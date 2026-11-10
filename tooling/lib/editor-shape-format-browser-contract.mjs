@@ -1,8 +1,7 @@
 import { queryElementFill, queryElementStroke } from '/out/editor/editor.mjs';
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const byName = (doc, name) => Object.values(doc.elements)
-  .find((record) => record.src.name === name);
+const byName = (doc, name) => Object.values(doc.elements).find((record) => record.src.name === name);
 
 /** 真实浏览器守住渐变/图片描边上屏、查看视图同步与 60 元素提交预算。 */
 export async function runEditorShapeFormatBrowserContract({ openEditor, load }) {
@@ -28,10 +27,15 @@ export async function runEditorShapeFormatBrowserContract({ openEditor, load }) 
   const editSibling = editStatic.querySelector(`[data-edit-id="${sibling.id}"]`);
   const viewSibling = viewStatic.querySelector(`[data-edit-id="${sibling.id}"]`);
   session.editor.exec({
-    type: 'SetFill', id: target.id,
+    type: 'SetFill',
+    id: target.id,
     fill: {
-      type: 'gradient', angle: 45,
-      stops: [{ pos: 0, color: '#0EA5E9' }, { pos: 1, color: '#8B5CF6' }],
+      type: 'gradient',
+      angle: 45,
+      stops: [
+        { pos: 0, color: '#0EA5E9' },
+        { pos: 1, color: '#8B5CF6' },
+      ],
     },
   });
   const fillState = queryElementFill(session.editor.doc, [target.id]);
@@ -51,23 +55,31 @@ export async function runEditorShapeFormatBrowserContract({ openEditor, load }) 
     viewHidden: getComputedStyle(viewMount.querySelector('[data-ppt-layer="interaction"]')).display === 'none',
     fillMarkup: fillNode?.innerHTML.slice(0, 300),
   };
-  if (!Object.entries(fillEvidence).filter(([key]) => key !== 'fillMarkup')
-    .every(([, value]) => value)) {
+  if (
+    !Object.entries(fillEvidence)
+      .filter(([key]) => key !== 'fillMarkup')
+      .every(([, value]) => value)
+  ) {
     throw new Error(`Chrome 渐变上屏、查看视图同步或增量 DOM 身份失败：${JSON.stringify(fillEvidence)}`);
   }
 
   const pictureBefore = editStatic.querySelector(`[data-edit-id="${picture.id}"]`);
   const fillAfter = editStatic.querySelector(`[data-edit-id="${target.id}"]`);
   session.editor.exec({
-    type: 'SetStroke', id: picture.id,
+    type: 'SetStroke',
+    id: picture.id,
     stroke: { color: '#F97316', width: 3, dash: [12, 9], cap: 'round', join: 'bevel' },
   });
   const strokeState = queryElementStroke(session.editor.doc, [picture.id]);
   const pictureAfter = editStatic.querySelector(`[data-edit-id="${picture.id}"]`);
-  if (!strokeState.direct || strokeState.value?.color !== 'rgb(249,115,22)'
-    || pictureAfter === pictureBefore || !pictureAfter?.querySelector('[stroke="rgb(249,115,22)"]')
+  if (
+    !strokeState.direct
+    || strokeState.value?.color !== 'rgb(249,115,22)'
+    || pictureAfter === pictureBefore
+    || !pictureAfter?.querySelector('[stroke="rgb(249,115,22)"]')
     || editStatic.querySelector(`[data-edit-id="${target.id}"]`) !== fillAfter
-    || editStatic.querySelector('svg') !== editSvg) {
+    || editStatic.querySelector('svg') !== editSvg
+  ) {
     throw new Error('Chrome 图片描边上屏或无关分区身份失败');
   }
   session.dispose();
@@ -88,17 +100,23 @@ export async function runEditorShapeFormatBrowserContract({ openEditor, load }) 
   for (let index = 0; index < 80; index++) {
     const started = performance.now();
     const strokeRound = index % 2 === 1;
-    const result = perfSession.editor.exec(strokeRound
-      ? {
-        type: 'SetStroke', id: perfTarget,
-        stroke: {
-          color: index % 4 === 1 ? '#0369A1' : '#C2410C', width: 1, dash: null,
-        },
-      }
-      : {
-        type: 'SetFill', id: perfTarget,
-        fill: { type: 'solid', color: index % 4 ? '#E0F2FE' : '#FFEDD5' },
-      });
+    const result = perfSession.editor.exec(
+      strokeRound
+        ? {
+            type: 'SetStroke',
+            id: perfTarget,
+            stroke: {
+              color: index % 4 === 1 ? '#0369A1' : '#C2410C',
+              width: 1,
+              dash: null,
+            },
+          }
+        : {
+            type: 'SetFill',
+            id: perfTarget,
+            fill: { type: 'solid', color: index % 4 ? '#E0F2FE' : '#FFEDD5' },
+          },
+    );
     if (!result.dirtyElements.has(perfTarget)) {
       throw new Error(`Chrome 第 ${index + 1} 次格式性能提交意外成为 no-op`);
     }
@@ -110,9 +128,11 @@ export async function runEditorShapeFormatBrowserContract({ openEditor, load }) 
   };
   const fillP95 = p95(fillSamples);
   const strokeP95 = p95(strokeSamples);
-  if (roots.length !== 60
+  if (
+    roots.length !== 60
     || perfStatic.querySelector(`[data-edit-id="${perfSibling}"]`) !== stableSibling
-    || perfStatic.querySelector('svg') !== stableSvg) {
+    || perfStatic.querySelector('svg') !== stableSvg
+  ) {
     throw new Error('Chrome 60 元素填充/描边后的 DOM 身份不稳定');
   }
   recordPerformanceBudget('Chrome 60 元素填充 p95', fillP95, 16);

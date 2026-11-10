@@ -12,10 +12,11 @@ function frameLeft(mount, session, record) {
   if (!matrix) throw new Error(`浏览器对齐缺少元素框 CTM：${record.id}`);
   // 组内元素的渲染节点用组缩放折算后的外框作局部坐标。
   const frame = session.editor.renderedElement(record.id);
-  return Math.min(...[
-    new DOMPoint(0, 0), new DOMPoint(frame.w, 0),
-    new DOMPoint(frame.w, frame.h), new DOMPoint(0, frame.h),
-  ].map((point) => point.matrixTransform(matrix).x));
+  return Math.min(
+    ...[new DOMPoint(0, 0), new DOMPoint(frame.w, 0), new DOMPoint(frame.w, frame.h), new DOMPoint(0, frame.h)].map(
+      (point) => point.matrixTransform(matrix).x,
+    ),
+  );
 }
 
 /** 浏览器 CTM 是模型矩阵之外的 ground truth，同时测量完整同步 DOM 反馈。 */
@@ -30,8 +31,7 @@ export async function runEditorAlignBrowserContract({ openEditor, load }) {
   let geometryDetail = '';
   try {
     session.mount(mount, { mode: 'edit', textMode: 'svg', snapping: false });
-    const byName = (name) => Object.values(session.editor.doc.elements)
-      .find((record) => record.src.name === name);
+    const byName = (name) => Object.values(session.editor.doc.elements).find((record) => record.src.name === name);
     const plain = byName('align-plain');
     const rotated = byName('align-rotated');
     const leaf = byName('align-group-leaf');
@@ -70,9 +70,12 @@ export async function runEditorAlignBrowserContract({ openEditor, load }) {
       staticLayer?.querySelector('svg')?.getBoundingClientRect();
     }
     const alignP95 = p95(samples);
-    if (ids.length !== 60
+    if (
+      ids.length !== 60
       || mount.querySelector('[data-ppt-layer="static"]') !== staticLayer
-      || perfSession.editor.isDirty() || perfSession.editor.history.undoCount !== 0) {
+      || perfSession.editor.isDirty()
+      || perfSession.editor.history.undoCount !== 0
+    ) {
       throw new Error('60 元素完整 DOM 对齐后的 DOM 或历史状态不稳定');
     }
     recordPerformanceBudget('60 元素完整 DOM 对齐反馈 p95', alignP95, 8);

@@ -1,6 +1,4 @@
-import {
-  changeValue, openFixture, saveAndReopen, selectPaneObject,
-} from './site-editor-browser-helpers.mjs';
+import { changeValue, openFixture, saveAndReopen, selectPaneObject } from './site-editor-browser-helpers.mjs';
 
 export async function runSiteEditorShapeToolbarContract(context) {
   const { evaluate, waitFor, click, request } = context;
@@ -9,15 +7,22 @@ export async function runSiteEditorShapeToolbarContract(context) {
     await click('#inspectorToggle');
   }
   await request('Emulation.setDeviceMetricsOverride', {
-    width: 700, height: 900, deviceScaleFactor: 1, mobile: false,
+    width: 700,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false,
   });
-  await waitFor(`getComputedStyle(document.querySelector('#objectPanel')).display === 'none'
+  await waitFor(
+    `getComputedStyle(document.querySelector('#objectPanel')).display === 'none'
     && document.querySelector('#slideCount')?.hidden
     && [...document.querySelectorAll('[data-task-tab]')].reduce((width, tab) => width + tab.getBoundingClientRect().width, 0)
       < document.querySelector('.task-tabs').getBoundingClientRect().width * 0.7
-    && getComputedStyle(document.querySelector('#taskStart')).justifyContent === 'flex-start'`, '窄屏编辑外壳收敛');
+    && getComputedStyle(document.querySelector('#taskStart')).justifyContent === 'flex-start'`,
+    '窄屏编辑外壳收敛',
+  );
   await click('[data-edit-id]');
-  await waitFor(`document.querySelector('#editorApp')?.dataset.inspectorOpen === 'true'
+  await waitFor(
+    `document.querySelector('#editorApp')?.dataset.inspectorOpen === 'true'
     && getComputedStyle(document.querySelector('#objectPanel')).display !== 'none'
     && !document.querySelector('#shapeInspector')?.hidden
     && document.querySelector('#editorInspector')?.scrollTop === 0
@@ -25,9 +30,14 @@ export async function runSiteEditorShapeToolbarContract(context) {
       ['eye', 'eye-off'].includes(button.firstElementChild?.getAttribute('data-pane-icon')))
     && [...document.querySelectorAll('#objectList [data-pane-action="lock"]')].every((button) =>
       ['lock', 'unlock'].includes(button.firstElementChild?.getAttribute('data-pane-icon')))
-    && !/[●○🔒🔓]/u.test(document.querySelector('#objectList')?.textContent ?? '')`, '窄屏选中图形显示统一图标属性面板');
+    && !/[●○🔒🔓]/u.test(document.querySelector('#objectList')?.textContent ?? '')`,
+    '窄屏选中图形显示统一图标属性面板',
+  );
   await request('Emulation.setDeviceMetricsOverride', {
-    width: 1280, height: 720, deviceScaleFactor: 1, mobile: false,
+    width: 1280,
+    height: 720,
+    deviceScaleFactor: 1,
+    mobile: false,
   });
   await selectPaneObject(context, 'format-alpha-solid');
   await waitFor(`document.querySelector('#shapeInspector') && !document.querySelector('#shapeInspector').hidden`, '形状上下文面板');
@@ -108,55 +118,77 @@ export async function runSiteEditorShapeToolbarContract(context) {
 
   const recoveryDefault = await evaluate("document.querySelector('#recoveryToggle').checked");
   if (!recoveryDefault) throw new Error('本机恢复默认没有启用');
-  await click('#recoveryToggle'); await click('#recoveryToggle');
+  await click('#recoveryToggle');
+  await click('#recoveryToggle');
   await waitFor("document.querySelector('#recoveryState').textContent === '恢复记录已写入本机'", '本机恢复记录落盘');
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     window.confirm = () => true;
     const bytes = await fetch('/fixtures/sample-editor-shape-format.pptx').then((response) => response.arrayBuffer());
     const transfer = new DataTransfer();
     transfer.items.add(new File([bytes], 'shape-format.pptx'));
     const input = document.querySelector('#fileInput'); input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+    true,
+  );
   await waitFor("!document.querySelector('#recoveryPrompt').hidden", '本机恢复提示');
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const bytes = await fetch('/fixtures/sample-editor-text.pptx').then((response) => response.arrayBuffer());
     const transfer = new DataTransfer();
     transfer.items.add(new File([bytes], 'reentry-text.pptx'));
     const input = document.querySelector('#fileInput'); input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
-  await waitFor(`document.querySelector('#fileName')?.textContent === 'reentry-text.pptx'
+  })()`,
+    true,
+  );
+  await waitFor(
+    `document.querySelector('#fileName')?.textContent === 'reentry-text.pptx'
     && document.querySelector('#recoveryPrompt').hidden
-    && !document.querySelector('#editorApp')?.dataset.loading`, '恢复决策被新打开取代');
-  await evaluate(`(async () => {
+    && !document.querySelector('#editorApp')?.dataset.loading`,
+    '恢复决策被新打开取代',
+  );
+  await evaluate(
+    `(async () => {
     const bytes = await fetch('/fixtures/sample-editor-shape-format.pptx').then((response) => response.arrayBuffer());
     const transfer = new DataTransfer();
     transfer.items.add(new File([bytes], 'shape-format.pptx'));
     const input = document.querySelector('#fileInput'); input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+    true,
+  );
   await waitFor("!document.querySelector('#recoveryPrompt').hidden", '重新进入本机恢复提示');
   await click('#restoreRecovery');
-  await waitFor(`document.querySelector('#fileName')?.textContent.startsWith('● shape-format.pptx')
-    && !document.querySelector('#editorApp')?.dataset.loading`, '恢复后的形状文稿');
+  await waitFor(
+    `document.querySelector('#fileName')?.textContent.startsWith('● shape-format.pptx')
+    && !document.querySelector('#editorApp')?.dataset.loading`,
+    '恢复后的形状文稿',
+  );
   await selectPaneObject(context, 'format-alpha-solid');
-  await waitFor(`document.querySelector('#shapeFillColor').value === '#123456'
+  await waitFor(
+    `document.querySelector('#shapeFillColor').value === '#123456'
     && document.querySelector('#slideHidden').checked
     && document.querySelector('#transitionType').value === 'fade'
-    && document.querySelectorAll('#animationTimeline li').length === ${animationBefore + 1}`, '恢复内容验证');
+    && document.querySelectorAll('#animationTimeline li').length === ${animationBefore + 1}`,
+    '恢复内容验证',
+  );
   await selectPaneObject(context, 'format-rich-stroke');
   await waitFor(`document.querySelector('#shapeStrokeColor').value === '#654321'`, '恢复描边验证');
 
   await saveAndReopen(context, 'shape-format-reopen.pptx');
   await selectPaneObject(context, 'format-alpha-solid');
-  await waitFor(`document.querySelector('#shapeFillColor').value === '#123456'
+  await waitFor(
+    `document.querySelector('#shapeFillColor').value === '#123456'
     && document.querySelector('#linkType').value === 'external'
     && document.querySelector('#slideBackgroundColor').value === '#abcdef'
     && document.querySelector('#slideHidden').checked
     && document.querySelector('#slideNotes').value === '073 浏览器备注'
     && document.querySelector('#transitionType').value === 'fade'
-    && document.querySelectorAll('#animationTimeline li').length === ${animationBefore + 1}`, '形状与页面能力重开验证');
+    && document.querySelectorAll('#animationTimeline li').length === ${animationBefore + 1}`,
+    '形状与页面能力重开验证',
+  );
   await selectPaneObject(context, 'format-rich-stroke');
   await waitFor(`document.querySelector('#shapeStrokeColor').value === '#654321'`, '描边重开验证');
 }

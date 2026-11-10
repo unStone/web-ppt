@@ -3,14 +3,12 @@ function pathByFill(markup, color) {
 }
 
 function rotatedPoint(frame, local) {
-  const radians = frame.rot * Math.PI / 180;
+  const radians = (frame.rot * Math.PI) / 180;
   const center = { x: frame.x + frame.w / 2, y: frame.y + frame.h / 2 };
   const point = { x: frame.x + local.x, y: frame.y + local.y };
   return {
-    x: center.x + (point.x - center.x) * Math.cos(radians)
-      - (point.y - center.y) * Math.sin(radians),
-    y: center.y + (point.x - center.x) * Math.sin(radians)
-      + (point.y - center.y) * Math.cos(radians),
+    x: center.x + (point.x - center.x) * Math.cos(radians) - (point.y - center.y) * Math.sin(radians),
+    y: center.y + (point.x - center.x) * Math.sin(radians) + (point.y - center.y) * Math.cos(radians),
   };
 }
 
@@ -28,11 +26,11 @@ export function runPresetShapeLibreOfficeContract({ exportSvg }) {
     throw new Error('LibreOffice 没有把 roundRect 渲染为四段圆角曲线');
   }
   const frame = { x: 70, y: 80, w: 260, h: 150, rot: 10 };
-  const radius = Math.min(frame.w, frame.h) * 44_000 / 100_000;
+  const radius = (Math.min(frame.w, frame.h) * 44_000) / 100_000;
   const expectedSlide = rotatedPoint(frame, { x: 0, y: radius });
   const expected = {
-    x: expectedSlide.x / 1280 * Number(viewBox[1]),
-    y: expectedSlide.y / 720 * Number(viewBox[2]),
+    x: (expectedSlide.x / 1280) * Number(viewBox[1]),
+    y: (expectedSlide.y / 720) * Number(viewBox[2]),
   };
   const error = Math.hypot(Number(move[1]) - expected.x, Number(move[2]) - expected.y);
   const starData = star.match(/\bd="([^"]+)"/)?.[1] ?? '';

@@ -1,8 +1,9 @@
 const LIMIT = 10000;
-const unsigned = (raw) => typeof raw === 'string' && /^\+?\d+$/.test(raw.trim())
-  && Number(raw) <= 0xffffffff ? Number(raw) : null;
-const numeric = (raw) => /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(raw.trim())
-  && Number.isFinite(Number(raw)) ? { kind: 'number', value: Number(raw) } : { kind: 'invalid', value: null, raw };
+const unsigned = (raw) => (typeof raw === 'string' && /^\+?\d+$/.test(raw.trim()) && Number(raw) <= 0xffffffff ? Number(raw) : null);
+const numeric = (raw) =>
+  /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(raw.trim()) && Number.isFinite(Number(raw))
+    ? { kind: 'number', value: Number(raw) }
+    : { kind: 'invalid', value: null, raw };
 
 /** 缓存和字面数据共用 idx 语义；保留空槽，不能按 XML 的 pt 出现顺序压平。 */
 function inlineDimension(dimension) {
@@ -25,9 +26,7 @@ function inlineDimension(dimension) {
       if (index === null || index >= count) return invalid('invalid-point-index');
       if (seen.has(index)) return invalid('duplicate-point-index');
       seen.add(index);
-      values[index] = dimension.kind === 'strDim'
-        ? { kind: 'string', value: point.value }
-        : numeric(point.value);
+      values[index] = dimension.kind === 'strDim' ? { kind: 'string', value: point.value } : numeric(point.value);
     }
     levels.push({ count, name: level.name, formatCode: level.formatCode, values });
   }
@@ -42,8 +41,8 @@ function workbookDimension(dimension) {
   if (reference.status !== 'resolved') return unresolved(reference.reason);
   const direction = reference.direction;
   if (!['col', 'row'].includes(direction)) return unresolved('invalid-direction');
-  const values = direction === 'row' ? reference.rows
-    : (reference.rows[0] ?? []).map((_, column) => reference.rows.map((row) => row[column]));
+  const values =
+    direction === 'row' ? reference.rows : (reference.rows[0] ?? []).map((_, column) => reference.rows.map((row) => row[column]));
   return { status: 'resolved', direction, levels: values.map((values) => ({ count: values.length, values })) };
 }
 
@@ -53,7 +52,8 @@ function compareSources(inline, workbook) {
   if (workbook.status !== 'resolved') return unavailable(workbook.reason);
   // 物理列序并不保证等于层级缓存顺序；没有对应关系的证据时不能伪造逐点差异。
   if (inline.levels.length !== 1 || workbook.levels.length !== 1) return unavailable('hierarchy-order-unverified');
-  const a = inline.levels[0], b = workbook.levels[0];
+  const a = inline.levels[0],
+    b = workbook.levels[0];
   if ([...a.values, ...b.values].some((point) => ['invalid', 'error', 'uncalculated'].includes(point.kind))) {
     return unavailable('unusable-values');
   }
@@ -62,12 +62,12 @@ function compareSources(inline, workbook) {
     const other = b.values[index];
     return point.kind === other.kind && point.value === other.value ? [] : [{ index, inline: point, workbook: other }];
   });
-  return { status: differences.length ? 'different' : 'equal', compared: a.count,
-    ...(differences.length ? { differences } : {}) };
+  return { status: differences.length ? 'different' : 'equal', compared: a.count, ...(differences.length ? { differences } : {}) };
 }
 
 /** 调查报告保留两路证据，不承担选源、公式重算或层级空白继承策略。 */
 export function dimensionEvidence(dimension) {
-  const inlineData = inlineDimension(dimension), workbookData = workbookDimension(dimension);
+  const inlineData = inlineDimension(dimension),
+    workbookData = workbookDimension(dimension);
   return { inlineData, workbookData, sourceComparison: compareSources(inlineData, workbookData) };
 }

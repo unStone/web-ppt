@@ -56,8 +56,7 @@ const validate = () => {
   const manifest = manifestJson.value;
   const report = reportJson.value;
 
-  if (!isRecord(manifest) || manifest.version !== 1
-    || !Array.isArray(manifest.artifacts) || manifest.artifacts.length === 0) {
+  if (!isRecord(manifest) || manifest.version !== 1 || !Array.isArray(manifest.artifacts) || manifest.artifacts.length === 0) {
     throw new Error('Office 清单格式无效');
   }
   if (!isRecord(report) || report.version !== 1) throw new Error('PowerPoint 报告格式无效');
@@ -88,8 +87,7 @@ const validate = () => {
   if (!isRecord(report.powerPoint)) throw new Error('PowerPoint 版本信息缺失');
   requireString(report.powerPoint.version, 'PowerPoint version');
   requireString(report.powerPoint.build, 'PowerPoint build');
-  if (!isRecord(report.environment) || report.environment.userInteractive !== true
-    || !isPositiveInt(report.environment.sessionId)) {
+  if (!isRecord(report.environment) || report.environment.userInteractive !== true || !isPositiveInt(report.environment.sessionId)) {
     throw new Error('PowerPoint 门禁必须运行在已登录的交互式 Windows 桌面会话');
   }
   if (!Array.isArray(report.artifacts)) throw new Error('PowerPoint 报告产物列表缺失');
@@ -104,8 +102,7 @@ const validate = () => {
   }
 
   for (const artifact of manifest.artifacts) {
-    if (!isRecord(artifact) || typeof artifact.file !== 'string'
-      || !isPositiveInt(artifact.slides) || expectedFiles.has(artifact.file)) {
+    if (!isRecord(artifact) || typeof artifact.file !== 'string' || !isPositiveInt(artifact.slides) || expectedFiles.has(artifact.file)) {
       throw new Error(`Office 清单含无效或重复产物：${String(artifact?.file)}`);
     }
     expectedFiles.add(artifact.file);
@@ -124,9 +121,14 @@ const validate = () => {
     if (artifact.chartData) {
       const expected = artifact.chartData;
       const chartData = evidence.chartData;
-      if (!isRecord(chartData) || chartData.synchronized !== true
-        || chartData.displayValue !== expected.value || chartData.workbookValue !== expected.value
-        || chartData.seriesName !== expected.seriesName || chartData.category !== expected.category) {
+      if (
+        !isRecord(chartData)
+        || chartData.synchronized !== true
+        || chartData.displayValue !== expected.value
+        || chartData.workbookValue !== expected.value
+        || chartData.seriesName !== expected.seriesName
+        || chartData.category !== expected.category
+      ) {
         throw new Error(`${artifact.file} 缺少图表显示值与双击工作簿一致的证据`);
       }
     }
@@ -135,15 +137,17 @@ const validate = () => {
     throw new Error('PowerPoint 报告包含清单之外的产物');
   }
 
-  const worktreeState = execFileSync(
-    'git', ['status', '--porcelain=v1', '--untracked-files=all'],
-    { cwd: process.cwd(), encoding: 'utf8' },
-  );
+  const worktreeState = execFileSync('git', ['status', '--porcelain=v1', '--untracked-files=all'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
   if (worktreeState.trim() !== '') {
     throw new Error('当前 Git 工作树不干净，PowerPoint 证据不能只绑定到 HEAD');
   }
 
-  console.log(`PowerPoint 证据有效：${expectedFiles.size}/${expectedFiles.size} 份，版本 ${report.powerPoint.version} build ${report.powerPoint.build}`);
+  console.log(
+    `PowerPoint 证据有效：${expectedFiles.size}/${expectedFiles.size} 份，版本 ${report.powerPoint.version} build ${report.powerPoint.build}`,
+  );
 };
 
 try {

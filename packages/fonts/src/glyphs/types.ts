@@ -45,7 +45,10 @@ export interface FontEmbeddingRights {
   outlineAllowed: boolean;
 }
 
-export interface FontEmbedding { bytes: Uint8Array; info: FontFaceInfo }
+export interface FontEmbedding {
+  bytes: Uint8Array;
+  info: FontFaceInfo;
+}
 
 export type FontScript = 'Latn' | 'Hani';
 export interface FontShapeOptions extends FontRequestOptions {
@@ -82,7 +85,9 @@ export interface GlyphRun {
 }
 
 /** 适配器边界只使用设计单位和 UTF-16 簇，不暴露第三方字体对象。 */
-export interface ShaperGlyph extends PositionedGlyph { cluster: number }
+export interface ShaperGlyph extends PositionedGlyph {
+  cluster: number;
+}
 export interface FontShaperFace {
   shape(text: string, options: FontShapeOptions): Promise<ShaperGlyph[]>;
   outline(glyphId: number, options: FontRequestOptions): Promise<string>;
@@ -95,7 +100,7 @@ export interface FontShaper {
 export interface FontProviderOptions {
   loadShaper?: (signal: AbortSignal) => Promise<FontShaper>;
   limits?: Partial<FontProviderLimits>;
-  decodeEot?: (bytes: Uint8Array, options: {signal: AbortSignal; maxOutputBytes: number}) => Promise<Uint8Array | null>;
+  decodeEot?: (bytes: Uint8Array, options: { signal: AbortSignal; maxOutputBytes: number }) => Promise<Uint8Array | null>;
 }
 export interface FontProviderLimits {
   maxFontBytes: number;
@@ -105,20 +110,48 @@ export interface FontProviderLimits {
   maxTextLength: number;
 }
 
-export type FontProblem = 'font-bytes-unavailable' | 'provider-disposed' | 'invalid-font' | 'aborted'
-  | 'face-unavailable' | 'duplicate-face-id' | 'ambiguous-face' | 'resource-limit' | 'embedding-restricted'
-  | 'preview-print-only' | 'bitmap-only' | 'cmap-not-supported' | 'missing-glyphs'
-  | 'unsupported-script' | 'unsupported-direction' | 'script-mismatch' | 'invalid-text'
-  | 'shaper-unavailable' | 'shaper-failed' | 'invalid-glyph-id' | 'invalid-request'
-  | 'needs-container-decoder' | 'collection-not-supported' | 'variable-not-supported'
-  | 'cff-not-supported' | 'color-font-not-supported' | 'decoder-unavailable' | 'decode-failed'
-  | 'eot-root-restricted' | 'eot-feature-not-supported' | 'subset-not-permitted'
-  | 'measurement-not-prepared' | 'unsupported-layout' | 'layout-failed' | 'face-style-mismatch' | 'font-install-failed';
+export type FontProblem =
+  | 'font-bytes-unavailable'
+  | 'provider-disposed'
+  | 'invalid-font'
+  | 'aborted'
+  | 'face-unavailable'
+  | 'duplicate-face-id'
+  | 'ambiguous-face'
+  | 'resource-limit'
+  | 'embedding-restricted'
+  | 'preview-print-only'
+  | 'bitmap-only'
+  | 'cmap-not-supported'
+  | 'missing-glyphs'
+  | 'unsupported-script'
+  | 'unsupported-direction'
+  | 'script-mismatch'
+  | 'invalid-text'
+  | 'shaper-unavailable'
+  | 'shaper-failed'
+  | 'invalid-glyph-id'
+  | 'invalid-request'
+  | 'needs-container-decoder'
+  | 'collection-not-supported'
+  | 'variable-not-supported'
+  | 'cff-not-supported'
+  | 'color-font-not-supported'
+  | 'decoder-unavailable'
+  | 'decode-failed'
+  | 'eot-root-restricted'
+  | 'eot-feature-not-supported'
+  | 'subset-not-permitted'
+  | 'measurement-not-prepared'
+  | 'unsupported-layout'
+  | 'layout-failed'
+  | 'face-style-mismatch'
+  | 'font-install-failed';
 export interface FontFailure {
   ok: false;
   reason: FontProblem;
   faceId?: string;
-  missing?: Array<{start: number; end: number; text: string}>;
-  range?: {start: number; end: number};
+  missing?: Array<{ start: number; end: number; text: string }>;
+  range?: { start: number; end: number };
 }
-export type FontResult<T> = {ok: true; value: T} | FontFailure;
+export type FontResult<T> = { ok: true; value: T } | FontFailure;

@@ -7,14 +7,25 @@ const p95 = (samples) => {
   samples.sort((left, right) => left - right);
   return samples[Math.floor(samples.length * 0.95)];
 };
-const point = (pair) => { const [x, y] = pair.split(',').map(Number); return new DOMPoint(x, y); };
+const point = (pair) => {
+  const [x, y] = pair.split(',').map(Number);
+  return new DOMPoint(x, y);
+};
 const center = (rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
 const distance = (left, right) => Math.hypot(left.x - right.x, left.y - right.y);
-const pointer = (type, position, pointerId, pointerType = 'mouse') => new PointerEvent(type, {
-  bubbles: true, composed: true, cancelable: true, button: 0,
-  buttons: type === 'pointerup' || type === 'pointercancel' ? 0 : 1,
-  pointerId, pointerType, isPrimary: true, clientX: position.x, clientY: position.y,
-});
+const pointer = (type, position, pointerId, pointerType = 'mouse') =>
+  new PointerEvent(type, {
+    bubbles: true,
+    composed: true,
+    cancelable: true,
+    button: 0,
+    buttons: type === 'pointerup' || type === 'pointercancel' ? 0 : 1,
+    pointerId,
+    pointerType,
+    isPrimary: true,
+    clientX: position.x,
+    clientY: position.y,
+  });
 
 function mountElement() {
   const mount = document.createElement('div');
@@ -26,7 +37,10 @@ function mountElement() {
 function screenPoints(polygon) {
   const matrix = polygon.getScreenCTM();
   if (!matrix) throw new Error('Chrome 无法取得裁剪框屏幕矩阵');
-  return polygon.getAttribute('points').trim().split(/\s+/)
+  return polygon
+    .getAttribute('points')
+    .trim()
+    .split(/\s+/)
     .map((pair) => point(pair).matrixTransform(matrix));
 }
 
@@ -39,20 +53,19 @@ async function geometryContract(openEditor, load) {
   try {
     const view = session.mount(mount, { mode: 'edit', textMode: 'svg', snapping: false });
     session.mount(viewMount, { mode: 'view', textMode: 'svg', snapping: false });
-    const external = Object.values(session.editor.doc.elements)
-      .find((record) => record.src.name === 'image-external');
+    const external = Object.values(session.editor.doc.elements).find((record) => record.src.name === 'image-external');
     const target = mount.querySelector(`[data-edit-id="${external.id}"]`);
     target.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }));
-    if (!mount.querySelector(`[data-edit-crop-id="${external.id}"]`)
-      || viewMount.querySelector('[data-edit-crop-id]')) {
+    if (!mount.querySelector(`[data-edit-crop-id="${external.id}"]`) || viewMount.querySelector('[data-edit-crop-id]')) {
       throw new Error('Chrome 双击图片没有遵守 edit/view 裁剪模式边界');
     }
     view.endImageCrop();
-    const image = Object.values(session.editor.doc.elements)
-      .find((record) => record.src.name === 'image-nested');
+    const image = Object.values(session.editor.doc.elements).find((record) => record.src.name === 'image-nested');
     if (!view.startImageCrop(image.id)) throw new Error('Chrome 无法编排组合内图片裁剪');
     session.editor.exec({
-      type: 'SetCrop', id: image.id, crop: { l: 0.12, t: 0.08, r: 0.18, b: 0.14 },
+      type: 'SetCrop',
+      id: image.id,
+      crop: { l: 0.12, t: 0.08, r: 0.18, b: 0.14 },
     });
     session.editor.exec({ type: 'SetXfrm', id: image.id, rot: 27 });
     let geometryError = 0;
@@ -62,8 +75,10 @@ async function geometryContract(openEditor, load) {
       const crop = queryElementCrop(session.editor.doc, [image.id]).value;
       const effective = session.editor.effectiveElement(image.id);
       const expectedSlide = [
-        { x: 0, y: 0 }, { x: effective.w, y: 0 },
-        { x: effective.w, y: effective.h }, { x: 0, y: effective.h },
+        { x: 0, y: 0 },
+        { x: effective.w, y: 0 },
+        { x: effective.w, y: effective.h },
+        { x: 0, y: effective.h },
       ].map((local) => elementFrameToSlidePoint(session.editor.doc, image.id, local));
       const sourceW = effective.w / (1 - crop.l - crop.r);
       const sourceH = effective.h / (1 - crop.t - crop.b);
@@ -76,20 +91,21 @@ async function geometryContract(openEditor, load) {
       const overlay = mount.querySelector('[data-ppt-layer="interaction"]');
       const matrix = overlay.getScreenCTM();
       const expected = expectedSlide.map(({ x, y }) => new DOMPoint(x, y).matrixTransform(matrix));
-      const expectedSource = expectedSourceSlide
-        .map(({ x, y }) => new DOMPoint(x, y).matrixTransform(matrix));
+      const expectedSource = expectedSourceSlide.map(({ x, y }) => new DOMPoint(x, y).matrixTransform(matrix));
       const actual = screenPoints(mount.querySelector('[data-edit-crop-frame]'));
       const actualSource = screenPoints(mount.querySelector('[data-edit-crop-source-frame]'));
-      geometryError = Math.max(geometryError, ...actual.map((value, index) =>
-        distance(value, expected[index])), ...actualSource.map((value, index) =>
-        distance(value, expectedSource[index])));
-      const visuals = [...mount.querySelectorAll('[data-edit-crop-handle]')]
-        .map((node) => node.getBoundingClientRect());
-      const hits = [...mount.querySelectorAll('[data-edit-crop-hit]')]
-        .map((node) => node.getBoundingClientRect());
-      hitSizeError = Math.max(hitSizeError, ...visuals.flatMap((rect) =>
-        [Math.abs(rect.width - 8), Math.abs(rect.height - 8)]), ...hits.flatMap((rect) =>
-        [Math.abs(rect.width - 16), Math.abs(rect.height - 16)]));
+      geometryError = Math.max(
+        geometryError,
+        ...actual.map((value, index) => distance(value, expected[index])),
+        ...actualSource.map((value, index) => distance(value, expectedSource[index])),
+      );
+      const visuals = [...mount.querySelectorAll('[data-edit-crop-handle]')].map((node) => node.getBoundingClientRect());
+      const hits = [...mount.querySelectorAll('[data-edit-crop-hit]')].map((node) => node.getBoundingClientRect());
+      hitSizeError = Math.max(
+        hitSizeError,
+        ...visuals.flatMap((rect) => [Math.abs(rect.width - 8), Math.abs(rect.height - 8)]),
+        ...hits.flatMap((rect) => [Math.abs(rect.width - 16), Math.abs(rect.height - 16)]),
+      );
     }
     if (geometryError > 0.5 || hitSizeError > 0.5) {
       throw new Error(`Chrome 裁剪矩阵/命中偏差 ${geometryError.toFixed(3)}/${hitSizeError.toFixed(3)}px`);
@@ -103,19 +119,24 @@ async function geometryContract(openEditor, load) {
     touchHandle.dispatchEvent(pointer('pointerdown', touchStart, 401, 'touch'));
     view.element.dispatchEvent(pointer('pointermove', touchEnd, 401, 'touch'));
     view.element.dispatchEvent(pointer('pointercancel', touchEnd, 401, 'touch'));
-    if (JSON.stringify(queryElementCrop(session.editor.doc, [image.id]).value) !== touchCropBefore
-      || session.editor.history.undoCount !== touchCropHistory) {
+    if (
+      JSON.stringify(queryElementCrop(session.editor.doc, [image.id]).value) !== touchCropBefore
+      || session.editor.history.undoCount !== touchCropHistory
+    ) {
       throw new Error('单指触屏没有沿用图片裁剪取消事务');
     }
     view.setMode('view');
-    if (mount.querySelector('[data-edit-crop-id]')
-      || getComputedStyle(mount.querySelector('[data-ppt-layer="interaction"]')).display !== 'none') {
+    if (
+      mount.querySelector('[data-edit-crop-id]')
+      || getComputedStyle(mount.querySelector('[data-ppt-layer="interaction"]')).display !== 'none'
+    ) {
       throw new Error('Chrome view 模式泄漏裁剪辅助层');
     }
     return { geometryError, hitSizeError };
   } finally {
     session.dispose();
-    mount.remove(); viewMount.remove();
+    mount.remove();
+    viewMount.remove();
   }
 }
 
@@ -125,7 +146,11 @@ function measureFrames(mount, view) {
   let serial = 0;
   const originalRequest = window.requestAnimationFrame;
   const originalCancel = window.cancelAnimationFrame;
-  window.requestAnimationFrame = (callback) => { const id = ++serial; pending.set(id, callback); return id; };
+  window.requestAnimationFrame = (callback) => {
+    const id = ++serial;
+    pending.set(id, callback);
+    return id;
+  };
   window.cancelAnimationFrame = (id) => pending.delete(id);
   const flush = () => {
     const entry = pending.entries().next().value;
@@ -142,7 +167,7 @@ function measureFrames(mount, view) {
     view.element.dispatchEvent(pointer('pointermove', end, 301));
     samples.push(flush());
     for (let index = 0; index < 80; index++) {
-      end = { x: start.x + 10 + index % 5, y: start.y + index % 2 };
+      end = { x: start.x + 10 + (index % 5), y: start.y + (index % 2) };
       view.element.dispatchEvent(pointer('pointermove', end, 301));
       samples.push(flush());
     }
@@ -165,8 +190,11 @@ async function performanceContract(openEditor, load) {
     const ids = [];
     for (let index = 0; index < 60; index++) {
       session.editor.exec({
-        type: 'AddImage', slideId, bytes: bytesOf(), mime: 'image/png',
-        rect: { x: 15 + index % 10 * 115, y: 15 + Math.floor(index / 10) * 105, w: 90, h: 70 },
+        type: 'AddImage',
+        slideId,
+        bytes: bytesOf(),
+        mime: 'image/png',
+        rect: { x: 15 + (index % 10) * 115, y: 15 + Math.floor(index / 10) * 105, w: 90, h: 70 },
       });
       ids.push(session.editor.selection.ids[0]);
     }
@@ -179,7 +207,8 @@ async function performanceContract(openEditor, load) {
     for (let index = 0; index < 80; index++) {
       const started = performance.now();
       session.editor.exec({
-        type: 'SetCrop', id,
+        type: 'SetCrop',
+        id,
         crop: { l: index % 2 ? 0.11 : 0.12, t: 0.05, r: 0.08, b: 0.04 },
       });
       mount.querySelector('[data-edit-crop-frame]').getBoundingClientRect();
@@ -189,11 +218,13 @@ async function performanceContract(openEditor, load) {
     const historyBeforeFrame = session.editor.history.undoCount;
     const cropBeforeFrame = JSON.stringify(queryElementCrop(session.editor.doc, [id]).value);
     const frameP95 = measureFrames(mount, view);
-    if (ids.length !== 60
+    if (
+      ids.length !== 60
       || mount.querySelector(`[data-edit-id="${siblingId}"]`) !== sibling
       || mount.querySelector('[data-ppt-layer="static"] svg') !== svg
       || session.editor.history.undoCount !== historyBeforeFrame
-      || JSON.stringify(queryElementCrop(session.editor.doc, [id]).value) !== cropBeforeFrame) {
+      || JSON.stringify(queryElementCrop(session.editor.doc, [id]).value) !== cropBeforeFrame
+    ) {
       throw new Error('Chrome 60 图片裁剪后的模型、历史或 DOM 身份不稳定');
     }
     recordPerformanceBudget('Chrome 60 图片裁剪提交 p95', commitP95, 16);
@@ -206,12 +237,13 @@ async function performanceContract(openEditor, load) {
 }
 
 export async function runEditorImageCropBrowserContract({ openEditor, load }) {
-  return { ...await geometryContract(openEditor, load), ...await performanceContract(openEditor, load) };
+  return { ...(await geometryContract(openEditor, load)), ...(await performanceContract(openEditor, load)) };
 }
 
 /** 主浏览器驱动只搬运一个自描述字段；指标命名和格式由能力契约自己拥有。 */
 export function publishEditorImageCropBrowserResult(report, result) {
-  report.dataset.imageCropReport = `图片裁剪偏差/命中 ${result.geometryError.toFixed(3)}/`
+  report.dataset.imageCropReport =
+    `图片裁剪偏差/命中 ${result.geometryError.toFixed(3)}/`
     + `${result.hitSizeError.toFixed(3)}px · 裁剪提交/帧 p95 ${result.commitP95.toFixed(3)}/`
     + `${result.frameP95.toFixed(3)}ms`;
 }

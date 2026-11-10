@@ -46,49 +46,117 @@ export function makeTtf({ family = 'WebPPT Test', style = 'Regular', bold = fals
   // 'A' 画成一个矩形：4 个点、1 条轮廓，够证明 glyf/loca 是通的。
   // 长度必须是偶数——short 格式的 loca 存的是偏移的一半。
   const glyphA = [
-    ...i16(1), ...i16(100), ...i16(0), ...i16(500), ...i16(700), // numberOfContours + 包围盒
-    ...u16(3),                                                    // endPtsOfContours
-    ...u16(0),                                                    // instructionLength
-    ...u8(1), ...u8(1), ...u8(1), ...u8(1),                       // flags：4 个点都在曲线上
-    ...i16(100), ...i16(400), ...i16(0), ...i16(-400),            // x 增量
-    ...i16(0), ...i16(0), ...i16(700), ...i16(0),                 // y 增量
+    ...i16(1),
+    ...i16(100),
+    ...i16(0),
+    ...i16(500),
+    ...i16(700), // numberOfContours + 包围盒
+    ...u16(3), // endPtsOfContours
+    ...u16(0), // instructionLength
+    ...u8(1),
+    ...u8(1),
+    ...u8(1),
+    ...u8(1), // flags：4 个点都在曲线上
+    ...i16(100),
+    ...i16(400),
+    ...i16(0),
+    ...i16(-400), // x 增量
+    ...i16(0),
+    ...i16(0),
+    ...i16(700),
+    ...i16(0), // y 增量
   ];
 
   const tables = new Map();
   // .notdef 长度为 0，'A' 紧随其后
   tables.set('glyf', bytes(glyphA));
   tables.set('loca', bytes([...u16(0), ...u16(0), ...u16(glyphA.length / 2)]));
-  tables.set('head', bytes([
-    ...u32(0x00010000), ...u32(0x00010000), ...u32(0), ...u32(0x5f0f3cf5),
-    ...u16(0x000b), ...u16(UPEM),
-    ...u32(0), ...u32(0), ...u32(0), ...u32(0),                   // created / modified 固定为 0，保证可重复
-    ...i16(100), ...i16(0), ...i16(500), ...i16(700),             // 全局包围盒
-    ...u16((bold ? 1 : 0) | (italic ? 2 : 0)),                    // macStyle
-    ...u16(8), ...i16(2), ...i16(0), ...i16(0),                   // lowestRecPPEM / fontDirectionHint / indexToLocFormat / glyphDataFormat
-  ]));
-  tables.set('hhea', bytes([
-    ...u32(0x00010000), ...i16(800), ...i16(-200), ...i16(0),
-    ...u16(600), ...i16(0), ...i16(0), ...i16(600),
-    ...i16(1), ...i16(0), ...i16(0),
-    ...i16(0), ...i16(0), ...i16(0), ...i16(0),
-    ...i16(0), ...u16(2),                                          // metricDataFormat / numberOfHMetrics
-  ]));
-  tables.set('maxp', bytes([
-    ...u32(0x00010000), ...u16(2),
-    ...u16(4), ...u16(0), ...u16(0), ...u16(0), ...u16(1), ...u16(0),
-    ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u16(0),
-  ]));
+  tables.set(
+    'head',
+    bytes([
+      ...u32(0x00010000),
+      ...u32(0x00010000),
+      ...u32(0),
+      ...u32(0x5f0f3cf5),
+      ...u16(0x000b),
+      ...u16(UPEM),
+      ...u32(0),
+      ...u32(0),
+      ...u32(0),
+      ...u32(0), // created / modified 固定为 0，保证可重复
+      ...i16(100),
+      ...i16(0),
+      ...i16(500),
+      ...i16(700), // 全局包围盒
+      ...u16((bold ? 1 : 0) | (italic ? 2 : 0)), // macStyle
+      ...u16(8),
+      ...i16(2),
+      ...i16(0),
+      ...i16(0), // lowestRecPPEM / fontDirectionHint / indexToLocFormat / glyphDataFormat
+    ]),
+  );
+  tables.set(
+    'hhea',
+    bytes([
+      ...u32(0x00010000),
+      ...i16(800),
+      ...i16(-200),
+      ...i16(0),
+      ...u16(600),
+      ...i16(0),
+      ...i16(0),
+      ...i16(600),
+      ...i16(1),
+      ...i16(0),
+      ...i16(0),
+      ...i16(0),
+      ...i16(0),
+      ...i16(0),
+      ...i16(0),
+      ...i16(0),
+      ...u16(2), // metricDataFormat / numberOfHMetrics
+    ]),
+  );
+  tables.set(
+    'maxp',
+    bytes([
+      ...u32(0x00010000),
+      ...u16(2),
+      ...u16(4),
+      ...u16(0),
+      ...u16(0),
+      ...u16(0),
+      ...u16(1),
+      ...u16(0),
+      ...u16(0),
+      ...u16(0),
+      ...u16(0),
+      ...u16(0),
+      ...u16(0),
+      ...u16(0),
+      ...u16(0),
+    ]),
+  );
   tables.set('hmtx', bytes([...u16(600), ...i16(0), ...u16(600), ...i16(100)]));
 
   // cmap：format 4，只映射 'A'
   const sub4 = [
-    ...u16(4), ...u16(32), ...u16(0),
-    ...u16(4), ...u16(4), ...u16(1), ...u16(0),
-    ...u16(0x41), ...u16(0xffff),
+    ...u16(4),
+    ...u16(32),
     ...u16(0),
-    ...u16(0x41), ...u16(0xffff),
-    ...i16(1 - 0x41), ...i16(1),
-    ...u16(0), ...u16(0),
+    ...u16(4),
+    ...u16(4),
+    ...u16(1),
+    ...u16(0),
+    ...u16(0x41),
+    ...u16(0xffff),
+    ...u16(0),
+    ...u16(0x41),
+    ...u16(0xffff),
+    ...i16(1 - 0x41),
+    ...i16(1),
+    ...u16(0),
+    ...u16(0),
   ];
   tables.set('cmap', bytes([...u16(0), ...u16(1), ...u16(3), ...u16(1), ...u32(12), ...sub4]));
 
@@ -106,20 +174,48 @@ export function makeTtf({ family = 'WebPPT Test', style = 'Regular', bold = fals
   tables.set('name', bytes([...u16(0), ...u16(strings.length), ...u16(6 + records.length), ...records, ...pool]));
 
   // OS/2 version 4 定长 96 字节，字段顺序照 spec 排，别少也别多
-  tables.set('OS/2', bytes([
-    ...u16(4), ...i16(600), ...u16(bold ? 700 : 400), ...u16(5), ...u16(0),
-    ...i16(650), ...i16(600), ...i16(0), ...i16(75), ...i16(650), ...i16(600), ...i16(0), ...i16(350),
-    ...i16(50), ...i16(300),                                       // yStrikeoutSize / Position
-    ...i16(0),                                                     // sFamilyClass
-    ...new Array(10).fill(0),                                      // panose
-    ...u32(1), ...u32(0), ...u32(0), ...u32(0),                    // ulUnicodeRange1..4
-    ...enc.encode('WPPT'),                                          // achVendID
-    ...u16((italic ? 1 : 0) | (bold ? 32 : 0)),                    // fsSelection
-    ...u16(0x41), ...u16(0x41),                                     // usFirstCharIndex / usLastCharIndex
-    ...i16(800), ...i16(-200), ...i16(0), ...u16(800), ...u16(200),
-    ...u32(1), ...u32(0),                                           // ulCodePageRange1..2
-    ...i16(500), ...i16(700), ...u16(0), ...u16(0x20), ...u16(1),
-  ]));
+  tables.set(
+    'OS/2',
+    bytes([
+      ...u16(4),
+      ...i16(600),
+      ...u16(bold ? 700 : 400),
+      ...u16(5),
+      ...u16(0),
+      ...i16(650),
+      ...i16(600),
+      ...i16(0),
+      ...i16(75),
+      ...i16(650),
+      ...i16(600),
+      ...i16(0),
+      ...i16(350),
+      ...i16(50),
+      ...i16(300), // yStrikeoutSize / Position
+      ...i16(0), // sFamilyClass
+      ...new Array(10).fill(0), // panose
+      ...u32(1),
+      ...u32(0),
+      ...u32(0),
+      ...u32(0), // ulUnicodeRange1..4
+      ...enc.encode('WPPT'), // achVendID
+      ...u16((italic ? 1 : 0) | (bold ? 32 : 0)), // fsSelection
+      ...u16(0x41),
+      ...u16(0x41), // usFirstCharIndex / usLastCharIndex
+      ...i16(800),
+      ...i16(-200),
+      ...i16(0),
+      ...u16(800),
+      ...u16(200),
+      ...u32(1),
+      ...u32(0), // ulCodePageRange1..2
+      ...i16(500),
+      ...i16(700),
+      ...u16(0),
+      ...u16(0x20),
+      ...u16(1),
+    ]),
+  );
   tables.set('post', bytes([...u32(0x00030000), ...u32(0), ...i16(0), ...i16(0), ...u32(0), ...u32(0), ...u32(0), ...u32(0), ...u32(0)]));
 
   // 表目录按 tag 升序；目录里记的是**真实长度**，四字节对齐靠表之间补零
@@ -174,17 +270,27 @@ export function wrapEot(fontData, { flags = 0, familyName = 'WebPPT Test', style
   };
 
   const head = [
-    ...new Array(10).fill(0),                    // FontPANOSE
-    ...u8(1),                                     // Charset = DEFAULT_CHARSET
+    ...new Array(10).fill(0), // FontPANOSE
+    ...u8(1), // Charset = DEFAULT_CHARSET
     ...u8(italic ? 1 : 0),
     ...le32(bold ? 700 : 400),
-    ...le16(0),                                   // fsType
-    ...le16(0x504c),                              // MagicNumber
-    ...le32(0), ...le32(0), ...le32(0), ...le32(0), // UnicodeRange 1..4
-    ...le32(0), ...le32(0),                        // CodePageRange 1..2
-    ...le32(0),                                   // CheckSumAdjustment
-    ...le32(0), ...le32(0), ...le32(0), ...le32(0), // Reserved 1..4
-    ...str(familyName), ...str(styleName), ...str('1.0'), ...str(`${familyName} ${styleName}`),
+    ...le16(0), // fsType
+    ...le16(0x504c), // MagicNumber
+    ...le32(0),
+    ...le32(0),
+    ...le32(0),
+    ...le32(0), // UnicodeRange 1..4
+    ...le32(0),
+    ...le32(0), // CodePageRange 1..2
+    ...le32(0), // CheckSumAdjustment
+    ...le32(0),
+    ...le32(0),
+    ...le32(0),
+    ...le32(0), // Reserved 1..4
+    ...str(familyName),
+    ...str(styleName),
+    ...str('1.0'),
+    ...str(`${familyName} ${styleName}`),
   ];
 
   const total = 16 + head.length + data.length;

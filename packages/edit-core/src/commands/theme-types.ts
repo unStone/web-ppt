@@ -18,35 +18,41 @@ export interface SetThemeCommand {
   };
 }
 
-export type ThemeColorPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['themes', string, 'ovr', 'colors', ThemeColorSlot];
-  readonly value: string;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['themes', string, 'ovr', 'colors', ThemeColorSlot];
-  readonly origin: string;
-};
+export type ThemeColorPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['themes', string, 'ovr', 'colors', ThemeColorSlot];
+      readonly value: string;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['themes', string, 'ovr', 'colors', ThemeColorSlot];
+      readonly origin: string;
+    };
 
-export type ThemeFontPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['themes', string, 'ovr', 'fonts', 'major' | 'minor', 'latin' | 'ea' | 'cs'];
-  readonly value: string;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['themes', string, 'ovr', 'fonts', 'major' | 'minor', 'latin' | 'ea' | 'cs'];
-  readonly origin: string;
-} | {
-  readonly op: 'set';
-  readonly path: readonly ['themes', string, 'ovr', 'fonts', 'major' | 'minor', 'scripts', string];
-  readonly value: string;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['themes', string, 'ovr', 'fonts', 'major' | 'minor', 'scripts', string];
-  readonly origin: string;
-};
+export type ThemeFontPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['themes', string, 'ovr', 'fonts', 'major' | 'minor', 'latin' | 'ea' | 'cs'];
+      readonly value: string;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['themes', string, 'ovr', 'fonts', 'major' | 'minor', 'latin' | 'ea' | 'cs'];
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['themes', string, 'ovr', 'fonts', 'major' | 'minor', 'scripts', string];
+      readonly value: string;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['themes', string, 'ovr', 'fonts', 'major' | 'minor', 'scripts', string];
+      readonly origin: string;
+    };
 
 export type ThemePatch = ThemeColorPatch | ThemeFontPatch;

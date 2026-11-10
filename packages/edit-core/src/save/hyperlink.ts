@@ -1,8 +1,6 @@
 import { relativeTarget, resolveRelationshipTarget } from '../clipboard-source';
 import { own } from '../data-validation';
-import type {
-  EditDoc, ElementInsertionRelationship, ElementRecord, LinkOverride, LinkTarget, TextOverride,
-} from '../types';
+import type { EditDoc, ElementInsertionRelationship, ElementRecord, LinkOverride, LinkTarget, TextOverride } from '../types';
 import { insertXmlChildUnchecked, removeXmlChild } from '../xml/nodes';
 import { insertXmlInOrder } from '../xml/order';
 import { DRAWINGML_NS, OFFICE_RELATIONSHIPS_NS, PRESENTATIONML_NS } from '../xml/qname';
@@ -13,10 +11,8 @@ import type { XmlDocument, XmlElement } from '../xml/types';
 import { namespacedElement } from './xml-element';
 import { locateElementHost } from './xfrm';
 
-export const HYPERLINK_RELATIONSHIP =
-  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
-export const SLIDE_RELATIONSHIP =
-  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
+export const HYPERLINK_RELATIONSHIP = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+export const SLIDE_RELATIONSHIP = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide';
 
 interface ResolvedRelationship {
   readonly id: string;
@@ -36,8 +32,7 @@ function relationshipInfo(element: XmlElement): ResolvedRelationship | null {
 
 function sourceRelationships(source?: Uint8Array): ResolvedRelationship[] {
   if (!source) return [];
-  return xmlElementChildren(parseXmlTree(source).root, { localName: 'Relationship' })
-    .flatMap((element) => relationshipInfo(element) ?? []);
+  return xmlElementChildren(parseXmlTree(source).root, { localName: 'Relationship' }).flatMap((element) => relationshipInfo(element) ?? []);
 }
 
 function relationKey(sourcePart: string, relationship: ResolvedRelationship): string | null {
@@ -47,23 +42,37 @@ function relationKey(sourcePart: string, relationship: ResolvedRelationship): st
   if (relationship.type !== SLIDE_RELATIONSHIP || relationship.targetMode) return null;
   try {
     return `internal\0${resolveRelationshipTarget(sourcePart, relationship.target)}`;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
-function targetRelation(doc: EditDoc, sourcePart: string, target: LinkTarget): {
-  key: string; type: string; target: string; targetMode?: 'External';
+function targetRelation(
+  doc: EditDoc,
+  sourcePart: string,
+  target: LinkTarget,
+): {
+  key: string;
+  type: string;
+  target: string;
+  targetMode?: 'External';
 } | null {
   if (target.kind === 'external') {
     return {
-      key: `external\0${target.href}`, type: HYPERLINK_RELATIONSHIP,
-      target: target.href, targetMode: 'External',
+      key: `external\0${target.href}`,
+      type: HYPERLINK_RELATIONSHIP,
+      target: target.href,
+      targetMode: 'External',
     };
   }
   const targetPart = doc.slides[target.slideId]?.origin?.part;
-  return targetPart ? {
-    key: `internal\0${targetPart}`, type: SLIDE_RELATIONSHIP,
-    target: relativeTarget(sourcePart, targetPart),
-  } : null;
+  return targetPart
+    ? {
+        key: `internal\0${targetPart}`,
+        type: SLIDE_RELATIONSHIP,
+        target: relativeTarget(sourcePart, targetPart),
+      }
+    : null;
 }
 
 export interface HyperlinkSaveContext {
@@ -75,24 +84,19 @@ export interface HyperlinkSaveContext {
   generatedRelationships(): readonly ElementInsertionRelationship[];
 }
 
-function missingSlideRelationship(
-  doc: EditDoc,
-  sourcePart: string,
-  relationship: ResolvedRelationship,
-): boolean {
+function missingSlideRelationship(doc: EditDoc, sourcePart: string, relationship: ResolvedRelationship): boolean {
   if (relationship.type !== SLIDE_RELATIONSHIP || relationship.targetMode) return false;
   let targetPart: string;
-  try { targetPart = resolveRelationshipTarget(sourcePart, relationship.target); } catch { return false; }
+  try {
+    targetPart = resolveRelationshipTarget(sourcePart, relationship.target);
+  } catch {
+    return false;
+  }
   return !doc.slideOrder.some((id) => doc.slides[id]?.origin?.part === targetPart);
 }
 
-export function hasDanglingSlideRelationships(
-  doc: EditDoc,
-  sourcePart: string,
-  source: Uint8Array | undefined,
-): boolean {
-  return sourceRelationships(source).some((relationship) =>
-    missingSlideRelationship(doc, sourcePart, relationship));
+export function hasDanglingSlideRelationships(doc: EditDoc, sourcePart: string, source: Uint8Array | undefined): boolean {
+  return sourceRelationships(source).some((relationship) => missingSlideRelationship(doc, sourcePart, relationship));
 }
 
 export function createHyperlinkSaveContext(
@@ -102,8 +106,9 @@ export function createHyperlinkSaveContext(
   additions: readonly ElementInsertionRelationship[],
 ): HyperlinkSaveContext {
   const existing = sourceRelationships(source);
-  const dangling = new Set(existing.filter((relationship) =>
-    missingSlideRelationship(doc, sourcePart, relationship)).map((relationship) => relationship.id));
+  const dangling = new Set(
+    existing.filter((relationship) => missingSlideRelationship(doc, sourcePart, relationship)).map((relationship) => relationship.id),
+  );
   const used = new Set(existing.map((relationship) => relationship.id));
   const byKey = new Map<string, string>();
   for (const relationship of existing) {
@@ -114,7 +119,9 @@ export function createHyperlinkSaveContext(
     if (used.has(relationship.targetId)) throw new Error(`目标关系 id 冲突：${relationship.targetId}`);
     used.add(relationship.targetId);
     const key = relationKey(sourcePart, {
-      id: relationship.targetId, type: relationship.type, target: relationship.target,
+      id: relationship.targetId,
+      type: relationship.type,
+      target: relationship.target,
       ...(relationship.targetMode ? { targetMode: relationship.targetMode } : {}),
     });
     if (key && !byKey.has(key)) byKey.set(key, relationship.targetId);
@@ -134,12 +141,17 @@ export function createHyperlinkSaveContext(
       used.add(id);
       byKey.set(relation.key, id);
       generated.push({
-        sourceId: id, targetId: id, type: relation.type,
-        target: relation.target, ...(relation.targetMode ? { targetMode: relation.targetMode } : {}),
+        sourceId: id,
+        targetId: id,
+        type: relation.type,
+        target: relation.target,
+        ...(relation.targetMode ? { targetMode: relation.targetMode } : {}),
       });
       return id;
     },
-    retireRelationship(id) { retired.add(id); },
+    retireRelationship(id) {
+      retired.add(id);
+    },
     retiredRelationshipIds: () => retired,
     removeDanglingHyperlinks(document) {
       // 目标页删除使这些关系本身进入本次结构变更闭包；即使源文件原本没有引用也不能继续悬空。
@@ -147,11 +159,16 @@ export function createHyperlinkSaveContext(
       const visit = (parent: XmlElement): void => {
         for (const child of [...xmlElementChildren(parent)]) {
           const id = findXmlAttribute(child, {
-            localName: 'id', namespaceUri: OFFICE_RELATIONSHIPS_NS,
+            localName: 'id',
+            namespaceUri: OFFICE_RELATIONSHIPS_NS,
           })?.value;
           // 悬停链接在文字 rPr 里叫 hlinkMouseOver，在形状 cNvPr 里叫 hlinkHover（CT_NonVisualDrawingProps）
-          if (id && dangling.has(id) && child.namespaceUri === DRAWINGML_NS
-            && ['hlinkClick', 'hlinkMouseOver', 'hlinkHover'].includes(child.localName)) {
+          if (
+            id
+            && dangling.has(id)
+            && child.namespaceUri === DRAWINGML_NS
+            && ['hlinkClick', 'hlinkMouseOver', 'hlinkHover'].includes(child.localName)
+          ) {
             removeXmlChild(parent, child);
             retired.add(id);
           } else visit(child);
@@ -164,28 +181,27 @@ export function createHyperlinkSaveContext(
 }
 
 function linkMarks(text: TextOverride | undefined): boolean {
-  return text?.kind === 'flat' && text.paragraphs.some((paragraph) =>
-    paragraph.marks.some((mark) => own(mark.runOverrides ?? {}, 'link')));
+  return text?.kind === 'flat' && text.paragraphs.some((paragraph) => paragraph.marks.some((mark) => own(mark.runOverrides ?? {}, 'link')));
 }
 
 export function hasHyperlinkOverrides(record: ElementRecord): boolean {
-  return own(record.ovr, 'link') || linkMarks(record.ovr.text)
-    || Object.values(record.ovr.tableCells ?? {}).some((cell) => linkMarks(cell.text));
+  return (
+    own(record.ovr, 'link') || linkMarks(record.ovr.text) || Object.values(record.ovr.tableCells ?? {}).some((cell) => linkMarks(cell.text))
+  );
 }
 
 function hyperlinkChild(parent: XmlElement): XmlElement | null {
   return findXmlChild(parent, { localName: 'hlinkClick', namespaceUri: DRAWINGML_NS });
 }
 
-export function patchHyperlinkNode(
-  parent: XmlElement,
-  override: LinkOverride,
-  context: HyperlinkSaveContext,
-): void {
+export function patchHyperlinkNode(parent: XmlElement, override: LinkOverride, context: HyperlinkSaveContext): void {
   let node = hyperlinkChild(parent);
-  const previousId = node ? findXmlAttribute(node, {
-    localName: 'id', namespaceUri: OFFICE_RELATIONSHIPS_NS,
-  })?.value : undefined;
+  const previousId = node
+    ? findXmlAttribute(node, {
+        localName: 'id',
+        namespaceUri: OFFICE_RELATIONSHIPS_NS,
+      })?.value
+    : undefined;
   const id = override.kind === 'none' ? null : context.relationId(override);
   if (!id) {
     if (node) removeXmlChild(parent, node);
@@ -202,15 +218,12 @@ export function patchHyperlinkNode(
   else removeXmlAttribute(node, 'action');
 }
 
-export function patchElementHyperlink(
-  document: XmlDocument,
-  record: ElementRecord,
-  context: HyperlinkSaveContext,
-): void {
+export function patchElementHyperlink(document: XmlDocument, record: ElementRecord, context: HyperlinkSaveContext): void {
   if (!own(record.ovr, 'link')) return;
   const { host } = locateElementHost(document, record);
   const properties = findXmlDescendant(host, {
-    localName: 'cNvPr', namespaceUri: PRESENTATIONML_NS,
+    localName: 'cNvPr',
+    namespaceUri: PRESENTATIONML_NS,
   });
   if (!properties) throw new Error(`元素 ${record.id} 缺少 p:cNvPr`);
   patchHyperlinkNode(properties, record.ovr.link!, context);
@@ -247,10 +260,12 @@ export function patchHyperlinkRelationshipPart(
   const tree = source
     ? parseXmlTree(source)
     : parseXmlTree('<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>');
-  const existing = new Set(xmlElementChildren(tree.root, { localName: 'Relationship' }).flatMap((node) => {
-    const id = findXmlAttribute(node, { localName: 'Id', namespaceUri: null })?.value;
-    return id ? [id] : [];
-  }));
+  const existing = new Set(
+    xmlElementChildren(tree.root, { localName: 'Relationship' }).flatMap((node) => {
+      const id = findXmlAttribute(node, { localName: 'Id', namespaceUri: null })?.value;
+      return id ? [id] : [];
+    }),
+  );
   for (const relationship of [...additions, ...context.generatedRelationships()]) {
     if (existing.has(relationship.targetId)) throw new Error(`目标关系 id 冲突：${relationship.targetId}`);
     existing.add(relationship.targetId);

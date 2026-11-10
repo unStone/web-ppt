@@ -3,9 +3,15 @@
   "compilerOptions": {
     "noEmit": true,
     "paths": {
-      "@web-ppt/edit-core/xml": ["./src/xml/index.ts"],
-      "@web-ppt/edit-core/opc": ["./src/opc/index.ts"]
+      "@web-ppt/edit-core/xml": [
+        "./src/xml/index.ts"
+      ],
+      "@web-ppt/edit-core/opc": [
+        "./src/opc/index.ts"
+      ]
     }
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

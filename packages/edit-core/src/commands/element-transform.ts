@@ -19,8 +19,7 @@ export function elementTransformPatches(
   if (!record) throw new Error(`找不到元素：${id}`);
   if (record.meta.editable === 'none') throw new Error(`元素不可编辑：${id}`);
   assertElementUnlocked(doc, id);
-  if (record.meta.editable === 'frame'
-    && fields.some((field) => values[field] !== undefined && !isFrameXfrmField(field))) {
+  if (record.meta.editable === 'frame' && fields.some((field) => values[field] !== undefined && !isFrameXfrmField(field))) {
     throw new Error(`框架对象只允许修改位置与尺寸：${id}`);
   }
 
@@ -38,9 +37,7 @@ export function elementTransformPatches(
     }
     const path = ['elements', id, 'ovr', field] as const;
     forward.push({ op: 'set', path, value, origin } as Patch);
-    inverse.unshift((hadOverride
-      ? { op: 'set', path, value: before, origin }
-      : { op: 'del', path, origin }) as Patch);
+    inverse.unshift((hadOverride ? { op: 'set', path, value: before, origin } : { op: 'del', path, origin }) as Patch);
   }
   return { forward, inverse };
 }

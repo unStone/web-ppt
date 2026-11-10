@@ -1,13 +1,9 @@
-import {
-  elementEditFrame, outermostSelectedElementIds, screenToSlidePoint, slideToElementEditParentPoint,
-} from '@web-ppt/edit-core';
+import { elementEditFrame, outermostSelectedElementIds, screenToSlidePoint, slideToElementEditParentPoint } from '@web-ppt/edit-core';
 import type { AffineMatrix, Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
 import { PointerGestureLifecycle } from './pointer-gesture';
 import type { PointerGestureSnapshot } from './pointer-gesture';
-import {
-  MIN_RESIZE_SIZE, resizeElementFrame, resizeMultiElementFrames,
-} from './resize-geometry';
+import { MIN_RESIZE_SIZE, resizeElementFrame, resizeMultiElementFrames } from './resize-geometry';
 import type { ResizeHandle } from './resize-geometry';
 import { updateSelectionOverlayFrame } from './selection-overlay';
 import { modelXfrmFields, transformFrameCorners, transformPreviewMatrix } from './transform-frame';
@@ -46,11 +42,12 @@ interface ResizeGestureOptions {
   zoom: () => number;
 }
 
-const matrixAttribute = (matrix: AffineMatrix): string =>
-  `matrix(${matrix.a} ${matrix.b} ${matrix.c} ${matrix.d} ${matrix.e} ${matrix.f})`;
+const matrixAttribute = (matrix: AffineMatrix): string => `matrix(${matrix.a} ${matrix.b} ${matrix.c} ${matrix.d} ${matrix.e} ${matrix.f})`;
 const axisCorners = (frame: TransformFrame): ResizeCorners => [
-  { x: frame.x, y: frame.y }, { x: frame.x + frame.w, y: frame.y },
-  { x: frame.x + frame.w, y: frame.y + frame.h }, { x: frame.x, y: frame.y + frame.h },
+  { x: frame.x, y: frame.y },
+  { x: frame.x + frame.w, y: frame.y },
+  { x: frame.x + frame.w, y: frame.y + frame.h },
+  { x: frame.x, y: frame.y + frame.h },
 ];
 
 function axisAlignedFrame(points: readonly SpacePoint[]): TransformFrame {
@@ -59,10 +56,13 @@ function axisAlignedFrame(points: readonly SpacePoint[]): TransformFrame {
   const x = Math.min(...xs);
   const y = Math.min(...ys);
   return {
-    x, y,
+    x,
+    y,
     w: Math.max(Math.max(...xs) - x, MIN_RESIZE_SIZE),
     h: Math.max(Math.max(...ys) - y, MIN_RESIZE_SIZE),
-    rot: 0, flipH: false, flipV: false,
+    rot: 0,
+    flipH: false,
+    flipV: false,
   };
 }
 
@@ -75,30 +75,34 @@ export class ResizeGestureController {
     this.lifecycle = new PointerGestureLifecycle(options.root);
   }
 
-  get isActive(): boolean { return this.lifecycle.isActive; }
+  get isActive(): boolean {
+    return this.lifecycle.isActive;
+  }
 
   begin(event: PointerEvent, handle: ResizeHandle, ids: readonly ElementId[]): void {
     this.cancel();
-    const targets = outermostSelectedElementIds(this.options.editor.doc, ids)
-      .map((id): ResizeTarget | null => {
-        const partition = findElementPartition(this.options.staticLayer, id);
-        if (!partition) return null;
-        return { id, source: elementEditFrame(this.options.editor.doc, id), partition, wrapper: null };
-      });
+    const targets = outermostSelectedElementIds(this.options.editor.doc, ids).map((id): ResizeTarget | null => {
+      const partition = findElementPartition(this.options.staticLayer, id);
+      if (!partition) return null;
+      return { id, source: elementEditFrame(this.options.editor.doc, id), partition, wrapper: null };
+    });
     if (!targets.length || targets.some((target) => target === null)) return;
     const typedTargets = targets as ResizeTarget[];
-    const points = typedTargets.flatMap((target) =>
-      transformFrameCorners(this.options.editor.doc, target.id, target.source));
+    const points = typedTargets.flatMap((target) => transformFrameCorners(this.options.editor.doc, target.id, target.source));
     const selectionSource = axisAlignedFrame(points);
     const session: ResizeSession = {
-      handle, targets: typedTargets, selectionSource,
-      originalCorners: typedTargets.length === 1
-        ? transformFrameCorners(this.options.editor.doc, typedTargets[0].id, typedTargets[0].source)
-        : axisCorners(selectionSource),
+      handle,
+      targets: typedTargets,
+      selectionSource,
+      originalCorners:
+        typedTargets.length === 1
+          ? transformFrameCorners(this.options.editor.doc, typedTargets[0].id, typedTargets[0].source)
+          : axisCorners(selectionSource),
     };
-    const cursor = event.target && (event.target as SVGElement).style?.cursor || 'default';
+    const cursor = (event.target && (event.target as SVGElement).style?.cursor) || 'default';
     this.lifecycle.begin(event, {
-      cursor, dataset: { name: 'editResizing', value: handle },
+      cursor,
+      dataset: { name: 'editResizing', value: handle },
       start: () => this.startPreview(session),
       frame: (snapshot) => this.applyFrame(session, snapshot),
       finish: (snapshot) => this.commit(session, snapshot),
@@ -106,18 +110,28 @@ export class ResizeGestureController {
     });
   }
 
-  move(event: PointerEvent): void { this.lifecycle.move(event); }
-  finish(event: PointerEvent): void { this.lifecycle.finish(event); }
+  move(event: PointerEvent): void {
+    this.lifecycle.move(event);
+  }
+  finish(event: PointerEvent): void {
+    this.lifecycle.finish(event);
+  }
   modifier(event: KeyboardEvent): boolean {
     return (event.key === 'Shift' || event.key === 'Alt') && this.lifecycle.modifier(event);
   }
-  cancel(): void { this.lifecycle.cancel(); }
-  cancelPointer(event: PointerEvent): void { this.lifecycle.cancelPointer(event); }
+  cancel(): void {
+    this.lifecycle.cancel();
+  }
+  cancelPointer(event: PointerEvent): void {
+    this.lifecycle.cancelPointer(event);
+  }
 
   private currentSlide(screen: SpacePoint): SpacePoint {
     const rect = this.options.stage.getBoundingClientRect();
     return screenToSlidePoint(screen, {
-      left: rect.left, top: rect.top, zoom: this.options.zoom(),
+      left: rect.left,
+      top: rect.top,
+      zoom: this.options.zoom(),
     });
   }
 
@@ -139,12 +153,11 @@ export class ResizeGestureController {
     }
 
     const selection = resizeElementFrame(session.selectionSource, session.handle, slide, modifiers);
-    const resized = resizeMultiElementFrames(
-      this.options.editor.doc, session.targets, session.selectionSource, selection,
-    );
+    const resized = resizeMultiElementFrames(this.options.editor.doc, session.targets, session.selectionSource, selection);
     const frames = session.targets.map((target, index) => ({ target, frame: resized[index] }));
-    const committedSelection = axisAlignedFrame(frames.flatMap(({ target, frame }) =>
-      transformFrameCorners(this.options.editor.doc, target.id, frame)));
+    const committedSelection = axisAlignedFrame(
+      frames.flatMap(({ target, frame }) => transformFrameCorners(this.options.editor.doc, target.id, frame)),
+    );
     return {
       frames,
       corners: axisCorners(committedSelection),
@@ -170,25 +183,25 @@ export class ResizeGestureController {
     for (const { target, frame } of proposal.frames) {
       target.wrapper?.setAttribute('transform', matrixAttribute(transformPreviewMatrix(target.source, frame)));
     }
-    updateSelectionOverlayFrame(
-      this.options.interactionLayer, proposal.corners, this.options.zoom(), proposal.handleFlip,
-    );
+    updateSelectionOverlayFrame(this.options.interactionLayer, proposal.corners, this.options.zoom(), proposal.handleFlip);
   }
 
   private commit(session: ResizeSession, snapshot: PointerGestureSnapshot): (() => void) | null {
     const proposal = this.proposal(session, snapshot);
     if (!proposal.frames.some(({ target, frame }) => !this.sameFrame(target.source, frame))) return null;
-    return () => this.options.editor.transaction((transaction) => {
-      for (const { target, frame } of proposal.frames) {
-        transaction.exec({
-          type: 'SetXfrm', id: target.id,
-          ...modelXfrmFields(this.options.editor, target.id, frame, ['x', 'y', 'w', 'h']),
-        });
-        if (frame.flipH !== target.source.flipH || frame.flipV !== target.source.flipV) {
-          transaction.exec({ type: 'SetFlip', id: target.id, h: frame.flipH, v: frame.flipV });
+    return () =>
+      this.options.editor.transaction((transaction) => {
+        for (const { target, frame } of proposal.frames) {
+          transaction.exec({
+            type: 'SetXfrm',
+            id: target.id,
+            ...modelXfrmFields(this.options.editor, target.id, frame, ['x', 'y', 'w', 'h']),
+          });
+          if (frame.flipH !== target.source.flipH || frame.flipV !== target.source.flipV) {
+            transaction.exec({ type: 'SetFlip', id: target.id, h: frame.flipH, v: frame.flipV });
+          }
         }
-      }
-    }, '缩放元素');
+      }, '缩放元素');
   }
 
   private clearPreview(session: ResizeSession): void {
@@ -199,9 +212,14 @@ export class ResizeGestureController {
   }
 
   private sameFrame(left: TransformFrame, right: TransformFrame): boolean {
-    return Math.abs(left.x - right.x) < 1e-9 && Math.abs(left.y - right.y) < 1e-9
-      && Math.abs(left.w - right.w) < 1e-9 && Math.abs(left.h - right.h) < 1e-9
+    return (
+      Math.abs(left.x - right.x) < 1e-9
+      && Math.abs(left.y - right.y) < 1e-9
+      && Math.abs(left.w - right.w) < 1e-9
+      && Math.abs(left.h - right.h) < 1e-9
       && Math.abs(left.rot - right.rot) < 1e-9
-      && left.flipH === right.flipH && left.flipV === right.flipV;
+      && left.flipH === right.flipH
+      && left.flipV === right.flipV
+    );
   }
 }

@@ -5,8 +5,11 @@ export default defineConfig({
     copyPublicDir: false,
     lib: {
       entry: {
-        'edit-core': 'src/index.ts', xml: 'src/xml/index.ts', opc: 'src/opc/index.ts',
-        save: 'src/save/index.ts', generate: 'src/generate/index.ts',
+        'edit-core': 'src/index.ts',
+        xml: 'src/xml/index.ts',
+        opc: 'src/opc/index.ts',
+        save: 'src/save/index.ts',
+        generate: 'src/generate/index.ts',
       },
       fileName: (_format, entryName) => `${entryName}.js`,
       formats: ['es'],

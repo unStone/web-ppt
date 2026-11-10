@@ -8,19 +8,45 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const line = '<a:ln w="114300"><a:solidFill><a:srgbClr val="7C3AED"/></a:solidFill></a:ln>';
 
 const solidShape = sp({
-  x: 80, y: 100, w: 220, h: 140, fill: solid('accent1'), name: 'hit-solid',
+  x: 80,
+  y: 100,
+  w: 220,
+  h: 140,
+  fill: solid('accent1'),
+  name: 'hit-solid',
 });
 const outlineShape = sp({
-  x: 360, y: 100, w: 220, h: 140, fill: '<a:noFill/>', ln: line, name: 'hit-outline',
+  x: 360,
+  y: 100,
+  w: 220,
+  h: 140,
+  fill: '<a:noFill/>',
+  ln: line,
+  name: 'hit-outline',
 });
 const overlapLower = sp({
-  x: 700, y: 100, w: 220, h: 160, fill: solid('accent2'), name: 'hit-overlap-lower',
+  x: 700,
+  y: 100,
+  w: 220,
+  h: 160,
+  fill: solid('accent2'),
+  name: 'hit-overlap-lower',
 });
 const overlapUpper = sp({
-  x: 780, y: 150, w: 220, h: 160, fill: solid('accent3'), name: 'hit-overlap-upper',
+  x: 780,
+  y: 150,
+  w: 220,
+  h: 160,
+  fill: solid('accent3'),
+  name: 'hit-overlap-upper',
 });
 const nestedLeaf = sp({
-  x: 20, y: 20, w: 200, h: 100, fill: solid('accent5'), name: 'hit-nested-leaf',
+  x: 20,
+  y: 20,
+  w: 200,
+  h: 100,
+  fill: solid('accent5'),
+  name: 'hit-nested-leaf',
 });
 const innerGroup = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="401" name="hit-inner-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -36,7 +62,9 @@ ${innerGroup}
 </p:grpSp>`;
 
 const bytes = deck({
-  name: 'Editor Hit', width: 1280, height: 720,
+  name: 'Editor Hit',
+  width: 1280,
+  height: 720,
   slides: [slideXml(solidShape + outlineShape + overlapLower + overlapUpper + outerGroup)],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });

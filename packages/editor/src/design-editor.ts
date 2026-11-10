@@ -26,9 +26,12 @@ class DomDesignEditor implements DesignEditor {
     session.editor.toDesignCanvas(this.currentTarget);
     this.idPrefix = `${session.editor.doc.identity.prefix}design-view-${++designViewSerial}-`;
     this.presentation = session.toPresentation();
-    this.textMode = options.textMode === 'svg' || options.textMode === 'html'
-      ? options.textMode
-      : foreignObjectScalesCorrectly(container.ownerDocument) ? 'html' : 'svg';
+    this.textMode =
+      options.textMode === 'svg' || options.textMode === 'html'
+        ? options.textMode
+        : foreignObjectScalesCorrectly(container.ownerDocument)
+          ? 'html'
+          : 'svg';
     this.element = container.ownerDocument.createElement('div');
     this.element.dataset.pptDesignEditor = this.currentTarget.kind;
     this.element.style.position = 'relative';
@@ -39,8 +42,12 @@ class DomDesignEditor implements DesignEditor {
     this.render();
   }
 
-  get target(): DesignTarget { return structuredClone(this.currentTarget); }
-  get destroyed(): boolean { return this.isDestroyed; }
+  get target(): DesignTarget {
+    return structuredClone(this.currentTarget);
+  }
+  get destroyed(): boolean {
+    return this.isDestroyed;
+  }
 
   setTarget(target: DesignTarget): void {
     this.assertAlive();
@@ -57,15 +64,11 @@ class DomDesignEditor implements DesignEditor {
 
   render(): void {
     this.assertAlive();
-    this.element.innerHTML = renderSlideToSvg(
-      this.presentation,
-      this.session.editor.toDesignCanvas(this.currentTarget),
-      {
-        textMode: this.textMode,
-        idPrefix: `${this.idPrefix}${this.currentTarget.id}-`,
-        includeEditMarkers: true,
-      },
-    );
+    this.element.innerHTML = renderSlideToSvg(this.presentation, this.session.editor.toDesignCanvas(this.currentTarget), {
+      textMode: this.textMode,
+      idPrefix: `${this.idPrefix}${this.currentTarget.id}-`,
+      includeEditMarkers: true,
+    });
     bindDesignIdentities(this.element, this.session.editor.doc, this.currentTarget);
   }
 
@@ -93,10 +96,6 @@ class DomDesignEditor implements DesignEditor {
   }
 }
 
-export function createDesignEditor(
-  container: HTMLElement,
-  session: EditorSession,
-  options: DesignEditorOptions,
-): DesignEditor {
+export function createDesignEditor(container: HTMLElement, session: EditorSession, options: DesignEditorOptions): DesignEditor {
   return new DomDesignEditor(container, session, options);
 }

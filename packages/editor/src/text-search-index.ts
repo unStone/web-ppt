@@ -1,14 +1,10 @@
 import { assertFindTextRequest, findText, slideOfElement } from '@web-ppt/edit-core';
-import type {
-  Editor, FindTextRequest, SlideId, TextSearchMatch,
-} from '@web-ppt/edit-core';
+import type { Editor, FindTextRequest, SlideId, TextSearchMatch } from '@web-ppt/edit-core';
 
 const MAX_QUERY_CACHES = 8;
 
 function requestKey(request: FindTextRequest): string {
-  return JSON.stringify([
-    request.query, request.matchCase === true, request.wholeWord === true,
-  ]);
+  return JSON.stringify([request.query, request.matchCase === true, request.wholeWord === true]);
 }
 
 function requestSlides(editor: Editor, request: FindTextRequest): SlideId[] {
@@ -54,7 +50,8 @@ export class SessionTextSearchIndex {
       let matches = pages!.get(slideId);
       if (!matches) {
         matches = findText(this.editor.doc, {
-          ...request, scope: { kind: 'slide', slideId },
+          ...request,
+          scope: { kind: 'slide', slideId },
         });
         pages!.set(slideId, matches);
       }

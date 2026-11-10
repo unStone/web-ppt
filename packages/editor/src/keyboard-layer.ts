@@ -17,16 +17,17 @@ function layerIds(options: KeyboardControllerOptions, roots: readonly ElementId[
   const first = doc.elements[roots[0]];
   if (!first) return null;
   const part = first.meta.origin?.part ?? null;
-  if (roots.some((id) => {
-    const record = doc.elements[id];
-    return !record || record.parent !== first.parent || (record.meta.origin?.part ?? null) !== part;
-  })) return null;
+  if (
+    roots.some((id) => {
+      const record = doc.elements[id];
+      return !record || record.parent !== first.parent || (record.meta.origin?.part ?? null) !== part;
+    })
+  )
+    return null;
   return writableLayerSiblingIds(doc, first);
 }
 
-function commandsFor(
-  roots: readonly ElementId[], layer: readonly ElementId[], to: ElementLayerTarget,
-): ElementId[] {
+function commandsFor(roots: readonly ElementId[], layer: readonly ElementId[], to: ElementLayerTarget): ElementId[] {
   const selected = new Set(roots);
   const ordered = layer.filter((id) => selected.has(id));
   if (to === 'front') {
@@ -57,25 +58,24 @@ export class LayerKeyboardController {
   keyDown(event: KeyboardEvent): boolean {
     const hasOnePrimary = event.ctrlKey !== event.metaKey;
     const key = bracketKey(event);
-    if (event.defaultPrevented || !key
-      || !hasOnePrimary || event.altKey || shouldYieldKeyboardEvent(event)) return false;
+    if (event.defaultPrevented || !key || !hasOnePrimary || event.altKey || shouldYieldKeyboardEvent(event)) return false;
     event.preventDefault();
     if (this.options.gestureActive()) return true;
     const selection = this.options.editor.selection;
     if (selection.kind !== 'elements') return true;
     const doc = this.options.editor.doc;
-    if (selection.ids.some((id) => slideOfElement(doc, id) !== this.options.slideId()
-      || !isSelectable(doc, id))) return true;
+    if (selection.ids.some((id) => slideOfElement(doc, id) !== this.options.slideId() || !isSelectable(doc, id))) return true;
     const roots = outermostSelectedElementIds(doc, selection.ids);
     const layer = layerIds(this.options, roots);
     if (!layer) return true;
-    const to: ElementLayerTarget = key === ']'
-      ? event.shiftKey ? 'front' : 'forward'
-      : event.shiftKey ? 'back' : 'backward';
+    const to: ElementLayerTarget = key === ']' ? (event.shiftKey ? 'front' : 'forward') : event.shiftKey ? 'back' : 'backward';
     const ids = commandsFor(roots, layer, to);
     if (!ids.length) return true;
     const labels: Record<ElementLayerTarget, string> = {
-      front: '置于顶层', back: '置于底层', forward: '上移一层', backward: '下移一层',
+      front: '置于顶层',
+      back: '置于底层',
+      forward: '上移一层',
+      backward: '下移一层',
     };
     this.options.editor.transaction((transaction) => {
       for (const id of ids) transaction.exec({ type: 'SetZ', id, to });

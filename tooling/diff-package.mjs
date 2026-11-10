@@ -11,9 +11,7 @@ export function diffPackageBytes(beforeBytes, afterBytes) {
   const afterNames = new Set(Object.keys(after));
   const added = [...afterNames].filter((name) => !beforeNames.has(name)).sort();
   const removed = [...beforeNames].filter((name) => !afterNames.has(name)).sort();
-  const changed = [...beforeNames]
-    .filter((name) => afterNames.has(name) && !equalBytes(before[name], after[name]))
-    .sort();
+  const changed = [...beforeNames].filter((name) => afterNames.has(name) && !equalBytes(before[name], after[name])).sort();
   return { equal: !added.length && !removed.length && !changed.length, added, removed, changed };
 }
 
@@ -32,10 +30,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     console.error('用法: node tooling/diff-package.mjs <before.pptx> <after.pptx>');
     process.exitCode = 2;
   } else {
-    const diff = diffPackageBytes(
-      new Uint8Array(readFileSync(beforePath)),
-      new Uint8Array(readFileSync(afterPath)),
-    );
+    const diff = diffPackageBytes(new Uint8Array(readFileSync(beforePath)), new Uint8Array(readFileSync(afterPath)));
     console.log(report(diff));
     if (!diff.equal) process.exitCode = 1;
   }

@@ -1,14 +1,26 @@
 import {
-  findPlaceholderByIdentity, PLACEHOLDER_DIRECT_BITS,
-  releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate,
+  findPlaceholderByIdentity,
+  PLACEHOLDER_DIRECT_BITS,
+  releasePptxLayoutReparseSession,
+  reparsePptxLayoutTemplate,
+  reparsePptxMasterTemplate,
   reparsePptxSlideWithLayout,
 } from '@web-ppt/core';
 import type {
-  Fill, GeomSpec, ShapeCreationDefaults, Slide, SlideElement, SlideLayoutTemplate, SlideMasterTemplate,
-  TableCreationDefaults, TextBody,
+  Fill,
+  GeomSpec,
+  ShapeCreationDefaults,
+  Slide,
+  SlideElement,
+  SlideLayoutTemplate,
+  SlideMasterTemplate,
+  TableCreationDefaults,
+  TextBody,
 } from '@web-ppt/core';
 import {
-  hydrateLayoutSlideAssets, hydrateLayoutTemplateAssets, hydrateMasterTemplateAssets,
+  hydrateLayoutSlideAssets,
+  hydrateLayoutTemplateAssets,
+  hydrateMasterTemplateAssets,
   releaseLayoutAssetCache,
 } from './layout-assets';
 import { fieldTextWithoutDirect } from './field-text';
@@ -53,10 +65,7 @@ function originKey(element: SlideElement): string | null {
   return origin ? `${origin.part}\0${origin.spid}` : null;
 }
 
-function indexOrigins(
-  element: SlideElement,
-  output: Map<string, SlideElement | null>,
-): void {
+function indexOrigins(element: SlideElement, output: Map<string, SlideElement | null>): void {
   const key = originKey(element);
   if (key) output.set(key, output.has(key) ? null : element);
   if (element.kind === 'group') {
@@ -76,16 +85,14 @@ function resolvedLayoutVariant(doc: EditDoc, slideId: SlideId): LayoutResolvedVa
   const slide = doc.slides[slideId];
   const pkg = designProjectionPackage(doc);
   const sourcePart = sourcePartForLayout(doc, slideId);
-  if (!pkg || !slide?.origin || !sourcePart || !slide.layoutId
-    || (slide.layoutId === slide.sourceLayoutId && pkg === doc.package)) return null;
+  if (!pkg || !slide?.origin || !sourcePart || !slide.layoutId || (slide.layoutId === slide.sourceLayoutId && pkg === doc.package))
+    return null;
   const cache = sourceCache(doc, pkg);
   const slideNum = doc.slideOrder.indexOf(slideId) + 1;
   const variantKey = `${sourcePart}\0${slide.layoutId}\0${slideNum}`;
   let variant = cache.variants.get(variantKey);
   if (!variant) {
-    const result = reparsePptxSlideWithLayout(
-      pkg, sourcePart, slide.layoutId, slideNum,
-    );
+    const result = reparsePptxSlideWithLayout(pkg, sourcePart, slide.layoutId, slideNum);
     const parsed = hydrateLayoutSlideAssets(doc, result.slide, result.assets);
     const origins = new Map<string, SlideElement | null>();
     for (const element of parsed.elements) indexOrigins(element, origins);
@@ -120,17 +127,12 @@ export function resolvedLayoutTemplate(doc: EditDoc, layoutId: string): SlideLay
   return resolved.layout;
 }
 
-export function resolvedLayoutElementSource(
-  doc: EditDoc,
-  layoutId: string,
-  record: EditDoc['elements'][string],
-): SlideElement | null {
+export function resolvedLayoutElementSource(doc: EditDoc, layoutId: string, record: EditDoc['elements'][string]): SlideElement | null {
   const origin = record.meta.origin;
   if (!origin || record.meta.created) return null;
   const template = resolvedLayoutTemplate(doc, layoutId);
   if (!template) return null;
-  return layoutSourceCaches.get(doc)?.templates.get(layoutId)
-    ?.origins.get(`${origin.part}\0${origin.spid}`) ?? null;
+  return layoutSourceCaches.get(doc)?.templates.get(layoutId)?.origins.get(`${origin.part}\0${origin.spid}`) ?? null;
 }
 
 export function resolvedMasterTemplate(doc: EditDoc, masterId: string): SlideMasterTemplate | null {
@@ -149,16 +151,11 @@ export function resolvedMasterTemplate(doc: EditDoc, masterId: string): SlideMas
   return resolved.master;
 }
 
-export function resolvedMasterElementSource(
-  doc: EditDoc,
-  masterId: string,
-  record: EditDoc['elements'][string],
-): SlideElement | null {
+export function resolvedMasterElementSource(doc: EditDoc, masterId: string, record: EditDoc['elements'][string]): SlideElement | null {
   const origin = record.meta.origin;
   if (!origin || record.meta.created) return null;
   if (!resolvedMasterTemplate(doc, masterId)) return null;
-  return layoutSourceCaches.get(doc)?.masters.get(masterId)
-    ?.origins.get(`${origin.part}\0${origin.spid}`) ?? null;
+  return layoutSourceCaches.get(doc)?.masters.get(masterId)?.origins.get(`${origin.part}\0${origin.spid}`) ?? null;
 }
 
 export function resolvedLayoutSlide(doc: EditDoc, slideId: SlideId): Slide | null {
@@ -173,11 +170,7 @@ export function releaseLayoutProjectionCache(doc: EditDoc): void {
 }
 
 /** 同包、同页、同目标版式只解析一次；缓存不进入 EditDoc，文档仍可结构化克隆。 */
-function resolvedLayoutSource(
-  doc: EditDoc,
-  slideId: SlideId,
-  record: EditDoc['elements'][string],
-): SlideElement | null {
+function resolvedLayoutSource(doc: EditDoc, slideId: SlideId, record: EditDoc['elements'][string]): SlideElement | null {
   const slide = doc.slides[slideId];
   const origin = record.meta.origin;
   if (!slide?.origin || !origin || record.meta.created) return null;
@@ -195,9 +188,11 @@ export function changedLayout(doc: EditDoc, slideId: SlideId) {
 export function slideDesignChanged(doc: EditDoc, slideId: SlideId): boolean {
   const slide = doc.slides[slideId];
   if (!slide?.layoutId) return false;
-  return slide.layoutId !== slide.sourceLayoutId
+  return (
+    slide.layoutId !== slide.sourceLayoutId
     || layoutHasEdits(doc, slide.layoutId)
-    || masterHasEdits(doc, doc.layouts[slide.layoutId]?.origin.masterPart ?? '');
+    || masterHasEdits(doc, doc.layouts[slide.layoutId]?.origin.masterPart ?? '')
+  );
 }
 
 export function layoutShowsMaster(doc: EditDoc, layoutId: string): boolean {
@@ -218,53 +213,36 @@ export function effectiveLayoutBackground(
   return resolved?.background ?? layout.background;
 }
 
-export function currentShapeDefaults(
-  doc: EditDoc,
-  slideId: SlideId,
-): ShapeCreationDefaults | undefined {
+export function currentShapeDefaults(doc: EditDoc, slideId: SlideId): ShapeCreationDefaults | undefined {
   const slide = doc.slides[slideId];
   if (!slide?.layoutId) return slide?.defaultShape;
   if (slide.layoutId === slide.sourceLayoutId) {
-    return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultShape
-      ?? slide.defaultShape ?? doc.layouts[slide.layoutId]?.defaultShape;
+    return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultShape ?? slide.defaultShape ?? doc.layouts[slide.layoutId]?.defaultShape;
   }
-  return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultShape
-    ?? doc.layouts[slide.layoutId]?.defaultShape
-    ?? slide.defaultShape;
+  return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultShape ?? doc.layouts[slide.layoutId]?.defaultShape ?? slide.defaultShape;
 }
 
-export function currentTableDefaults(
-  doc: EditDoc,
-  slideId: SlideId,
-): TableCreationDefaults | undefined {
+export function currentTableDefaults(doc: EditDoc, slideId: SlideId): TableCreationDefaults | undefined {
   const slide = doc.slides[slideId];
   if (!slide?.layoutId) return slide?.defaultTable;
   if (slide.layoutId === slide.sourceLayoutId) {
-    return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultTable
-      ?? slide.defaultTable ?? doc.layouts[slide.layoutId]?.defaultTable;
+    return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultTable ?? slide.defaultTable ?? doc.layouts[slide.layoutId]?.defaultTable;
   }
-  return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultTable
-    ?? doc.layouts[slide.layoutId]?.defaultTable
-    ?? slide.defaultTable;
+  return resolvedLayoutSlide(doc, slideId)?.editInfo?.defaultTable ?? doc.layouts[slide.layoutId]?.defaultTable ?? slide.defaultTable;
 }
 
 /** 页面级 showMasterSp=false 必须继续压过新关系指向的版式/母版。 */
-export function projectedLayoutElements(
-  doc: EditDoc,
-  slideId: SlideId,
-  resolveLayoutElement?: LayoutElementResolver,
-): SlideElement[] {
+export function projectedLayoutElements(doc: EditDoc, slideId: SlideId, resolveLayoutElement?: LayoutElementResolver): SlideElement[] {
   const layout = changedLayout(doc, slideId);
   if (!layout) return [];
   const masterEdited = masterHasEdits(doc, layout.origin.masterPart);
   if (layoutHasEdits(doc, layout.id) || masterEdited) {
     const master = doc.masters[layout.origin.masterPart];
-    const masterElements = layoutShowsMaster(doc, layout.id) && master
-      ? master.children.map((id) =>
-        resolveLayoutElement ? resolveLayoutElement(id) : doc.elements[id].src)
-      : [];
-    const layoutElements = layout.children.map((id) =>
-      resolveLayoutElement ? resolveLayoutElement(id) : doc.elements[id].src);
+    const masterElements =
+      layoutShowsMaster(doc, layout.id) && master
+        ? master.children.map((id) => (resolveLayoutElement ? resolveLayoutElement(id) : doc.elements[id].src))
+        : [];
+    const layoutElements = layout.children.map((id) => (resolveLayoutElement ? resolveLayoutElement(id) : doc.elements[id].src));
     const elements = [...masterElements, ...layoutElements];
     return doc.slides[slideId].sourceHideMasterShapes
       ? elements.filter((element) => element.editInfo?.origin?.part !== layout.origin.masterPart)
@@ -273,17 +251,16 @@ export function projectedLayoutElements(
   const variant = resolvedLayoutVariant(doc, slideId);
   const elements = variant
     ? [
-      ...variant.slide.elements.filter((element) => {
-        const part = element.editInfo?.origin?.part;
-        return !!part && part !== variant.sourcePart;
-      }),
-      // 重解析结果把已绑定占位符折叠进 slide 内容；目录节点仍承担未绑定交互与语义匹配。
-      ...layout.elements.filter((element) => !!element.editInfo?.placeholder),
-    ]
+        ...variant.slide.elements.filter((element) => {
+          const part = element.editInfo?.origin?.part;
+          return !!part && part !== variant.sourcePart;
+        }),
+        // 重解析结果把已绑定占位符折叠进 slide 内容；目录节点仍承担未绑定交互与语义匹配。
+        ...layout.elements.filter((element) => !!element.editInfo?.placeholder),
+      ]
     : layout.elements;
   if (!doc.slides[slideId].sourceHideMasterShapes) return elements;
-  return elements.filter((element) =>
-    element.editInfo?.origin?.part !== layout.origin.masterPart);
+  return elements.filter((element) => element.editInfo?.origin?.part !== layout.origin.masterPart);
 }
 
 function targetPlaceholder(
@@ -297,49 +274,39 @@ function targetPlaceholder(
   const slide = doc.slides[slideId];
   if (!slide.layoutId) return null;
   const sourceLayout = slide.layoutId === slide.sourceLayoutId;
-  const editedSourceDesign = sourceLayout && (layoutHasEdits(doc, slide.layoutId)
-    || masterHasEdits(doc, doc.layouts[slide.layoutId]?.origin.masterPart ?? ''));
-  if (sourceLayout && !editedSourceDesign
-    && !(record.meta.created && record.meta.fieldPlaceholder)) return null;
-  const elements = sourceLayout && !editedSourceDesign
-    ? doc.layouts[slide.layoutId]?.elements ?? []
-    : projectedLayoutElements(doc, slideId, resolveLayoutElement);
-  const placeholders = elements.filter((element) =>
-    !!element.editInfo?.placeholder) ?? [];
-  return findPlaceholderByIdentity(
-    placeholders, (element) => element.editInfo?.placeholder, ph,
-  ) ?? null;
+  const editedSourceDesign =
+    sourceLayout && (layoutHasEdits(doc, slide.layoutId) || masterHasEdits(doc, doc.layouts[slide.layoutId]?.origin.masterPart ?? ''));
+  if (sourceLayout && !editedSourceDesign && !(record.meta.created && record.meta.fieldPlaceholder)) return null;
+  const elements =
+    sourceLayout && !editedSourceDesign
+      ? (doc.layouts[slide.layoutId]?.elements ?? [])
+      : projectedLayoutElements(doc, slideId, resolveLayoutElement);
+  const placeholders = elements.filter((element) => !!element.editInfo?.placeholder) ?? [];
+  return findPlaceholderByIdentity(placeholders, (element) => element.editInfo?.placeholder, ph) ?? null;
 }
 
-function inheritedLayoutText(
-  doc: EditDoc,
-  slideId: SlideId,
-  target: SlideElement,
-  fallback: TextBody | null,
-): TextBody | null {
+function inheritedLayoutText(doc: EditDoc, slideId: SlideId, target: SlideElement, fallback: TextBody | null): TextBody | null {
   if (!fallback) return null;
   const layoutId = doc.slides[slideId]?.layoutId;
   const origin = target.editInfo?.origin;
-  const host = layoutId && origin ? doc.layouts[layoutId]?.children
-    .map((id) => doc.elements[id])
-    .find((record) => record.meta.origin?.part === origin.part
-      && record.meta.origin.spid === origin.spid) : undefined;
+  const host =
+    layoutId && origin
+      ? doc.layouts[layoutId]?.children
+          .map((id) => doc.elements[id])
+          .find((record) => record.meta.origin?.part === origin.part && record.meta.origin.spid === origin.spid)
+      : undefined;
   // 版式提示文字自身的 rPr 不会传给页面内容；用户建立的文字覆盖则要叠在继承模板上。
   const source = fieldTextWithoutDirect(fallback);
   // textLevelTemplate 的数组位置就是九级样式地址；清理提示文字直设时不能把各级都折回 0 级。
   source.paragraphs.forEach((paragraph, index) => {
     paragraph.lvl = fallback.paragraphs[index]?.lvl ?? paragraph.lvl;
   });
-  return host?.ovr.text?.kind === 'flat'
-    ? textBodyFromOverride(host.ovr.text, source, (link) => renderLinkTarget(doc, link))
-    : source;
+  return host?.ovr.text?.kind === 'flat' ? textBodyFromOverride(host.ovr.text, source, (link) => renderLinkTarget(doc, link)) : source;
 }
 
 export function projectionContentIds(doc: EditDoc, slideId: SlideId): ElementId[] {
   const slide = doc.slides[slideId];
-  return changedLayout(doc, slideId)
-    ? slide.children.filter((elementId) => !doc.elements[elementId].meta.inherited)
-    : slide.children;
+  return changedLayout(doc, slideId) ? slide.children.filter((elementId) => !doc.elements[elementId].meta.inherited) : slide.children;
 }
 
 /** 目标没有宿主且来源变换本来只靠旧版式继承时，保存必须把有效 frame 降级为页面直设。 */
@@ -348,9 +315,7 @@ export function layoutFallbackElementIds(doc: EditDoc, slideId: SlideId): Elemen
   const slide = doc.slides[slideId];
   return slide.children.filter((id) => {
     const record = doc.elements[id];
-    return !!record?.meta.ph
-      && record.meta.origin?.part === slide.origin?.part
-      && !targetPlaceholder(doc, slideId, record);
+    return !!record?.meta.ph && record.meta.origin?.part === slide.origin?.part && !targetPlaceholder(doc, slideId, record);
   });
 }
 
@@ -361,8 +326,7 @@ export function layoutFallbackGeometry(record: EditDoc['elements'][string]): Geo
 
 function flattenVirtualElement(element: SlideElement, output: Array<ElementId | null>): void {
   output.push(null);
-  if (element.kind === 'group'
-    && (!element.editInfo || element.editInfo.editable !== 'frame')) {
+  if (element.kind === 'group' && (!element.editInfo || element.editInfo.editable !== 'frame')) {
     for (const child of element.children) flattenVirtualElement(child, output);
   }
 }
@@ -378,8 +342,7 @@ function flattenRecordElement(doc: EditDoc, id: ElementId, output: Array<Element
 /** 整页 SVG 可混入没有 EditDoc 身份的目标版式静态节点；DOM 绑定按同一投影序列跳过它们。 */
 export function projectedSlideElementIds(doc: EditDoc, slideId: SlideId): Array<ElementId | null> {
   const output: Array<ElementId | null> = [];
-  for (const element of projectedLayoutElements(doc, slideId)
-    .filter((candidate) => !candidate.editInfo?.placeholder)) {
+  for (const element of projectedLayoutElements(doc, slideId).filter((candidate) => !candidate.editInfo?.placeholder)) {
     flattenVirtualElement(element, output);
   }
   for (const id of projectionContentIds(doc, slideId)) flattenRecordElement(doc, id, output);
@@ -388,8 +351,7 @@ export function projectedSlideElementIds(doc: EditDoc, slideId: SlideId): Array<
 
 /** 尚无 slide 内容节点的目标占位符只供 edit interaction layer 提示，不进入业务渲染。 */
 export function unboundLayoutPlaceholders(doc: EditDoc, slideId: SlideId): SlideElement[] {
-  const placeholders = projectedLayoutElements(doc, slideId).filter((element) =>
-    !!element.editInfo?.placeholder);
+  const placeholders = projectedLayoutElements(doc, slideId).filter((element) => !!element.editInfo?.placeholder);
   if (!placeholders.length) return placeholders;
   const bound = new Set<SlideElement>();
   for (const id of projectionContentIds(doc, slideId)) {
@@ -411,16 +373,20 @@ export function rebasedElementBase(
   const slide = doc.slides[slideId];
   const target = targetPlaceholder(doc, slideId, record, resolveLayoutElement);
   const resolved = resolvedLayoutSource(doc, slideId, record);
-  const missingTarget = !!record.meta.ph && !!changedLayout(doc, slideId)
-    && record.meta.origin?.part === slide?.origin?.part && !target;
+  const missingTarget = !!record.meta.ph && !!changedLayout(doc, slideId) && record.meta.origin?.part === slide?.origin?.part && !target;
   if (missingTarget) {
     // 文本/主题直设仍应在新母版下求值；只有旧占位符提供、而目标已断开的外观字段需要固定。
     const base = structuredClone(resolved ?? record.src);
     const direct = record.meta.placeholderDirect ?? 0;
     if (!(direct & PLACEHOLDER_DIRECT_BITS.transform)) {
       Object.assign(base, {
-        x: record.src.x, y: record.src.y, w: record.src.w, h: record.src.h,
-        rot: record.src.rot, flipH: record.src.flipH, flipV: record.src.flipV,
+        x: record.src.x,
+        y: record.src.y,
+        w: record.src.w,
+        h: record.src.h,
+        rot: record.src.rot,
+        flipH: record.src.flipH,
+        flipV: record.src.flipV,
       });
     }
     if (base.kind === 'shape' && record.src.kind === 'shape') {
@@ -431,17 +397,21 @@ export function rebasedElementBase(
         base.stroke = structuredClone(record.src.stroke);
       }
       if (!(direct & (PLACEHOLDER_DIRECT_BITS.effects | PLACEHOLDER_DIRECT_BITS.style))) {
-        base.effects = structuredClone(
-          record.meta.placeholderInheritedEffects ?? record.src.effects,
-        );
+        base.effects = structuredClone(record.meta.placeholderInheritedEffects ?? record.src.effects);
       }
-    } else if (base.kind === 'image' && record.src.kind === 'image'
-      && !(direct & (PLACEHOLDER_DIRECT_BITS.stroke | PLACEHOLDER_DIRECT_BITS.style))) {
+    } else if (
+      base.kind === 'image'
+      && record.src.kind === 'image'
+      && !(direct & (PLACEHOLDER_DIRECT_BITS.stroke | PLACEHOLDER_DIRECT_BITS.style))
+    ) {
       base.stroke = structuredClone(record.src.stroke);
     }
     // 继承图片填充跨 part 还需要复制关系闭包；当前显式降级为无填充，避免即时与重开分叉。
-    if (base.kind === 'shape' && base.fill?.type === 'image'
-      && !(direct & (PLACEHOLDER_DIRECT_BITS.fill | PLACEHOLDER_DIRECT_BITS.style))) {
+    if (
+      base.kind === 'shape'
+      && base.fill?.type === 'image'
+      && !(direct & (PLACEHOLDER_DIRECT_BITS.fill | PLACEHOLDER_DIRECT_BITS.style))
+    ) {
       base.fill = { type: 'none' };
     }
     const geom = layoutFallbackGeometry(record);
@@ -457,8 +427,7 @@ export function rebasedElementBase(
       ...(base.editInfo?.geom ? { geom: structuredClone(base.editInfo.geom) } : {}),
     };
   }
-  const creationDefaults = record.meta.created && record.meta.themeDefaultShape
-    ? currentShapeDefaults(doc, slideId) : undefined;
+  const creationDefaults = record.meta.created && record.meta.themeDefaultShape ? currentShapeDefaults(doc, slideId) : undefined;
   if (creationDefaults && record.src.kind === 'shape') {
     const base = structuredClone(record.src);
     base.fill = base.openGeom ? { type: 'none' } : structuredClone(creationDefaults.fill);
@@ -473,8 +442,13 @@ export function rebasedElementBase(
   const base = structuredClone(record.src);
   if (!(direct & PLACEHOLDER_DIRECT_BITS.transform)) {
     Object.assign(base, {
-      x: target.x, y: target.y, w: target.w, h: target.h,
-      rot: target.rot, flipH: target.flipH, flipV: target.flipV,
+      x: target.x,
+      y: target.y,
+      w: target.w,
+      h: target.h,
+      rot: target.rot,
+      flipH: target.flipH,
+      flipV: target.flipV,
     });
   }
   const targetGeom = target.editInfo?.geom;
@@ -492,19 +466,13 @@ export function rebasedElementBase(
     if (!(direct & (PLACEHOLDER_DIRECT_BITS.effects | PLACEHOLDER_DIRECT_BITS.style))) {
       base.effects = structuredClone(target.effects);
     }
-    const rawTargetText = target.editInfo?.textLevelTemplate
-      ?? target.editInfo?.textTemplate ?? target.text;
+    const rawTargetText = target.editInfo?.textLevelTemplate ?? target.editInfo?.textTemplate ?? target.text;
     const targetText = inheritedLayoutText(doc, slideId, target, rawTargetText);
-    base.text = record.meta.created && !record.meta.fieldPlaceholder
-      ? structuredClone(target.text)
-      : rebaseLayoutText(
-        base.text,
-        targetText,
-      );
+    base.text =
+      record.meta.created && !record.meta.fieldPlaceholder ? structuredClone(target.text) : rebaseLayoutText(base.text, targetText);
   } else if (base.kind === 'image') {
     if (!(direct & PLACEHOLDER_DIRECT_BITS.geometry)) {
-      base.clipPath = targetGeom?.preset === 'rect' ? null
-        : target.kind === 'shape' ? target.path : base.clipPath;
+      base.clipPath = targetGeom?.preset === 'rect' ? null : target.kind === 'shape' ? target.path : base.clipPath;
     }
     if (!(direct & PLACEHOLDER_DIRECT_BITS.stroke) && 'stroke' in target) {
       base.stroke = structuredClone(target.stroke);
@@ -512,8 +480,11 @@ export function rebasedElementBase(
   }
   return {
     base,
-    ...((direct & PLACEHOLDER_DIRECT_BITS.geometry) && record.meta.geom
-      ? { geom: record.meta.geom } : targetGeom ? { geom: targetGeom } : {}),
+    ...(direct & PLACEHOLDER_DIRECT_BITS.geometry && record.meta.geom
+      ? { geom: record.meta.geom }
+      : targetGeom
+        ? { geom: targetGeom }
+        : {}),
   };
 }
 
@@ -530,24 +501,19 @@ export function rebasedTextBase(
   if (base.kind !== 'shape') return null;
   if (base.text) return base.text;
   const target = targetPlaceholder(doc, slideId, record, resolveLayoutElement);
-  const template = target?.editInfo?.textLevelTemplate
+  const template =
+    target?.editInfo?.textLevelTemplate
     ?? target?.editInfo?.textTemplate
     ?? (target?.kind === 'shape' ? target.text : null)
     ?? (record.meta.themeDefaultShape ? currentShapeDefaults(doc, slideId)?.textTemplate : undefined)
     ?? record.meta.textTemplate
     ?? null;
   if (!template) return null;
-  return record.meta.created
-    ? structuredClone(template)
-    : rebaseLayoutText(record.meta.textTemplate ?? template, template);
+  return record.meta.created ? structuredClone(template) : rebaseLayoutText(record.meta.textTemplate ?? template, template);
 }
 
 /** 列表改级必须读取九级样式目录，不能从当前段落反推相邻级别的继承值。 */
-export function rebasedTextLevelTemplate(
-  doc: EditDoc,
-  slideId: SlideId,
-  id: ElementId,
-): TextBody | undefined {
+export function rebasedTextLevelTemplate(doc: EditDoc, slideId: SlideId, id: ElementId): TextBody | undefined {
   const record = doc.elements[id];
   if (!record) throw new Error(`找不到元素：${id}`);
   const target = targetPlaceholder(doc, slideId, record);

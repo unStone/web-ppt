@@ -136,8 +136,10 @@ export function parseDataModel(dataRoot: Element | null): DiagramPoint[] {
   // 没有 doc 节点时把所有没被别人指向的点当根
   const hasParent = new Set<string>();
   for (const n of nodes.values()) for (const k of n.kids) hasParent.add(k.id);
-  return [...nodes.keys()].filter((id) => !hasParent.has(id))
-    .map((id) => build(id, 0)).filter((x): x is DiagramPoint => x !== null);
+  return [...nodes.keys()]
+    .filter((id) => !hasParent.has(id))
+    .map((id) => build(id, 0))
+    .filter((x): x is DiagramPoint => x !== null);
 }
 
 /** 取点的 txBody 元素，供调用方用自己的文本解析器处理 */
@@ -181,7 +183,10 @@ interface Placed {
 function flatten(pts: DiagramPoint[]): DiagramPoint[] {
   const out: DiagramPoint[] = [];
   const walk = (list: DiagramPoint[]): void => {
-    for (const p of list) { out.push(p); walk(p.children); }
+    for (const p of list) {
+      out.push(p);
+      walk(p.children);
+    }
   };
   walk(pts);
   return out;
@@ -197,14 +202,26 @@ function layoutLinear(pts: DiagramPoint[], w: number, h: number, vertical: boole
     // 限制长宽比：占满整幅宽度的横条不像 SmartArt，像表格行
     const bw = Math.min(w, bh * 5);
     return items.map((pt, i) => ({
-      x: (w - bw) / 2, y: i * (bh + gap), w: bw, h: bh, pt, prst: 'roundRect', colorIdx: i,
+      x: (w - bw) / 2,
+      y: i * (bh + gap),
+      w: bw,
+      h: bh,
+      pt,
+      prst: 'roundRect',
+      colorIdx: i,
     }));
   }
   const bw = (w - gap * (n - 1)) / n;
   // 同理：横向流程的盒子顶天立地会变成一根根柱子
   const bh = Math.min(h, bw * 0.8);
   return items.map((pt, i) => ({
-    x: i * (bw + gap), y: (h - bh) / 2, w: bw, h: bh, pt, prst: 'roundRect', colorIdx: i,
+    x: i * (bw + gap),
+    y: (h - bh) / 2,
+    w: bw,
+    h: bh,
+    pt,
+    prst: 'roundRect',
+    colorIdx: i,
   }));
 }
 
@@ -221,7 +238,11 @@ function layoutCycle(pts: DiagramPoint[], w: number, h: number): Placed[] {
     return {
       x: w / 2 + rx * Math.cos(a) - bw / 2,
       y: h / 2 + ry * Math.sin(a) - bh / 2,
-      w: bw, h: bh, pt, prst: 'ellipse', colorIdx: i,
+      w: bw,
+      h: bh,
+      pt,
+      prst: 'ellipse',
+      colorIdx: i,
     };
   });
 }
@@ -242,13 +263,18 @@ function layoutSnake(pts: DiagramPoint[], w: number, h: number): Placed[] {
   if (!n) return [];
   const cols = Math.ceil(Math.sqrt(n));
   const rows = Math.ceil(n / cols);
-  const gx = w * 0.03, gy = h * 0.05;
+  const gx = w * 0.03,
+    gy = h * 0.05;
   const bw = (w - gx * (cols - 1)) / cols;
   const bh = (h - gy * (rows - 1)) / rows;
   return pts.map((pt, i) => ({
     x: (i % cols) * (bw + gx),
     y: Math.floor(i / cols) * (bh + gy),
-    w: bw, h: bh, pt, prst: 'roundRect', colorIdx: i,
+    w: bw,
+    h: bh,
+    pt,
+    prst: 'roundRect',
+    colorIdx: i,
   }));
 }
 
@@ -256,17 +282,30 @@ function layoutRadial(pts: DiagramPoint[], w: number, h: number): Placed[] {
   if (!pts.length) return [];
   const [center, ...rest] = pts;
   const size = Math.min(w, h) * 0.3;
-  const out: Placed[] = [{
-    x: (w - size) / 2, y: (h - size) / 2, w: size, h: size, pt: center, prst: 'ellipse', colorIdx: 0,
-  }];
+  const out: Placed[] = [
+    {
+      x: (w - size) / 2,
+      y: (h - size) / 2,
+      w: size,
+      h: size,
+      pt: center,
+      prst: 'ellipse',
+      colorIdx: 0,
+    },
+  ];
   const n = rest.length;
-  const bw = Math.min(w, h) * 0.26, bh = bw * 0.62;
+  const bw = Math.min(w, h) * 0.26,
+    bh = bw * 0.62;
   rest.forEach((pt, i) => {
     const a = -Math.PI / 2 + (i * 2 * Math.PI) / Math.max(n, 1);
     out.push({
       x: w / 2 + ((w - bw) / 2) * Math.cos(a) - bw / 2,
       y: h / 2 + ((h - bh) / 2) * Math.sin(a) - bh / 2,
-      w: bw, h: bh, pt, prst: 'ellipse', colorIdx: i + 1,
+      w: bw,
+      h: bh,
+      pt,
+      prst: 'ellipse',
+      colorIdx: i + 1,
     });
   });
   return out;
@@ -291,8 +330,13 @@ function layoutHierarchy(pts: DiagramPoint[], w: number, h: number): Placed[] {
     const bw = (w - gap * (row.length - 1)) / row.length;
     row.forEach((pt, i) => {
       out.push({
-        x: i * (bw + gap), y: lvl * rowH + (rowH - bh) / 2,
-        w: bw, h: bh, pt, prst: 'roundRect', colorIdx: lvl,
+        x: i * (bw + gap),
+        y: lvl * rowH + (rowH - bh) / 2,
+        w: bw,
+        h: bh,
+        pt,
+        prst: 'roundRect',
+        colorIdx: lvl,
       });
     });
   });
@@ -320,9 +364,7 @@ export interface DiagramBuildOptions {
 /**
  * 排布并产出元素。层级布局额外画父子连线——组织结构图没有连线就读不出层级。
  */
-export function buildDiagram(
-  pts: DiagramPoint[], w: number, h: number, opts: DiagramBuildOptions,
-): SlideElement[] {
+export function buildDiagram(pts: DiagramPoint[], w: number, h: number, opts: DiagramBuildOptions): SlideElement[] {
   // 层级类要保留树形，其余按层序铺平
   const input = opts.family === 'hierarchy' ? pts : flatten(pts);
   const placed = LAYOUTS[opts.family](input, w, h, opts.vertical);
@@ -333,17 +375,32 @@ export function buildDiagram(
   if (opts.family === 'hierarchy') {
     const byId = new Map(placed.map((p) => [p.pt.id, p]));
     const line = (a: Placed, b: Placed): void => {
-      const x1 = a.x + a.w / 2, y1 = a.y + a.h;
-      const x2 = b.x + b.w / 2, y2 = b.y;
+      const x1 = a.x + a.w / 2,
+        y1 = a.y + a.h;
+      const x2 = b.x + b.w / 2,
+        y2 = b.y;
       const midY = (y1 + y2) / 2;
-      const minX = Math.min(x1, x2), minY = Math.min(y1, y2);
-      const bw = Math.max(Math.abs(x2 - x1), 1), bh = Math.max(y2 - y1, 1);
+      const minX = Math.min(x1, x2),
+        minY = Math.min(y1, y2);
+      const bw = Math.max(Math.abs(x2 - x1), 1),
+        bh = Math.max(y2 - y1, 1);
       // 折线走「下 → 横 → 下」，与组织结构图的画法一致
       const d = `M ${x1 - minX} 0 L ${x1 - minX} ${midY - minY} L ${x2 - minX} ${midY - minY} L ${x2 - minX} ${bh}`;
       out.push({
-        kind: 'shape', x: minX, y: minY, w: bw, h: bh, rot: 0, flipH: false, flipV: false,
-        path: d, fill: null, stroke: { color: opts.colors[0] ?? 'rgb(68,114,196)', width: 1.5, dash: null },
-        text: null, openGeom: true, name: 'SmartArt 连线',
+        kind: 'shape',
+        x: minX,
+        y: minY,
+        w: bw,
+        h: bh,
+        rot: 0,
+        flipH: false,
+        flipV: false,
+        path: d,
+        fill: null,
+        stroke: { color: opts.colors[0] ?? 'rgb(68,114,196)', width: 1.5, dash: null },
+        text: null,
+        openGeom: true,
+        name: 'SmartArt 连线',
       });
     };
     const walkLines = (list: DiagramPoint[]): void => {
@@ -364,8 +421,17 @@ export function buildDiagram(
     const fill: Fill = { type: 'solid', color };
     const geom = presetGeom(p.prst, p.w, p.h, {});
     const shape: ShapeElement = {
-      kind: 'shape', x: p.x, y: p.y, w: p.w, h: p.h, rot: 0, flipH: false, flipV: false,
-      path: geom.d, fill, stroke: null,
+      kind: 'shape',
+      x: p.x,
+      y: p.y,
+      w: p.w,
+      h: p.h,
+      rot: 0,
+      flipH: false,
+      flipV: false,
+      path: geom.d,
+      fill,
+      stroke: null,
       text: opts.textOf(p.pt.id),
       name: 'SmartArt 节点',
     };
@@ -375,11 +441,17 @@ export function buildDiagram(
 }
 
 /** 组装成一个 group，坐标系与 frame 对齐 */
-export function wrapDiagram(children: SlideElement[], base: Omit<GroupElement,
-  'kind' | 'childX' | 'childY' | 'scaleX' | 'scaleY' | 'children'>): GroupElement {
+export function wrapDiagram(
+  children: SlideElement[],
+  base: Omit<GroupElement, 'kind' | 'childX' | 'childY' | 'scaleX' | 'scaleY' | 'children'>,
+): GroupElement {
   return {
-    kind: 'group', ...base,
-    childX: 0, childY: 0, scaleX: 1, scaleY: 1,
+    kind: 'group',
+    ...base,
+    childX: 0,
+    childY: 0,
+    scaleX: 1,
+    scaleY: 1,
     children,
     name: 'SmartArt',
   };

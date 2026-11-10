@@ -1,6 +1,4 @@
-import type {
-  FindTextRequest, TextSearchMatch, TextSearchScope,
-} from '@web-ppt/edit-core';
+import type { FindTextRequest, TextSearchMatch, TextSearchScope } from '@web-ppt/edit-core';
 
 export type TextSearchMode = 'find' | 'replace';
 

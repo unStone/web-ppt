@@ -15,10 +15,12 @@ const entry = join(root, 'tooling/lib/edit-equivalence-entry.ts');
 const bundle = join(outDir, 'runtime.mjs');
 const worker = join(root, 'tooling/lib/edit-fingerprint.mjs');
 const password = 'web-ppt-2024';
-const { values } = parseArgs({ options: {
-  'shard-index': { type: 'string', default: '0' },
-  'shard-count': { type: 'string', default: '1' },
-} });
+const { values } = parseArgs({
+  options: {
+    'shard-index': { type: 'string', default: '0' },
+    'shard-count': { type: 'string', default: '1' },
+  },
+});
 const shardIndex = Number(values['shard-index']);
 const shardCount = Number(values['shard-count']);
 const allFixtures = readdirSync(fixturesDir)
@@ -28,11 +30,20 @@ const fixtures = partitionFixtures(allFixtures, shardIndex, shardCount);
 if (!fixtures.length) throw new Error('没有找到可验证的 PPT 固件');
 
 mkdirSync(outDir, { recursive: true });
-execFileSync('npx', [
-  'esbuild', entry, '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${bundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    entry,
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${bundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 
 function fingerprint(name, mode) {
   const file = join(fixturesDir, name);
@@ -54,7 +65,8 @@ console.log('\n\x1b[36m▸ M0 独立进程渲染等价\x1b[0m');
 for (const name of fixtures) {
   const readonly = fingerprint(name, 'readonly');
   const editable = fingerprint(name, 'edit');
-  const sameMeta = readonly.width === editable.width
+  const sameMeta =
+    readonly.width === editable.width
     && readonly.height === editable.height
     && readonly.source === editable.source
     && readonly.pages === editable.pages;
@@ -82,9 +94,19 @@ if (failures.length) {
   recordCount('fixtures', fixtures.length);
   recordCount('equivalence', svgCount);
   if (process.env.WEB_PPT_EQUIVALENCE_REPORT) {
-    writeFileSync(process.env.WEB_PPT_EQUIVALENCE_REPORT, `${JSON.stringify({
-      index: shardIndex, total: shardCount, fixtures, svgCount,
-    }, null, 2)}\n`);
+    writeFileSync(
+      process.env.WEB_PPT_EQUIVALENCE_REPORT,
+      `${JSON.stringify(
+        {
+          index: shardIndex,
+          total: shardCount,
+          fixtures,
+          svgCount,
+        },
+        null,
+        2,
+      )}\n`,
+    );
   }
   console.log(`\x1b[32m✓ ${fixtures.length} 份固件 / ${pages} 页 / ${svgCount} 对 SVG 指纹完全一致（资源按实际字节寻址）\x1b[0m`);
 }

@@ -69,9 +69,11 @@ export function cloneXmlNode(source: XmlNode): XmlNode {
 export function cloneXmlNodeWithNamespaceClosure(source: XmlElement, destination?: XmlElement): XmlElement {
   const clone = cloneXmlNode(source);
   const inherited = destination ? elementStates.get(destination)!.namespaces : undefined;
-  const declared = new Set(clone.attributes
-    .filter((attribute) => attribute.name === 'xmlns' || attribute.name.startsWith('xmlns:'))
-    .map((attribute) => attribute.name === 'xmlns' ? '' : attribute.name.slice(6)));
+  const declared = new Set(
+    clone.attributes
+      .filter((attribute) => attribute.name === 'xmlns' || attribute.name.startsWith('xmlns:'))
+      .map((attribute) => (attribute.name === 'xmlns' ? '' : attribute.name.slice(6))),
+  );
   for (const [prefix, uri] of elementStates.get(source)!.namespaces) {
     if (prefix === 'xml' || declared.has(prefix) || inherited?.get(prefix) === uri) continue;
     setXmlAttribute(clone, prefix ? `xmlns:${prefix}` : 'xmlns', uri);
@@ -97,11 +99,7 @@ function adoptNamespaces(parent: XmlElement, child: XmlNode): void {
 }
 
 /** 在指定节点前插入；before 省略时追加。格式化空白由原父节点保持，不凭空重排已有内容。 */
-export function insertXmlChildUnchecked(
-  parent: XmlElement,
-  child: XmlNode,
-  before: XmlNode | null = null,
-): number {
+export function insertXmlChildUnchecked(parent: XmlElement, child: XmlNode, before: XmlNode | null = null): number {
   assertCanAttach(parent, child);
   const children = parent.children as XmlNode[];
   let index = before === null ? children.length : children.indexOf(before);
@@ -109,18 +107,13 @@ export function insertXmlChildUnchecked(
   // 缩进空白位于“前一个元素与目标元素之间”。插入到目标前时复制这段空白，
   // 让新节点和原目标各得一份；既不格式化整棵树，也不会把两个标签粘在一起。
   let spacing = before !== null && index > 0 ? children[index - 1] : null;
-  let inherited = spacing?.type === 'text' && !spacing.value.trim()
-    ? createXmlText(spacing.value)
-    : null;
+  let inherited = spacing?.type === 'text' && !spacing.value.trim() ? createXmlText(spacing.value) : null;
   if (before === null && index > 0) {
     const closingSpacing = children[index - 1];
     if (closingSpacing.type === 'text' && !closingSpacing.value.trim()) {
       // 结束标签前的空白通常只有换行，没有子节点缩进；向前找上一位兄弟使用的缩进。
-      spacing = [...children.slice(0, -1)].reverse()
-        .find((node) => node.type === 'text' && !node.value.trim()) ?? null;
-      const value = spacing?.type === 'text'
-        ? spacing.value
-        : closingSpacing.value.replace(/([^\r\n])?$/, '  $&');
+      spacing = [...children.slice(0, -1)].reverse().find((node) => node.type === 'text' && !node.value.trim()) ?? null;
+      const value = spacing?.type === 'text' ? spacing.value : closingSpacing.value.replace(/([^\r\n])?$/, '  $&');
       inherited = createXmlText(value);
       index--;
       children.splice(index, 0, inherited, child);
@@ -146,9 +139,13 @@ export function removeXmlChild(parent: XmlElement, child: XmlNode): boolean {
   if (index < 0) return false;
   const previous = children[index - 1];
   const next = children[index + 1];
-  const ownsIndent = child.type === 'element'
-    && previous?.type === 'text' && !previous.value.trim() && /[\r\n]/.test(previous.value)
-    && next?.type === 'text' && !next.value.trim();
+  const ownsIndent =
+    child.type === 'element'
+    && previous?.type === 'text'
+    && !previous.value.trim()
+    && /[\r\n]/.test(previous.value)
+    && next?.type === 'text'
+    && !next.value.trim();
   if (ownsIndent) {
     children.splice(index - 1, 2);
     nodeState(previous).parent = null;
@@ -156,18 +153,13 @@ export function removeXmlChild(parent: XmlElement, child: XmlNode): boolean {
     children.splice(index, 1);
   }
   nodeState(child).parent = null;
-  (parent as { selfClosing: boolean }).selfClosing =
-    elementStates.get(parent)!.sourceSelfClosing && children.length === 0;
+  (parent as { selfClosing: boolean }).selfClosing = elementStates.get(parent)!.sourceSelfClosing && children.length === 0;
   markXmlDirty(parent);
   return true;
 }
 
 /** 原槽位替换为零到多个节点；相邻未知节点与格式化空白均保持原位。 */
-export function replaceXmlChildren(
-  parent: XmlElement,
-  current: XmlNode,
-  replacements: readonly XmlNode[],
-): void {
+export function replaceXmlChildren(parent: XmlElement, current: XmlNode, replacements: readonly XmlNode[]): void {
   if (new Set(replacements).size !== replacements.length) throw new Error('XML 替换不能包含重复节点');
   const children = parent.children as XmlNode[];
   const index = children.indexOf(current);
@@ -199,7 +191,9 @@ export function reorderXmlChildren(parent: XmlElement, ordered: readonly XmlNode
   });
   if (current.length !== ordered.length) throw new Error('XML 重排节点集合与父元素不一致');
   if (current.every((child, index) => child === ordered[index])) return false;
-  slots.forEach((slot, index) => { children[slot] = ordered[index]; });
+  slots.forEach((slot, index) => {
+    children[slot] = ordered[index];
+  });
   markXmlDirty(parent);
   return true;
 }

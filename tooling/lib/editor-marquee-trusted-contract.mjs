@@ -27,7 +27,10 @@ export async function runTrustedMarqueeContract({ evaluate, trustedMouseGesture 
       end: { x: end.x, y: end.y },
     };
   })()`);
-  const result = await trustedMouseGesture(points.start, points.end, `(() => {
+  const result = await trustedMouseGesture(
+    points.start,
+    points.end,
+    `(() => {
     const state = globalThis.trustedMarqueeContract;
     const { trustedMarqueeSession } = globalThis.editorContract;
     const mount = document.querySelector('#mount');
@@ -43,7 +46,8 @@ export async function runTrustedMarqueeContract({ evaluate, trustedMouseGesture 
       svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
       defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
     };
-  })()`, `(() => {
+  })()`,
+    `(() => {
     const state = globalThis.trustedMarqueeContract;
     const { trustedMarqueeSession } = globalThis.editorContract;
     const mount = document.querySelector('#mount');
@@ -62,8 +66,8 @@ export async function runTrustedMarqueeContract({ evaluate, trustedMouseGesture 
     trustedMarqueeSession.dispose();
     delete globalThis.trustedMarqueeContract;
     return result;
-  })()`);
-  const passed = Object.values(result.during).every(Boolean)
-    && Object.values(result.committed).every(Boolean);
+  })()`,
+  );
+  const passed = Object.values(result.during).every(Boolean) && Object.values(result.committed).every(Boolean);
   if (!passed) throw new Error(`真实 pointer capture 框选失败：${JSON.stringify(result)}`);
 }

@@ -17,14 +17,31 @@ export async function runSiteI18nChartReadonlyContract(context) {
     const input = document.querySelector('#fileInput'); input.files = files.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
   })()`);
-  await waitFor("document.querySelector('#fileName').textContent === 'chart-readonly.pptx' && !document.querySelector('#editorApp').dataset.loading", '缺工作簿固件就绪');
+  await waitFor(
+    "document.querySelector('#fileName').textContent === 'chart-readonly.pptx' && !document.querySelector('#editorApp').dataset.loading",
+    '缺工作簿固件就绪',
+  );
   await selectPaneObject(context, '图表');
-  await waitFor("document.querySelector('[data-chart-status]').textContent === 'This chart data is read-only: 图表关系指向的内嵌工作簿不存在'", '只读绑定保留真实诊断');
-  if (!await evaluate(`!document.querySelector('#chartInspector').hidden
+  await waitFor(
+    "document.querySelector('[data-chart-status]').textContent === 'This chart data is read-only: 图表关系指向的内嵌工作簿不存在'",
+    '只读绑定保留真实诊断',
+  );
+  if (
+    !(await evaluate(`!document.querySelector('#chartInspector').hidden
     && [...document.querySelectorAll('#chartInspector input,#chartInspector select,#chartInspector button')].every((node) => node.disabled)
     && document.querySelector('[data-chart-grid] thead input').value === '2024 年'
-    && document.querySelector('#undo').disabled && !document.querySelector('#saveFile').disabled`)) throw new Error('只读图表应保留原文、禁用数据修改且不影响文稿保存');
+    && document.querySelector('#undo').disabled && !document.querySelector('#saveFile').disabled`))
+  )
+    throw new Error('只读图表应保留原文、禁用数据修改且不影响文稿保存');
   await click('[data-site-locale="zh-CN"]');
-  await waitFor("document.querySelector('[data-chart-status]').textContent === '此图表数据只读：图表关系指向的内嵌工作簿不存在'", '只读摘要切中文');
-  if (!await evaluate("[...document.querySelectorAll('#chartInspector input,#chartInspector select,#chartInspector button')].every((node) => node.disabled)")) throw new Error('切语言不能解除只读图表限制');
+  await waitFor(
+    "document.querySelector('[data-chart-status]').textContent === '此图表数据只读：图表关系指向的内嵌工作簿不存在'",
+    '只读摘要切中文',
+  );
+  if (
+    !(await evaluate(
+      "[...document.querySelectorAll('#chartInspector input,#chartInspector select,#chartInspector button')].every((node) => node.disabled)",
+    ))
+  )
+    throw new Error('切语言不能解除只读图表限制');
 }

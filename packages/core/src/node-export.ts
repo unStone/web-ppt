@@ -31,10 +31,7 @@ export interface NodeSvgOptions extends Omit<RenderOptions, 'textMode' | 'measur
 }
 
 /** PNG 光栅化回调：拿到自包含 SVG 与目标像素尺寸，返回 PNG 字节。 */
-export type NodeRasterizer = (
-  svg: string,
-  size: { width: number; height: number },
-) => Uint8Array | Promise<Uint8Array>;
+export type NodeRasterizer = (svg: string, size: { width: number; height: number }) => Uint8Array | Promise<Uint8Array>;
 
 export interface NodePngOptions extends NodeSvgOptions {
   rasterize: NodeRasterizer;
@@ -45,9 +42,11 @@ export interface NodePngOptions extends NodeSvgOptions {
 /** 在 Node 中渲染单页为原生 `<text>` 的 SVG 字符串。 */
 export function renderSlideSvgInNode(pres: Presentation, slide: Slide, options: NodeSvgOptions): string {
   if (typeof options?.measureText !== 'function') {
-    throw new NodeRenderError('node-measure-required',
+    throw new NodeRenderError(
+      'node-measure-required',
       'Node 渲染需要显式注入 measureText（例如 @web-ppt/fonts/glyphs 的 withFontMeasurement 产物）；'
-      + '不注入时没有可信字宽，渲染会静默退回估算断行，这里直接拒绝');
+        + '不注入时没有可信字宽，渲染会静默退回估算断行，这里直接拒绝',
+    );
   }
   return renderSlideToSvg(pres, slide, {
     ...options,
@@ -61,18 +60,24 @@ export function renderSlideSvgInNode(pres: Presentation, slide: Slide, options: 
 /** 在 Node 中渲染单页并交给宿主光栅化函数，返回 PNG 字节。 */
 export async function renderSlidePngInNode(pres: Presentation, slide: Slide, options: NodePngOptions): Promise<Uint8Array> {
   if (typeof options?.measureText !== 'function') {
-    throw new NodeRenderError('node-measure-required',
-      'Node PNG 渲染需要显式注入 measureText；不注入时没有可信字宽，渲染会静默退回估算断行，这里直接拒绝');
+    throw new NodeRenderError(
+      'node-measure-required',
+      'Node PNG 渲染需要显式注入 measureText；不注入时没有可信字宽，渲染会静默退回估算断行，这里直接拒绝',
+    );
   }
   if (typeof options?.rasterize !== 'function') {
-    throw new NodeRenderError('node-rasterizer-required',
-      'Node PNG 需要宿主注入 rasterize 光栅化函数（例如 resvg）；core 不内置任何光栅化依赖');
+    throw new NodeRenderError(
+      'node-rasterizer-required',
+      'Node PNG 需要宿主注入 rasterize 光栅化函数（例如 resvg）；core 不内置任何光栅化依赖',
+    );
   }
   const svg = renderSlideSvgInNode(pres, slide, options);
   const bytes = await options.rasterize(svg, validateRasterSize(pres, options.scale ?? 2));
   if (!(bytes instanceof Uint8Array) || bytes.length === 0) {
-    throw new NodeRenderError('node-rasterizer-required',
-      `rasterize 必须返回非空 PNG 字节（Uint8Array），收到 ${bytes === null || bytes === undefined ? String(bytes) : `长度 ${bytes.length}`}`);
+    throw new NodeRenderError(
+      'node-rasterizer-required',
+      `rasterize 必须返回非空 PNG 字节（Uint8Array），收到 ${bytes === null || bytes === undefined ? String(bytes) : `长度 ${bytes.length}`}`,
+    );
   }
   return bytes;
 }

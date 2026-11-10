@@ -4,9 +4,11 @@ import { JSDOM } from 'jsdom';
 // 核对 Office 定义的序列与轴引用；重开成功无法捕获宽容解析器跳过的无效 XML。
 export function verifyChartDesignXml(xml) {
   const dom = new JSDOM(xml, { contentType: 'application/xml' });
-  const chart = dom.window.document, ns = chart.documentElement.namespaceURI;
+  const chart = dom.window.document,
+    ns = chart.documentElement.namespaceURI;
   const sequences = {
-    chart: 'title autoTitleDeleted pivotFmts view3D floor sideWall backWall plotArea legend plotVisOnly dispBlanksAs showDLblsOverMax extLst',
+    chart:
+      'title autoTitleDeleted pivotFmts view3D floor sideWall backWall plotArea legend plotVisOnly dispBlanksAs showDLblsOverMax extLst',
     barChart: 'barDir grouping varyColors ser dLbls gapWidth overlap serLines axId extLst',
     lineChart: 'grouping varyColors ser dLbls dropLines hiLowLines upDownBars marker smooth axId extLst',
     areaChart: 'grouping varyColors ser dLbls dropLines axId extLst',
@@ -20,7 +22,10 @@ export function verifyChartDesignXml(xml) {
     const order = sequence.split(' ');
     for (const node of chart.getElementsByTagNameNS(ns, name)) {
       const indices = [...node.children].filter((c) => c.namespaceURI === ns).map((c) => order.indexOf(c.localName));
-      assert(indices.every((value, i) => value >= 0 && (i === 0 || value >= indices[i - 1])), `${name} 子节点顺序`);
+      assert(
+        indices.every((value, i) => value >= 0 && (i === 0 || value >= indices[i - 1])),
+        `${name} 子节点顺序`,
+      );
     }
   }
   for (const area of chart.getElementsByTagNameNS(ns, 'plotArea')) {

@@ -30,7 +30,8 @@ const slide = `${XML}<q:sld xmlns:d="${NS.a}" xmlns:q="${NS.p}" xmlns:r="${NS.r}
 <q:clrMapOvr><d:masterClrMapping/></q:clrMapOvr></q:sld>`;
 
 const files = unzipSync(deck({ name: 'Edit Xfrm', width: 1280, height: 720, slides: [slide] }));
-files['ppt/slideLayouts/slideLayout1.xml'] = new TextEncoder().encode(`${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="obj">
+files['ppt/slideLayouts/slideLayout1.xml'] =
+  new TextEncoder().encode(`${XML}<p:sldLayout xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}" type="obj">
 <p:cSld name="Xfrm"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
 <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
 <p:sp><p:nvSpPr><p:cNvPr id="9" name="版式占位符"/><p:cNvSpPr/><p:nvPr><p:ph type="obj" idx="9"/></p:nvPr></p:nvSpPr>

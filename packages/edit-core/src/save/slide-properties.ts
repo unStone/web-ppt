@@ -19,8 +19,9 @@ import { patchSlideAnimations } from './animation';
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
 function remapRelationshipIds(root: XmlElement, record: SlideRecord): void {
-  const mapping = new Map(record.backgroundImage?.relationships
-    .map((relationship) => [relationship.sourceId, relationship.targetId] as const) ?? []);
+  const mapping = new Map(
+    record.backgroundImage?.relationships.map((relationship) => [relationship.sourceId, relationship.targetId] as const) ?? [],
+  );
   const visit = (element: XmlElement): void => {
     for (const attribute of element.attributes) {
       const target = attribute.namespaceUri === OFFICE_REL_NS ? mapping.get(attribute.value) : null;
@@ -32,13 +33,13 @@ function remapRelationshipIds(root: XmlElement, record: SlideRecord): void {
 }
 
 export function hasSlidePropertyOverrides(record: SlideRecord): boolean {
-  return own(record.ovr, 'background') || own(record.ovr, 'hidden')
-    || own(record.ovr, 'transition') || own(record.ovr, 'animations');
+  return own(record.ovr, 'background') || own(record.ovr, 'hidden') || own(record.ovr, 'transition') || own(record.ovr, 'animations');
 }
 
 function commonSlide(document: XmlDocument, record: SlideRecord): XmlElement {
   const common = findXmlChild(document.root, {
-    localName: 'cSld', namespaceUri: PRESENTATIONML_NS,
+    localName: 'cSld',
+    namespaceUri: PRESENTATIONML_NS,
   });
   if (!common) throw new Error(`幻灯片 ${record.id} 缺少 p:cSld`);
   return common;
@@ -47,11 +48,10 @@ function commonSlide(document: XmlDocument, record: SlideRecord): XmlElement {
 function relatedPart(doc: EditDoc, part: string, relationSuffix: string): string | null {
   const bytes = doc.package?.parts[relationshipPartFor(part)];
   if (!bytes) return null;
-  const relation = xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' })
-    .find((node) => findXmlAttribute(node, { localName: 'Type', namespaceUri: null })
-      ?.value.endsWith(relationSuffix));
-  const target = relation
-    && findXmlAttribute(relation, { localName: 'Target', namespaceUri: null })?.value;
+  const relation = xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' }).find((node) =>
+    findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value.endsWith(relationSuffix),
+  );
+  const target = relation && findXmlAttribute(relation, { localName: 'Target', namespaceUri: null })?.value;
   return target ? resolveRelationshipTarget(part, target) : null;
 }
 
@@ -59,18 +59,26 @@ function backgroundFromPart(doc: EditDoc, part: string): { found: boolean; image
   const bytes = doc.package?.parts[part];
   if (!bytes) return { found: false, image: null };
   const common = findXmlChild(parseXmlTree(bytes).root, {
-    localName: 'cSld', namespaceUri: PRESENTATIONML_NS,
+    localName: 'cSld',
+    namespaceUri: PRESENTATIONML_NS,
   });
-  const background = common && findXmlChild(common, {
-    localName: 'bg', namespaceUri: PRESENTATIONML_NS,
-  });
+  const background =
+    common
+    && findXmlChild(common, {
+      localName: 'bg',
+      namespaceUri: PRESENTATIONML_NS,
+    });
   if (!background) return { found: false, image: null };
   const properties = findXmlChild(background, {
-    localName: 'bgPr', namespaceUri: PRESENTATIONML_NS,
+    localName: 'bgPr',
+    namespaceUri: PRESENTATIONML_NS,
   });
-  const image = properties && findXmlChild(properties, {
-    localName: 'blipFill', namespaceUri: DRAWINGML_NS,
-  });
+  const image =
+    properties
+    && findXmlChild(properties, {
+      localName: 'blipFill',
+      namespaceUri: DRAWINGML_NS,
+    });
   return { found: true, image: image ? background : null };
 }
 
@@ -87,29 +95,25 @@ function inheritedImageBackground(doc: EditDoc, record: SlideRecord): XmlElement
   return null;
 }
 
-function patchBackground(
-  document: XmlDocument,
-  doc: EditDoc,
-  record: SlideRecord,
-): void {
+function patchBackground(document: XmlDocument, doc: EditDoc, record: SlideRecord): void {
   if (!own(record.ovr, 'background')) return;
   const fill = record.ovr.background;
   if (fill?.type === 'image') assertSlideImageFill(fill, `幻灯片 ${record.id} 的背景覆盖`);
   else assertVectorFill(fill, `幻灯片 ${record.id} 的背景覆盖`);
   const common = commonSlide(document, record);
   let background = findXmlChild(common, {
-    localName: 'bg', namespaceUri: PRESENTATIONML_NS,
+    localName: 'bg',
+    namespaceUri: PRESENTATIONML_NS,
   });
   if (!background) {
     const inherited = fill.type === 'image' ? inheritedImageBackground(doc, record) : null;
-    background = inherited
-      ? cloneXmlNodeWithNamespaceClosure(inherited)
-      : namespacedElement(common, PRESENTATIONML_NS, 'bg');
+    background = inherited ? cloneXmlNodeWithNamespaceClosure(inherited) : namespacedElement(common, PRESENTATIONML_NS, 'bg');
     if (inherited) remapRelationshipIds(background, record);
     insertXmlInOrder(common, background);
   }
   let properties = findXmlChild(background, {
-    localName: 'bgPr', namespaceUri: PRESENTATIONML_NS,
+    localName: 'bgPr',
+    namespaceUri: PRESENTATIONML_NS,
   });
   for (const child of [...xmlElementChildren(background)]) {
     if (child.namespaceUri === PRESENTATIONML_NS && child.localName === 'bgRef') {
@@ -123,9 +127,7 @@ function patchBackground(
   if (fill.type === 'image') {
     const imageBackground = record.backgroundImage;
     if (!imageBackground) throw new Error(`幻灯片 ${record.id} 的图片背景缺少关系`);
-    patchBackgroundImageFill(
-      properties, fill, imageBackground.imageRelationshipId, imageBackground.sourcePart !== undefined,
-    );
+    patchBackgroundImageFill(properties, fill, imageBackground.imageRelationshipId, imageBackground.sourcePart !== undefined);
   } else {
     removeDrawingFillChildren(properties);
     appendVectorFill(properties, fill);
@@ -140,9 +142,7 @@ export function patchSlideProperties(document: XmlDocument, doc: EditDoc, record
   }
   if (own(record.ovr, 'transition')) {
     const layoutTransition = record.layoutId ? doc.layouts[record.layoutId]?.transition : undefined;
-    patchSlideTransition(
-      document, record.ovr.transition!, layoutTransition !== undefined,
-    );
+    patchSlideTransition(document, record.ovr.transition!, layoutTransition !== undefined);
   }
   if (own(record.ovr, 'animations')) {
     patchSlideAnimations(document, doc, record, record.ovr.animations!);

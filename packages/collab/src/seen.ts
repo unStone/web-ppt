@@ -11,21 +11,33 @@ export interface SeenState {
 export type SeenMap = Map<string, SeenState>;
 
 export function restoreSeen(entries: readonly CollabSeenCheckpoint[] = []): SeenMap {
-  return new Map(entries.map((entry) => [entry.replicaId, {
-    contiguous: entry.contiguous,
-    sparse: new Set(entry.sparse),
-  }]));
+  return new Map(
+    entries.map((entry) => [
+      entry.replicaId,
+      {
+        contiguous: entry.contiguous,
+        sparse: new Set(entry.sparse),
+      },
+    ]),
+  );
 }
 
 export function cloneSeen(seen: SeenMap): SeenMap {
-  return new Map([...seen].map(([replicaId, state]) => [replicaId, {
-    contiguous: state.contiguous, sparse: new Set(state.sparse),
-  }]));
+  return new Map(
+    [...seen].map(([replicaId, state]) => [
+      replicaId,
+      {
+        contiguous: state.contiguous,
+        sparse: new Set(state.sparse),
+      },
+    ]),
+  );
 }
 
 export function checkpointSeen(seen: SeenMap): CollabSeenCheckpoint[] {
   return [...seen].map(([replicaId, state]) => ({
-    replicaId, contiguous: state.contiguous,
+    replicaId,
+    contiguous: state.contiguous,
     sparse: [...state.sparse].sort((left, right) => left - right),
   }));
 }

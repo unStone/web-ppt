@@ -1,21 +1,24 @@
-import {
-  listSections, queryElementAltText, querySlideSize,
-} from '@web-ppt/edit-core';
+import { listSections, queryElementAltText, querySlideSize } from '@web-ppt/edit-core';
 import type {
-  AddSectionCommand, DistributeElementsCommand, Editor, ElementAltTextState, ElementId,
-  SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand, SlideSizeState,
+  AddSectionCommand,
+  DistributeElementsCommand,
+  Editor,
+  ElementAltTextState,
+  ElementId,
+  SectionId,
+  SectionRecord,
+  SetAltTextCommand,
+  SetSlideSizeCommand,
+  SlideSizeState,
 } from '@web-ppt/edit-core';
 
 /** 挂载视图与 headless adapter 共享同一套公共命令语义。 */
 export class CommonObjectSlideCommands {
   constructor(private readonly editor: Editor) {}
 
-  distribute(
-    enabled: boolean, axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[],
-  ): boolean {
+  distribute(enabled: boolean, axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[]): boolean {
     if (!this.writable(enabled)) return false;
-    const targets = ids ?? (this.editor.selection.kind === 'elements'
-      ? this.editor.selection.ids : null);
+    const targets = ids ?? (this.editor.selection.kind === 'elements' ? this.editor.selection.ids : null);
     if (!targets) return false;
     this.editor.exec({ type: 'DistributeElements', ids: targets, axis });
     return true;
@@ -26,14 +29,14 @@ export class CommonObjectSlideCommands {
     return target ? queryElementAltText(this.editor.doc, target) : null;
   }
 
-  setAltText(
-    enabled: boolean, value: Pick<SetAltTextCommand, 'title' | 'descr'>, id?: ElementId,
-  ): boolean {
+  setAltText(enabled: boolean, value: Pick<SetAltTextCommand, 'title' | 'descr'>, id?: ElementId): boolean {
     const target = this.selectedElementId(id);
     return target ? this.exec(enabled, { type: 'SetAltText', id: target, ...value }) : false;
   }
 
-  listSections(): SectionRecord[] { return listSections(this.editor.doc); }
+  listSections(): SectionRecord[] {
+    return listSections(this.editor.doc);
+  }
 
   addSection(enabled: boolean, value: Omit<AddSectionCommand, 'type'>): SectionRecord | null {
     if (!this.writable(enabled)) return null;
@@ -54,13 +57,17 @@ export class CommonObjectSlideCommands {
     return this.exec(enabled, { type: 'RemoveSection', id });
   }
 
-  querySlideSize(): SlideSizeState { return querySlideSize(this.editor.doc); }
+  querySlideSize(): SlideSizeState {
+    return querySlideSize(this.editor.doc);
+  }
 
   setSlideSize(enabled: boolean, value: Pick<SetSlideSizeCommand, 'w' | 'h' | 'fit'>): boolean {
     return this.exec(enabled, { type: 'SetSlideSize', ...value });
   }
 
-  private writable(enabled: boolean): boolean { return enabled && !this.editor.doc.meta.readonly; }
+  private writable(enabled: boolean): boolean {
+    return enabled && !this.editor.doc.meta.readonly;
+  }
 
   private exec(enabled: boolean, command: Parameters<Editor['exec']>[0]): boolean {
     if (!this.writable(enabled)) return false;

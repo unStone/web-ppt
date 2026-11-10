@@ -1,6 +1,4 @@
-import type {
-  BuiltinTemplateId, BuiltinTemplatePreviewToken,
-} from '@web-ppt/edit-core/templates';
+import type { BuiltinTemplateId, BuiltinTemplatePreviewToken } from '@web-ppt/edit-core/templates';
 import { createBlankPptx } from '@web-ppt/edit-core/generate';
 import { createPptxFromTemplate, listBuiltinTemplates } from '@web-ppt/edit-core/templates';
 import { message, type SiteMessage } from './i18n/message';
@@ -43,14 +41,17 @@ const pickerCss = `
 @media(max-width:680px){.template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}`;
 
 function pickerElements(): {
-  dialog: HTMLDialogElement; grid: HTMLElement; close: HTMLButtonElement;
+  dialog: HTMLDialogElement;
+  grid: HTMLElement;
+  close: HTMLButtonElement;
 } {
   const existing = document.querySelector<HTMLDialogElement>('#templateDialog');
-  if (existing) return {
-    dialog: existing,
-    grid: existing.querySelector<HTMLElement>('#templateGrid')!,
-    close: existing.querySelector<HTMLButtonElement>('#closeTemplateDialog')!,
-  };
+  if (existing)
+    return {
+      dialog: existing,
+      grid: existing.querySelector<HTMLElement>('#templateGrid')!,
+      close: existing.querySelector<HTMLButtonElement>('#closeTemplateDialog')!,
+    };
   const style = document.createElement('style');
   style.dataset.templatePicker = '';
   style.textContent = pickerCss;
@@ -83,14 +84,14 @@ function pickerElements(): {
 }
 
 const blankPreview: BuiltinTemplatePreviewToken = {
-  surface: '#FFFFFF', foreground: '#1F3864', accent: '#4472C4', secondary: '#70AD47', motif: 'rule',
+  surface: '#FFFFFF',
+  foreground: '#1F3864',
+  accent: '#4472C4',
+  secondary: '#70AD47',
+  motif: 'rule',
 };
 
-function card(
-  choice: NewDocumentChoice,
-  description: SiteMessage,
-  preview: BuiltinTemplatePreviewToken,
-): HTMLButtonElement {
+function card(choice: NewDocumentChoice, description: SiteMessage, preview: BuiltinTemplatePreviewToken): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'template-card';
@@ -119,22 +120,23 @@ export async function chooseNewDocument(signal?: AbortSignal): Promise<NewDocume
   const choices = [
     {
       choice: { kind: 'blank', name: message('空白') } as const,
-      description: message('兼容原有最小文稿'), preview: blankPreview,
+      description: message('兼容原有最小文稿'),
+      preview: blankPreview,
     },
     ...listBuiltinTemplates().map((template) => ({
       choice: { kind: 'template', id: template.id, name: message(labels[template.id].name) } as const,
-      description: message(labels[template.id].description), preview: template.preview,
+      description: message(labels[template.id].description),
+      preview: template.preview,
     })),
   ];
-  grid.replaceChildren(...choices.map(({ choice, description, preview }) =>
-    card(choice, description, preview)));
+  grid.replaceChildren(...choices.map(({ choice, description, preview }) => card(choice, description, preview)));
   const selected = await new Promise<NewDocumentChoice | null>((resolve) => {
     let selected: NewDocumentChoice | null = null;
     const select = (event: Event): void => {
       const button = (event.target as Element).closest<HTMLButtonElement>('[data-template-id]');
       if (!button) return;
-      selected = choices.find(({ choice }) =>
-        (choice.kind === 'blank' ? 'blank' : choice.id) === button.dataset.templateId)?.choice ?? null;
+      selected =
+        choices.find(({ choice }) => (choice.kind === 'blank' ? 'blank' : choice.id) === button.dataset.templateId)?.choice ?? null;
       dialog.close();
     };
     const restoreLanguageControl = moveLanguageControl(dialog.querySelector('.template-dialog-head')!);
@@ -151,13 +153,21 @@ export async function chooseNewDocument(signal?: AbortSignal): Promise<NewDocume
       dialog.remove();
       resolve(selected);
     };
-    const abort = () => { selected = null; dialog.close(); finish(); };
+    const abort = () => {
+      selected = null;
+      dialog.close();
+      finish();
+    };
     grid.addEventListener('click', select);
     dialog.addEventListener('close', finish);
     signal?.addEventListener('abort', abort, { once: true });
     close.onclick = () => dialog.close();
-    try { dialog.showModal(); }
-    catch (error) { finish(); throw error; }
+    try {
+      dialog.showModal();
+    } catch (error) {
+      finish();
+      throw error;
+    }
     grid.querySelector<HTMLButtonElement>('button')?.focus();
   });
   if (!selected) return null;

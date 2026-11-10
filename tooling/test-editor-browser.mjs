@@ -70,18 +70,31 @@ async function waitForExternalLoadRelease() {
 }
 
 async function launch(url) {
-  child = spawn(browser, [
-    '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-    `--user-data-dir=${profile}`, '--remote-debugging-port=0', url,
-  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  child = spawn(
+    browser,
+    [
+      '--headless=new',
+      '--no-sandbox',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      `--user-data-dir=${profile}`,
+      '--remote-debugging-port=0',
+      url,
+    ],
+    { stdio: ['ignore', 'ignore', 'pipe'] },
+  );
   let spawnError;
-  child.once('error', (error) => { spawnError = error; });
-  child.stderr.on('data', (chunk) => { diagnostics += chunk.toString('utf8'); });
+  child.once('error', (error) => {
+    spawnError = error;
+  });
+  child.stderr.on('data', (chunk) => {
+    diagnostics += chunk.toString('utf8');
+  });
   // 端口以 DevToolsActivePort 为准：CI 负载高时 stderr 的监听日志可能迟于固定窗口。
   return waitForDevToolsPort({
     profile,
     isRunning: () => !spawnError && browserRunning(),
-    diagnostics: () => spawnError ? `${spawnError.message}\n${diagnostics}` : diagnostics,
+    diagnostics: () => (spawnError ? `${spawnError.message}\n${diagnostics}` : diagnostics),
   });
 }
 
@@ -91,7 +104,9 @@ async function pageTarget(port, url) {
       const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) => response.json());
       const target = targets.find((candidate) => candidate.type === 'page' && candidate.url === url);
       if (target) return target;
-    } catch { /* DevTools 端口刚出现时可能还没开始响应。 */ }
+    } catch {
+      /* DevTools 端口刚出现时可能还没开始响应。 */
+    }
     await delay(100);
   }
   throw new Error('Chrome 没有创建编辑契约页面');
@@ -103,16 +118,13 @@ function browserRunning() {
 
 async function waitForBrowserExit(milliseconds) {
   if (!browserRunning()) return true;
-  return Promise.race([
-    new Promise((resolveExit) => child.once('close', () => resolveExit(true))),
-    delay(milliseconds).then(() => false),
-  ]);
+  return Promise.race([new Promise((resolveExit) => child.once('close', () => resolveExit(true))), delay(milliseconds).then(() => false)]);
 }
 
 async function stopBrowser() {
   if (browserRunning()) {
     child.kill('SIGTERM');
-    if (!await waitForBrowserExit(2000) && browserRunning()) {
+    if (!(await waitForBrowserExit(2000)) && browserRunning()) {
       child.kill('SIGKILL');
       await waitForBrowserExit(2000);
     }
@@ -137,14 +149,17 @@ async function runBrowserAttempt(number, url) {
     const result = await browserResult(target.webSocketDebuggerUrl);
     if (result.status === 'pass') return result;
     return {
-      functionalStatus: 'fail', functionalError: result.text,
-      performanceFailures: [], environment: { disturbed: false, reasons: [] },
+      functionalStatus: 'fail',
+      functionalError: result.text,
+      performanceFailures: [],
+      environment: { disturbed: false, reasons: [] },
     };
   } catch (error) {
     return {
       functionalStatus: 'fail',
       functionalError: error instanceof Error ? error.stack : String(error),
-      performanceFailures: [], environment: { disturbed: false, reasons: [] },
+      performanceFailures: [],
+      environment: { disturbed: false, reasons: [] },
     };
   } finally {
     await stopBrowser();
@@ -160,8 +175,7 @@ try {
   const attempts = await runPerformanceAttempts({
     attempt: (number) => runBrowserAttempt(number, url),
     onRetry: async (result) => {
-      console.warn('  Chrome · 环境受扰，自动重测性能契约（1/1）：'
-        + result.environment.reasons.join('；'));
+      console.warn('  Chrome · 环境受扰，自动重测性能契约（1/1）：' + result.environment.reasons.join('；'));
       await waitForExternalLoadRelease();
     },
   });
@@ -174,103 +188,112 @@ try {
   }
   if (result.performanceFailures.length > 0) {
     const failures = result.performanceFailures
-      .map((failure) => `${failure.name} ${failure.actual.toFixed(3)}ms > ${failure.budget}ms`).join('；');
-    const baseline = [['测前', result.environment.before], ['测中', result.environment.during]]
-      .map(([phase, sample]) => `${phase} rAF ${sample.p95.toFixed(1)}/${sample.max.toFixed(1)}ms，`
-        + `固定计算 ${sample.computeP50.toFixed(1)}ms`).join('；');
+      .map((failure) => `${failure.name} ${failure.actual.toFixed(3)}ms > ${failure.budget}ms`)
+      .join('；');
+    const baseline = [
+      ['测前', result.environment.before],
+      ['测中', result.environment.during],
+    ]
+      .map(
+        ([phase, sample]) =>
+          `${phase} rAF ${sample.p95.toFixed(1)}/${sample.max.toFixed(1)}ms，` + `固定计算 ${sample.computeP50.toFixed(1)}ms`,
+      )
+      .join('；');
     const environment = result.environment.disturbed
       ? `受扰（${result.environment.reasons.join('；')}；${baseline}）`
       : `安静（${baseline}）`;
     throw new Error(`真实浏览器性能契约未通过：${failures}\n环境自检：${environment}`);
   }
-  console.log(`  Chrome · 点选反馈 p95 ${result.hitP95}ms · 60 元素提交 p95 ${result.p95}ms`
-    + ` · 完整选择框 p95 ${result.selectionP95}ms · OBB/手柄最大偏差`
-    + ` ${result.spaceError}/${result.handleError}px`
-    + ` · 嵌套拖动偏差 ${result.nestedDragError}px`
-    + ` · 拖动帧 p95 ${result.dragP95}ms`
-    + ` · 顶点偏差/p95 ${result.vertexError}px/${result.vertexP95}ms`
-    + ` · 预设调节柄偏差/p95 ${result.presetAdjustmentError}px/${result.presetAdjustmentP95}ms`
-    + ` · 对齐偏差/p95 ${result.alignError}px/${result.alignP95}ms`
-    + ` · 分布偏差/p95 ${result.commonDistributionError}px/${result.commonDistributionP95}ms`
-    + ` · 页面尺寸反馈 p95 ${result.commonSizeP95}ms`
-    + ` · 触屏细描边命中 ${result.touchHitDistance}px`
-    + ` · 缩放/命中偏差 ${result.resizeError}/${result.resizeHitError}px`
-    + ` · 缩放帧 p95 ${result.resizeP95}ms`
-    + ` · 45°×60 p95 ${result.resizeSingularP95}ms`
-    + ` · 旋转嵌套/非等比组合/多选偏差 ${result.rotationNestedError}/${result.rotationNonUniformError}`
-    + `/${result.rotationMultiError}px`
-    + ` · 旋转60 p95 ${result.rotationP95}ms`
-    + ` · 吸附阈值/组内/等距偏差 ${result.snapThresholdError}/${result.snapGroupError}/${result.snapSpacingError}px`
-    + ` · 吸附60 p95 ${result.snapP95}ms`
-    + ` · 框选偏差 ${result.marqueeError}px · 框选60 首帧/p95 `
-    + `${result.marqueeFirstFrame}/${result.marqueeP95}ms`
-    + ` · 键盘微移偏差 ${result.keyboardError}px · 键盘60 p95 ${result.keyboardP95}ms`
-    + ` · 撤销/重做60 p95 ${result.historyUndoP95}/${result.historyRedoP95}ms`
-    + ` · 删除/撤销/重做60 p95 ${result.deleteP95}/${result.deleteUndoP95}/${result.deleteRedoP95}ms`
-    + ` · 层级/撤销/重做60 p95 ${result.layerP95}/${result.layerUndoP95}/${result.layerRedoP95}ms`
-    + ` · 组合/解组60 p95 ${result.groupP95}/${result.ungroupP95}ms`
-    + ` · Tab60 p95 ${result.tabP95}ms`
-    + ` · 修饰点选/框选60 p95 ${result.multiselectClickP95}/${result.multiselectMarqueeP95}ms`
-    + ` · 剪贴板60 p95 ${result.clipboardPasteP95}ms`
-    + ` · 文字输入 p95 ${result.textP95}ms`
-    + ` · 段落格式 p95 ${result.paragraphP95}ms`
-    + ` · 富文本2000 p95 ${result.richTextPasteP95}ms`
-    + ` · engine2000 p95 ${result.engineTextP95}ms/行盒偏差 ${result.engineLineError}px`
-    + ` · auto engine ${result.engineAutoProbe}`
-    + ` · table20×10 ${result.tableCellTextP95}ms/末格追加 ${result.tableInsertRowP95}ms`
-    + `/贴合偏差 ${result.tableCellGeometryError}px`
-    + ` · 表格60格结构反馈 p95 ${result.tableStructureP95}ms`
-    + ` · autofit browser/engine/cell ${result.autofitBrowserP95}/${result.autofitEngineP95}/${result.autofitCellP95}ms`
-    + ` · spAutoFit browser/engine ${result.shapeAutofitBrowserP95}/${result.shapeAutofitEngineP95}ms`
-    + `/frame ${result.shapeAutofitFrameError}px`
-    + ` · bodyProps browser/engine ${result.bodyPropsBrowserP95}/${result.bodyPropsEngineP95}ms`
-    + `/frame ${result.bodyPropsFrameError}px`
-    + ` · 新增形状偏差/p95 ${result.addShapeError}px/${result.addShapeP95}ms`
-    + ` · 新增图片偏差/p95 ${result.addImageError}px/${result.addImageP95}ms`
-    + ` · 媒体真实点击播放完成 ${result.mediaPlayback}`
-    + ` · ${result.imageCropReport}`
-    + ` · 新增页${result.addSlidePages}页偏差/p95 ${result.addSlideError}px/${result.addSlideP95}ms`
-    + ` · 重排页${result.moveSlidePages}页 p95 ${result.moveSlideP95}ms`
-    + ` · 换版式${result.changeLayoutPages}页单页完整上屏 p95 ${result.changeLayoutP95}ms`
-    + ` · 主题${result.themePages}页局部整页上屏 p95 ${result.themeP95}ms`
-    + ` · 母版${result.masterPages}页跨版式传播`
-    + ` · 0.7 跨能力模板 ${result.v07Integration}/3`
-    + ` · 新增20×10表格偏差/p95 ${result.addTableError}px/${result.addTableP95}ms`
-    + ` · 超链接提交/路由 p95 ${result.hyperlinkCommitP95}/${result.hyperlinkRouteP95}ms`
-    + ` · 页面属性200页批量/单页上屏 p95 ${result.slidePropertiesBatchP95}/${result.slidePropertiesRenderP95}ms`
-    + ` · 页面图片背景200页模型/完整上屏 p95 `
-    + `${result.slideImageBackgroundModelP95}/${result.slideImageBackgroundP95}ms`
-    + ` · 图片 ZIP 页数/并发/释放 ${result.imageZip}`
-    + ` · 40种切换启动/200页批量/单页反馈 p95 ${result.transitionPreviewP95}/`
-    + `${result.transitionBatchP95}/${result.transitionFeedbackP95}ms`
-    + ` · 60元素动画启动/200页批量/单页反馈 p95 ${result.animationPreviewP95}/`
-    + `${result.animationBatchP95}/${result.animationFeedbackP95}ms`
-    + ` · 备注2000 p95 ${result.slideNotesP95}ms`
-    + ` · IndexedDB恢复1000帧 写入/恢复 ${result.recoveryPersistMs}/${result.recoveryRestoreMs}ms`
-    + `/分块 ${result.recoveryChunks}/同步增量 ${result.recoverySyncOverhead}ms`
-    + `/50MB指纹 ${result.recoveryFingerprintMs}ms`
-    + ` · 选择窗格60锁定往返 p95 ${result.selectionPaneP95}ms`
-    + ` · 格式刷60完整反馈 p95 ${result.formatPainterP95}ms`
-    + ` · 查找替换200页索引/查询/增量 ${result.findReplaceBuildMs}/`
-    + `${result.findReplaceQueryP95}/${result.findReplaceIncrementalMs}ms`
-    + ` · 查找替换60导航/替换 p95 ${result.findReplaceNavigationP95}/`
-    + `${result.findReplaceReplaceP95}ms`
-    + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
-    + ` · trusted touch ${result.trustedTouch} distance/center/pan `
-    + `${Number(result.touchZoomError).toFixed(3)}/${Number(result.touchCenterError).toFixed(3)}/`
-    + `${Number(result.touchPanError).toFixed(3)}，60元素 p95 ${Number(result.touchP95).toFixed(3)}ms`
-    + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
-    + `${result.trustedSnap}/${result.trustedMarquee}`
-    + ` · trusted keyboard/tab/history/delete ${result.trustedKeyboard}/${result.trustedTab}/`
-    + `${result.trustedHistory}/${result.trustedDelete}/${result.trustedLayer}/${result.trustedGroup}`
-    + ` · trusted multiselect ${result.trustedModifierSelection}`
-    + ` · trusted clipboard ${result.trustedClipboard}`
-    + ` · trusted rich clipboard ${result.trustedRichTextClipboard}`
-    + ` · trusted appendix B ${result.trustedShortcutAudit}`
-    + ` · trusted text/IME ${result.trustedText}`
-    + ` · trusted engine text/IME ${result.trustedEngineText}`
-    + ` · trusted table cell text/IME ${result.trustedTableCellText}`
-    + ` · ${result.fontFaces} 个嵌入 @font-face`);
+  console.log(
+    `  Chrome · 点选反馈 p95 ${result.hitP95}ms · 60 元素提交 p95 ${result.p95}ms`
+      + ` · 完整选择框 p95 ${result.selectionP95}ms · OBB/手柄最大偏差`
+      + ` ${result.spaceError}/${result.handleError}px`
+      + ` · 嵌套拖动偏差 ${result.nestedDragError}px`
+      + ` · 拖动帧 p95 ${result.dragP95}ms`
+      + ` · 顶点偏差/p95 ${result.vertexError}px/${result.vertexP95}ms`
+      + ` · 预设调节柄偏差/p95 ${result.presetAdjustmentError}px/${result.presetAdjustmentP95}ms`
+      + ` · 对齐偏差/p95 ${result.alignError}px/${result.alignP95}ms`
+      + ` · 分布偏差/p95 ${result.commonDistributionError}px/${result.commonDistributionP95}ms`
+      + ` · 页面尺寸反馈 p95 ${result.commonSizeP95}ms`
+      + ` · 触屏细描边命中 ${result.touchHitDistance}px`
+      + ` · 缩放/命中偏差 ${result.resizeError}/${result.resizeHitError}px`
+      + ` · 缩放帧 p95 ${result.resizeP95}ms`
+      + ` · 45°×60 p95 ${result.resizeSingularP95}ms`
+      + ` · 旋转嵌套/非等比组合/多选偏差 ${result.rotationNestedError}/${result.rotationNonUniformError}`
+      + `/${result.rotationMultiError}px`
+      + ` · 旋转60 p95 ${result.rotationP95}ms`
+      + ` · 吸附阈值/组内/等距偏差 ${result.snapThresholdError}/${result.snapGroupError}/${result.snapSpacingError}px`
+      + ` · 吸附60 p95 ${result.snapP95}ms`
+      + ` · 框选偏差 ${result.marqueeError}px · 框选60 首帧/p95 `
+      + `${result.marqueeFirstFrame}/${result.marqueeP95}ms`
+      + ` · 键盘微移偏差 ${result.keyboardError}px · 键盘60 p95 ${result.keyboardP95}ms`
+      + ` · 撤销/重做60 p95 ${result.historyUndoP95}/${result.historyRedoP95}ms`
+      + ` · 删除/撤销/重做60 p95 ${result.deleteP95}/${result.deleteUndoP95}/${result.deleteRedoP95}ms`
+      + ` · 层级/撤销/重做60 p95 ${result.layerP95}/${result.layerUndoP95}/${result.layerRedoP95}ms`
+      + ` · 组合/解组60 p95 ${result.groupP95}/${result.ungroupP95}ms`
+      + ` · Tab60 p95 ${result.tabP95}ms`
+      + ` · 修饰点选/框选60 p95 ${result.multiselectClickP95}/${result.multiselectMarqueeP95}ms`
+      + ` · 剪贴板60 p95 ${result.clipboardPasteP95}ms`
+      + ` · 文字输入 p95 ${result.textP95}ms`
+      + ` · 段落格式 p95 ${result.paragraphP95}ms`
+      + ` · 富文本2000 p95 ${result.richTextPasteP95}ms`
+      + ` · engine2000 p95 ${result.engineTextP95}ms/行盒偏差 ${result.engineLineError}px`
+      + ` · auto engine ${result.engineAutoProbe}`
+      + ` · table20×10 ${result.tableCellTextP95}ms/末格追加 ${result.tableInsertRowP95}ms`
+      + `/贴合偏差 ${result.tableCellGeometryError}px`
+      + ` · 表格60格结构反馈 p95 ${result.tableStructureP95}ms`
+      + ` · autofit browser/engine/cell ${result.autofitBrowserP95}/${result.autofitEngineP95}/${result.autofitCellP95}ms`
+      + ` · spAutoFit browser/engine ${result.shapeAutofitBrowserP95}/${result.shapeAutofitEngineP95}ms`
+      + `/frame ${result.shapeAutofitFrameError}px`
+      + ` · bodyProps browser/engine ${result.bodyPropsBrowserP95}/${result.bodyPropsEngineP95}ms`
+      + `/frame ${result.bodyPropsFrameError}px`
+      + ` · 新增形状偏差/p95 ${result.addShapeError}px/${result.addShapeP95}ms`
+      + ` · 新增图片偏差/p95 ${result.addImageError}px/${result.addImageP95}ms`
+      + ` · 媒体真实点击播放完成 ${result.mediaPlayback}`
+      + ` · ${result.imageCropReport}`
+      + ` · 新增页${result.addSlidePages}页偏差/p95 ${result.addSlideError}px/${result.addSlideP95}ms`
+      + ` · 重排页${result.moveSlidePages}页 p95 ${result.moveSlideP95}ms`
+      + ` · 换版式${result.changeLayoutPages}页单页完整上屏 p95 ${result.changeLayoutP95}ms`
+      + ` · 主题${result.themePages}页局部整页上屏 p95 ${result.themeP95}ms`
+      + ` · 母版${result.masterPages}页跨版式传播`
+      + ` · 0.7 跨能力模板 ${result.v07Integration}/3`
+      + ` · 新增20×10表格偏差/p95 ${result.addTableError}px/${result.addTableP95}ms`
+      + ` · 超链接提交/路由 p95 ${result.hyperlinkCommitP95}/${result.hyperlinkRouteP95}ms`
+      + ` · 页面属性200页批量/单页上屏 p95 ${result.slidePropertiesBatchP95}/${result.slidePropertiesRenderP95}ms`
+      + ` · 页面图片背景200页模型/完整上屏 p95 `
+      + `${result.slideImageBackgroundModelP95}/${result.slideImageBackgroundP95}ms`
+      + ` · 图片 ZIP 页数/并发/释放 ${result.imageZip}`
+      + ` · 40种切换启动/200页批量/单页反馈 p95 ${result.transitionPreviewP95}/`
+      + `${result.transitionBatchP95}/${result.transitionFeedbackP95}ms`
+      + ` · 60元素动画启动/200页批量/单页反馈 p95 ${result.animationPreviewP95}/`
+      + `${result.animationBatchP95}/${result.animationFeedbackP95}ms`
+      + ` · 备注2000 p95 ${result.slideNotesP95}ms`
+      + ` · IndexedDB恢复1000帧 写入/恢复 ${result.recoveryPersistMs}/${result.recoveryRestoreMs}ms`
+      + `/分块 ${result.recoveryChunks}/同步增量 ${result.recoverySyncOverhead}ms`
+      + `/50MB指纹 ${result.recoveryFingerprintMs}ms`
+      + ` · 选择窗格60锁定往返 p95 ${result.selectionPaneP95}ms`
+      + ` · 格式刷60完整反馈 p95 ${result.formatPainterP95}ms`
+      + ` · 查找替换200页索引/查询/增量 ${result.findReplaceBuildMs}/`
+      + `${result.findReplaceQueryP95}/${result.findReplaceIncrementalMs}ms`
+      + ` · 查找替换60导航/替换 p95 ${result.findReplaceNavigationP95}/`
+      + `${result.findReplaceReplaceP95}ms`
+      + ` · 可信文字输入 p95 ${Number(result.trustedTextP95).toFixed(3)}ms`
+      + ` · trusted touch ${result.trustedTouch} distance/center/pan `
+      + `${Number(result.touchZoomError).toFixed(3)}/${Number(result.touchCenterError).toFixed(3)}/`
+      + `${Number(result.touchPanError).toFixed(3)}，60元素 p95 ${Number(result.touchP95).toFixed(3)}ms`
+      + ` · pointer capture ${result.trustedDrag}/${result.trustedResize}/${result.trustedRotation}/`
+      + `${result.trustedSnap}/${result.trustedMarquee}`
+      + ` · trusted keyboard/tab/history/delete ${result.trustedKeyboard}/${result.trustedTab}/`
+      + `${result.trustedHistory}/${result.trustedDelete}/${result.trustedLayer}/${result.trustedGroup}`
+      + ` · trusted multiselect ${result.trustedModifierSelection}`
+      + ` · trusted clipboard ${result.trustedClipboard}`
+      + ` · trusted rich clipboard ${result.trustedRichTextClipboard}`
+      + ` · trusted appendix B ${result.trustedShortcutAudit}`
+      + ` · trusted text/IME ${result.trustedText}`
+      + ` · trusted engine text/IME ${result.trustedEngineText}`
+      + ` · trusted table cell text/IME ${result.trustedTableCellText}`
+      + ` · ${result.fontFaces} 个嵌入 @font-face`,
+  );
 } catch (error) {
   console.error(error instanceof Error ? error.stack : String(error));
   throw error;

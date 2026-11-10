@@ -16,8 +16,7 @@ let prerendered: Sample[] = [];
 const inlined = new Set<string>();
 
 /** 外部数据一律转义后才拼进 HTML */
-const esc = (v: string): string =>
-  v.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+const esc = (v: string): string => v.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
 /**
  * 一张样本卡的静态形态，与 src/samples.ts 里 card() 生成的 DOM 保持一致。
@@ -34,15 +33,15 @@ function cardHtml(s: Sample): string {
     credit += `${credit ? ' · ' : ''}<a data-site-message href="${esc(s.source)}" target="_blank" rel="noopener noreferrer nofollow">出处</a>`;
   }
   return (
-    `<article class="sample-card" data-file="${esc(s.file)}" data-url="${esc(s.url)}">` +
-    `<h3>${esc(s.title)}</h3>` +
-    (s.highlight ? `<p class="sample-highlight">${esc(s.highlight)}</p>` : '') +
-    '<div class="sample-foot">' +
-    '<button class="chip act" data-preview data-site-message>预览</button>' +
-    `<a class="chip" data-site-message href="./?sample=${encodeURIComponent(s.file)}" title="带缩略图栏与演示的完整查看器">在首页打开</a>` +
-    '</div>' +
-    (credit ? `<p class="sample-credit">${credit}</p>` : '') +
-    '</article>'
+    `<article class="sample-card" data-file="${esc(s.file)}" data-url="${esc(s.url)}">`
+    + `<h3>${esc(s.title)}</h3>`
+    + (s.highlight ? `<p class="sample-highlight">${esc(s.highlight)}</p>` : '')
+    + '<div class="sample-foot">'
+    + '<button class="chip act" data-preview data-site-message>预览</button>'
+    + `<a class="chip" data-site-message href="./?sample=${encodeURIComponent(s.file)}" title="带缩略图栏与演示的完整查看器">在首页打开</a>`
+    + '</div>'
+    + (credit ? `<p class="sample-credit">${credit}</p>` : '')
+    + '</article>'
   );
 }
 
@@ -76,8 +75,7 @@ export default defineConfig({
           if (has('vite/modulepreload-polyfill')) return 'assets/preload-[hash].js';
           return 'assets/chunk-[hash].js';
         },
-        assetFileNames: (info) =>
-          info.name?.endsWith('.css') ? 'assets/style-[hash][extname]' : 'assets/[name]-[hash][extname]',
+        assetFileNames: (info) => (info.name?.endsWith('.css') ? 'assets/style-[hash][extname]' : 'assets/[name]-[hash][extname]'),
       },
     },
   },
@@ -125,7 +123,9 @@ export default defineConfig({
       name: 'inline-css',
       apply: 'build',
       enforce: 'post',
-      buildStart() { inlined.clear(); },
+      buildStart() {
+        inlined.clear();
+      },
       transformIndexHtml: {
         order: 'post',
         handler(html, ctx) {

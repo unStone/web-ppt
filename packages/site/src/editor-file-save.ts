@@ -6,14 +6,18 @@ export async function prepareFileSave(session: EditorSession) {
   const editor = session.editor;
   const confirm = editor.captureSavepoint();
   let changed = false;
-  const release = editor.subscribe(change => { if (change.source !== 'selection') changed = true; });
+  const release = editor.subscribe((change) => {
+    if (change.source !== 'selection') changed = true;
+  });
   try {
     const doc = editor.doc;
     const result = await (await import('@web-ppt/edit-core/save')).serializeEditDoc(doc);
     if (result.package !== doc.package) disposeOpcPackage(result.package);
     return {
       bytes: result.bytes,
-      get changed() { return changed || session.disposed; },
+      get changed() {
+        return changed || session.disposed;
+      },
       confirm(): boolean {
         if (session.disposed) return false;
         confirm();
@@ -21,7 +25,10 @@ export async function prepareFileSave(session: EditorSession) {
       },
       release,
     };
-  } catch (error) { release(); throw error; }
+  } catch (error) {
+    release();
+    throw error;
+  }
 }
 
 export async function writeLocalFile(handle: FileSystemFileHandle, bytes: Uint8Array): Promise<void> {
@@ -30,7 +37,11 @@ export async function writeLocalFile(handle: FileSystemFileHandle, bytes: Uint8A
     await writable.write(new Uint8Array(bytes));
     await writable.close();
   } catch (error) {
-    try { await writable.abort(); } catch { /* 保留原始交付错误，不用清理错误覆盖它。 */ }
+    try {
+      await writable.abort();
+    } catch {
+      /* 保留原始交付错误，不用清理错误覆盖它。 */
+    }
     throw error;
   }
 }

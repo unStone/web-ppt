@@ -1,7 +1,6 @@
 import type { TextBodyLayoutProperties } from './types';
 
-export type TextBodyEditableProperty =
-  | 'anchor' | 'insets' | 'wrap' | 'vert' | 'anchorCtr' | 'columns' | 'columnGap' | 'autoFit';
+export type TextBodyEditableProperty = 'anchor' | 'insets' | 'wrap' | 'vert' | 'anchorCtr' | 'columns' | 'columnGap' | 'autoFit';
 
 export const TEXT_BODY_PROPERTY_BITS: Readonly<Record<TextBodyEditableProperty, number>> = {
   anchor: 1 << 0,

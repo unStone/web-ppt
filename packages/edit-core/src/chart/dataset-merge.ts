@@ -32,14 +32,15 @@ function sanitizeDatasetRoot(merged: ChartDatasetState, source: ChartDatasetStat
     deferred = true;
   }
   for (const key of ['categories', 'series'] as const) {
-    try { assertChartDictionary(merged[key], `图表 ${key}`); } catch {
+    try {
+      assertChartDictionary(merged[key], `图表 ${key}`);
+    } catch {
       target[key] = structuredClone(source[key]);
       deferred = true;
     }
   }
   return deferred;
 }
-
 
 export function mergeChartDatasetState(source: ChartDatasetState, sparse: unknown) {
   if (sparse === undefined) {
@@ -51,16 +52,13 @@ export function mergeChartDatasetState(source: ChartDatasetState, sparse: unknow
   }
   const merged = structuredClone(source) as ChartDatasetState;
   overlayState(merged as unknown as Record<string, unknown>, sparse as Record<string, unknown>);
-  for (const item of Object.values(merged.series) as Array<ChartDatasetState['series'][ChartSeriesId]
-    & { pointsReady?: true }>) {
+  for (const item of Object.values(merged.series) as Array<ChartDatasetState['series'][ChartSeriesId] & { pointsReady?: true }>) {
     if (item.pointsReady !== true) continue;
     item.points ??= Object.create(null) as Record<ChartPointId, ChartPoint>;
     delete item.pointsReady;
   }
   let deferred = sanitizeDatasetRoot(merged, source);
-  deferred = validateMaterializedRecords(
-    merged.categories, merged.series, source.categories, source.series,
-  ) || deferred;
+  deferred = validateMaterializedRecords(merged.categories, merged.series, source.categories, source.series) || deferred;
   reconcileCategoryMatrix(merged);
   return { state: merged, deferred };
 }

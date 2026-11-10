@@ -6,9 +6,34 @@ import type { EditDoc, ElementFillState, ElementId } from './types';
 export type VectorFill = Exclude<Fill, { type: 'image' }>;
 
 export const SHAPE_PATTERN_PRESETS = [
-  'pct5', 'pct10', 'pct20', 'pct25', 'pct30', 'pct40', 'pct50', 'pct60', 'pct70', 'pct75',
-  'pct80', 'pct90', 'ltHorz', 'horz', 'dkHorz', 'ltVert', 'vert', 'dkVert', 'ltUpDiag',
-  'upDiag', 'ltDnDiag', 'dnDiag', 'smGrid', 'lgGrid', 'cross', 'diagCross', 'trellis', 'wave',
+  'pct5',
+  'pct10',
+  'pct20',
+  'pct25',
+  'pct30',
+  'pct40',
+  'pct50',
+  'pct60',
+  'pct70',
+  'pct75',
+  'pct80',
+  'pct90',
+  'ltHorz',
+  'horz',
+  'dkHorz',
+  'ltVert',
+  'vert',
+  'dkVert',
+  'ltUpDiag',
+  'upDiag',
+  'ltDnDiag',
+  'dnDiag',
+  'smGrid',
+  'lgGrid',
+  'cross',
+  'diagCross',
+  'trellis',
+  'wave',
 ] as const;
 const patternPresets = new Set<string>(SHAPE_PATTERN_PRESETS);
 
@@ -23,8 +48,12 @@ export function assertDrawingColor(value: unknown, label: string): asserts value
   }
   const channels = match.slice(2, 5).map(Number);
   const alpha = alphaText === undefined ? 1 : Number(alphaText);
-  if (channels.some((channel) => !Number.isFinite(channel) || channel < 0 || channel > 255)
-    || !Number.isFinite(alpha) || alpha < 0 || alpha > 1) {
+  if (
+    channels.some((channel) => !Number.isFinite(channel) || channel < 0 || channel > 255)
+    || !Number.isFinite(alpha)
+    || alpha < 0
+    || alpha > 1
+  ) {
     throw new Error(`${label} 的通道超出范围`);
   }
 }
@@ -38,10 +67,8 @@ export function normalizeDrawingColor(value: string): string {
   }
   const match = /^(rgb|rgba)\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d+(?:\.\d+)?|\.\d+)\s*)?\)$/i.exec(value)!;
   const channels = match.slice(2, 5).map(Number);
-  const alpha = match[1].toLowerCase() === 'rgba'
-    ? Math.round(Number(match[5]) * 1000) / 1000 : 1;
-  return alpha >= 1 ? `rgb(${channels.join(',')})`
-    : `rgba(${channels.join(',')},${alpha})`;
+  const alpha = match[1].toLowerCase() === 'rgba' ? Math.round(Number(match[5]) * 1000) / 1000 : 1;
+  return alpha >= 1 ? `rgb(${channels.join(',')})` : `rgba(${channels.join(',')},${alpha})`;
 }
 
 export function normalizeVectorFill(fill: VectorFill): VectorFill {
@@ -50,7 +77,8 @@ export function normalizeVectorFill(fill: VectorFill): VectorFill {
   if (fill.type === 'gradient') {
     const angle = fill.radial === true ? 0 : Math.round(fill.angle * 60000) / 60000;
     return {
-      type: 'gradient', angle,
+      type: 'gradient',
+      angle,
       stops: fill.stops.map((stop) => ({
         pos: Math.round(stop.pos * 100000) / 100000,
         color: normalizeDrawingColor(stop.color),
@@ -59,7 +87,9 @@ export function normalizeVectorFill(fill: VectorFill): VectorFill {
     };
   }
   return {
-    type: 'pattern', fg: normalizeDrawingColor(fill.fg), bg: normalizeDrawingColor(fill.bg),
+    type: 'pattern',
+    fg: normalizeDrawingColor(fill.fg),
+    bg: normalizeDrawingColor(fill.bg),
     preset: fill.preset,
   };
 }
@@ -79,10 +109,14 @@ export function assertVectorFill(value: unknown, label: string): asserts value i
   if (type === 'gradient') {
     assertDataObject(value, ['type', 'angle', 'stops', 'radial'], label);
     const gradient = value as { angle?: unknown; stops?: unknown; radial?: unknown };
-    const angleUnits = typeof gradient.angle === 'number'
-      ? Math.round(gradient.angle * 60000) : Number.NaN;
-    if (typeof gradient.angle !== 'number' || !Number.isFinite(gradient.angle)
-      || !Number.isSafeInteger(angleUnits) || angleUnits < 0 || angleUnits >= 21600000) {
+    const angleUnits = typeof gradient.angle === 'number' ? Math.round(gradient.angle * 60000) : Number.NaN;
+    if (
+      typeof gradient.angle !== 'number'
+      || !Number.isFinite(gradient.angle)
+      || !Number.isSafeInteger(angleUnits)
+      || angleUnits < 0
+      || angleUnits >= 21600000
+    ) {
       throw new Error(`${label}.angle 必须是 0–360° 内可写回的有限角度`);
     }
     if (gradient.radial !== undefined && typeof gradient.radial !== 'boolean') {
@@ -96,8 +130,7 @@ export function assertVectorFill(value: unknown, label: string): asserts value i
       assertDataObject(stop, ['pos', 'color'], `${label}.stops[${index}]`);
       const pos = (stop as { pos?: unknown }).pos;
       const normalized = typeof pos === 'number' ? Math.round(pos * 100000) / 100000 : Number.NaN;
-      if (typeof pos !== 'number' || !Number.isFinite(pos) || pos < 0 || pos > 1
-        || normalized <= previous) {
+      if (typeof pos !== 'number' || !Number.isFinite(pos) || pos < 0 || pos > 1 || normalized <= previous) {
         throw new Error(`${label}.stops 必须按 0–1 严格递增`);
       }
       previous = normalized;

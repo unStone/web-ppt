@@ -12,12 +12,12 @@ import { createTemplateFillMeasurement, verifyTemplateFillFonts } from './lib/te
 
 const root = resolve(import.meta.dirname, '..');
 const directory = join(root, 'tooling/agent-eval/fixtures');
-const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 verifyTemplateFillFonts(root, assert);
 const measureText = createTemplateFillMeasurement(root);
 assert.equal(TASKS.length, 8);
-assert.equal(new Set(TASKS.map(task => task.id)).size, TASKS.length);
-assert.deepEqual(TASKS.map(task => task.kind).sort(), ['clean', ...LAYOUT_CHECKS].sort());
+assert.equal(new Set(TASKS.map((task) => task.id)).size, TASKS.length);
+assert.deepEqual(TASKS.map((task) => task.kind).sort(), ['clean', ...LAYOUT_CHECKS].sort());
 assert.throws(() => getTask('unknown-evaluation-task'), /unknown-evaluation-task/);
 assert.throws(() => buildFixture('unknown-evaluation-task'), /unknown-evaluation-task/);
 assert.throws(() => buildReferenceSolution('unknown-evaluation-task'), /unknown-evaluation-task/);
@@ -42,12 +42,15 @@ for (const task of TASKS) {
   assert.deepEqual(references[0], references[1], `${task.id} 同进程参考必须确定性`);
   assert.deepEqual(readFileSync(join(directory, task.fixtureName)), Buffer.from(inputs[0]));
   assert.deepEqual(readFileSync(join(directory, task.referenceName)), Buffer.from(references[0]));
-  const recorded = manifest.tasks.find(item => item.id === task.id);
+  const recorded = manifest.tasks.find((item) => item.id === task.id);
   assert.equal(recorded.inputSha256, hash(inputs[0]));
   assert.equal(recorded.referenceSha256, hash(references[0]));
   const opened = [];
   try {
-    for (const [label, bytes] of [['input', inputs[0]], ['reference', references[0]]]) {
+    for (const [label, bytes] of [
+      ['input', inputs[0]],
+      ['reference', references[0]],
+    ]) {
       const presentation = await parse(bytes, { edit: true, keepPackage: true, lazy: false });
       const doc = createDoc(presentation, { idPrefix: 'eval-fixture-' });
       opened.push(doc);
@@ -57,19 +60,21 @@ for (const task of TASKS) {
       assert.equal(description.totalSlides, 1);
       assert.equal(description.totalElements, 4);
       const elements = description.slides[0].elements;
-      assert.deepEqual(elements.map(element => element.name),
-        ['Evaluation title', 'Evaluation body', 'Evaluation image', 'Evaluation card']);
-      assert(elements.every(element => !element.hidden && !element.locked));
-      const title = elements.find(element => element.name === task.titleName);
+      assert.deepEqual(
+        elements.map((element) => element.name),
+        ['Evaluation title', 'Evaluation body', 'Evaluation image', 'Evaluation card'],
+      );
+      assert(elements.every((element) => !element.hidden && !element.locked));
+      const title = elements.find((element) => element.name === task.titleName);
       assert(title.placeholder?.layout, `${task.id} 必须有真实版式提示来源`);
-      const image = doc.elements[elements.find(element => element.kind === 'image').id].src;
+      const image = doc.elements[elements.find((element) => element.kind === 'image').id].src;
       const asset = sourceAsset(doc, image.src);
       assert(asset && asset.mime === 'image/png');
       const metadata = readImageMetadata(asset.bytes);
       assert.equal(metadata.width / metadata.height, 2);
       const options = { fonts: { available: [task.fontFamily], embedded: [] }, measureText };
       if (label === 'reference') {
-        assert.equal(title.paragraphs.map(paragraph => paragraph.text).join('\n'), task.expectedTitle);
+        assert.equal(title.paragraphs.map((paragraph) => paragraph.text).join('\n'), task.expectedTitle);
         const report = await lintPresentation(doc, options);
         assert.deepEqual(report.checks, [...LAYOUT_CHECKS]);
         assert.deepEqual(report.issues, [], `${task.id} 参考必须七项零问题`);
@@ -77,18 +82,24 @@ for (const task of TASKS) {
         assert.deepEqual((await lintPresentation(doc, options)).issues, []);
       } else {
         const report = await lintPresentation(doc, { ...options, checks: [task.kind] });
-        assert(report.issues.some(issue => issue.reason === task.kind), `${task.id} 必须真实触发目标检查`);
+        assert(
+          report.issues.some((issue) => issue.reason === task.kind),
+          `${task.id} 必须真实触发目标检查`,
+        );
       }
     }
     const [input, reference] = opened;
-    const inputDescription = describePresentation(input), referenceDescription = describePresentation(reference);
-    assert.deepEqual(inputDescription.slides[0].elements.map(element => element.id),
-      referenceDescription.slides[0].elements.map(element => element.id));
+    const inputDescription = describePresentation(input),
+      referenceDescription = describePresentation(reference);
+    assert.deepEqual(
+      inputDescription.slides[0].elements.map((element) => element.id),
+      referenceDescription.slides[0].elements.map((element) => element.id),
+    );
     for (const part of ['ppt/theme/theme1.xml', 'ppt/slideMasters/slideMaster1.xml', 'ppt/slideLayouts/slideLayout1.xml']) {
       assert.deepEqual(sourcePartBytes(input, part), sourcePartBytes(reference, part), `${task.id} 设计资源不得改变`);
     }
-    const imageBytes = doc => {
-      const element = describePresentation(doc).slides[0].elements.find(item => item.kind === 'image');
+    const imageBytes = (doc) => {
+      const element = describePresentation(doc).slides[0].elements.find((item) => item.kind === 'image');
       return sourceAsset(doc, doc.elements[element.id].src.src).bytes;
     };
     assert.deepEqual(imageBytes(input), imageBytes(reference));

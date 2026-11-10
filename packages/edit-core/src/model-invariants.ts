@@ -18,12 +18,8 @@ import { assertVectorFill } from './shape-fill';
 import { assertStroke } from './shape-stroke';
 import { assertEffects } from './shape-effects';
 import { assertImageCrop, canEditImageContent } from './image-content';
-import {
-  assertImageReplacement, assertImageResource, assertImageResourceTargets,
-} from './commands/element-image-content';
-import {
-  assertSlideImageBackground, assertSlideImageBackgroundDimensions, assertSlideImageFill,
-} from './commands/slide-property';
+import { assertImageReplacement, assertImageResource, assertImageResourceTargets } from './commands/element-image-content';
+import { assertSlideImageBackground, assertSlideImageBackgroundDimensions, assertSlideImageFill } from './commands/slide-property';
 import { assertLinkOverride, supportsElementLink } from './hyperlink';
 import { assertActiveRelationshipTargets, assertElementInsertionSource } from './insertion-invariants';
 import { isNotesPart } from './notes-part';
@@ -35,9 +31,7 @@ import { assertCustomGeometryOverride } from './custom-geometry';
 import { assertPresetGeometry } from './preset-geometry';
 import { assertTableStyleSettings } from './table-style';
 import { assertSlideSize } from './slide-size';
-import {
-  assertTableCellOverrides, assertTableGridOverrides, assertTableRows,
-} from './table-invariants';
+import { assertTableCellOverrides, assertTableGridOverrides, assertTableRows } from './table-invariants';
 import { THEME_COLOR_SLOTS } from '@web-ppt/core';
 import { assertThemeColor, assertThemeFont, assertThemeOverrides } from './theme';
 import { assertParagraphPropertyOverrides } from './paragraph-property-schema';
@@ -46,18 +40,17 @@ import { assertDocumentExtensions } from './document-extensions';
 import { validateExtensionAddresses } from './extension-addresses';
 import { validateExtensionMigrationReceipts } from './extension-migration-receipt';
 
-
 function assertFiniteTransform(record: ElementRecord, doc: EditDoc): void {
   const target = canvasTargetOfElement(doc, record.id);
-  const source = target.kind === 'slide' && slideDesignChanged(doc, target.id)
-    ? effectiveElement(doc, record.id) : record.src;
+  const source = target.kind === 'slide' && slideDesignChanged(doc, target.id) ? effectiveElement(doc, record.id) : record.src;
   for (const field of XFRM_FIELDS) {
     const value = own(record.ovr, field) ? record.ovr[field] : source[field];
     assertXfrmValue(field, value, `元素 ${record.id} 的 ${field}`);
   }
-  if (source.kind === 'group'
-    && (!Number.isFinite(source.scaleX) || !Number.isFinite(source.scaleY)
-      || source.scaleX === 0 || source.scaleY === 0)) {
+  if (
+    source.kind === 'group'
+    && (!Number.isFinite(source.scaleX) || !Number.isFinite(source.scaleY) || source.scaleX === 0 || source.scaleY === 0)
+  ) {
     throw new Error(`组 ${record.id} 的子坐标范围不能为零`);
   }
 }
@@ -68,23 +61,18 @@ function assertElementOrder(record: ElementRecord): void {
 }
 
 function assertTextBodies(record: ElementRecord): void {
-  const bodies = record.src.kind === 'shape'
-    ? [record.src.text]
-    : record.src.kind === 'table'
-      ? tableRowsWithoutTextOverrides(record)
-        .flatMap((row) => row.cells.map((cell) => cell.text ?? cell.editInfo?.textTemplate ?? null))
-      : [];
+  const bodies =
+    record.src.kind === 'shape'
+      ? [record.src.text]
+      : record.src.kind === 'table'
+        ? tableRowsWithoutTextOverrides(record).flatMap((row) => row.cells.map((cell) => cell.text ?? cell.editInfo?.textTemplate ?? null))
+        : [];
   if (bodies.some((body) => body !== null && body.paragraphs.length === 0)) {
     throw new Error(`元素 ${record.id} 的文本体至少需要一个段落`);
   }
 }
 
-function assertTextOverride(
-  doc: EditDoc,
-  record: ElementRecord,
-  value: unknown,
-  label: string,
-): asserts value is TextOverride {
+function assertTextOverride(doc: EditDoc, record: ElementRecord, value: unknown, label: string): asserts value is TextOverride {
   if (!value || typeof value !== 'object') throw new Error(`${label} 无效`);
   const kind = (value as { kind?: unknown }).kind;
   if (kind === 'empty') {
@@ -94,7 +82,9 @@ function assertTextOverride(
   if (kind !== 'flat') throw new Error(`${label} 类型无效`);
   assertDataObject(value, ['kind', 'body', 'bodyOverrides', 'paragraphs'], label);
   validateFlatTextOverride(value as Extract<TextOverride, { kind: 'flat' }>, {
-    doc, part: record.meta.origin?.part, resources: doc.imageResources,
+    doc,
+    part: record.meta.origin?.part,
+    resources: doc.imageResources,
   });
 }
 
@@ -104,9 +94,7 @@ function assertTextOverrides(doc: EditDoc, record: ElementRecord): void {
     textTargetContext(doc, { id: record.id });
     assertTextOverride(doc, record, record.ovr.text, `元素 ${record.id} 的文字覆盖`);
   }
-  assertTableCellOverrides(
-    doc, record, (value, label) => assertTextOverride(doc, record, value, label),
-  );
+  assertTableCellOverrides(doc, record, (value, label) => assertTextOverride(doc, record, value, label));
 }
 
 function assertParentChain(doc: EditDoc, id: ElementId): void {
@@ -185,13 +173,20 @@ export function validateEditDoc(doc: EditDoc): void {
   assertSlideSize(doc.meta.sourceWidth, '来源页面宽度');
   assertSlideSize(doc.meta.sourceHeight, '来源页面高度');
   if (doc.package?.disposed) throw new Error('编辑文档持有的 OPC 包已经释放');
-  if (!doc.identity.nextSpid || typeof doc.identity.nextSpid !== 'object'
-    || Object.entries(doc.identity.nextSpid).some(([part, value]) =>
-      !part || !Number.isSafeInteger(value) || value <= 0)) {
+  if (
+    !doc.identity.nextSpid
+    || typeof doc.identity.nextSpid !== 'object'
+    || Object.entries(doc.identity.nextSpid).some(([part, value]) => !part || !Number.isSafeInteger(value) || value <= 0)
+  ) {
     throw new Error('编辑文档缺少有效的 part spid 分配状态');
   }
-  if (!doc.saveState || !doc.saveState.baselines || typeof doc.saveState.baselines !== 'object'
-    || !Array.isArray(doc.saveState.createdParts) || !Array.isArray(doc.saveState.sourceSlideParts)) {
+  if (
+    !doc.saveState
+    || !doc.saveState.baselines
+    || typeof doc.saveState.baselines !== 'object'
+    || !Array.isArray(doc.saveState.createdParts)
+    || !Array.isArray(doc.saveState.sourceSlideParts)
+  ) {
     throw new Error('编辑文档缺少可序列化的保存基线状态');
   }
   if (!doc.imageResources || typeof doc.imageResources !== 'object') {
@@ -205,40 +200,52 @@ export function validateEditDoc(doc: EditDoc): void {
   const detachedBaselines = detachedSlideBaselineParts(doc);
   for (const [part, bytes] of Object.entries(doc.saveState.baselines)) {
     // 删除整页后基线是撤销时复原已移除 OPC part 的唯一来源，因此不要求当前包仍含该 part。
-    if (!(bytes instanceof Uint8Array)
-      || (doc.package && !doc.package.parts[part] && !detachedBaselines.has(part))) {
+    if (!(bytes instanceof Uint8Array) || (doc.package && !doc.package.parts[part] && !detachedBaselines.has(part))) {
       throw new Error(`保存基线无效：${part}`);
     }
   }
-  if (new Set(doc.saveState.createdParts).size !== doc.saveState.createdParts.length
-    || doc.saveState.createdParts.some((part) => typeof part !== 'string' || !part)) {
+  if (
+    new Set(doc.saveState.createdParts).size !== doc.saveState.createdParts.length
+    || doc.saveState.createdParts.some((part) => typeof part !== 'string' || !part)
+  ) {
     throw new Error('会话生成的 OPC part 状态无效');
   }
-  if (new Set(doc.saveState.sourceSlideParts).size !== doc.saveState.sourceSlideParts.length
-    || doc.saveState.sourceSlideParts.some((part) => typeof part !== 'string' || !part)) {
+  if (
+    new Set(doc.saveState.sourceSlideParts).size !== doc.saveState.sourceSlideParts.length
+    || doc.saveState.sourceSlideParts.some((part) => typeof part !== 'string' || !part)
+  ) {
     throw new Error('来源页面 part 顺序无效');
   }
   if (new Set(doc.slideOrder).size !== doc.slideOrder.length) throw new Error('slideOrder 不能包含重复页');
   if (doc.slideOrder.length !== Object.keys(doc.slides).length) throw new Error('slideOrder 必须恰好包含全部幻灯片');
   assertSectionState(doc, doc.sections, '编辑文档节状态');
-  if (!doc.layouts || !Array.isArray(doc.layoutOrder)
+  if (
+    !doc.layouts
+    || !Array.isArray(doc.layoutOrder)
     || new Set(doc.layoutOrder).size !== doc.layoutOrder.length
     || doc.layoutOrder.length !== Object.keys(doc.layouts).length
-    || doc.layoutOrder.some((id) => doc.layouts[id]?.id !== id)) {
+    || doc.layoutOrder.some((id) => doc.layouts[id]?.id !== id)
+  ) {
     throw new Error('版式目录与 layoutOrder 不一致');
   }
   const layoutIds = new Set(doc.layoutOrder);
-  if (!doc.masters || !Array.isArray(doc.masterOrder)
+  if (
+    !doc.masters
+    || !Array.isArray(doc.masterOrder)
     || new Set(doc.masterOrder).size !== doc.masterOrder.length
     || doc.masterOrder.length !== Object.keys(doc.masters).length
-    || doc.masterOrder.some((id) => doc.masters[id]?.id !== id)) {
+    || doc.masterOrder.some((id) => doc.masters[id]?.id !== id)
+  ) {
     throw new Error('母版目录与 masterOrder 不一致');
   }
   const masterIds = new Set(doc.masterOrder);
-  if (!doc.themes || !Array.isArray(doc.themeOrder)
+  if (
+    !doc.themes
+    || !Array.isArray(doc.themeOrder)
     || new Set(doc.themeOrder).size !== doc.themeOrder.length
     || doc.themeOrder.length !== Object.keys(doc.themes).length
-    || doc.themeOrder.some((id) => doc.themes[id]?.id !== id)) {
+    || doc.themeOrder.some((id) => doc.themes[id]?.id !== id)
+  ) {
     throw new Error('主题目录与 themeOrder 不一致');
   }
   const themeIds = new Set(doc.themeOrder);
@@ -289,8 +296,7 @@ export function validateEditDoc(doc: EditDoc): void {
     if (doc.elements[master.id] || doc.slides[master.id] || doc.layouts[master.id]) {
       throw new Error(`母版与页面、版式或元素 id 冲突：${master.id}`);
     }
-    if (master.layoutIds.some((id) => !layoutIds.has(id)
-      || doc.layouts[id].origin.masterPart !== master.id)) {
+    if (master.layoutIds.some((id) => !layoutIds.has(id) || doc.layouts[id].origin.masterPart !== master.id)) {
       throw new Error(`母版 ${master.id} 的直属版式集合无效`);
     }
     if (own(master.ovr, 'background')) {
@@ -323,8 +329,7 @@ export function validateEditDoc(doc: EditDoc): void {
     }
   }
 
-  const createdParts = new Set(Object.values(doc.slides)
-    .flatMap((slide) => slide.creation && slide.origin ? [slide.origin.part] : []));
+  const createdParts = new Set(Object.values(doc.slides).flatMap((slide) => (slide.creation && slide.origin ? [slide.origin.part] : [])));
   const creationSlideIds = new Set<number>();
   const creationRelationshipIds = new Set<string>();
   const creationNotesParts = new Set<string>();
@@ -355,16 +360,16 @@ export function validateEditDoc(doc: EditDoc): void {
       } else assertVectorFill(slide.ovr.background, `幻灯片 ${slideId} 的背景覆盖`);
     }
     if (slide.backgroundImage) {
-      if (!slide.origin || slide.ovr.background?.type !== 'image'
-        || slide.ovr.background.src !== slide.backgroundImage.src) {
+      if (!slide.origin || slide.ovr.background?.type !== 'image' || slide.ovr.background.src !== slide.backgroundImage.src) {
         throw new Error(`幻灯片 ${slideId} 的图片背景与资源闭包不一致`);
       }
-      assertSlideImageBackground(
-        slide.backgroundImage, slide, doc.imageResources,
-        `幻灯片 ${slideId} 的图片背景资源`, doc,
-      );
+      assertSlideImageBackground(slide.backgroundImage, slide, doc.imageResources, `幻灯片 ${slideId} 的图片背景资源`, doc);
       assertSlideImageBackgroundDimensions(
-        doc, slide, slide.ovr.background, slide.backgroundImage, doc.imageResources,
+        doc,
+        slide,
+        slide.ovr.background,
+        slide.backgroundImage,
+        doc.imageResources,
         `幻灯片 ${slideId} 的图片背景资源`,
       );
     } else if (slide.ovr.background?.type === 'image') {
@@ -388,15 +393,20 @@ export function validateEditDoc(doc: EditDoc): void {
     if (slide.notes) {
       const binding = slide.notes;
       const packageUnavailable = doc.meta.readonly && !doc.package;
-      const sourceExists = packageUnavailable || binding.sourcePart === undefined
-        || !!doc.package?.parts[binding.sourcePart] || !!doc.saveState.baselines[binding.sourcePart];
-      const targetExists = packageUnavailable || !!doc.package?.parts[binding.targetPart]
-        || !!doc.saveState.baselines[binding.targetPart];
-      if (!isNotesPart(binding.targetPart)
-        || typeof binding.relationshipId !== 'string' || !binding.relationshipId
-        || binding.sourcePart !== undefined && !isNotesPart(binding.sourcePart)
+      const sourceExists =
+        packageUnavailable
+        || binding.sourcePart === undefined
+        || !!doc.package?.parts[binding.sourcePart]
+        || !!doc.saveState.baselines[binding.sourcePart];
+      const targetExists = packageUnavailable || !!doc.package?.parts[binding.targetPart] || !!doc.saveState.baselines[binding.targetPart];
+      if (
+        !isNotesPart(binding.targetPart)
+        || typeof binding.relationshipId !== 'string'
+        || !binding.relationshipId
+        || (binding.sourcePart !== undefined && !isNotesPart(binding.sourcePart))
         || !sourceExists
-        || !targetExists && binding.sourcePart === undefined && !own(slide.ovr, 'notes')) {
+        || (!targetExists && binding.sourcePart === undefined && !own(slide.ovr, 'notes'))
+      ) {
         throw new Error(`幻灯片 ${slideId} 的备注 OPC 身份无效`);
       }
       if (!targetExists) {
@@ -406,8 +416,13 @@ export function validateEditDoc(doc: EditDoc): void {
         sessionNotesParts.add(binding.targetPart);
       }
     }
-    if (slide.origin && doc.package && !doc.package.parts[slide.origin.part] && !slide.creation
-      && !doc.saveState.baselines[slide.origin.part]) {
+    if (
+      slide.origin
+      && doc.package
+      && !doc.package.parts[slide.origin.part]
+      && !slide.creation
+      && !doc.saveState.baselines[slide.origin.part]
+    ) {
       throw new Error(`幻灯片 ${slideId} 的源 part 不存在：${slide.origin.part}`);
     }
     if (slide.creation) {
@@ -415,7 +430,9 @@ export function validateEditDoc(doc: EditDoc): void {
       const notesFields = [creation.duplicateNotesSourcePart, creation.duplicateNotesPart];
       const removedSpids = creation.duplicateRemovedSpids ?? [];
       const removedAnimationSpids = creation.duplicateRemovedAnimationSpids ?? removedSpids;
-      if (!slide.origin || !slide.layoutId
+      if (
+        !slide.origin
+        || !slide.layoutId
         || !/^ppt\/slides\/slide\d+\.xml$/.test(slide.origin.part)
         || !layoutIds.has(slide.creation.layoutPart)
         || !layoutIds.has(slide.layoutId)
@@ -429,8 +446,7 @@ export function validateEditDoc(doc: EditDoc): void {
           && (typeof creation.duplicateSourcePart !== 'string'
             || !creation.duplicateSourcePart
             || creation.duplicateSourcePart === slide.origin.part
-            || (!doc.package?.parts[creation.duplicateSourcePart]
-              && !doc.saveState.baselines[creation.duplicateSourcePart])))
+            || (!doc.package?.parts[creation.duplicateSourcePart] && !doc.saveState.baselines[creation.duplicateSourcePart])))
         || (notesFields.filter((value) => value !== undefined).length !== 0
           && (typeof creation.duplicateNotesSourcePart !== 'string'
             || !creation.duplicateNotesSourcePart
@@ -438,8 +454,7 @@ export function validateEditDoc(doc: EditDoc): void {
             || !/^ppt\/notesSlides\/notesSlide\d+\.xml$/.test(creation.duplicateNotesPart)
             || !creation.duplicateSourcePart
             || creation.duplicateNotesSourcePart === creation.duplicateNotesPart
-            || (!doc.package?.parts[creation.duplicateNotesSourcePart!]
-              && !doc.saveState.baselines[creation.duplicateNotesSourcePart!])))
+            || (!doc.package?.parts[creation.duplicateNotesSourcePart!] && !doc.saveState.baselines[creation.duplicateNotesSourcePart!])))
         || !Array.isArray(removedSpids)
         || new Set(removedSpids).size !== removedSpids.length
         || removedSpids.some((spid) => !Number.isSafeInteger(spid) || spid <= 0)
@@ -447,11 +462,14 @@ export function validateEditDoc(doc: EditDoc): void {
         || new Set(removedAnimationSpids).size !== removedAnimationSpids.length
         || removedAnimationSpids.some((spid) => !Number.isSafeInteger(spid) || spid <= 0)
         || removedSpids.some((spid) => !removedAnimationSpids.includes(spid))
-        || (removedAnimationSpids.length > 0 && !creation.duplicateSourcePart)) {
+        || (removedAnimationSpids.length > 0 && !creation.duplicateSourcePart)
+      ) {
         throw new Error(`新增幻灯片 ${slideId} 的 OPC 身份无效`);
       }
-      if (creationSlideIds.has(slide.creation.presentationSlideId)
-        || creationRelationshipIds.has(slide.creation.presentationRelationshipId)) {
+      if (
+        creationSlideIds.has(slide.creation.presentationSlideId)
+        || creationRelationshipIds.has(slide.creation.presentationRelationshipId)
+      ) {
         throw new Error(`新增幻灯片 ${slideId} 的 OPC 身份重复`);
       }
       creationSlideIds.add(slide.creation.presentationSlideId);
@@ -473,9 +491,11 @@ export function validateEditDoc(doc: EditDoc): void {
     if (record.src.kind !== 'group' && record.children) throw new Error(`非组元素 ${id} 不能拥有 children`);
     if (record.meta.sourceParent !== undefined) {
       const sourceParent = record.meta.sourceParent;
-      if (record.meta.created || sourceParent === record.parent
-        || (!doc.slides[sourceParent] && !doc.layouts[sourceParent]
-          && !doc.elements[sourceParent] && !doc.removedElements[sourceParent])) {
+      if (
+        record.meta.created
+        || sourceParent === record.parent
+        || (!doc.slides[sourceParent] && !doc.layouts[sourceParent] && !doc.elements[sourceParent] && !doc.removedElements[sourceParent])
+      ) {
         throw new Error(`元素 ${id} 的来源父级无效`);
       }
     }
@@ -524,13 +544,21 @@ export function validateEditDoc(doc: EditDoc): void {
   for (const [id, record] of Object.entries(doc.removedElements)) {
     if (record.id !== id || doc.elements[id]) throw new Error(`已删除元素状态冲突：${id}`);
     if (record.meta.editable === 'none') throw new Error(`不可编辑元素不能进入删除集：${id}`);
-    if (record.meta.origin && doc.package && !doc.package.parts[record.meta.origin.part]
-      && !doc.saveState.baselines[record.meta.origin.part] && !createdParts.has(record.meta.origin.part)) {
+    if (
+      record.meta.origin
+      && doc.package
+      && !doc.package.parts[record.meta.origin.part]
+      && !doc.saveState.baselines[record.meta.origin.part]
+      && !createdParts.has(record.meta.origin.part)
+    ) {
       throw new Error(`已删除元素 ${id} 的源 part 不存在：${record.meta.origin.part}`);
     }
-    if (record.sourceSpids && (!Array.isArray(record.sourceSpids)
-      || record.sourceSpids.some((spid) => !Number.isInteger(spid) || spid <= 0)
-      || new Set(record.sourceSpids).size !== record.sourceSpids.length)) {
+    if (
+      record.sourceSpids
+      && (!Array.isArray(record.sourceSpids)
+        || record.sourceSpids.some((spid) => !Number.isInteger(spid) || spid <= 0)
+        || new Set(record.sourceSpids).size !== record.sourceSpids.length)
+    ) {
       throw new Error(`已删除元素 ${id} 的动画来源 spid 无效`);
     }
   }
@@ -542,8 +570,7 @@ export function validateEditDoc(doc: EditDoc): void {
     assertTableGridOverrides(record);
     assertTextOverrides(doc, record);
     if (own(record.ovr, 'link')) {
-      if (!supportsElementLink(record.src.kind)
-        || record.meta.editable !== 'full') {
+      if (!supportsElementLink(record.src.kind) || record.meta.editable !== 'full') {
         throw new Error(`元素 ${id} 不能包含链接覆盖`);
       }
       assertLinkOverride(record.ovr.link, `元素 ${id} 的链接覆盖`);
@@ -558,15 +585,13 @@ export function validateEditDoc(doc: EditDoc): void {
       assertVectorFill(record.ovr.fill, `元素 ${id} 的填充覆盖`);
     }
     if (own(record.ovr, 'stroke')) {
-      if ((record.src.kind !== 'shape' && record.src.kind !== 'image')
-        || record.meta.editable !== 'full') {
+      if ((record.src.kind !== 'shape' && record.src.kind !== 'image') || record.meta.editable !== 'full') {
         throw new Error(`元素 ${id} 不能包含描边覆盖`);
       }
       if (record.ovr.stroke !== null) assertStroke(record.ovr.stroke, `元素 ${id} 的描边覆盖`);
     }
     if (own(record.ovr, 'effects')) {
-      if (!['shape', 'image', 'group'].includes(record.src.kind)
-        || record.meta.editable !== 'full') {
+      if (!['shape', 'image', 'group'].includes(record.src.kind) || record.meta.editable !== 'full') {
         throw new Error(`元素 ${id} 不支持二维效果覆盖`);
       }
       assertEffects(record.ovr.effects, `元素 ${id} 的二维效果覆盖`);
@@ -581,11 +606,7 @@ export function validateEditDoc(doc: EditDoc): void {
       if (record.src.kind !== 'shape' || record.meta.editable !== 'full') {
         throw new Error(`元素 ${id} 不支持自定义几何覆盖`);
       }
-      assertCustomGeometryOverride(
-        record.meta.customGeometry ?? null,
-        record.ovr.geometry,
-        `元素 ${id} 的自定义几何覆盖`,
-      );
+      assertCustomGeometryOverride(record.meta.customGeometry ?? null, record.ovr.geometry, `元素 ${id} 的自定义几何覆盖`);
     }
     if (own(record.ovr, 'presetGeometry')) {
       if (record.src.kind !== 'shape' || record.meta.editable !== 'full') {
@@ -598,10 +619,7 @@ export function validateEditDoc(doc: EditDoc): void {
       if (!canEditImageContent(record, true)) {
         throw new Error(`元素 ${id} 不支持图片替换资源`);
       }
-      assertImageReplacement(
-        record.meta.imageReplacement, record.meta.origin?.part, doc.imageResources,
-        `元素 ${id} 的图片替换资源`,
-      );
+      assertImageReplacement(record.meta.imageReplacement, record.meta.origin?.part, doc.imageResources, `元素 ${id} 的图片替换资源`);
     }
     if (record.meta.origin) {
       // 母版元素会按页投影成多个只读记录，但仍共享同一个 OOXML 锚点；只有可写节点必须独占锚点。
@@ -610,9 +628,12 @@ export function validateEditDoc(doc: EditDoc): void {
         if (spids.has(key)) throw new Error(`同一 part 内 spid 重复：${record.meta.origin.part}#${record.meta.origin.spid}`);
         spids.add(key);
       }
-      if (doc.package && !doc.package.parts[record.meta.origin.part]
+      if (
+        doc.package
+        && !doc.package.parts[record.meta.origin.part]
         && !doc.saveState.baselines[record.meta.origin.part]
-        && !createdParts.has(record.meta.origin.part)) {
+        && !createdParts.has(record.meta.origin.part)
+      ) {
         throw new Error(`元素 ${id} 的源 part 不存在：${record.meta.origin.part}`);
       }
     }

@@ -14,9 +14,19 @@ import { SYMBOL_PRESETS } from './presets-symbols';
 import { DIAGRAM_PRESETS } from './presets-diagrams';
 
 export type {
-  CubicArcSegment, CustomGeometry, CustomGeometryArcCommand, CustomGeometryCloseCommand, CustomGeometryCommand, CustomGeometryCubicCommand,
-  CustomGeometryGuide, CustomGeometryLineCommand, CustomGeometryMoveCommand, CustomGeometryPath,
-  CustomGeometryPoint, CustomGeometryPointRole, CustomGeometryQuadraticCommand,
+  CubicArcSegment,
+  CustomGeometry,
+  CustomGeometryArcCommand,
+  CustomGeometryCloseCommand,
+  CustomGeometryCommand,
+  CustomGeometryCubicCommand,
+  CustomGeometryGuide,
+  CustomGeometryLineCommand,
+  CustomGeometryMoveCommand,
+  CustomGeometryPath,
+  CustomGeometryPoint,
+  CustomGeometryPointRole,
+  CustomGeometryQuadraticCommand,
   CustomGeometryScalar,
 } from './custom';
 export { arcToCubicSegments, materializeCustomGeometryArcs, resolveCustomGeometry } from './custom';

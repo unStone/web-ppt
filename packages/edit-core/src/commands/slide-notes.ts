@@ -7,8 +7,11 @@ import { allocateNotesPart } from './add-slide-identity';
 import type { CommandPatches, SetNotesCommand, SlideNotesPatch } from './types';
 
 export function isSlideNotesPatch(patch: { readonly path: readonly unknown[] }): patch is SlideNotesPatch {
-  return patch.path[0] === 'slides' && (patch.path.length === 3 && patch.path[2] === 'notes'
-    || patch.path.length === 4 && patch.path[2] === 'ovr' && patch.path[3] === 'notes');
+  return (
+    patch.path[0] === 'slides'
+    && ((patch.path.length === 3 && patch.path[2] === 'notes')
+      || (patch.path.length === 4 && patch.path[2] === 'ovr' && patch.path[3] === 'notes'))
+  );
 }
 
 export function validateSlideNotesPatch(doc: EditDoc, patch: SlideNotesPatch, index: number): void {
@@ -19,9 +22,15 @@ export function validateSlideNotesPatch(doc: EditDoc, patch: SlideNotesPatch, in
   }
   if (patch.path.length === 3 && patch.op === 'set') {
     assertNotesBinding(
-      (patch as Extract<SlideNotesPatch, {
-        op: 'set'; path: readonly ['slides', string, 'notes'];
-      }>).value,
+      (
+        patch as Extract<
+          SlideNotesPatch,
+          {
+            op: 'set';
+            path: readonly ['slides', string, 'notes'];
+          }
+        >
+      ).value,
       `Patch ${index}`,
     );
   }
@@ -31,25 +40,42 @@ export function applySlideNotesPatch(doc: EditDoc, patch: SlideNotesPatch): void
   const record = doc.slides[patch.path[1]];
   if (!record) throw new Error(`备注 Patch 指向不存在的幻灯片：${patch.path[1]}`);
   if (patch.path.length === 3) {
-    if (patch.op === 'set') record.notes = structuredClone(
-      (patch as Extract<SlideNotesPatch, {
-        op: 'set'; path: readonly ['slides', string, 'notes'];
-      }>).value,
-    );
+    if (patch.op === 'set')
+      record.notes = structuredClone(
+        (
+          patch as Extract<
+            SlideNotesPatch,
+            {
+              op: 'set';
+              path: readonly ['slides', string, 'notes'];
+            }
+          >
+        ).value,
+      );
     else delete record.notes;
-  } else if (patch.op === 'set') record.ovr.notes = (
-    patch as Extract<SlideNotesPatch, {
-      op: 'set'; path: readonly ['slides', string, 'ovr', 'notes'];
-    }>
-  ).value;
+  } else if (patch.op === 'set')
+    record.ovr.notes = (
+      patch as Extract<
+        SlideNotesPatch,
+        {
+          op: 'set';
+          path: readonly ['slides', string, 'ovr', 'notes'];
+        }
+      >
+    ).value;
   else delete record.ovr.notes;
 }
 
 function assertNotesBinding(value: SlideNotesBinding, label: string): void {
-  if (!value || typeof value !== 'object'
-    || typeof value.targetPart !== 'string' || !value.targetPart
-    || typeof value.relationshipId !== 'string' || !value.relationshipId
-    || value.sourcePart !== undefined && (typeof value.sourcePart !== 'string' || !value.sourcePart)) {
+  if (
+    !value
+    || typeof value !== 'object'
+    || typeof value.targetPart !== 'string'
+    || !value.targetPart
+    || typeof value.relationshipId !== 'string'
+    || !value.relationshipId
+    || (value.sourcePart !== undefined && (typeof value.sourcePart !== 'string' || !value.sourcePart))
+  ) {
     throw new Error(`${label} 的备注 OPC 身份无效`);
   }
 }
@@ -64,12 +90,11 @@ function relationshipSource(doc: EditDoc, slide: SlideRecord): Uint8Array | unde
 function allocateRelationshipId(doc: EditDoc, slide: SlideRecord): string {
   const ids = new Set<string>([slide.creation?.layoutRelationshipId ?? '']);
   const source = relationshipSource(doc, slide);
-  if (source) for (const relation of xmlElementChildren(
-    parseXmlTree(source).root, { localName: 'Relationship' },
-  )) {
-    const id = findXmlAttribute(relation, { localName: 'Id', namespaceUri: null })?.value;
-    if (id) ids.add(id);
-  }
+  if (source)
+    for (const relation of xmlElementChildren(parseXmlTree(source).root, { localName: 'Relationship' })) {
+      const id = findXmlAttribute(relation, { localName: 'Id', namespaceUri: null })?.value;
+      if (id) ids.add(id);
+    }
   for (let candidate = 1; Number.isSafeInteger(candidate); candidate++) {
     const id = `rId${candidate}`;
     if (!ids.has(id)) return id;
@@ -79,8 +104,7 @@ function allocateRelationshipId(doc: EditDoc, slide: SlideRecord): string {
 
 function ownsNotesPart(doc: EditDoc, slide: SlideRecord): boolean {
   const part = slide.notes?.targetPart;
-  return !part || Object.values(doc.slides)
-    .filter((candidate) => candidate.notes?.targetPart === part).length === 1;
+  return !part || Object.values(doc.slides).filter((candidate) => candidate.notes?.targetPart === part).length === 1;
 }
 
 function independentBinding(doc: EditDoc, slide: SlideRecord): SlideNotesBinding | undefined {
@@ -92,11 +116,7 @@ function independentBinding(doc: EditDoc, slide: SlideRecord): SlideNotesBinding
   };
 }
 
-export function setNotesPatches(
-  doc: EditDoc,
-  command: SetNotesCommand,
-  origin: string,
-): CommandPatches {
+export function setNotesPatches(doc: EditDoc, command: SetNotesCommand, origin: string): CommandPatches {
   if (doc.meta.readonly || doc.meta.source !== 'pptx' || !doc.package) {
     throw new Error('只读或非 OOXML 编辑文档不能修改演讲者备注');
   }
@@ -108,13 +128,14 @@ export function setNotesPatches(
   const hadOverride = own(record.ovr, 'notes');
   if (!binding && hadOverride && record.ovr.notes === command.text) return { forward: [], inverse: [] };
   const forward: SlideNotesPatch = { op: 'set', path, value: command.text, origin };
-  const inverse: SlideNotesPatch = hadOverride
-    ? { op: 'set', path, value: record.ovr.notes!, origin }
-    : { op: 'del', path, origin };
+  const inverse: SlideNotesPatch = hadOverride ? { op: 'set', path, value: record.ovr.notes!, origin } : { op: 'del', path, origin };
   if (!binding) return { forward: [forward], inverse: [inverse] };
   const bindingPath = ['slides', command.id, 'notes'] as const;
   const bindingForward: SlideNotesPatch = {
-    op: 'set', path: bindingPath, value: binding, origin,
+    op: 'set',
+    path: bindingPath,
+    value: binding,
+    origin,
   };
   const bindingInverse: SlideNotesPatch = record.notes
     ? { op: 'set', path: bindingPath, value: structuredClone(record.notes), origin }

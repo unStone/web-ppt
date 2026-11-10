@@ -23,34 +23,46 @@ export async function runNativeHitContract({ check, lib, root }) {
     const svgBefore = staticLayer.querySelector('svg');
     const historyBefore = session.editor.history.undoCount;
     pointerClick(target);
-    check('编辑模式点选通过稳定身份提交 headless 选区并只更新交互层',
+    check(
+      '编辑模式点选通过稳定身份提交 headless 选区并只更新交互层',
       session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === targetId
-      && session.editor.selection.enteredGroup === null
-      && interactionLayer.querySelector(`[data-edit-selection-id="${targetId}"]`)
-      && staticLayer.querySelector('svg') === svgBefore
-      && session.editor.history.undoCount === historyBefore);
+        && session.editor.selection.ids[0] === targetId
+        && session.editor.selection.enteredGroup === null
+        && interactionLayer.querySelector(`[data-edit-selection-id="${targetId}"]`)
+        && staticLayer.querySelector('svg') === svgBefore
+        && session.editor.history.undoCount === historyBefore,
+    );
 
-    const groupId = session.editor.doc.slides[view.slideId].children
-      .find((id) => session.editor.doc.elements[id].src.kind === 'group');
+    const groupId = session.editor.doc.slides[view.slideId].children.find((id) => session.editor.doc.elements[id].src.kind === 'group');
     const childId = session.editor.doc.elements[groupId].children[0];
     const group = staticLayer.querySelector(`[data-edit-id="${groupId}"]`);
     const child = staticLayer.querySelector(`[data-edit-id="${childId}"]`);
     pointerClick(child);
-    const selectedOuterGroup = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === groupId && session.editor.selection.enteredGroup === null;
+    const selectedOuterGroup =
+      session.editor.selection.kind === 'elements'
+      && session.editor.selection.ids[0] === groupId
+      && session.editor.selection.enteredGroup === null;
     child.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
-    const enteredGroup = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === childId && session.editor.selection.enteredGroup === groupId
+    const enteredGroup =
+      session.editor.selection.kind === 'elements'
+      && session.editor.selection.ids[0] === childId
+      && session.editor.selection.enteredGroup === groupId
       && interactionLayer.querySelector(`[data-edit-selection-id="${childId}"]`);
     view.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    const exitedGroup = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === groupId && session.editor.selection.enteredGroup === null;
+    const exitedGroup =
+      session.editor.selection.kind === 'elements'
+      && session.editor.selection.ids[0] === groupId
+      && session.editor.selection.enteredGroup === null;
     view.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    check('默认选外层组，双击进组，Escape 每次只退出一层', selectedOuterGroup && enteredGroup
-      && exitedGroup && session.editor.selection.kind === 'none'
-      && staticLayer.querySelector(`[data-edit-id="${groupId}"]`) === group
-      && staticLayer.querySelector('svg') === svgBefore);
+    check(
+      '默认选外层组，双击进组，Escape 每次只退出一层',
+      selectedOuterGroup
+        && enteredGroup
+        && exitedGroup
+        && session.editor.selection.kind === 'none'
+        && staticLayer.querySelector(`[data-edit-id="${groupId}"]`) === group
+        && staticLayer.querySelector('svg') === svgBefore,
+    );
 
     const groupRecord = session.editor.doc.elements[groupId];
     const childRecord = session.editor.doc.elements[childId];
@@ -64,30 +76,32 @@ export async function runNativeHitContract({ check, lib, root }) {
     groupRecord.meta.hiddenByUser = false;
     childRecord.meta.editable = 'none';
     pointerClick(child);
-    const uneditableLeafFallsBack = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === groupId;
+    const uneditableLeafFallsBack = session.editor.selection.kind === 'elements' && session.editor.selection.ids[0] === groupId;
     groupRecord.meta.editable = 'none';
     childRecord.meta.editable = 'full';
     pointerClick(child);
-    check('锁定、用户隐藏或不可编辑的组阻断后代，不可编辑叶子回退到可编辑父组', lockedGroupSkipped
-      && hiddenGroupSkipped && uneditableLeafFallsBack && session.editor.selection.kind === 'none');
+    check(
+      '锁定、用户隐藏或不可编辑的组阻断后代，不可编辑叶子回退到可编辑父组',
+      lockedGroupSkipped && hiddenGroupSkipped && uneditableLeafFallsBack && session.editor.selection.kind === 'none',
+    );
 
     const [lowerId, , upperId] = session.editor.doc.slides[view.slideId].children;
     const lower = staticLayer.querySelector(`[data-edit-id="${lowerId}"]`);
     const upper = staticLayer.querySelector(`[data-edit-id="${upperId}"]`);
     Object.defineProperty(document, 'elementsFromPoint', {
-      configurable: true, value: () => [upper, lower],
+      configurable: true,
+      value: () => [upper, lower],
     });
     const altClick = () => pointerClick(lower, { altKey: true, clientX: 120, clientY: 140 });
     altClick();
-    const topSelected = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === upperId;
+    const topSelected = session.editor.selection.kind === 'elements' && session.editor.selection.ids[0] === upperId;
     altClick();
-    const lowerSelected = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === lowerId;
+    const lowerSelected = session.editor.selection.kind === 'elements' && session.editor.selection.ids[0] === lowerId;
     altClick();
-    check('Alt+点选按 elementsFromPoint 的 z 序在重叠元素间循环', topSelected && lowerSelected
-      && session.editor.selection.kind === 'elements' && session.editor.selection.ids[0] === upperId);
+    check(
+      'Alt+点选按 elementsFromPoint 的 z 序在重叠元素间循环',
+      topSelected && lowerSelected && session.editor.selection.kind === 'elements' && session.editor.selection.ids[0] === upperId,
+    );
     delete document.elementsFromPoint;
     session.dispose();
   }
@@ -104,10 +118,15 @@ export async function runNativeHitContract({ check, lib, root }) {
     const firstTarget = firstContainer.querySelector(`[data-edit-id="${firstId}"]`);
     const secondTarget = secondContainer.querySelector(`[data-edit-id="${secondId}"]`);
     session.editor.select({ kind: 'elements', ids: [secondId], enteredGroup: null });
-    const viewDispatchAccepted = firstTarget.dispatchEvent(new MouseEvent('pointerdown', {
-      bubbles: true, composed: true, cancelable: true,
-    }));
-    const viewModeUnchanged = session.editor.selection.kind === 'elements'
+    const viewDispatchAccepted = firstTarget.dispatchEvent(
+      new MouseEvent('pointerdown', {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      }),
+    );
+    const viewModeUnchanged =
+      session.editor.selection.kind === 'elements'
       && session.editor.selection.ids[0] === secondId
       && firstContainer.querySelector('[data-ppt-layer="interaction"]').style.display === 'none';
 
@@ -117,7 +136,8 @@ export async function runNativeHitContract({ check, lib, root }) {
       if (change.source === 'selection') selectionEvents++;
     });
     pointerClick(secondTarget);
-    const sharedSelectionRendered = firstContainer.querySelector(`[data-edit-selection-id="${secondId}"]`)
+    const sharedSelectionRendered =
+      firstContainer.querySelector(`[data-edit-selection-id="${secondId}"]`)
       && secondContainer.querySelector(`[data-edit-selection-id="${secondId}"]`)
       && selectionEvents === 1;
     session.editor.select({ kind: 'none' });
@@ -128,14 +148,20 @@ export async function runNativeHitContract({ check, lib, root }) {
     const destroyedViewSilent = session.editor.selection.kind === 'none';
     first.setMode('edit');
     pointerClick(firstTarget);
-    check('查看模式不拦截也不改选区，多视图同步反馈但各自拥有事件生命周期', viewDispatchAccepted
-      && viewModeUnchanged && sharedSelectionRendered && destroyedViewSilent
-      && session.editor.selection.kind === 'elements' && session.editor.selection.ids[0] === firstId
-      && selectionEvents === 3,
-    `accepted=${viewDispatchAccepted} unchanged=${viewModeUnchanged} shared=${!!sharedSelectionRendered}`
-      + ` firstMarker=${!!firstContainer.querySelector(`[data-edit-selection-id="${secondId}"]`)}`
-      + ` secondMarker=${!!secondContainer.querySelector(`[data-edit-selection-id="${secondId}"]`)}`
-      + ` destroyed=${destroyedViewSilent} events=${selectionEvents}`);
+    check(
+      '查看模式不拦截也不改选区，多视图同步反馈但各自拥有事件生命周期',
+      viewDispatchAccepted
+        && viewModeUnchanged
+        && sharedSelectionRendered
+        && destroyedViewSilent
+        && session.editor.selection.kind === 'elements'
+        && session.editor.selection.ids[0] === firstId
+        && selectionEvents === 3,
+      `accepted=${viewDispatchAccepted} unchanged=${viewModeUnchanged} shared=${!!sharedSelectionRendered}`
+        + ` firstMarker=${!!firstContainer.querySelector(`[data-edit-selection-id="${secondId}"]`)}`
+        + ` secondMarker=${!!secondContainer.querySelector(`[data-edit-selection-id="${secondId}"]`)}`
+        + ` destroyed=${destroyedViewSilent} events=${selectionEvents}`,
+    );
     unsubscribe();
     second.element.remove();
     session.dispose();
@@ -147,28 +173,42 @@ export async function runNativeHitContract({ check, lib, root }) {
     const session = await lib.openEditor(bytes, { idPrefix: 'editor-nested-hit-' });
     const container = document.createElement('div');
     const view = session.mount(container, { mode: 'edit', textMode: 'svg' });
-    const byName = (name) => Object.values(session.editor.doc.elements)
-      .find((record) => record.src.name === name)?.id;
+    const byName = (name) => Object.values(session.editor.doc.elements).find((record) => record.src.name === name)?.id;
     const outerId = byName('hit-outer-group');
     const innerId = byName('hit-inner-group');
     const leafId = byName('hit-nested-leaf');
     const leaf = container.querySelector(`[data-edit-id="${leafId}"]`);
     pointerClick(leaf);
-    const selectedOuter = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === outerId && session.editor.selection.enteredGroup === null;
+    const selectedOuter =
+      session.editor.selection.kind === 'elements'
+      && session.editor.selection.ids[0] === outerId
+      && session.editor.selection.enteredGroup === null;
     leaf.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
-    const enteredOuter = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === innerId && session.editor.selection.enteredGroup === outerId;
+    const enteredOuter =
+      session.editor.selection.kind === 'elements'
+      && session.editor.selection.ids[0] === innerId
+      && session.editor.selection.enteredGroup === outerId;
     leaf.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
-    const enteredInner = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === leafId && session.editor.selection.enteredGroup === innerId;
+    const enteredInner =
+      session.editor.selection.kind === 'elements'
+      && session.editor.selection.ids[0] === leafId
+      && session.editor.selection.enteredGroup === innerId;
     view.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    const exitedInner = session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === innerId && session.editor.selection.enteredGroup === outerId;
+    const exitedInner =
+      session.editor.selection.kind === 'elements'
+      && session.editor.selection.ids[0] === innerId
+      && session.editor.selection.enteredGroup === outerId;
     view.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    check('嵌套组每次双击只进一层，Escape 按父链对称退出', selectedOuter && enteredOuter
-      && enteredInner && exitedInner && session.editor.selection.kind === 'elements'
-      && session.editor.selection.ids[0] === outerId && session.editor.selection.enteredGroup === null);
+    check(
+      '嵌套组每次双击只进一层，Escape 按父链对称退出',
+      selectedOuter
+        && enteredOuter
+        && enteredInner
+        && exitedInner
+        && session.editor.selection.kind === 'elements'
+        && session.editor.selection.ids[0] === outerId
+        && session.editor.selection.enteredGroup === null,
+    );
     session.dispose();
   }
 }

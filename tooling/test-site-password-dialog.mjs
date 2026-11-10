@@ -14,7 +14,9 @@ document.head.innerHTML = '<link rel="canonical" href="https://web-ppt.test/">';
 document.body.innerHTML = '<nav id="siteLanguage"></nav>';
 
 // jsdom 还没有原生 dialog 状态机；只补浏览器已经提供的开关语义，产品逻辑原样运行。
-window.HTMLDialogElement.prototype.showModal = function showModal() { this.open = true; };
+window.HTMLDialogElement.prototype.showModal = function showModal() {
+  this.open = true;
+};
 window.HTMLDialogElement.prototype.close = function close() {
   this.open = false;
   this.dispatchEvent(new window.Event('close'));
@@ -34,9 +36,7 @@ const tick = () => new Promise((resolveTick) => setTimeout(resolveTick));
 const submit = async (password) => {
   const input = document.querySelector('#viewerPassword');
   input.value = password;
-  document.querySelector('#viewerPasswordForm').dispatchEvent(
-    new window.SubmitEvent('submit', { bubbles: true, cancelable: true }),
-  );
+  document.querySelector('#viewerPasswordForm').dispatchEvent(new window.SubmitEvent('submit', { bubbles: true, cancelable: true }));
   await tick();
 };
 
@@ -53,8 +53,7 @@ try {
   const dialog = document.querySelector('#viewerPasswordDialog');
   assert.ok(dialog?.open, '加密文件必须打开模态密码框');
   assert.equal(dialog.querySelector('h2').textContent, '输入打开密码');
-  assert.match(dialog.querySelector('p').textContent, /默认 <演示>\.pptx/,
-    '文件名按文本显示，不能拼进 HTML');
+  assert.match(dialog.querySelector('p').textContent, /默认 <演示>\.pptx/, '文件名按文本显示，不能拼进 HTML');
   assert.equal(document.activeElement?.id, 'viewerPassword');
   assert.equal(dialog.querySelector('input').type, 'password');
 
@@ -86,8 +85,13 @@ try {
   assert.equal(document.querySelector('#viewerPasswordDialog'), null);
 
   const broken = new Error('文件损坏');
-  await assert.rejects(api.openWithPresentationPassword('broken.pptx', async () => { throw broken; }),
-    (error) => error === broken, '非密码错误必须交回原解析错误路径');
+  await assert.rejects(
+    api.openWithPresentationPassword('broken.pptx', async () => {
+      throw broken;
+    }),
+    (error) => error === broken,
+    '非密码错误必须交回原解析错误路径',
+  );
   assert.equal(document.querySelector('#viewerPasswordDialog'), null);
   console.log('官网加密文档密码框：首次提示、错误重试、成功清理、取消与异常分流通过');
 } finally {

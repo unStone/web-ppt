@@ -21,8 +21,11 @@ export function expectedCountKeys(root, leaves) {
       throw new Error(`无法读取 ${entry} 的计数声明：${ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`);
     }
     function visit(node) {
-      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)
-        && ['recordCount', 'countedAssert'].includes(node.expression.text)) {
+      if (
+        ts.isCallExpression(node)
+        && ts.isIdentifier(node.expression)
+        && ['recordCount', 'countedAssert'].includes(node.expression.text)
+      ) {
         const argument = node.arguments[0];
         if (!argument || !ts.isStringLiteralLike(argument) || !argument.text) {
           const position = source.getLineAndCharacterOfPosition(node.getStart(source));

@@ -15,24 +15,35 @@ const NOTES_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relatio
 
 function notesTextBody(root: XmlElement): XmlElement {
   const shapeTree = findXmlDescendant(root, {
-    localName: 'spTree', namespaceUri: PRESENTATIONML_NS,
+    localName: 'spTree',
+    namespaceUri: PRESENTATIONML_NS,
   });
-  for (const shape of shapeTree ? xmlElementChildren(shapeTree, {
-    localName: 'sp', namespaceUri: PRESENTATIONML_NS,
-  }) : []) {
+  for (const shape of shapeTree
+    ? xmlElementChildren(shapeTree, {
+        localName: 'sp',
+        namespaceUri: PRESENTATIONML_NS,
+      })
+    : []) {
     const nonVisual = findXmlChild(shape, {
-      localName: 'nvSpPr', namespaceUri: PRESENTATIONML_NS,
+      localName: 'nvSpPr',
+      namespaceUri: PRESENTATIONML_NS,
     });
-    const properties = nonVisual && findXmlChild(nonVisual, {
-      localName: 'nvPr', namespaceUri: PRESENTATIONML_NS,
-    });
-    const placeholder = properties && findXmlChild(properties, {
-      localName: 'ph', namespaceUri: PRESENTATIONML_NS,
-    });
-    const type = placeholder?.attributes.find((attribute) =>
-      attribute.namespaceUri === null && attribute.localName === 'type')?.value;
+    const properties =
+      nonVisual
+      && findXmlChild(nonVisual, {
+        localName: 'nvPr',
+        namespaceUri: PRESENTATIONML_NS,
+      });
+    const placeholder =
+      properties
+      && findXmlChild(properties, {
+        localName: 'ph',
+        namespaceUri: PRESENTATIONML_NS,
+      });
+    const type = placeholder?.attributes.find((attribute) => attribute.namespaceUri === null && attribute.localName === 'type')?.value;
     const body = findXmlChild(shape, {
-      localName: 'txBody', namespaceUri: PRESENTATIONML_NS,
+      localName: 'txBody',
+      namespaceUri: PRESENTATIONML_NS,
     });
     if (type === 'body' && body) return body;
   }
@@ -45,16 +56,13 @@ function setElementText(element: XmlElement, value: string): void {
 }
 
 function paragraphFromTemplate(template: XmlElement | null, value: string): XmlElement {
-  const paragraph = template
-    ? cloneXmlNode(template)
-    : createXmlElement('a:p', { selfClosing: false });
+  const paragraph = template ? cloneXmlNode(template) : createXmlElement('a:p', { selfClosing: false });
   // 克隆节点脱离原树时尚未重新绑定命名空间，只能先按 localName 定位。
   let text = findXmlDescendant(paragraph, { localName: 't' });
   if (!text) {
     const prefix = paragraph.prefix ? `${paragraph.prefix}:` : '';
     const run = createXmlElement(`${prefix}r`, { selfClosing: false });
-    const endProperties = xmlElementChildren(paragraph)
-      .find((child) => child.localName === 'endParaRPr');
+    const endProperties = xmlElementChildren(paragraph).find((child) => child.localName === 'endParaRPr');
     if (endProperties) {
       const properties = createXmlElement(`${prefix}rPr`);
       for (const attribute of endProperties.attributes) {
@@ -89,7 +97,8 @@ export function patchNotesText(source: Uint8Array, value: string): Uint8Array {
   const tree = parseXmlTree(source);
   const body = notesTextBody(tree.root);
   const paragraphs = xmlElementChildren(body, {
-    localName: 'p', namespaceUri: DRAWINGML_NS,
+    localName: 'p',
+    namespaceUri: DRAWINGML_NS,
   });
   for (const paragraph of paragraphs) removeXmlChild(body, paragraph);
   for (const [index, line] of value.split('\n').entries()) {
@@ -116,14 +125,9 @@ export function createGeneratedNotesPart(value: string): Uint8Array {
 }
 
 const attribute = (element: XmlElement, localName: string): string | undefined =>
-  element.attributes.find((candidate) =>
-    candidate.localName === localName && candidate.namespaceUri === null)?.value;
+  element.attributes.find((candidate) => candidate.localName === localName && candidate.namespaceUri === null)?.value;
 
-function patchRelationshipTarget(
-  source: Uint8Array,
-  type: string,
-  target: string,
-): { bytes: Uint8Array; found: boolean } {
+function patchRelationshipTarget(source: Uint8Array, type: string, target: string): { bytes: Uint8Array; found: boolean } {
   const tree = parseXmlTree(source);
   let found = false;
   for (const relation of xmlElementChildren(tree.root, { localName: 'Relationship' })) {
@@ -136,9 +140,11 @@ function patchRelationshipTarget(
 }
 
 function availableRelationshipId(source?: Uint8Array): string {
-  const ids = new Set(source ? xmlElementChildren(
-    parseXmlTree(source).root, { localName: 'Relationship' },
-  ).flatMap((relation) => attribute(relation, 'Id') ?? []) : []);
+  const ids = new Set(
+    source
+      ? xmlElementChildren(parseXmlTree(source).root, { localName: 'Relationship' }).flatMap((relation) => attribute(relation, 'Id') ?? [])
+      : [],
+  );
   for (let serial = 1; Number.isSafeInteger(serial); serial++) {
     const id = `rId${serial}`;
     if (!ids.has(id)) return id;
@@ -146,20 +152,21 @@ function availableRelationshipId(source?: Uint8Array): string {
   throw new Error('备注页的页面回指关系身份已耗尽');
 }
 
-function patchNotesBackReference(
-  source: Uint8Array | undefined,
-  notesPart: string,
-  slidePart: string,
-): Uint8Array {
+function patchNotesBackReference(source: Uint8Array | undefined, notesPart: string, slidePart: string): Uint8Array {
   const target = relativeTarget(notesPart, slidePart);
   if (source) {
     const patched = patchRelationshipTarget(source, SLIDE_REL, target);
     if (patched.found) return patched.bytes;
   }
   const id = availableRelationshipId(source);
-  return patchRelationshipPart(source, [{
-    sourceId: id, targetId: id, type: SLIDE_REL, target,
-  }]);
+  return patchRelationshipPart(source, [
+    {
+      sourceId: id,
+      targetId: id,
+      type: SLIDE_REL,
+      target,
+    },
+  ]);
 }
 
 /** 备注关系属于页面元数据；只重定向指定 rId，不能重建整个关系 part。 */
@@ -167,12 +174,14 @@ export function patchSlideNotesRelationship(slide: SlideRecord, source?: Uint8Ar
   if (!slide.origin) throw new Error(`页面 ${slide.id} 缺少 notes 关系宿主`);
   if (!source) {
     if (!slide.notes) return patchRelationshipPart(undefined, []);
-    return patchRelationshipPart(undefined, [{
-      sourceId: slide.notes.relationshipId,
-      targetId: slide.notes.relationshipId,
-      type: NOTES_REL,
-      target: relativeTarget(slide.origin.part, slide.notes.targetPart),
-    }]);
+    return patchRelationshipPart(undefined, [
+      {
+        sourceId: slide.notes.relationshipId,
+        targetId: slide.notes.relationshipId,
+        type: NOTES_REL,
+        target: relativeTarget(slide.origin.part, slide.notes.targetPart),
+      },
+    ]);
   }
   const tree = parseXmlTree(source);
   const relations = xmlElementChildren(tree.root, { localName: 'Relationship' });
@@ -186,14 +195,16 @@ export function patchSlideNotesRelationship(slide: SlideRecord, source?: Uint8Ar
     }
     return changed ? serializeXmlTreeBytes(tree) : source;
   }
-  const relation = relations.find((candidate) =>
-    attribute(candidate, 'Id') === slide.notes!.relationshipId);
-  if (!relation) return patchRelationshipPart(source, [{
-    sourceId: slide.notes.relationshipId,
-    targetId: slide.notes.relationshipId,
-    type: NOTES_REL,
-    target: relativeTarget(slide.origin.part, slide.notes.targetPart),
-  }]);
+  const relation = relations.find((candidate) => attribute(candidate, 'Id') === slide.notes!.relationshipId);
+  if (!relation)
+    return patchRelationshipPart(source, [
+      {
+        sourceId: slide.notes.relationshipId,
+        targetId: slide.notes.relationshipId,
+        type: NOTES_REL,
+        target: relativeTarget(slide.origin.part, slide.notes.targetPart),
+      },
+    ]);
   if (attribute(relation, 'Type') !== NOTES_REL) {
     throw new Error(`页面 ${slide.id} 的 notes 关系 id 与其它关系冲突`);
   }
@@ -206,19 +217,18 @@ export function patchSlideNotesRelationship(slide: SlideRecord, source?: Uint8Ar
   return serializeXmlTreeBytes(tree);
 }
 
-function relationshipTargetsTrackedNotes(
-  doc: EditDoc,
-  slide: SlideRecord,
-  tracked: ReadonlySet<string>,
-): boolean {
+function relationshipTargetsTrackedNotes(doc: EditDoc, slide: SlideRecord, tracked: ReadonlySet<string>): boolean {
   const part = slide.origin && relationshipPartFor(slide.origin.part);
   const source = part && doc.package?.parts[part];
   if (!source || !slide.origin) return false;
   return xmlElementChildren(parseXmlTree(source).root, { localName: 'Relationship' }).some((relation) => {
     const target = attribute(relation, 'Target');
-    return attribute(relation, 'Type') === NOTES_REL
-      && attribute(relation, 'TargetMode') !== 'External' && !!target
-      && tracked.has(resolveRelationshipTarget(slide.origin!.part, target));
+    return (
+      attribute(relation, 'Type') === NOTES_REL
+      && attribute(relation, 'TargetMode') !== 'External'
+      && !!target
+      && tracked.has(resolveRelationshipTarget(slide.origin!.part, target))
+    );
   });
 }
 
@@ -228,17 +238,12 @@ export interface NotesSavePlan {
 }
 
 /** 捕获第一次触碰的基线，并把会话创建的 notes part 纳入可撤销生命周期。 */
-export function prepareNotesSave(
-  doc: EditDoc,
-  baselines: Record<string, Uint8Array>,
-  createdParts: Set<string>,
-): NotesSavePlan {
+export function prepareNotesSave(doc: EditDoc, baselines: Record<string, Uint8Array>, createdParts: Set<string>): NotesSavePlan {
   const trackedParts = new Set([...createdParts].filter(isNotesPart));
   for (const slide of Object.values(doc.slides)) {
     const binding = slide.notes;
     if (!binding) continue;
-    if (trackedParts.has(binding.targetPart)
-      || !doc.package?.parts[binding.targetPart] && !baselines[binding.targetPart]) {
+    if (trackedParts.has(binding.targetPart) || (!doc.package?.parts[binding.targetPart] && !baselines[binding.targetPart])) {
       trackedParts.add(binding.targetPart);
       createdParts.add(binding.targetPart);
       createdParts.add(relationshipPartFor(binding.targetPart));
@@ -252,8 +257,8 @@ export function prepareNotesSave(
   const relationshipSlides = new Map<string, SlideRecord>();
   for (const slide of Object.values(doc.slides)) {
     if (!slide.origin) continue;
-    const needsPatch = !!slide.notes && trackedParts.has(slide.notes.targetPart)
-      || relationshipTargetsTrackedNotes(doc, slide, trackedParts);
+    const needsPatch =
+      (!!slide.notes && trackedParts.has(slide.notes.targetPart)) || relationshipTargetsTrackedNotes(doc, slide, trackedParts);
     if (!needsPatch) continue;
     relationshipSlides.set(slide.origin.part, slide);
     if (slide.creation) continue;
@@ -276,30 +281,27 @@ export function materializeNotesParts(
     const binding = slide.notes;
     if (!binding) continue;
     if (plan.trackedParts.has(binding.targetPart)) {
-      const source = binding.sourcePart
-        ? baselines[binding.sourcePart] ?? doc.package?.parts[binding.sourcePart]
-        : undefined;
+      const source = binding.sourcePart ? (baselines[binding.sourcePart] ?? doc.package?.parts[binding.sourcePart]) : undefined;
       if (binding.sourcePart && !source) throw new Error(`找不到备注克隆来源：${binding.sourcePart}`);
-      const value = own(slide.ovr, 'notes') ? slide.ovr.notes! : slide.src.notes ?? '';
+      const value = own(slide.ovr, 'notes') ? slide.ovr.notes! : (slide.src.notes ?? '');
       changes[binding.targetPart] = patchNotesText(source ?? emptyNotesXml(), value);
       const sourceRelationships = binding.sourcePart
-        ? baselines[relationshipPartFor(binding.sourcePart)]
-          ?? doc.package?.parts[relationshipPartFor(binding.sourcePart)]
+        ? (baselines[relationshipPartFor(binding.sourcePart)] ?? doc.package?.parts[relationshipPartFor(binding.sourcePart)])
         : undefined;
       changes[relationshipPartFor(binding.targetPart)] = patchNotesBackReference(
-        sourceRelationships, binding.targetPart, slide.origin!.part,
+        sourceRelationships,
+        binding.targetPart,
+        slide.origin!.part,
       );
       continue;
     }
     const baseline = baselines[binding.targetPart];
     if (!baseline) continue;
     const current = doc.package?.parts[binding.targetPart];
-    const changed = own(slide.ovr, 'notes')
-      || !!current && (current.length !== baseline.length
-        || current.some((byte, index) => byte !== baseline[index]));
+    const changed =
+      own(slide.ovr, 'notes')
+      || (!!current && (current.length !== baseline.length || current.some((byte, index) => byte !== baseline[index])));
     if (!changed) continue;
-    changes[binding.targetPart] = own(slide.ovr, 'notes')
-      ? patchNotesText(baseline, slide.ovr.notes!)
-      : baseline;
+    changes[binding.targetPart] = own(slide.ovr, 'notes') ? patchNotesText(baseline, slide.ovr.notes!) : baseline;
   }
 }

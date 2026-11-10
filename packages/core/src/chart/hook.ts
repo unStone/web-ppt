@@ -50,7 +50,12 @@ export function setChartExParser(fn: ChartParser | null): void {
 }
 
 export function supportsChartEx(namespace: string, source: object): boolean {
-  return extendedSessions.has(source) && /^http:\/\/schemas.microsoft.com\/office\/drawing\/(2014|2015\/9\/8|2015\/10\/21|2016\/5\/(9|10|11|12|13|14|15))\/chartex$/.test(namespace);
+  return (
+    extendedSessions.has(source)
+    && /^http:\/\/schemas.microsoft.com\/office\/drawing\/(2014|2015\/9\/8|2015\/10\/21|2016\/5\/(9|10|11|12|13|14|15))\/chartex$/.test(
+      namespace,
+    )
+  );
 }
 
 /** 由 index.ts 在启动时注入真正的图表解析器 */
@@ -62,5 +67,5 @@ export function setChartParser(fn: ChartParser): void {
 export const setChartRenderer = setChartParser;
 
 export function getChartParser(extended = false, source?: object): ChartParser | null {
-  return extended ? source ? extendedSessions.get(source) ?? null : extendedParser : parser;
+  return extended ? (source ? (extendedSessions.get(source) ?? null) : extendedParser) : parser;
 }

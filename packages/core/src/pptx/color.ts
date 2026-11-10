@@ -14,9 +14,21 @@ type RGB = [number, number, number];
 const SYS: Record<string, string> = { window: 'FFFFFF', windowText: '000000' };
 
 const PRST: Record<string, string> = {
-  black: '000000', white: 'FFFFFF', red: 'FF0000', green: '008000', lime: '00FF00',
-  blue: '0000FF', yellow: 'FFFF00', cyan: '00FFFF', magenta: 'FF00FF', gray: '808080',
-  ltGray: 'C0C0C0', dkGray: '404040', orange: 'FFA500', purple: '800080', brown: 'A52A2A',
+  black: '000000',
+  white: 'FFFFFF',
+  red: 'FF0000',
+  green: '008000',
+  lime: '00FF00',
+  blue: '0000FF',
+  yellow: 'FFFF00',
+  cyan: '00FFFF',
+  magenta: 'FF00FF',
+  gray: '808080',
+  ltGray: 'C0C0C0',
+  dkGray: '404040',
+  orange: 'FFA500',
+  purple: '800080',
+  brown: 'A52A2A',
 };
 
 const COLOR_TAGS = ['srgbClr', 'schemeClr', 'sysClr', 'prstClr', 'scrgbClr', 'hslClr'];
@@ -37,14 +49,26 @@ export function parseColor(el: Element, ctx: ColorCtx): string {
   for (let n = el.firstElementChild; n; n = n.nextElementSibling) {
     const val = (numAttr(n, 'val') ?? 0) / 100000;
     switch (n.localName) {
-      case 'alpha': alpha = val; break;
+      case 'alpha':
+        alpha = val;
+        break;
       // shade / tint 在**线性** RGB 空间做，直接对 sRGB 分量乘会明显偏暗 / 偏艳。
       // 实测对照 LibreOffice：线性空间误差 Δ≤8，sRGB 直乘最大 Δ≈69。
-      case 'shade': rgb = inLinear(rgb, (c) => c * val); break;
-      case 'tint': rgb = inLinear(rgb, (c) => c * val + (1 - val)); break;
-      case 'lumMod': rgb = adjustHsl(rgb, (h, s, l) => [h, s, l * val]); break;
-      case 'lumOff': rgb = adjustHsl(rgb, (h, s, l) => [h, s, l + val]); break;
-      case 'satMod': rgb = adjustHsl(rgb, (h, s, l) => [h, s * val, l]); break;
+      case 'shade':
+        rgb = inLinear(rgb, (c) => c * val);
+        break;
+      case 'tint':
+        rgb = inLinear(rgb, (c) => c * val + (1 - val));
+        break;
+      case 'lumMod':
+        rgb = adjustHsl(rgb, (h, s, l) => [h, s, l * val]);
+        break;
+      case 'lumOff':
+        rgb = adjustHsl(rgb, (h, s, l) => [h, s, l + val]);
+        break;
+      case 'satMod':
+        rgb = adjustHsl(rgb, (h, s, l) => [h, s * val, l]);
+        break;
     }
   }
   const [r, g, b] = rgb.map((c) => Math.round(clamp(c, 0, 255)));
@@ -60,17 +84,9 @@ function baseColor(el: Element, ctx: ColorCtx): RGB {
     case 'prstClr':
       return hex(PRST[attr(el, 'val') ?? ''] ?? '808080');
     case 'scrgbClr':
-      return [
-        ((numAttr(el, 'r') ?? 0) / 100000) * 255,
-        ((numAttr(el, 'g') ?? 0) / 100000) * 255,
-        ((numAttr(el, 'b') ?? 0) / 100000) * 255,
-      ];
+      return [((numAttr(el, 'r') ?? 0) / 100000) * 255, ((numAttr(el, 'g') ?? 0) / 100000) * 255, ((numAttr(el, 'b') ?? 0) / 100000) * 255];
     case 'hslClr':
-      return hslToRgb(
-        ((numAttr(el, 'hue') ?? 0) / 60000) / 360,
-        (numAttr(el, 'sat') ?? 0) / 100000,
-        (numAttr(el, 'lum') ?? 0) / 100000,
-      );
+      return hslToRgb((numAttr(el, 'hue') ?? 0) / 60000 / 360, (numAttr(el, 'sat') ?? 0) / 100000, (numAttr(el, 'lum') ?? 0) / 100000);
     case 'schemeClr': {
       const name = attr(el, 'val') ?? 'tx1';
       if (name === 'phClr') return ctx.phClr ? parseCssRgb(ctx.phClr) : [128, 128, 128];
@@ -122,8 +138,11 @@ function adjustHsl(rgb: RGB, fn: (h: number, s: number, l: number) => [number, n
 }
 
 function rgbToHsl([r, g, b]: RGB): [number, number, number] {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
   const l = (max + min) / 2;
   if (max === min) return [0, 0, l];
   const d = max - min;

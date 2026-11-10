@@ -11,7 +11,7 @@ import { runSitePptSaveBrowserContract } from './lib/site-ppt-save-browser-contr
 import { runSitePortableClipboardBrowserContract } from './lib/site-portable-clipboard-browser-contract.mjs';
 import { runSiteVideoBrowserContract } from './lib/site-video-browser-contract.mjs';
 import { runSitePdfBrowserContract } from './lib/site-pdf-browser-contract.mjs';
-import {siteFontWorkerFixture} from './lib/site-font-worker-fixture.mjs';
+import { siteFontWorkerFixture } from './lib/site-font-worker-fixture.mjs';
 import { runSiteThreeDBrowserContract } from './lib/site-three-d-browser-contract.mjs';
 import { runSiteMetafileBrowserContract } from './lib/site-metafile-browser-contract.mjs';
 import { runStandaloneCommentsBrowserContract } from './lib/standalone-comments-browser-contract.mjs';
@@ -49,9 +49,7 @@ import { runSiteAppearanceBrowserContract } from './lib/site-appearance-browser-
 import { runSiteEditContextFailureContract } from './lib/site-edit-context-browser-contract.mjs';
 /** 官网产品层的 .ppt 转换确认、零命令拒绝与下载命名必须在真实浏览器观察。 */
 import { execFileSync, spawn } from 'node:child_process';
-import {
-  existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -146,24 +144,35 @@ const aliases = [
   ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
   ['@web-ppt/editor', join(root, 'packages/editor/src/index.ts')],
 ];
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/site/src/editor-page.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--splitting', '--entry-names=editor-page', '--chunk-names=chunk-[hash]',
-  '--log-level=error', ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
-  `--outdir=${bundleDir}`, `--metafile=${metafile}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/site/src/editor-page.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--splitting',
+    '--entry-names=editor-page',
+    '--chunk-names=chunk-[hash]',
+    '--log-level=error',
+    ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+    `--outdir=${bundleDir}`,
+    `--metafile=${metafile}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 
 const metadata = JSON.parse(readFileSync(metafile, 'utf8'));
 const outputs = metadata.outputs;
 const outputByAbsolute = new Map(Object.keys(outputs).map((key) => [resolve(root, key), key]));
-const importedOutput = (owner, path) => outputByAbsolute.get(resolve(dirname(resolve(root, owner)), path))
-  ?? outputByAbsolute.get(resolve(root, path));
+const importedOutput = (owner, path) =>
+  outputByAbsolute.get(resolve(dirname(resolve(root, owner)), path)) ?? outputByAbsolute.get(resolve(root, path));
 const pathEndsWith = (value, suffix) => {
   const normalized = value?.replaceAll('\\', '/');
   return normalized === suffix || normalized?.endsWith(`/${suffix}`);
 };
-const entry = Object.entries(outputs).find(([, info]) =>
-  pathEndsWith(info.entryPoint, 'packages/site/src/editor-page.ts'))?.[0];
+const entry = Object.entries(outputs).find(([, info]) => pathEndsWith(info.entryPoint, 'packages/site/src/editor-page.ts'))?.[0];
 if (!entry) throw new Error('官网编辑器分块检查找不到入口产物');
 const closure = (roots, includeDynamic) => {
   const seen = new Set();
@@ -180,27 +189,43 @@ const closure = (roots, includeDynamic) => {
   }
   return seen;
 };
-const hasImageZip = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
-  .some((input) => pathEndsWith(input, 'packages/core/src/image-zip.ts')));
-const hasBuiltinTemplates = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
-  .some((input) => pathEndsWith(input, 'packages/edit-core/src/templates/recipes.ts')));
-const hasTemplatePicker = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
-  .some((input) => pathEndsWith(input, 'packages/site/src/editor-template-picker.ts')));
-const hasChartData = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
-  .some((input) => pathEndsWith(input, 'packages/edit-core/src/chart/workbook.ts')));
-const hasFontDecoder = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
-  .some((input) => pathEndsWith(input, 'node_modules/mtx-decompressor/dist/index.mjs')));
-const hasAdjustments = (keys) => [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {})
-  .some((input) => pathEndsWith(input, 'packages/editor/src/adjustments/preset-adjustment-editor.ts')));
+const hasImageZip = (keys) =>
+  [...keys].some((key) => Object.keys(outputs[key]?.inputs ?? {}).some((input) => pathEndsWith(input, 'packages/core/src/image-zip.ts')));
+const hasBuiltinTemplates = (keys) =>
+  [...keys].some((key) =>
+    Object.keys(outputs[key]?.inputs ?? {}).some((input) => pathEndsWith(input, 'packages/edit-core/src/templates/recipes.ts')),
+  );
+const hasTemplatePicker = (keys) =>
+  [...keys].some((key) =>
+    Object.keys(outputs[key]?.inputs ?? {}).some((input) => pathEndsWith(input, 'packages/site/src/editor-template-picker.ts')),
+  );
+const hasChartData = (keys) =>
+  [...keys].some((key) =>
+    Object.keys(outputs[key]?.inputs ?? {}).some((input) => pathEndsWith(input, 'packages/edit-core/src/chart/workbook.ts')),
+  );
+const hasFontDecoder = (keys) =>
+  [...keys].some((key) =>
+    Object.keys(outputs[key]?.inputs ?? {}).some((input) => pathEndsWith(input, 'node_modules/mtx-decompressor/dist/index.mjs')),
+  );
+const hasAdjustments = (keys) =>
+  [...keys].some((key) =>
+    Object.keys(outputs[key]?.inputs ?? {}).some((input) =>
+      pathEndsWith(input, 'packages/editor/src/adjustments/preset-adjustment-editor.ts'),
+    ),
+  );
 const initial = closure([entry], false);
-const cordisOutputs = Object.keys(outputs).filter(key => Object.keys(outputs[key].inputs).some(input =>
-  pathEndsWith(input, 'node_modules/cordis/lib/index.js')));
+const cordisOutputs = Object.keys(outputs).filter((key) =>
+  Object.keys(outputs[key].inputs).some((input) => pathEndsWith(input, 'node_modules/cordis/lib/index.js')),
+);
 if (cordisOutputs.length !== 1 || initial.has(cordisOutputs[0])) {
   throw new Error('Cordis 文稿插件必须在首次打开时加载，且只有一份运行时');
 }
-const mediaOutputs = Object.keys(outputs).filter((key) => Object.keys(outputs[key].inputs).some((input) =>
-  pathEndsWith(input, 'packages/edit-core/src/media/resource.ts')
-  || pathEndsWith(input, 'packages/site/src/editor-media-tools.ts')));
+const mediaOutputs = Object.keys(outputs).filter((key) =>
+  Object.keys(outputs[key].inputs).some(
+    (input) =>
+      pathEndsWith(input, 'packages/edit-core/src/media/resource.ts') || pathEndsWith(input, 'packages/site/src/editor-media-tools.ts'),
+  ),
+);
 if (mediaOutputs.length !== 2 || mediaOutputs.some((key) => initial.has(key))) {
   throw new Error('媒体工具和共享校验实现必须在按需闭包，不能重复打包或进入首屏');
 }
@@ -231,22 +256,30 @@ const initialGzip = gzipSync(readFileSync(resolve(root, entry))).length;
 if (initialGzip > 215467) {
   throw new Error(`官网编辑初始入口体积回归：${initialGzip}B gzip > 215467B`);
 }
-const initialSize = [...initial].reduce((sum, key) => {
-  const bytes = readFileSync(resolve(root, key));
-  return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
-}, { raw: 0, gzip: 0 });
+const initialSize = [...initial].reduce(
+  (sum, key) => {
+    const bytes = readFileSync(resolve(root, key));
+    return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
+  },
+  { raw: 0, gzip: 0 },
+);
 const initialBudget = { raw: 2_254_902, gzip: 509_849 };
 if (initialSize.raw > initialBudget.raw || initialSize.gzip > initialBudget.gzip) {
   throw new Error(`官网编辑首屏依赖闭包体积回归：${JSON.stringify({ initialBudget, initialSize })}`);
 }
 const applicationEntry = Object.entries(outputs).find(([, info]) =>
-  pathEndsWith(info.entryPoint, 'packages/site/src/editor-application.ts'))?.[0];
+  pathEndsWith(info.entryPoint, 'packages/site/src/editor-application.ts'),
+)?.[0];
 if (!applicationEntry) throw new Error('找不到 Cordis 产品应用的按需入口');
-const applicationAdditional = [...closure([applicationEntry], false)].filter(key => !initial.has(key))
-  .reduce((sum, key) => {
-    const bytes = readFileSync(resolve(root, key));
-    return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
-  }, { raw: 0, gzip: 0 });
+const applicationAdditional = [...closure([applicationEntry], false)]
+  .filter((key) => !initial.has(key))
+  .reduce(
+    (sum, key) => {
+      const bytes = readFileSync(resolve(root, key));
+      return { raw: sum.raw + bytes.length, gzip: sum.gzip + gzipSync(bytes).length };
+    },
+    { raw: 0, gzip: 0 },
+  );
 // 首次打开的预算包含动画蒙版、OOXML 转角解析及对象查找和侧栏任务导航；新增交互实测增加约 2.0 KB gzip。
 // beta.6 起含 timing 媒体播放语义解析（spid/playback/MediaTiming，core 激活闭包必经），gzip 余量按实测上调 300B
 // 查看器按动画时间线执行 p:cmd 媒体调用并上报播放失败（实测超出 1519B，上调 1.6KB），叠加媒体源回退的 100B
@@ -267,21 +300,29 @@ const applicationAdditional = [...closure([applicationEntry], false)].filter(key
 // 给每个模块加一行 `// 路径` 注释，实测 raw +1061B、gzip +537B（561,646B），上调 600B；压缩发布产物不含这类注释
 // 本闭包由 esbuild 打包；Vite 8 不再附带 esbuild，测试改用显式依赖的 0.28（Vite 8 可选 peer 下限 0.27），
 // 同一源码 0.21.5 → 0.28.2 实测 561,646B → 562,911B gzip，增 1265B，上调 1300B
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 53_200 };
+// 整仓 Biome 重排（无行为变化）：非压缩 esbuild 产物沿用源码里对象 / 数组字面量的分行，
+// 实测 gzip 563,644B，超出 595B，上调 600B（raw 仍在预算内）；压缩产物不受源码排版影响
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 53_800 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
 }
-writeFileSync(join(out, 'cordis-size.json'), JSON.stringify({ initialSize, initialBudget, applicationAdditional, activatedSize, activatedBudget }, null, 2) + '\n');
-const delayedChunks = new Set(imageZipTargets.map((key) =>
-  `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`));
+writeFileSync(
+  join(out, 'cordis-size.json'),
+  JSON.stringify({ initialSize, initialBudget, applicationAdditional, activatedSize, activatedBudget }, null, 2) + '\n',
+);
+const delayedChunks = new Set(imageZipTargets.map((key) => `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`));
 
 const browser = [
   process.env.CHROME_BIN,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/Applications/Chromium.app/Contents/MacOS/Chromium',
-  '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium',
-].filter(Boolean).find((candidate) => existsSync(candidate));
+  '/usr/bin/google-chrome',
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/chromium',
+]
+  .filter(Boolean)
+  .find((candidate) => existsSync(candidate));
 if (!browser) throw new Error('找不到 Chrome/Chromium；可通过 CHROME_BIN 指定真实浏览器');
 
 const editorShell = readFileSync(join(root, 'packages/site/editor.html'), 'utf8');
@@ -292,30 +333,56 @@ if (editorShell.includes('templateDialog') || editorStyle.includes('.template-di
 if (editorShell.includes('mediaDialog') || editorStyle.includes('#mediaDialog')) {
   throw new Error('媒体弹窗 DOM 与样式必须按需加载');
 }
-const editorHtml = productionLanguages ? readFileSync(join(productionDirectory, 'editor.html'), 'utf8') : editorShell
-  .replace('./src/editor-page.css', './editor-page.css')
-  .replace('./src/editor-page.ts', './editor-page.js');
+const editorHtml = productionLanguages
+  ? readFileSync(join(productionDirectory, 'editor.html'), 'utf8')
+  : editorShell.replace('./src/editor-page.css', './editor-page.css').replace('./src/editor-page.ts', './editor-page.js');
 const routes = new Map([
-  ...await siteFontWorkerFixture(root,out,aliases),
-  ...['cache', 'scatter-horizontal'].map(name => [`/fixtures/sample-chart-shared-transition-${name}.pptx`,
-    ['application/octet-stream', readFileSync(join(root, `fixtures/sample-chart-shared-transition-${name}.pptx`))]]),
+  ...(await siteFontWorkerFixture(root, out, aliases)),
+  ...['cache', 'scatter-horizontal'].map((name) => [
+    `/fixtures/sample-chart-shared-transition-${name}.pptx`,
+    ['application/octet-stream', readFileSync(join(root, `fixtures/sample-chart-shared-transition-${name}.pptx`))],
+  ]),
   ['/fixtures/sample-chart-hierarchy.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-hierarchy.pptx'))]],
   ['/fixtures/sample-chart-shared.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared.pptx'))]],
-  ['/fixtures/sample-chart-shared-cache.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared-cache.pptx'))]],
-  ['/fixtures/sample-chart-shared-cache-horizontal.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared-cache-horizontal.pptx'))]],
+  [
+    '/fixtures/sample-chart-shared-cache.pptx',
+    ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared-cache.pptx'))],
+  ],
+  [
+    '/fixtures/sample-chart-shared-cache-horizontal.pptx',
+    ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared-cache-horizontal.pptx'))],
+  ],
   ['/fixtures/sample-chart-shared-xy.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chart-shared-xy.pptx'))]],
-  ...['mixed', 'mixed-horizontal', 'mixed-crossed', 'mixed-overlap', 'mixed-records',
-    'mixed-records-horizontal', 'mixed-records-flat-horizontal', 'mixed-overlap-crossed'].map(name => [
-    `/fixtures/sample-chart-shared-${name}.pptx`, ['application/octet-stream', readFileSync(join(root, `fixtures/sample-chart-shared-${name}.pptx`))],
+  ...[
+    'mixed',
+    'mixed-horizontal',
+    'mixed-crossed',
+    'mixed-overlap',
+    'mixed-records',
+    'mixed-records-horizontal',
+    'mixed-records-flat-horizontal',
+    'mixed-overlap-crossed',
+  ].map((name) => [
+    `/fixtures/sample-chart-shared-${name}.pptx`,
+    ['application/octet-stream', readFileSync(join(root, `fixtures/sample-chart-shared-${name}.pptx`))],
   ]),
-  ['/fixtures/sample-portable-rich-text.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-portable-rich-text.pptx'))]],
+  [
+    '/fixtures/sample-portable-rich-text.pptx',
+    ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-portable-rich-text.pptx'))],
+  ],
   ['/fixtures/sample-comment-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-comment-edit.pptx'))]],
   ['/fixtures/sample-editor-resize.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-resize.pptx'))]],
   ['/fixtures/sample-editor-comments.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-comments.pptx'))]],
   ['/fixtures/sample-editor-audio-icon.png', ['image/png', readFileSync(join(root, 'fixtures/sample-editor-audio-icon.png'))]],
-  ['/fixtures/sample-editor-appearance.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-appearance.pptx'))]],
+  [
+    '/fixtures/sample-editor-appearance.pptx',
+    ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-appearance.pptx'))],
+  ],
   ['/fixtures/mixed-patched.pptx', ['application/octet-stream', readFileSync(join(root, 'out/edit-save/mixed-patched.pptx'))]],
-  ['/fixtures/sample-editor-add-media.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-add-media.pptx'))]],
+  [
+    '/fixtures/sample-editor-add-media.pptx',
+    ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-editor-add-media.pptx'))],
+  ],
   ['/fixtures/sample-editor-media.wav', ['audio/wav', readFileSync(join(root, 'fixtures/sample-editor-media.wav'))]],
   ['/fixtures/sample-editor-media.mp4', ['video/mp4', readFileSync(join(root, 'fixtures/sample-editor-media.mp4'))]],
   ['/editor.html', ['text/html; charset=utf-8', editorHtml]],
@@ -324,45 +391,144 @@ const routes = new Map([
   ['/fixtures/font-chinese.ttf', ['font/ttf', readFileSync(join(root, 'tooling/font-glyph-samples/chinese.ttf'))]],
   ['/fixtures/sample-vector-pdf-text.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-vector-pdf-text.pptx'))]],
   ['/fixtures/sample-vector-pdf-jobs.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-vector-pdf-jobs.pptx'))]],
-  ['/fixtures/sample-vector-pdf-effects.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-vector-pdf-effects.pptx'))]],
-  ['/editor.en.html', ['text/html; charset=utf-8', productionLanguages
-    ? readFileSync(join(productionDirectory, 'editor.en.html'), 'utf8') : editorHtml]],
+  [
+    '/fixtures/sample-vector-pdf-effects.pptx',
+    ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-vector-pdf-effects.pptx'))],
+  ],
+  [
+    '/editor.en.html',
+    ['text/html; charset=utf-8', productionLanguages ? readFileSync(join(productionDirectory, 'editor.en.html'), 'utf8') : editorHtml],
+  ],
   ['/src/i18n-language.css', ['text/css', readFileSync(join(root, 'packages/site/src/i18n-language.css'))]],
   ['/editor-page.css', ['text/css; charset=utf-8', editorStyle]],
   ['/missing-notes.pdf', ['application/pdf', Buffer.from('%PDF-1.4\n%%EOF')]],
-  ['/demo/showcase.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
-  ['/demo/held-remote.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))]],
-  ['/demo/sample-chart.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-chart.pptx'))]],
-  ['/demo/sample-encrypted-agile.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-encrypted-agile.pptx'))]],
-  ['/demo/sample-hidden.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-hidden.pptx'))]],
+  [
+    '/demo/showcase.pptx',
+    ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))],
+  ],
+  [
+    '/demo/held-remote.pptx',
+    ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/showcase.pptx'))],
+  ],
+  [
+    '/demo/sample-chart.pptx',
+    ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-chart.pptx'))],
+  ],
+  [
+    '/demo/sample-encrypted-agile.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-encrypted-agile.pptx')),
+    ],
+  ],
+  [
+    '/demo/sample-hidden.pptx',
+    ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-hidden.pptx'))],
+  ],
   ['/fixtures/sample.ppt', ['application/vnd.ms-powerpoint', readFileSync(join(root, 'fixtures/sample.ppt'))]],
-  ['/fixtures/sample-editor-shape-format.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-shape-format.pptx'))]],
-  ['/fixtures/sample-editor-preset-shape.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-preset-shape.pptx'))]],
-  ['/fixtures/sample-editor-text.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-text.pptx'))]],
-  ['/fixtures/sample-editor-image-content.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-image-content.pptx'))]],
-  ['/fixtures/sample-editor-format-painter.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-format-painter.pptx'))]],
-  ['/fixtures/sample-editor-find-replace.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-find-replace.pptx'))]],
-  ['/fixtures/sample-editor-transitions.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-transitions.pptx'))]],
-  ['/fixtures/sample-editor-animations.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-animations.pptx'))]],
-  ['/fixtures/sample-editor-touch.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-touch.pptx'))]],
-  ['/fixtures/sample-editor-selection-pane.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-selection-pane.pptx'))]],
-  ['/fixtures/sample-editor-add-slide.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-editor-add-slide.pptx'))]],
-  ['/fixtures/sample-chart-data.pptx', ['application/vnd.openxmlformats-officedocument.presentationml.presentation', readFileSync(join(root, 'fixtures/sample-chart-data.pptx'))]],
+  [
+    '/fixtures/sample-editor-shape-format.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-shape-format.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-preset-shape.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-preset-shape.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-text.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-text.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-image-content.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-image-content.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-format-painter.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-format-painter.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-find-replace.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-find-replace.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-transitions.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-transitions.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-animations.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-animations.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-touch.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-touch.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-selection-pane.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-selection-pane.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-editor-add-slide.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-editor-add-slide.pptx')),
+    ],
+  ],
+  [
+    '/fixtures/sample-chart-data.pptx',
+    [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      readFileSync(join(root, 'fixtures/sample-chart-data.pptx')),
+    ],
+  ],
   ['/assets/replacement.png', ['image/png', readFileSync(join(root, 'packages/site/public/og.png'))]],
 ]);
 const productionBase = productionLanguages
-  ? new URL(/<script[^>]+src="([^"]+)"/.exec(editorHtml)[1], 'http://localhost').pathname.split('/assets/')[0] : '';
+  ? new URL(/<script[^>]+src="([^"]+)"/.exec(editorHtml)[1], 'http://localhost').pathname.split('/assets/')[0]
+  : '';
 const dictionaryUrls = [];
 const saveChunks = [];
 const chartChunks = { tools: [], data: [] };
 if (productionLanguages) {
-  for (const page of ['index', 'samples']) for (const suffix of ['', '.en']) {
-    routes.set(`/${page}${suffix}.html`, ['text/html; charset=utf-8', readFileSync(join(productionDirectory, `${page}${suffix}.html`))]);
-  }
+  for (const page of ['index', 'samples'])
+    for (const suffix of ['', '.en']) {
+      routes.set(`/${page}${suffix}.html`, ['text/html; charset=utf-8', readFileSync(join(productionDirectory, `${page}${suffix}.html`))]);
+    }
   for (const name of readdirSync(join(productionDirectory, 'assets'))) {
     const bytes = readFileSync(join(productionDirectory, 'assets', name));
-    routes.set(`/assets/${name}`, [name.endsWith('.wasm') ? 'application/wasm'
-      : name.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8', bytes]);
+    routes.set(`/assets/${name}`, [
+      name.endsWith('.wasm') ? 'application/wasm' : name.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
+      bytes,
+    ]);
     if (name.endsWith('.js') && bytes.includes('Fidelity needs a reference')) dictionaryUrls.push(`${productionBase}/assets/${name}`);
     // 可用性校验也服务于复制入口；只定位保存聚合器，才能实际暂停首次序列化加载。
     if (name.endsWith('.js') && bytes.includes('多个编辑扩展的保存基线冲突')) saveChunks.push(`${productionBase}/assets/${name}`);
@@ -374,46 +540,120 @@ if (productionLanguages) {
   if (chartChunks.tools.length !== 1 || chartChunks.data.length !== 1) throw new Error('找不到生产图表工具与数据模块边界');
 }
 const standaloneBundle = join(out, 'standalone.mjs');
-execFileSync('npx', ['esbuild', join(root, 'packages/viewer/src/main.ts'), '--bundle', '--format=esm', '--platform=browser',
-  '--log-level=error', ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${standaloneBundle}`], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/viewer/src/main.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+    `--outfile=${standaloneBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 routes.set('/standalone.mjs', ['text/javascript', readFileSync(standaloneBundle)]);
 const recoveryShutdownBundle = join(out, 'recovery-shutdown.mjs');
-execFileSync('npx', ['esbuild', join(root, 'tooling/lib/site-recovery-shutdown-browser.mjs'),
-  '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
-  ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${recoveryShutdownBundle}`],
-{ cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'tooling/lib/site-recovery-shutdown-browser.mjs'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+    `--outfile=${recoveryShutdownBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 routes.set('/recovery-shutdown.mjs', ['text/javascript', readFileSync(recoveryShutdownBundle)]);
 const legacyChartSeed = join(out, 'legacy-chart-seed.mjs');
-execFileSync('npx', ['esbuild', join(root, 'tooling/lib/site-chart-legacy-seed-browser.mjs'),
-  '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
-  ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${legacyChartSeed}`], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'tooling/lib/site-chart-legacy-seed-browser.mjs'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+    `--outfile=${legacyChartSeed}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 routes.set('/legacy-chart-seed.mjs', ['text/javascript', readFileSync(legacyChartSeed)]);
 const filesShutdownBundle = join(out, 'files-shutdown.mjs');
-execFileSync('npx', ['esbuild', join(root, 'tooling/lib/site-files-shutdown-browser.mjs'),
-  '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
-  ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${filesShutdownBundle}`],
-{ cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'tooling/lib/site-files-shutdown-browser.mjs'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+    `--outfile=${filesShutdownBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 routes.set('/files-shutdown.mjs', ['text/javascript', readFileSync(filesShutdownBundle)]);
-routes.set('/tools-shell.html', ['text/html', editorShell.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '').replace('./src/editor-page.css', './editor-page.css')]);
+routes.set('/tools-shell.html', [
+  'text/html',
+  editorShell.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '').replace('./src/editor-page.css', './editor-page.css'),
+]);
 const toolsShutdownBundle = join(out, 'tools-shutdown.mjs');
-execFileSync('npx', ['esbuild', join(root, 'tooling/lib/site-tools-shutdown-browser.mjs'),
-  '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
-  ...aliases.map(([from, to]) => `--alias:${from}=${to}`), `--outfile=${toolsShutdownBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'tooling/lib/site-tools-shutdown-browser.mjs'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+    `--outfile=${toolsShutdownBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 routes.set('/tools-shutdown.mjs', ['text/javascript', readFileSync(toolsShutdownBundle)]);
 routes.set('/standalone.css', ['text/css', readFileSync(join(root, 'packages/viewer/src/style.css'))]);
-routes.set('/standalone.html', ['text/html', readFileSync(join(root, 'packages/viewer/index.html'), 'utf8')
-  .replace('/src/main.ts', '/standalone.mjs').replace('/src/style.css', '/standalone.css')]);
+routes.set('/standalone.html', [
+  'text/html',
+  readFileSync(join(root, 'packages/viewer/index.html'), 'utf8')
+    .replace('/src/main.ts', '/standalone.mjs')
+    .replace('/src/style.css', '/standalone.css'),
+]);
 if (!productionLanguages) {
   const samplesBundle = join(out, 'samples.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/site/src/samples.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error',
-    ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
-    `--outfile=${samplesBundle}`], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'packages/site/src/samples.ts'),
+      '--bundle',
+      '--format=esm',
+      '--platform=browser',
+      '--log-level=error',
+      ...aliases.map(([from, to]) => `--alias:${from}=${to}`),
+      `--outfile=${samplesBundle}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   routes.set('/samples.mjs', ['text/javascript', readFileSync(samplesBundle)]);
   routes.set('/samples.css', ['text/css', readFileSync(join(root, 'packages/site/src/style.css'))]);
-  routes.set('/samples.html', ['text/html; charset=utf-8', readFileSync(join(root, 'packages/site/samples.html'), 'utf8')
-    .replace('./src/samples.ts', '/samples.mjs').replace('./src/style.css', '/samples.css')]);
+  routes.set('/samples.html', [
+    'text/html; charset=utf-8',
+    readFileSync(join(root, 'packages/site/samples.html'), 'utf8')
+      .replace('./src/samples.ts', '/samples.mjs')
+      .replace('./src/style.css', '/samples.css'),
+  ]);
 }
 const chartexCore = join(out, 'chartex-core.mjs');
 await bundleBrowser({ root, entry: join(root, 'packages/core/src/index.ts'), output: chartexCore });
@@ -421,35 +661,55 @@ routes.set('/chartex-core.mjs', ['text/javascript', readFileSync(chartexCore)]);
 const chartexNative = join(out, 'chartex-native.mjs');
 await bundleBrowser({ root, entry: join(root, 'packages/core/src/chart-ex.ts'), output: chartexNative });
 routes.set('/chartex-native.mjs', ['text/javascript', readFileSync(chartexNative)]);
-routes.set('/fixtures/sample-chartex-native.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-native.pptx'))]);
-routes.set('/fixtures/sample-chartex-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-edit.pptx'))]);
-routes.set('/fixtures/sample-video-export.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-video-export.pptx'))]);
+routes.set('/fixtures/sample-chartex-native.pptx', [
+  'application/octet-stream',
+  readFileSync(join(root, 'fixtures/sample-chartex-native.pptx')),
+]);
+routes.set('/fixtures/sample-chartex-edit.pptx', [
+  'application/octet-stream',
+  readFileSync(join(root, 'fixtures/sample-chartex-edit.pptx')),
+]);
+routes.set('/fixtures/sample-video-export.pptx', [
+  'application/octet-stream',
+  readFileSync(join(root, 'fixtures/sample-video-export.pptx')),
+]);
 routes.set('/fixtures/sample-ppt-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-ppt-edit.pptx'))]);
 routes.set('/fixtures/sample-three-d.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-three-d.pptx'))]);
 routes.set('/fixtures/sample-emf-plus.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-emf-plus.pptx'))]);
 routes.set('/fixtures/sample-region-map.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-region-map.pptx'))]);
 routes.set('/fixtures/sample-ink-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-ink-edit.pptx'))]);
 routes.set('/fixtures/sample-ole-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-ole-edit.pptx'))]);
-routes.set('/fixtures/sample-smartart-edit.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-smartart-edit.pptx'))]);
-routes.set('/fixtures/sample-chartex-fallback.pptx', ['application/octet-stream', readFileSync(join(root, 'fixtures/sample-chartex-fallback.pptx'))]);
+routes.set('/fixtures/sample-smartart-edit.pptx', [
+  'application/octet-stream',
+  readFileSync(join(root, 'fixtures/sample-smartart-edit.pptx')),
+]);
+routes.set('/fixtures/sample-chartex-fallback.pptx', [
+  'application/octet-stream',
+  readFileSync(join(root, 'fixtures/sample-chartex-fallback.pptx')),
+]);
 const chartexSources = [{ name: 'fixture', path: '/fixtures/sample-chartex-fallback.pptx' }];
 const realChartex = join(root, 'corpus/chartex/libreoffice-funnel-pp1.pptx');
 if (existsSync(realChartex)) {
   routes.set('/fixtures/real-chartex.pptx', ['application/octet-stream', readFileSync(realChartex)]);
-  chartexSources.push({ name: 'libreoffice-funnel', path: '/fixtures/real-chartex.pptx',
+  chartexSources.push({
+    name: 'libreoffice-funnel',
+    path: '/fixtures/real-chartex.pptx',
     sha256: '8f971346a21010dfdb22799be79bbb883497cc260129cba41d5c9b06967fc3e3',
-    imageHash: '855f488a5d14106adab0adc1d4a547863f09f2e737fc347dacf493b80ed63096' });
+    imageHash: '855f488a5d14106adab0adc1d4a547863f09f2e737fc347dacf493b80ed63096',
+  });
 }
 let rejectEditContext = false;
-const editContextUrls = Object.entries(outputs).filter(([, info]) =>
-  pathEndsWith(info.entryPoint, 'packages/editor/src/edit-context/index.ts'))
+const editContextUrls = Object.entries(outputs)
+  .filter(([, info]) => pathEndsWith(info.entryPoint, 'packages/editor/src/edit-context/index.ts'))
   .map(([key]) => `/${relative(bundleDir, resolve(root, key)).split(sep).join('/')}`);
 let rejectedEditContextLoads = 0;
 const server = createServer((request, response) => {
   const rawPath = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
   const pathname = productionBase && rawPath.startsWith(`${productionBase}/`) ? rawPath.slice(productionBase.length) : rawPath;
   if (rejectEditContext && editContextUrls.includes(pathname)) {
-    rejectedEditContextLoads++; response.writeHead(503).end('Intentional optional chunk failure'); return;
+    rejectedEditContextLoads++;
+    response.writeHead(503).end('Intentional optional chunk failure');
+    return;
   }
   if (pathname === '/slow-media.wav') {
     setTimeout(() => {
@@ -474,7 +734,8 @@ const server = createServer((request, response) => {
     response.end(readFileSync(asset));
   };
   // 人为拉开动态块加载窗口，竞态合约不依赖本机磁盘恰好有多快。
-  if (delayedChunks.has(pathname)) setTimeout(send, 100); else send();
+  if (delayedChunks.has(pathname)) setTimeout(send, 100);
+  else send();
 });
 
 const delay = (milliseconds) => new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
@@ -497,25 +758,36 @@ function browserRunning() {
 
 async function waitForBrowserExit(milliseconds) {
   if (!browserRunning()) return true;
-  return Promise.race([
-    new Promise((resolveExit) => child.once('close', () => resolveExit(true))),
-    delay(milliseconds).then(() => false),
-  ]);
+  return Promise.race([new Promise((resolveExit) => child.once('close', () => resolveExit(true))), delay(milliseconds).then(() => false)]);
 }
 
 async function launch(url) {
-  child = spawn(browser, [
-    '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-    '--window-size=1280,720', `--user-data-dir=${profile}`, '--remote-debugging-port=0', url,
-  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  child = spawn(
+    browser,
+    [
+      '--headless=new',
+      '--no-sandbox',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--window-size=1280,720',
+      `--user-data-dir=${profile}`,
+      '--remote-debugging-port=0',
+      url,
+    ],
+    { stdio: ['ignore', 'ignore', 'pipe'] },
+  );
   let spawnError;
-  child.once('error', (error) => { spawnError = error; });
-  child.stderr.on('data', (chunk) => { diagnostics += chunk.toString('utf8'); });
+  child.once('error', (error) => {
+    spawnError = error;
+  });
+  child.stderr.on('data', (chunk) => {
+    diagnostics += chunk.toString('utf8');
+  });
   // Chrome 明确定义 DevToolsActivePort 为动态端口握手；stderr 只是日志，CI 负载高时可能迟到或改格式。
   return waitForDevToolsPort({
     profile,
     isRunning: () => !spawnError && browserRunning(),
-    diagnostics: () => spawnError ? `${spawnError.message}\n${diagnostics}` : diagnostics,
+    diagnostics: () => (spawnError ? `${spawnError.message}\n${diagnostics}` : diagnostics),
   });
 }
 
@@ -525,7 +797,9 @@ async function pageTarget(port, url) {
       const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) => response.json());
       const target = targets.find((candidate) => candidate.type === 'page' && candidate.url === url);
       if (target) return target.webSocketDebuggerUrl;
-    } catch { /* DevTools 端口刚出现时尚未开始响应。 */ }
+    } catch {
+      /* DevTools 端口刚出现时尚未开始响应。 */
+    }
     await delay(100);
   }
   throw new Error('Chrome 没有创建官网编辑页');
@@ -545,8 +819,7 @@ async function runContract(webSocketDebuggerUrl) {
     if (message.method === 'Page.javascriptDialogOpening' && message.params.type === 'beforeunload') {
       void request('Page.handleJavaScriptDialog', { accept: true });
     }
-    if (message.method === 'Runtime.consoleAPICalled'
-      && (message.params.type === 'warning' || message.params.type === 'error')) {
+    if (message.method === 'Runtime.consoleAPICalled' && (message.params.type === 'warning' || message.params.type === 'error')) {
       consoleFailures.push(message.params.args.map((arg) => arg.value ?? arg.description).join(' '));
     }
     if (message.method === 'Runtime.exceptionThrown') {
@@ -558,21 +831,22 @@ async function runContract(webSocketDebuggerUrl) {
     clearTimeout(response.timeout);
     message.error ? response.reject(new Error(`Chrome DevTools ${response.method}: ${message.error.message}`)) : response.resolve(message);
   });
-  const request = (method, params = {}) => new Promise((resolveRequest, rejectRequest) => {
-    const id = ++serial;
-    const timeout = setTimeout(() => {
-      pending.delete(id);
-      rejectRequest(new Error(`Chrome DevTools ${method} 请求超时`));
-    }, 15000);
-    pending.set(id, { resolve: resolveRequest, reject: rejectRequest, timeout, method });
-    // nativeVirtualKeyCode 是操作系统键码；各契约传入的 Windows 值只可用于 windowsVirtualKeyCode。
-    const commandParams = method === 'Input.dispatchKeyEvent'
-      ? { ...params, nativeVirtualKeyCode: undefined } : params;
-    socket.send(JSON.stringify({ id, method, params: commandParams }));
-  });
+  const request = (method, params = {}) =>
+    new Promise((resolveRequest, rejectRequest) => {
+      const id = ++serial;
+      const timeout = setTimeout(() => {
+        pending.delete(id);
+        rejectRequest(new Error(`Chrome DevTools ${method} 请求超时`));
+      }, 15000);
+      pending.set(id, { resolve: resolveRequest, reject: rejectRequest, timeout, method });
+      // nativeVirtualKeyCode 是操作系统键码；各契约传入的 Windows 值只可用于 windowsVirtualKeyCode。
+      const commandParams = method === 'Input.dispatchKeyEvent' ? { ...params, nativeVirtualKeyCode: undefined } : params;
+      socket.send(JSON.stringify({ id, method, params: commandParams }));
+    });
   const evaluate = async (expression, awaitPromise = false) => {
-    const response = await request('Runtime.evaluate', { expression, awaitPromise, returnByValue: true })
-      .catch((error) => { throw new Error(`${error.message}；表达式：${expression.slice(0, 240)}`, { cause: error }); });
+    const response = await request('Runtime.evaluate', { expression, awaitPromise, returnByValue: true }).catch((error) => {
+      throw new Error(`${error.message}；表达式：${expression.slice(0, 240)}`, { cause: error });
+    });
     if (response.result?.exceptionDetails) {
       throw new Error(response.result.exceptionDetails.exception?.description ?? '页面脚本执行失败');
     }
@@ -580,9 +854,14 @@ async function runContract(webSocketDebuggerUrl) {
   };
   const waitFor = async (expression, label, attempts = 100) => {
     for (let attempt = 0; attempt < attempts; attempt++) {
-      try { if (await evaluate(expression)) return; } catch (error) {
+      try {
+        if (await evaluate(expression)) return;
+      } catch (error) {
         // Page.navigate 返回时旧执行上下文可能仍在销毁；仅只读轮询可以跨过这个窗口。
-        if (!/Inspected target navigated or closed|Execution context was destroyed|Cannot find context with specified id/.test(String(error))) throw error;
+        if (
+          !/Inspected target navigated or closed|Execution context was destroyed|Cannot find context with specified id/.test(String(error))
+        )
+          throw error;
       }
       await delay(50);
     }
@@ -612,7 +891,8 @@ async function runContract(webSocketDebuggerUrl) {
     throw new Error(`等待${label}超时：${JSON.stringify(state)}；控制台：${consoleFailures.join(' | ')}`);
   };
   const click = async (selector) => {
-    const point = await evaluate(`(async () => {
+    const point = await evaluate(
+      `(async () => {
       for (let attempt = 0; attempt < 20; attempt++) {
         const node = document.querySelector(${JSON.stringify(selector)});
         if (!node) return null;
@@ -641,16 +921,30 @@ async function runContract(webSocketDebuggerUrl) {
         return point;
       }
       throw new Error('点击目标持续重绘：' + ${JSON.stringify(selector)});
-    })()`, true);
+    })()`,
+      true,
+    );
     if (!point) throw new Error(`找不到 ${selector}`);
     try {
       await request('Input.dispatchMouseEvent', {
-        type: 'mousePressed', x: point.x, y: point.y, button: 'left', buttons: 1, clickCount: 1,
+        type: 'mousePressed',
+        x: point.x,
+        y: point.y,
+        button: 'left',
+        buttons: 1,
+        clickCount: 1,
       });
       await request('Input.dispatchMouseEvent', {
-        type: 'mouseReleased', x: point.x, y: point.y, button: 'left', buttons: 0, clickCount: 1,
+        type: 'mouseReleased',
+        x: point.x,
+        y: point.y,
+        button: 'left',
+        buttons: 0,
+        clickCount: 1,
       });
-    } catch (error) { throw new Error(`点击 ${selector} (${point.x}, ${point.y}) 失败：${error.message}`); }
+    } catch (error) {
+      throw new Error(`点击 ${selector} (${point.x}, ${point.y}) 失败：${error.message}`);
+    }
     if (selector === '#addShape') await click('#shapePicker [data-shape-preset="roundRect"]');
     if (selector === '#addTable') await click('#tableSizeGrid [data-table-row="3"][data-table-column="3"]');
   };
@@ -663,11 +957,17 @@ async function runContract(webSocketDebuggerUrl) {
     await request('Runtime.enable');
     await request('Page.enable');
     await request('Emulation.setDeviceMetricsOverride', {
-      width: 1280, height: 720, deviceScaleFactor: 1, mobile: false,
+      width: 1280,
+      height: 720,
+      deviceScaleFactor: 1,
+      mobile: false,
     });
-    await waitFor(`document.querySelector('#fileName')?.textContent === 'showcase.pptx'
+    await waitFor(
+      `document.querySelector('#fileName')?.textContent === 'showcase.pptx'
       && document.querySelector('#documentKind')?.textContent === 'PPTX · 可编辑'
-      && !document.querySelector('#editorApp')?.dataset.loading`, '默认文稿就绪');
+      && !document.querySelector('#editorApp')?.dataset.loading`,
+      '默认文稿就绪',
+    );
     if (sidePanelOnly) {
       await runSiteEditorSidePanelBrowserContract({ evaluate, waitFor, click });
       if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
@@ -686,7 +986,7 @@ async function runContract(webSocketDebuggerUrl) {
     if (lifecycleOnly) {
       await runSiteEditorLifecycleBrowserContract({ evaluate, request, waitFor, click });
       await runSiteFilesBrowserContract({ evaluate });
-    await runSiteToolsBrowserContract({ evaluate });
+      await runSiteToolsBrowserContract({ evaluate });
       if (consoleFailures.length) throw new Error(consoleFailures.join(' | '));
       return { bytes: 0 };
     }
@@ -756,9 +1056,20 @@ async function runContract(webSocketDebuggerUrl) {
         consoleFailures.splice(index, 1);
         return true;
       };
-      await runSiteI18nProductionContract({ evaluate, request, waitFor, click, dictionaryUrls, chartChunks, saveChunks, onEvent, consumeConsoleFailure });
+      await runSiteI18nProductionContract({
+        evaluate,
+        request,
+        waitFor,
+        click,
+        dictionaryUrls,
+        chartChunks,
+        saveChunks,
+        onEvent,
+        consumeConsoleFailure,
+      });
       await request('Page.navigate', { url: await evaluate("new URL('editor.html?lang=zh-CN', location.href).href") });
-      const featureReady = "document.querySelector('#fileInput') && document.querySelector('#canvasMount')?.firstElementChild && !document.querySelector('#editorApp')?.dataset.loading";
+      const featureReady =
+        "document.querySelector('#fileInput') && document.querySelector('#canvasMount')?.firstElementChild && !document.querySelector('#editorApp')?.dataset.loading";
       await waitFor(`(${featureReady}) || document.querySelector('#recoveryPrompt')?.hidden === false`, '生产外观页面就绪');
       if (await evaluate("document.querySelector('#recoveryPrompt')?.hidden === false")) await click('#discardRecovery');
       await waitFor(featureReady, '生产外观文稿就绪');
@@ -820,20 +1131,29 @@ async function runContract(webSocketDebuggerUrl) {
         panel: { left: panel.left, top: panel.top, right: panel.right, bottom: panel.bottom, width: panel.width, height: panel.height },
         canvas: { width: canvas.width, height: canvas.height } };
     })()`);
-    if (desktopLayout.width !== 1280 || desktopLayout.height !== 720
+    if (
+      desktopLayout.width !== 1280
+      || desktopLayout.height !== 720
       || desktopLayout.scrollWidth > desktopLayout.width
-      || desktopLayout.panel.left < 0 || desktopLayout.panel.right > desktopLayout.width + 1
+      || desktopLayout.panel.left < 0
+      || desktopLayout.panel.right > desktopLayout.width + 1
       || desktopLayout.panel.bottom > desktopLayout.height + 1
-      || desktopLayout.panel.width < 200 || desktopLayout.panel.height < 300
-      || desktopLayout.canvas.width < 300 || desktopLayout.canvas.height < 300) {
+      || desktopLayout.panel.width < 200
+      || desktopLayout.panel.height < 300
+      || desktopLayout.canvas.width < 300
+      || desktopLayout.canvas.height < 300
+    ) {
       throw new Error(`1280×720 工具栏布局越界：${JSON.stringify(desktopLayout)}`);
     }
     const desktopShot = await request('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     writeFileSync(join(out, 'toolbar-1280x720.png'), assertPngDimensions(desktopShot.result.data, 1280, 720, '桌面'));
     await request('Emulation.setDeviceMetricsOverride', {
-      width: 390, height: 844, deviceScaleFactor: 1, mobile: true,
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
     });
-    if (!await evaluate("document.querySelector('#editorApp').dataset.inspectorOpen === 'true'")) {
+    if (!(await evaluate("document.querySelector('#editorApp').dataset.inspectorOpen === 'true'"))) {
       await click('#inspectorToggle');
     }
     await evaluate("document.querySelector('#editorInspector').scrollTop = 0");
@@ -845,36 +1165,50 @@ async function runContract(webSocketDebuggerUrl) {
         panel: { left: panel.left, top: panel.top, right: panel.right, bottom: panel.bottom, width: panel.width, height: panel.height },
         canvas: { width: canvas.width, height: canvas.height } };
     })()`);
-    if (mobileLayout.width !== 390 || mobileLayout.height !== 844
+    if (
+      mobileLayout.width !== 390
+      || mobileLayout.height !== 844
       || mobileLayout.scrollWidth > mobileLayout.width
-      || mobileLayout.panel.left < 71 || mobileLayout.panel.right > mobileLayout.width + 1
+      || mobileLayout.panel.left < 71
+      || mobileLayout.panel.right > mobileLayout.width + 1
       || mobileLayout.panel.bottom > mobileLayout.height + 1
-      || mobileLayout.panel.width < 250 || mobileLayout.panel.height < 300
-      || mobileLayout.canvas.width < 200 || mobileLayout.canvas.height < 200) {
+      || mobileLayout.panel.width < 250
+      || mobileLayout.panel.height < 300
+      || mobileLayout.canvas.width < 200
+      || mobileLayout.canvas.height < 200
+    ) {
       throw new Error(`390×844 工具栏布局越界：${JSON.stringify(mobileLayout)}`);
     }
     const mobileShot = await request('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     writeFileSync(join(out, 'toolbar-390x844.png'), assertPngDimensions(mobileShot.result.data, 390, 844, '移动端'));
     await request('Emulation.setDeviceMetricsOverride', {
-      width: 1280, height: 720, deviceScaleFactor: 1, mobile: false,
+      width: 1280,
+      height: 720,
+      deviceScaleFactor: 1,
+      mobile: false,
     });
     await click('#newFile');
-    await waitFor(`document.querySelector('#templateDialog')?.open
-      && document.querySelectorAll('[data-template-id]').length === 4`, '模板选择器');
+    await waitFor(
+      `document.querySelector('#templateDialog')?.open
+      && document.querySelectorAll('[data-template-id]').length === 4`,
+      '模板选择器',
+    );
     const templatePicker = await evaluate(`(() => ({
       names: [...document.querySelectorAll('.template-card > strong')].map((node) => node.textContent),
       midnightSurface: document.querySelector('[data-template-id="midnight"]')?.style
         .getPropertyValue('--template-surface'),
     }))()`);
-    if (templatePicker.names.join('|') !== '空白|极光|刊页|夜幕'
-      || templatePicker.midnightSurface !== '#101827') {
+    if (templatePicker.names.join('|') !== '空白|极光|刊页|夜幕' || templatePicker.midnightSurface !== '#101827') {
       throw new Error(`模板选择器没有消费公开预览目录：${JSON.stringify(templatePicker)}`);
     }
     await click('[data-template-id="midnight"]');
-    await waitFor(`document.querySelector('#fileName')?.textContent === '夜幕演示文稿.pptx'
+    await waitFor(
+      `document.querySelector('#fileName')?.textContent === '夜幕演示文稿.pptx'
       && document.querySelector('#slideCount')?.textContent === '1'
       && document.querySelector('#slideLayout')?.options.length === 5
-      && !document.querySelector('#editorApp')?.dataset.loading`, '夜幕模板文稿就绪');
+      && !document.querySelector('#editorApp')?.dataset.loading`,
+      '夜幕模板文稿就绪',
+    );
     const midnight = await evaluate(`(() => ({
       page: document.querySelector('#pageIndicator')?.textContent,
       elements: document.querySelectorAll('[data-edit-id]').length,
@@ -886,9 +1220,12 @@ async function runContract(webSocketDebuggerUrl) {
     await click('#newFile');
     await waitFor("document.querySelector('#templateDialog')?.open", '再次打开模板选择器');
     await click('[data-template-id="blank"]');
-    await waitFor(`document.querySelector('#fileName')?.textContent === '未命名演示文稿.pptx'
+    await waitFor(
+      `document.querySelector('#fileName')?.textContent === '未命名演示文稿.pptx'
       && document.querySelector('#slideCount')?.textContent === '1'
-      && !document.querySelector('#editorApp')?.dataset.loading`, '空白文稿就绪');
+      && !document.querySelector('#editorApp')?.dataset.loading`,
+      '空白文稿就绪',
+    );
     const blank = await evaluate(`(() => ({
       kind: document.querySelector('#documentKind')?.textContent,
       shapeDisabled: document.querySelector('#addShape')?.disabled,
@@ -897,23 +1234,35 @@ async function runContract(webSocketDebuggerUrl) {
       saveDisabled: document.querySelector('#saveFile')?.disabled,
       page: document.querySelector('#pageIndicator')?.textContent,
     }))()`);
-    if (blank.kind !== 'PPTX · 可编辑' || blank.shapeDisabled || blank.tableDisabled
+    if (
+      blank.kind !== 'PPTX · 可编辑'
+      || blank.shapeDisabled
+      || blank.tableDisabled
       || blank.exportDisabled
-      || blank.saveDisabled || blank.page !== '1 / 1') {
+      || blank.saveDisabled
+      || blank.page !== '1 / 1'
+    ) {
       throw new Error(`空白文稿没有进入可编辑状态：${JSON.stringify(blank)}`);
     }
     await click('#addSlide');
-    await waitFor(`document.querySelector('#slideCount')?.textContent === '2'
-      && document.querySelector('#pageIndicator')?.textContent === '2 / 2'`, '空白文稿新增页面');
+    await waitFor(
+      `document.querySelector('#slideCount')?.textContent === '2'
+      && document.querySelector('#pageIndicator')?.textContent === '2 / 2'`,
+      '空白文稿新增页面',
+    );
     await evaluate("document.querySelector('[data-web-ppt-editor]').focus({ preventScroll: true })");
     await dispatchKey('PageUp', 'PageUp', 33);
-    await waitFor(`document.querySelector('#pageIndicator')?.textContent === '1 / 2'
+    await waitFor(
+      `document.querySelector('#pageIndicator')?.textContent === '1 / 2'
       && document.querySelector('[data-slide-id][aria-current="true"] .slide-number')?.textContent === '1'`,
-    '可信 PageUp 同步产品分页器');
+      '可信 PageUp 同步产品分页器',
+    );
     await dispatchKey('PageDown', 'PageDown', 34);
-    await waitFor(`document.querySelector('#pageIndicator')?.textContent === '2 / 2'
+    await waitFor(
+      `document.querySelector('#pageIndicator')?.textContent === '2 / 2'
       && document.querySelector('[data-slide-id][aria-current="true"] .slide-number')?.textContent === '2'`,
-    '可信 PageDown 同步产品分页器');
+      '可信 PageDown 同步产品分页器',
+    );
     const blankInitialCount = await evaluate("document.querySelectorAll('[data-edit-id]').length");
     await click('#addShape');
     await waitFor("document.querySelector('#fileName')?.textContent.startsWith('●')", '空白文稿编辑命令');
@@ -934,11 +1283,17 @@ async function runContract(webSocketDebuggerUrl) {
       names: [...document.querySelectorAll('[data-pane-name]')].map(n=>n.textContent),
       chart: { hidden: document.querySelector('#chartInspector')?.hidden, html: document.querySelector('#chartInspector')?.innerHTML?.slice(0,2500), selected: [...document.querySelectorAll('[data-pane-element][aria-selected=true]')].map(e=>e.textContent) },
     }))()`);
-    if (!exportBusy.newDisabled || !exportBusy.inputDisabled || !exportBusy.exportDisabled
-      || !exportBusy.saveDisabled || !exportBusy.file.endsWith('未命名演示文稿.pptx')) {
+    if (
+      !exportBusy.newDisabled
+      || !exportBusy.inputDisabled
+      || !exportBusy.exportDisabled
+      || !exportBusy.saveDisabled
+      || !exportBusy.file.endsWith('未命名演示文稿.pptx')
+    ) {
       throw new Error(`图片导出没有原子锁定文稿会话：${JSON.stringify(exportBusy)}`);
     }
-    await evaluate(`(async () => {
+    await evaluate(
+      `(async () => {
       const bytes = await fetch('/fixtures/sample-editor-text.pptx').then((response) => response.arrayBuffer());
       const transfer = new DataTransfer();
       transfer.items.add(new File([bytes], '竞态替换.pptx', {
@@ -947,44 +1302,61 @@ async function runContract(webSocketDebuggerUrl) {
       const input = document.querySelector('#fileInput');
       input.files = transfer.files;
       input.dispatchEvent(new Event('change', { bubbles: true }));
-    })()`, true);
+    })()`,
+      true,
+    );
     await waitFor("globalThis.__capturedDownload?.name?.endsWith('-images.zip')", '当前编辑态图片 ZIP 下载');
-    const imageZipDownload = await evaluate(`(async () => {
+    const imageZipDownload = await evaluate(
+      `(async () => {
       const captured = globalThis.__capturedDownload;
       const bytes = new Uint8Array(await fetch(captured.href).then((response) => response.arrayBuffer()));
       return { name: captured.name, bytes: Array.from(bytes.slice(0, 4)),
         dirty: document.querySelector('#fileName')?.textContent.startsWith('●'),
         active: document.querySelector('#fileName')?.textContent,
         newDisabled: document.querySelector('#newFile')?.disabled };
-    })()`, true);
-    if (imageZipDownload.name !== '未命名演示文稿-images.zip'
-      || imageZipDownload.bytes[0] !== 0x50 || imageZipDownload.bytes[1] !== 0x4b
-      || !imageZipDownload.dirty || !imageZipDownload.active.endsWith('未命名演示文稿.pptx')
-      || imageZipDownload.newDisabled) {
+    })()`,
+      true,
+    );
+    if (
+      imageZipDownload.name !== '未命名演示文稿-images.zip'
+      || imageZipDownload.bytes[0] !== 0x50
+      || imageZipDownload.bytes[1] !== 0x4b
+      || !imageZipDownload.dirty
+      || !imageZipDownload.active.endsWith('未命名演示文稿.pptx')
+      || imageZipDownload.newDisabled
+    ) {
       throw new Error(`当前编辑态图片 ZIP 无效或改变保存状态：${JSON.stringify(imageZipDownload)}`);
     }
     await evaluate('globalThis.__capturedDownload = null');
     await click('#saveFile');
     await waitFor('!!globalThis.__capturedDownload', '空白 PPTX 下载');
-    const blankDownload = await evaluate(`(async () => {
+    const blankDownload = await evaluate(
+      `(async () => {
       const captured = globalThis.__capturedDownload;
       const bytes = new Uint8Array(await fetch(captured.href).then((response) => response.arrayBuffer()));
       return { name: captured.name, bytes: Array.from(bytes.slice(0, 4)) };
-    })()`, true);
-    if (blankDownload.name !== '未命名演示文稿.pptx'
-      || blankDownload.bytes[0] !== 0x50 || blankDownload.bytes[1] !== 0x4b) {
+    })()`,
+      true,
+    );
+    if (blankDownload.name !== '未命名演示文稿.pptx' || blankDownload.bytes[0] !== 0x50 || blankDownload.bytes[1] !== 0x4b) {
       throw new Error(`空白文稿下载无效：${JSON.stringify(blankDownload)}`);
     }
     await evaluate('globalThis.__capturedDownload = null');
-    await evaluate(`(async () => {
+    await evaluate(
+      `(async () => {
       const bytes = await fetch('/fixtures/sample.ppt').then((response) => response.arrayBuffer());
       const transfer = new DataTransfer();
       transfer.items.add(new File([bytes], 'sample.ppt', { type: 'application/vnd.ms-powerpoint' }));
       const input = document.querySelector('#fileInput');
       input.files = transfer.files;
       input.dispatchEvent(new Event('change', { bubbles: true }));
-    })()`, true);
-    await waitFor("document.querySelector('#documentKind')?.textContent.startsWith('PPT ·') && !document.querySelector('#editorApp')?.dataset.loading", '.ppt 打开');
+    })()`,
+      true,
+    );
+    await waitFor(
+      "document.querySelector('#documentKind')?.textContent.startsWith('PPT ·') && !document.querySelector('#editorApp')?.dataset.loading",
+      '.ppt 打开',
+    );
     const initialCount = await evaluate("document.querySelectorAll('[data-edit-id]').length");
     await evaluate(`(() => {
       globalThis.__conversionPrompts = [];
@@ -1015,10 +1387,17 @@ async function runContract(webSocketDebuggerUrl) {
       dirty: document.querySelector('#fileName').textContent.startsWith('●'),
       elements: document.querySelectorAll('[data-edit-id]').length,
     }))()`);
-    if (!rejected.prompt.includes('sample.pptx') || !rejected.prompt.includes('不会覆盖原文件')
+    if (
+      !rejected.prompt.includes('sample.pptx')
+      || !rejected.prompt.includes('不会覆盖原文件')
       || !rejected.prompt.includes('带原因的框架占位')
-      || rejected.edit !== 'false' || !rejected.addDisabled || !rejected.saveDisabled
-      || !rejected.undoDisabled || rejected.dirty || rejected.elements !== initialCount) {
+      || rejected.edit !== 'false'
+      || !rejected.addDisabled
+      || !rejected.saveDisabled
+      || !rejected.undoDisabled
+      || rejected.dirty
+      || rejected.elements !== initialCount
+    ) {
       throw new Error(`拒绝转换没有保持 view 与零命令：${JSON.stringify(rejected)}`);
     }
 
@@ -1031,8 +1410,8 @@ async function runContract(webSocketDebuggerUrl) {
       saveDisabled: document.querySelector('#saveFile').disabled,
       prompts: globalThis.__conversionPrompts.length,
     }))()`);
-    if (accepted.kind !== 'PPT → PPTX · 可编辑' || accepted.addDisabled || accepted.saveDisabled
-      || accepted.prompts !== 2) throw new Error(`确认转换后未开放编辑：${JSON.stringify(accepted)}`);
+    if (accepted.kind !== 'PPT → PPTX · 可编辑' || accepted.addDisabled || accepted.saveDisabled || accepted.prompts !== 2)
+      throw new Error(`确认转换后未开放编辑：${JSON.stringify(accepted)}`);
 
     await click('#addShape');
     await waitFor("document.querySelector('#fileName')?.textContent.startsWith('●')", '编辑命令提交');
@@ -1040,17 +1419,25 @@ async function runContract(webSocketDebuggerUrl) {
     if (editedCount !== initialCount + 1) throw new Error('确认转换后插入命令没有生效');
     await click('#saveFile');
     await waitFor('!!globalThis.__capturedDownload', 'PPTX 下载');
-    const downloaded = await evaluate(`(async () => {
+    const downloaded = await evaluate(
+      `(async () => {
       const captured = globalThis.__capturedDownload;
       const bytes = new Uint8Array(await fetch(captured.href).then((response) => response.arrayBuffer()));
       return { name: captured.name, bytes: Array.from(bytes), status: document.querySelector('#statusText').textContent };
-    })()`, true);
-    if (downloaded.name !== 'sample.pptx' || downloaded.bytes[0] !== 0x50
-      || downloaded.bytes[1] !== 0x4b || !downloaded.status.includes('PPTX')) {
+    })()`,
+      true,
+    );
+    if (
+      downloaded.name !== 'sample.pptx'
+      || downloaded.bytes[0] !== 0x50
+      || downloaded.bytes[1] !== 0x4b
+      || !downloaded.status.includes('PPTX')
+    ) {
       throw new Error(`下载结果不符合 .ppt 另存契约：${JSON.stringify({ ...downloaded, bytes: downloaded.bytes.slice(0, 4) })}`);
     }
     writeFileSync(join(out, 'sample.pptx'), Uint8Array.from(downloaded.bytes));
-    await evaluate(`(async () => {
+    await evaluate(
+      `(async () => {
       const bytes = await fetch('/fixtures/sample-chart-data.pptx').then((response) => response.arrayBuffer());
       const transfer = new DataTransfer();
       transfer.items.add(new File([bytes], 'sample-chart-data.pptx', {
@@ -1059,17 +1446,25 @@ async function runContract(webSocketDebuggerUrl) {
       const input = document.querySelector('#fileInput');
       input.files = transfer.files;
       input.dispatchEvent(new Event('change', { bubbles: true }));
-    })()`, true);
-    await waitFor(`document.querySelector('#fileName')?.textContent === 'sample-chart-data.pptx'
-      && !document.querySelector('#editorApp')?.dataset.loading`, '图表数据固件就绪');
+    })()`,
+      true,
+    );
+    await waitFor(
+      `document.querySelector('#fileName')?.textContent === 'sample-chart-data.pptx'
+      && !document.querySelector('#editorApp')?.dataset.loading`,
+      '图表数据固件就绪',
+    );
     await evaluate(`(() => {
       const row = [...document.querySelectorAll('[data-pane-element]')]
         .find((candidate) => candidate.querySelector('[data-pane-name]')?.textContent === '图表');
       if (!row) throw new Error('找不到图表对象');
       row.click();
     })()`);
-    await waitFor(`!document.querySelector('#chartInspector')?.hidden
-      && !!document.querySelector('[data-chart-grid="category"]')`, '图表数据表按需加载');
+    await waitFor(
+      `!document.querySelector('#chartInspector')?.hidden
+      && !!document.querySelector('[data-chart-grid="category"]')`,
+      '图表数据表按需加载',
+    );
     await evaluate(`(() => {
       const name = document.querySelector('[data-chart-grid="category"] thead th:nth-child(2) input');
       name.value = '浏览器营收';
@@ -1081,18 +1476,27 @@ async function runContract(webSocketDebuggerUrl) {
       value.value = '7777';
       value.dispatchEvent(new Event('change', { bubbles: true }));
     })()`);
-    await waitFor(`document.querySelector('#fileName')?.textContent.startsWith('●')
-      && document.querySelector('[data-chart-grid="category"] tbody tr:first-child td:nth-child(2) input')?.value === '7777'`, '图表数值编辑');
+    await waitFor(
+      `document.querySelector('#fileName')?.textContent.startsWith('●')
+      && document.querySelector('[data-chart-grid="category"] tbody tr:first-child td:nth-child(2) input')?.value === '7777'`,
+      '图表数值编辑',
+    );
     await evaluate('globalThis.__capturedDownload = null');
     await click('#saveFile');
     await waitFor('!!globalThis.__capturedDownload', '图表数据 PPTX 下载');
-    const chartDownload = await evaluate(`(async () => {
+    const chartDownload = await evaluate(
+      `(async () => {
       const captured = globalThis.__capturedDownload;
       const bytes = new Uint8Array(await fetch(captured.href).then((response) => response.arrayBuffer()));
       return { name: captured.name, signature: Array.from(bytes.slice(0, 4)) };
-    })()`, true);
-    if (chartDownload.name !== 'sample-chart-data-edited.pptx'
-      || chartDownload.signature[0] !== 0x50 || chartDownload.signature[1] !== 0x4b) {
+    })()`,
+      true,
+    );
+    if (
+      chartDownload.name !== 'sample-chart-data-edited.pptx'
+      || chartDownload.signature[0] !== 0x50
+      || chartDownload.signature[1] !== 0x4b
+    ) {
       throw new Error(`图表数据保存下载无效：${JSON.stringify(chartDownload)}`);
     }
     await evaluate(`(() => {
@@ -1101,13 +1505,17 @@ async function runContract(webSocketDebuggerUrl) {
     })()`);
     await waitFor(`document.querySelectorAll('[data-chart-grid="category"] thead th').length === 2`, '图表删至一个系列');
     await evaluate(`document.querySelector('[data-chart-grid="category"] thead th:nth-child(2) button')?.click()`);
-    await waitFor(`document.querySelectorAll('[data-chart-grid="category"] thead th').length === 1
+    await waitFor(
+      `document.querySelectorAll('[data-chart-grid="category"] thead th').length === 1
       && [...document.querySelectorAll('#chartInspector button')]
-        .some((button) => button.textContent === '增加系列')`, '图表删空后保留重建入口');
+        .some((button) => button.textContent === '增加系列')`,
+      '图表删空后保留重建入口',
+    );
     await evaluate(`[...document.querySelectorAll('#chartInspector button')]
       .find((button) => button.textContent === '增加系列')?.click()`);
     await waitFor(`document.querySelectorAll('[data-chart-grid="category"] thead th').length === 2`, '图表删空后重建系列');
-    await evaluate(`(async () => {
+    await evaluate(
+      `(async () => {
       const bytes = await fetch('/fixtures/sample-editor-preset-shape.pptx')
         .then((response) => response.arrayBuffer());
       const transfer = new DataTransfer();
@@ -1117,13 +1525,21 @@ async function runContract(webSocketDebuggerUrl) {
       const input = document.querySelector('#fileInput');
       input.files = transfer.files;
       input.dispatchEvent(new Event('change', { bubbles: true }));
-    })()`, true);
-    await waitFor(`document.querySelector('#fileName')?.textContent === 'sample-editor-preset-shape.pptx'
+    })()`,
+      true,
+    );
+    await waitFor(
+      `document.querySelector('#fileName')?.textContent === 'sample-editor-preset-shape.pptx'
       && document.querySelectorAll('[data-edit-id]').length >= 60
-      && !document.querySelector('#editorApp')?.dataset.loading`, '预设形状固件就绪');
+      && !document.querySelector('#editorApp')?.dataset.loading`,
+      '预设形状固件就绪',
+    );
     await click('[data-edit-id]');
-    await waitFor(`!document.querySelector('#shapeInspector')?.hidden
-      && document.querySelector('#shapePreset')?.value === 'roundRect'`, '预设形状检查器');
+    await waitFor(
+      `!document.querySelector('#shapeInspector')?.hidden
+      && document.querySelector('#shapePreset')?.value === 'roundRect'`,
+      '预设形状检查器',
+    );
     await click('#startShapeAdjustments');
     await waitFor("!!document.querySelector('[data-ppt-preset-handle]')", '预设形状调节柄');
     const switched = await evaluate(`(() => {
@@ -1132,13 +1548,18 @@ async function runContract(webSocketDebuggerUrl) {
       select.dispatchEvent(new Event('change', { bubbles: true }));
       return select.value;
     })()`);
-    await waitFor(`document.querySelector('#shapePreset')?.value === 'hexagon'
+    await waitFor(
+      `document.querySelector('#shapePreset')?.value === 'hexagon'
       && document.querySelector('#fileName')?.textContent.startsWith('●')
-      && !!document.querySelector('[data-ppt-preset-handle]')`, '官网预设形状切换');
+      && !!document.querySelector('[data-ppt-preset-handle]')`,
+      '官网预设形状切换',
+    );
     if (switched !== 'hexagon') throw new Error('官网形状类型控件无法选择完整预设目录');
     // 源码薄包服务器只有编辑页；三页完整矩阵由生产入口执行。
     await runSiteLanguagePreferencesContract({ evaluate, click, request, waitFor }, ['editor']);
-    const checkedInputFailure = await runSiteEditContextFailureContract({ evaluate, click, request, waitFor }, () => { rejectEditContext = true; });
+    const checkedInputFailure = await runSiteEditContextFailureContract({ evaluate, click, request, waitFor }, () => {
+      rejectEditContext = true;
+    });
     if (checkedInputFailure && !rejectedEditContextLoads) throw new Error('未实际触发 EditContext 模块下载失败');
     if (consoleFailures.length) throw new Error(`官网编辑页产生 console warning/error：${consoleFailures.join(' | ')}`);
     await runStandaloneCommentsBrowserContract({ evaluate, request, waitFor, click });
@@ -1187,14 +1608,50 @@ try {
   const url = `http://127.0.0.1:${address.port}${productionBase}/editor.html?lang=zh-CN`;
   const port = await launch(url);
   const result = await runContract(await pageTarget(port, url));
-  console.log(sidePanelOnly ? '编辑器侧栏浏览器专项通过（非完整门禁）' : chartLegacyOnly ? '旧图表迁移浏览器专项通过（非完整门禁）' : recoveryOnly ? '官网恢复服务专项通过（非完整门禁）' : lifecycleOnly ? '编辑器产品生命周期专项通过（非完整门禁）' : chartSharedOnly ? '共享图表浏览器专项通过（非完整门禁）' : chartHierarchyOnly ? '多级类别浏览器专项通过（非完整门禁）' : pptSaveOnly ? '原生 PPT 浏览器专项通过（非完整门禁）' : portableCopyOnly ? '无来源复制浏览器专项通过（非完整门禁）' : videoOnly ? '视频浏览器专项通过（非完整门禁）' : pdfOnly ? 'PDF 浏览器专项通过（非完整门禁）' : threeDOnly ? '三维浏览器专项通过（非完整门禁）' : metafileOnly ? 'EMF+ 浏览器专项通过（非完整门禁）' : objectEditOnly ? '对象内部编辑浏览器专项通过（非完整门禁）' : chartDesignOnly ? '图表样式浏览器专项通过（非完整门禁）' : commentEditOnly ? '批注编辑浏览器专项通过（非完整门禁）' : resizeOnly ? '页面尺寸浏览器专项通过（非完整门禁）' : productionLanguages ? process.env.SITE_I18N_ONLY
-    ? `\n\x1b[32m✓ 官网生产页面中英文专项 ${process.env.SITE_I18N_ONLY} 通过（非完整门禁）\x1b[0m`
-    : '\n\x1b[32m✓ 官网三张生产页面完整中英文工作流通过\x1b[0m' : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
-    + `（下载 ${result.bytes} bytes）\x1b[0m`);
+  console.log(
+    sidePanelOnly
+      ? '编辑器侧栏浏览器专项通过（非完整门禁）'
+      : chartLegacyOnly
+        ? '旧图表迁移浏览器专项通过（非完整门禁）'
+        : recoveryOnly
+          ? '官网恢复服务专项通过（非完整门禁）'
+          : lifecycleOnly
+            ? '编辑器产品生命周期专项通过（非完整门禁）'
+            : chartSharedOnly
+              ? '共享图表浏览器专项通过（非完整门禁）'
+              : chartHierarchyOnly
+                ? '多级类别浏览器专项通过（非完整门禁）'
+                : pptSaveOnly
+                  ? '原生 PPT 浏览器专项通过（非完整门禁）'
+                  : portableCopyOnly
+                    ? '无来源复制浏览器专项通过（非完整门禁）'
+                    : videoOnly
+                      ? '视频浏览器专项通过（非完整门禁）'
+                      : pdfOnly
+                        ? 'PDF 浏览器专项通过（非完整门禁）'
+                        : threeDOnly
+                          ? '三维浏览器专项通过（非完整门禁）'
+                          : metafileOnly
+                            ? 'EMF+ 浏览器专项通过（非完整门禁）'
+                            : objectEditOnly
+                              ? '对象内部编辑浏览器专项通过（非完整门禁）'
+                              : chartDesignOnly
+                                ? '图表样式浏览器专项通过（非完整门禁）'
+                                : commentEditOnly
+                                  ? '批注编辑浏览器专项通过（非完整门禁）'
+                                  : resizeOnly
+                                    ? '页面尺寸浏览器专项通过（非完整门禁）'
+                                    : productionLanguages
+                                      ? process.env.SITE_I18N_ONLY
+                                        ? `\n\x1b[32m✓ 官网生产页面中英文专项 ${process.env.SITE_I18N_ONLY} 通过（非完整门禁）\x1b[0m`
+                                        : '\n\x1b[32m✓ 官网三张生产页面完整中英文工作流通过\x1b[0m'
+                                      : `\n\x1b[32m✓ 官网编辑工具栏、预设形状与 .ppt 转换闭环通过`
+                                        + `（下载 ${result.bytes} bytes）\x1b[0m`,
+  );
 } finally {
   if (browserRunning()) {
     child.kill('SIGTERM');
-    if (!await waitForBrowserExit(2000) && browserRunning()) {
+    if (!(await waitForBrowserExit(2000)) && browserRunning()) {
       child.kill('SIGKILL');
       await waitForBrowserExit(2000);
     }

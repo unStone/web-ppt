@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
-    copyPublicDir: false, emptyOutDir: false,
+    copyPublicDir: false,
+    emptyOutDir: false,
     lib: { entry: 'src/media/index.ts', fileName: 'media', formats: ['es'] },
     rolldownOptions: { external: ['@web-ppt/edit-core/media'] },
   },

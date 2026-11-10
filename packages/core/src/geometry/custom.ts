@@ -56,8 +56,12 @@ export interface CustomGeometryCloseCommand {
   readonly points: readonly [];
 }
 
-export type CustomGeometryCommand = CustomGeometryMoveCommand | CustomGeometryLineCommand
-  | CustomGeometryCubicCommand | CustomGeometryQuadraticCommand | CustomGeometryArcCommand
+export type CustomGeometryCommand =
+  | CustomGeometryMoveCommand
+  | CustomGeometryLineCommand
+  | CustomGeometryCubicCommand
+  | CustomGeometryQuadraticCommand
+  | CustomGeometryArcCommand
   | CustomGeometryCloseCommand;
 
 export interface CustomGeometryPath {
@@ -83,8 +87,7 @@ export interface ResolvedCustomGeometry {
   readonly open: boolean;
 }
 
-const format = (value: number): string =>
-  Number.isFinite(value) ? String(Math.round(value * 1000) / 1000) : '0';
+const format = (value: number): string => (Number.isFinite(value) ? String(Math.round(value * 1000) / 1000) : '0');
 
 export type CubicArcSegment = readonly [
   control1: readonly [number, number],
@@ -105,23 +108,21 @@ export function arcToCubicSegments(
   const rx = Math.abs(widthRadius);
   const ry = Math.abs(heightRadius);
   if (!sweepAngle) return [];
-  const start = startAngle * Math.PI / 180;
+  const start = (startAngle * Math.PI) / 180;
   const centerX = fromX - rx * Math.cos(start);
   const centerY = fromY - ry * Math.sin(start);
   const count = Math.min(4096, Math.max(1, Math.ceil(Math.abs(sweepAngle) / 90)));
-  const delta = sweepAngle / count * Math.PI / 180;
+  const delta = ((sweepAngle / count) * Math.PI) / 180;
   const segments: CubicArcSegment[] = [];
   for (let index = 0; index < count; index++) {
     const a0 = start + delta * index;
     const a1 = a0 + delta;
-    const k = 4 / 3 * Math.tan(delta / 4);
+    const k = (4 / 3) * Math.tan(delta / 4);
     const endX = centerX + rx * Math.cos(a1);
     const endY = centerY + ry * Math.sin(a1);
     segments.push([
-      [centerX + rx * (Math.cos(a0) - k * Math.sin(a0)),
-        centerY + ry * (Math.sin(a0) + k * Math.cos(a0))],
-      [centerX + rx * (Math.cos(a1) + k * Math.sin(a1)),
-        centerY + ry * (Math.sin(a1) - k * Math.cos(a1))],
+      [centerX + rx * (Math.cos(a0) - k * Math.sin(a0)), centerY + ry * (Math.sin(a0) + k * Math.cos(a0))],
+      [centerX + rx * (Math.cos(a1) + k * Math.sin(a1)), centerY + ry * (Math.sin(a1) - k * Math.cos(a1))],
       [endX, endY],
     ]);
   }
@@ -153,17 +154,20 @@ export function materializeCustomGeometryArcs(geometry: CustomGeometry): CustomG
         }
         if (command.type === 'arc') {
           const segments = arcToCubicSegments(
-            currentX, currentY, command.widthRadius.value, command.heightRadius.value,
-            command.startAngle.value / 60000, command.sweepAngle.value / 60000,
+            currentX,
+            currentY,
+            command.widthRadius.value,
+            command.heightRadius.value,
+            command.startAngle.value / 60000,
+            command.sweepAngle.value / 60000,
           );
           segments.forEach((segment) => {
             const id = `${pathId}-c${commands.length}`;
-            const point = (
-              [x, y]: readonly [number, number], index: 0 | 1 | 2,
-            ): CustomGeometryPoint => ({
+            const point = ([x, y]: readonly [number, number], index: 0 | 1 | 2): CustomGeometryPoint => ({
               id: `${id}-${index === 2 ? 'a' : `c${index}`}`,
               role: index === 2 ? 'anchor' : 'control',
-              x: numericScalar(x), y: numericScalar(y),
+              x: numericScalar(x),
+              y: numericScalar(y),
             });
             const points = [point(segment[0], 0), point(segment[1], 1), point(segment[2], 2)] as const;
             commands.push({ id, type: 'cubic', points });
@@ -173,7 +177,8 @@ export function materializeCustomGeometryArcs(geometry: CustomGeometry): CustomG
         }
         const id = `${pathId}-c${commands.length}`;
         const clone = {
-          ...command, id,
+          ...command,
+          id,
           points: command.points.map((point, pointIndex) => ({
             ...point,
             id: `${id}-${pointIndex === command.points.length - 1 ? 'a' : `c${pointIndex}`}`,
@@ -190,19 +195,14 @@ export function materializeCustomGeometryArcs(geometry: CustomGeometry): CustomG
 }
 
 /** 编辑模型已持有公式求值结果；投影只负责从路径坐标空间缩放到当前 frame。 */
-export function resolveCustomGeometry(
-  geometry: CustomGeometry,
-  width: number,
-  height: number,
-): ResolvedCustomGeometry {
+export function resolveCustomGeometry(geometry: CustomGeometry, width: number, height: number): ResolvedCustomGeometry {
   const out: string[] = [];
   let anyFill = false;
   let anyStroke = false;
   for (const path of geometry.paths) {
     const sx = path.width ? Math.max(width, 0) / path.width : 1;
     const sy = path.height ? Math.max(height, 0) / path.height : 1;
-    const point = (value: CustomGeometryPoint): readonly [number, number] =>
-      [value.x.value * sx, value.y.value * sy];
+    const point = (value: CustomGeometryPoint): readonly [number, number] => [value.x.value * sx, value.y.value * sy];
     if (path.fill !== 'none') anyFill = true;
     if (path.stroke) anyStroke = true;
     let cx = 0;
@@ -221,16 +221,18 @@ export function resolveCustomGeometry(
         const hr = command.heightRadius.value * sy;
         const start = command.startAngle.value / 60000;
         const sweep = command.sweepAngle.value / 60000;
-        const radians = start * Math.PI / 180;
+        const radians = (start * Math.PI) / 180;
         const centerX = cx - wr * Math.cos(radians);
         const centerY = cy - hr * Math.sin(radians);
         const steps = Math.max(1, Math.ceil(Math.abs(sweep) / 180));
         for (let index = 0; index < steps; index++) {
           const segment = sweep / steps;
-          const angle = (start + segment * (index + 1)) * Math.PI / 180;
+          const angle = ((start + segment * (index + 1)) * Math.PI) / 180;
           cx = centerX + wr * Math.cos(angle);
           cy = centerY + hr * Math.sin(angle);
-          out.push(`A ${format(wr)} ${format(hr)} 0 ${Math.abs(segment) > 180 ? 1 : 0} ${segment >= 0 ? 1 : 0} ${format(cx)} ${format(cy)}`);
+          out.push(
+            `A ${format(wr)} ${format(hr)} 0 ${Math.abs(segment) > 180 ? 1 : 0} ${segment >= 0 ? 1 : 0} ${format(cx)} ${format(cy)}`,
+          );
         }
         continue;
       }
@@ -239,12 +241,13 @@ export function resolveCustomGeometry(
       if (command.type === 'move') {
         out.push(`M ${format(anchor[0])} ${format(anchor[1])}`);
         [startX, startY] = anchor;
-      }
-      else if (command.type === 'line') out.push(`L ${format(anchor[0])} ${format(anchor[1])}`);
+      } else if (command.type === 'line') out.push(`L ${format(anchor[0])} ${format(anchor[1])}`);
       else if (command.type === 'quadratic') {
         out.push(`Q ${format(points[0][0])} ${format(points[0][1])} ${format(anchor[0])} ${format(anchor[1])}`);
       } else {
-        out.push(`C ${format(points[0][0])} ${format(points[0][1])} ${format(points[1][0])} ${format(points[1][1])} ${format(anchor[0])} ${format(anchor[1])}`);
+        out.push(
+          `C ${format(points[0][0])} ${format(points[0][1])} ${format(points[1][0])} ${format(points[1][1])} ${format(anchor[0])} ${format(anchor[1])}`,
+        );
       }
       [cx, cy] = anchor;
     }

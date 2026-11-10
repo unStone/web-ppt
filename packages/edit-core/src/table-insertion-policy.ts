@@ -9,15 +9,15 @@ export function assertTableDimension(value: number, label: string): void {
 }
 
 /** 命令层与公开交互层必须共享同一占位符资格规则，避免 UI 接受而模型拒绝。 */
-export function isEmptyContentPlaceholder(
-  doc: EditDoc,
-  slideId: SlideId,
-  id: unknown,
-): id is ElementId {
+export function isEmptyContentPlaceholder(doc: EditDoc, slideId: SlideId, id: unknown): id is ElementId {
   if (typeof id !== 'string' || !id) return false;
   const record = doc.elements[id];
-  return record?.parent === slideId && record.meta.ph?.type === 'obj'
-    && record.meta.editable === 'full' && !record.meta.locked && record.src.kind === 'shape'
-    && (record.ovr.text?.kind === 'empty'
-      || (record.ovr.text === undefined && record.src.text === null));
+  return (
+    record?.parent === slideId
+    && record.meta.ph?.type === 'obj'
+    && record.meta.editable === 'full'
+    && !record.meta.locked
+    && record.src.kind === 'shape'
+    && (record.ovr.text?.kind === 'empty' || (record.ovr.text === undefined && record.src.text === null))
+  );
 }

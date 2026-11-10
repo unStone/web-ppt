@@ -11,23 +11,45 @@ const decoder = new TextDecoder();
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
 function withThemeStyle(markup) {
-  return markup.replace('</p:spPr>\n<p:txBody>', `</p:spPr>
+  return markup.replace(
+    '</p:spPr>\n<p:txBody>',
+    `</p:spPr>
 <p:style><a:lnRef idx="0"><a:schemeClr val="accent1"/></a:lnRef>
 <a:fillRef idx="0"><a:schemeClr val="accent1"/></a:fillRef>
 <a:effectRef idx="1"><a:schemeClr val="accent1"/></a:effectRef>
 <a:fontRef idx="minor"><a:schemeClr val="tx1"/></a:fontRef></p:style>
-<p:txBody>`);
+<p:txBody>`,
+  );
 }
 
-const inherited = withThemeStyle(sp({
-  x: 55, y: 55, w: 210, h: 110, name: 'effects-inherited', fill: solid('accent1'),
-}));
-const explicitEmpty = withThemeStyle(sp({
-  x: 300, y: 55, w: 210, h: 110, name: 'effects-explicit-empty', fill: solid('accent2'),
-  effect: '<a:effectLst/>',
-}));
+const inherited = withThemeStyle(
+  sp({
+    x: 55,
+    y: 55,
+    w: 210,
+    h: 110,
+    name: 'effects-inherited',
+    fill: solid('accent1'),
+  }),
+);
+const explicitEmpty = withThemeStyle(
+  sp({
+    x: 300,
+    y: 55,
+    w: 210,
+    h: 110,
+    name: 'effects-explicit-empty',
+    fill: solid('accent2'),
+    effect: '<a:effectLst/>',
+  }),
+);
 const rich = sp({
-  x: 545, y: 55, w: 210, h: 110, name: 'effects-rich', fill: solid('accent3'),
+  x: 545,
+  y: 55,
+  w: 210,
+  h: 110,
+  name: 'effects-rich',
+  fill: solid('accent3'),
   effect: `<a:effectLst xmlns:fixture="urn:web-ppt:effects" fixture:token="keep-effect-list">
 <a:glow rad="28575"><a:srgbClr val="F97316"/></a:glow></a:effectLst>
 <a:scene3d><a:camera prst="orthographicFront"/><a:lightRig rig="threePt" dir="t"/></a:scene3d>
@@ -62,27 +84,40 @@ ${sp({ x: 1020, y: 400, w: 1, h: 1, name: 'effects-alternate-choice', fill: soli
 ${sp({ x: 1020, y: 400, w: 1, h: 1, name: 'effects-alternate-fallback', fill: solid('FFFFFF') })}
 </mc:Fallback></mc:AlternateContent>`;
 const source = deck({
-  name: 'Editor Effects', width: 1060, height: 600,
+  name: 'Editor Effects',
+  width: 1060,
+  height: 600,
   slides: [
     slideXml(inherited + explicitEmpty + rich + picture + group + libreOfficeShapes + alternateContent),
-    slideXml(sp({
-      x: 80, y: 70, w: 260, h: 120, name: 'effects-unrelated-page', fill: solid('0F172A'),
-    })),
+    slideXml(
+      sp({
+        x: 80,
+        y: 70,
+        w: 260,
+        h: 120,
+        name: 'effects-unrelated-page',
+        fill: solid('0F172A'),
+      }),
+    ),
   ],
 });
 const files = unzipSync(source);
-const replace = (part, fn) => { files[part] = encoder.encode(fn(decoder.decode(files[part]))); };
-replace('ppt/theme/theme1.xml', (xml) => xml.replace(
-  '<a:effectStyle><a:effectLst/></a:effectStyle>',
-  '<a:effectStyle><a:effectLst><a:outerShdw blurRad="38100" dist="28575" dir="2700000"><a:srgbClr val="111827"><a:alpha val="40000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle>',
-));
-replace('ppt/slides/_rels/slide1.xml.rels', (xml) => xml.replace('</Relationships>',
-  `<Relationship Id="rId20" Type="${REL}/image" Target="../media/effects.png"/>`
-  + '</Relationships>'));
-replace('[Content_Types].xml', (xml) => xml.replace('<Default Extension="xml"',
-  '<Default Extension="png" ContentType="image/png"/><Default Extension="xml"'));
-files['ppt/media/effects.png'] = makePng(64, 36,
-  (x, y) => [(x * 4) % 256, 80 + (y * 4) % 176, ((x + y) * 3) % 256]);
+const replace = (part, fn) => {
+  files[part] = encoder.encode(fn(decoder.decode(files[part])));
+};
+replace('ppt/theme/theme1.xml', (xml) =>
+  xml.replace(
+    '<a:effectStyle><a:effectLst/></a:effectStyle>',
+    '<a:effectStyle><a:effectLst><a:outerShdw blurRad="38100" dist="28575" dir="2700000"><a:srgbClr val="111827"><a:alpha val="40000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle>',
+  ),
+);
+replace('ppt/slides/_rels/slide1.xml.rels', (xml) =>
+  xml.replace('</Relationships>', `<Relationship Id="rId20" Type="${REL}/image" Target="../media/effects.png"/>` + '</Relationships>'),
+);
+replace('[Content_Types].xml', (xml) =>
+  xml.replace('<Default Extension="xml"', '<Default Extension="png" ContentType="image/png"/><Default Extension="xml"'),
+);
+files['ppt/media/effects.png'] = makePng(64, 36, (x, y) => [(x * 4) % 256, 80 + ((y * 4) % 176), ((x + y) * 3) % 256]);
 
 const bytes = makeZip(Object.entries(files));
 mkdirSync(join(root, 'fixtures'), { recursive: true });

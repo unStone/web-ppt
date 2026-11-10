@@ -8,8 +8,14 @@ import type { RotationGestureController } from './rotation-gesture';
 import { combineSelectionIds, selectionModifierActive } from './selection-combine';
 import { isRotationHandleAt, resizeHandleAt } from './selection-handles';
 import {
-  alternateSelectableElementId, directSelectableChildIds, enteredGroupOnSlide, isSelectable,
-  outermostHitCandidate, pathWithinRoot, tableCellAddressFromPath, touchHitCandidate,
+  alternateSelectableElementId,
+  directSelectableChildIds,
+  enteredGroupOnSlide,
+  isSelectable,
+  outermostHitCandidate,
+  pathWithinRoot,
+  tableCellAddressFromPath,
+  touchHitCandidate,
 } from './selection-hit';
 import type { TextEditorController } from './text-editor';
 import type { ImageCropGestureController } from './image-crop-gesture';
@@ -43,7 +49,9 @@ interface SlidePointerControllerOptions {
 export class SlidePointerController {
   private readonly options: SlidePointerControllerOptions;
 
-  constructor(options: SlidePointerControllerOptions) { this.options = options; }
+  constructor(options: SlidePointerControllerOptions) {
+    this.options = options;
+  }
 
   readonly down = (event: PointerEvent): void => {
     const o = this.options;
@@ -58,7 +66,10 @@ export class SlidePointerController {
     }
     const cropHandle = o.crop.handleAt(event.target);
     if (cropHandle) {
-      o.move.cancel(); o.resize.cancel(); o.rotation.cancel(); o.marquee.cancel();
+      o.move.cancel();
+      o.resize.cancel();
+      o.rotation.cancel();
+      o.marquee.cancel();
       o.crop.begin(event, cropHandle);
       event.preventDefault();
       o.root.focus({ preventScroll: true });
@@ -66,8 +77,7 @@ export class SlidePointerController {
     }
     if (isRotationHandleAt(event.target, o.interactionLayer)) {
       const selection = o.editor.selection;
-      if (selection.kind === 'elements'
-        && selection.ids.every((id) => isSelectable(o.editor.doc, id))) {
+      if (selection.kind === 'elements' && selection.ids.every((id) => isSelectable(o.editor.doc, id))) {
         o.move.cancel();
         o.resize.cancel();
         o.marquee.cancel();
@@ -81,8 +91,7 @@ export class SlidePointerController {
     const resizeHandle = resizeHandleAt(event.target, o.interactionLayer);
     if (resizeHandle) {
       const selection = o.editor.selection;
-      if (selection.kind === 'elements'
-        && selection.ids.every((id) => isSelectable(o.editor.doc, id))) {
+      if (selection.kind === 'elements' && selection.ids.every((id) => isSelectable(o.editor.doc, id))) {
         o.move.cancel();
         o.marquee.cancel();
         o.resize.begin(event, resizeHandle, selection.ids);
@@ -102,13 +111,10 @@ export class SlidePointerController {
       o.crop.exit();
     }
     const selection = o.editor.selection;
-    const enteredGroup = enteredGroupOnSlide(
-      o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId(),
-    );
+    const enteredGroup = enteredGroupOnSlide(o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId());
     const togglesSelection = selectionModifierActive(event);
     const id = this.pointedElement(event, candidates, enteredGroup, selection, togglesSelection);
-    const keepsSelection = id && !event.altKey && !togglesSelection && selection.kind === 'elements'
-      && selection.ids.includes(id);
+    const keepsSelection = id && !event.altKey && !togglesSelection && selection.kind === 'elements' && selection.ids.includes(id);
     if (!id) {
       o.move.cancel();
       o.marquee.begin(event, enteredGroup);
@@ -120,15 +126,16 @@ export class SlidePointerController {
     o.marquee.cancel();
     if (!keepsSelection) {
       const scope = directSelectableChildIds(o.editor.doc, o.slideId(), enteredGroup);
-      const ids = combineSelectionIds(
-        scope, selection.kind === 'elements' ? selection.ids : [], [id], togglesSelection,
-      );
+      const ids = combineSelectionIds(scope, selection.kind === 'elements' ? selection.ids : [], [id], togglesSelection);
       o.editor.select(ids.length ? { kind: 'elements', ids, enteredGroup } : { kind: 'none' });
     }
     const nextSelection = o.editor.selection;
-    if ((!event.altKey || togglesSelection) && nextSelection.kind === 'elements'
+    if (
+      (!event.altKey || togglesSelection)
+      && nextSelection.kind === 'elements'
       && nextSelection.ids.includes(id)
-      && nextSelection.ids.every((selectedId) => isSelectable(o.editor.doc, selectedId))) {
+      && nextSelection.ids.every((selectedId) => isSelectable(o.editor.doc, selectedId))
+    ) {
       o.move.begin(event, nextSelection.ids);
     }
     o.touch.armLongPress(event, id);
@@ -138,15 +145,14 @@ export class SlidePointerController {
 
   private applyFormat(event: PointerEvent): void {
     const o = this.options;
-    o.move.cancel(); o.resize.cancel(); o.rotation.cancel(); o.marquee.cancel();
+    o.move.cancel();
+    o.resize.cancel();
+    o.rotation.cancel();
+    o.marquee.cancel();
     const selection = o.editor.selection;
-    const enteredGroup = enteredGroupOnSlide(
-      o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId(),
-    );
+    const enteredGroup = enteredGroupOnSlide(o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId());
     const candidates = o.hitCandidates(event.composedPath());
-    const id = this.pointedElement(
-      event, candidates, enteredGroup, selection, selectionModifierActive(event),
-    );
+    const id = this.pointedElement(event, candidates, enteredGroup, selection, selectionModifierActive(event));
     if (id) {
       const cell = tableCellAddressFromPath(event.composedPath(), o.staticLayer);
       try {
@@ -170,20 +176,20 @@ export class SlidePointerController {
   ): ElementId | undefined {
     const o = this.options;
     if (event.pointerType === 'touch' && !event.altKey) {
-      return touchHitCandidate(
-        o.editor.doc, o.root.ownerDocument, { x: event.clientX, y: event.clientY },
-        o.staticLayer, enteredGroup,
-      ) ?? outermostHitCandidate(o.editor.doc, candidates, enteredGroup);
+      return (
+        touchHitCandidate(o.editor.doc, o.root.ownerDocument, { x: event.clientX, y: event.clientY }, o.staticLayer, enteredGroup)
+        ?? outermostHitCandidate(o.editor.doc, candidates, enteredGroup)
+      );
     }
     return event.altKey
       ? alternateSelectableElementId(
-        o.editor.doc,
-        o.root.ownerDocument.elementsFromPoint?.(event.clientX, event.clientY) ?? [],
-        o.staticLayer,
-        enteredGroup,
-        selection,
-        togglesSelection,
-      )
+          o.editor.doc,
+          o.root.ownerDocument.elementsFromPoint?.(event.clientX, event.clientY) ?? [],
+          o.staticLayer,
+          enteredGroup,
+          selection,
+          togglesSelection,
+        )
       : outermostHitCandidate(o.editor.doc, candidates, enteredGroup);
   }
 
@@ -214,37 +220,40 @@ export class SlidePointerController {
     this.options.move.cancelPointer(event);
   };
 
-  readonly click = (event: MouseEvent): void => { this.options.touch.click(event); };
+  readonly click = (event: MouseEvent): void => {
+    this.options.touch.click(event);
+  };
 
   readonly doubleClick = (event: MouseEvent): void => {
     const o = this.options;
     if (!o.editable()) return;
     // 捕获期间的 pointerup 会把后续 click/dblclick 留在根节点；释放 capture 不会恢复命中路径。
     // 祖先链须覆盖交互层的空占位符；仍只认原生落点，不能穿透遮挡或合并重叠对象的路径。
-    const path = event.target === o.root && event.isTrusted
-      ? pathWithinRoot((o.root.getRootNode() as Document | ShadowRoot)
-        .elementFromPoint?.(event.clientX, event.clientY), o.root) : event.composedPath();
+    const path =
+      event.target === o.root && event.isTrusted
+        ? pathWithinRoot((o.root.getRootNode() as Document | ShadowRoot).elementFromPoint?.(event.clientX, event.clientY), o.root)
+        : event.composedPath();
     const candidates = o.hitCandidates(path);
     const selection = o.editor.selection;
-    const enteredGroup = enteredGroupOnSlide(
-      o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId(),
-    );
+    const enteredGroup = enteredGroupOnSlide(o.editor.doc, selection.kind === 'elements' ? selection.enteredGroup : null, o.slideId());
     const textId = outermostHitCandidate(o.editor.doc, candidates, enteredGroup);
     const cell = tableCellAddressFromPath(path, o.staticLayer);
-    const picture = textId && o.editor.doc.elements[textId]?.meta.ph?.type === 'pic'
-      ? o.editor.doc.elements[textId] : null;
+    const picture = textId && o.editor.doc.elements[textId]?.meta.ph?.type === 'pic' ? o.editor.doc.elements[textId] : null;
     if (picture) {
       const element = o.editor.effectiveElement(picture.id);
       o.editor.select({ kind: 'elements', ids: [picture.id], enteredGroup });
-      void o.imageInsertion.choose({
-        placeholderId: picture.id,
-        rect: { x: element.x, y: element.y, w: element.w, h: element.h },
-      }).catch(() => { /* 错误已作为 webpptimageerror 事件交给宿主。 */ });
+      void o.imageInsertion
+        .choose({
+          placeholderId: picture.id,
+          rect: { x: element.x, y: element.y, w: element.w, h: element.h },
+        })
+        .catch(() => {
+          /* 错误已作为 webpptimageerror 事件交给宿主。 */
+        });
       event.preventDefault();
       return;
     }
-    const image = textId && o.editor.doc.elements[textId]?.src.kind === 'image'
-      ? o.editor.doc.elements[textId] : null;
+    const image = textId && o.editor.doc.elements[textId]?.src.kind === 'image' ? o.editor.doc.elements[textId] : null;
     if (image && o.crop.enter(image.id)) {
       event.preventDefault();
       return;

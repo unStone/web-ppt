@@ -10,7 +10,9 @@ import { decryptPptStream } from './crypto/ppt';
 import { parsePpt } from './ppt/parser';
 import { parsePptx } from './pptx/parser';
 import {
-  releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate,
+  releasePptxLayoutReparseSession,
+  reparsePptxLayoutTemplate,
+  reparsePptxMasterTemplate,
   reparsePptxSlideWithLayout,
 } from './pptx/layout-reparse';
 import { renderElementToSvg, renderSlideToSvg } from './render/svg';
@@ -37,22 +39,40 @@ export * from './placeholder-match';
 export * from './text-body-edit';
 export { formatDrawingAutoNumber } from './text-auto-number';
 export {
-  fitTextShapeHeight, invalidateTextMeasureCaches, layoutText, placeGroupChild, placeGroupFrame, renderElementToSvg,
-  renderSlideToSvg, renderTextBodyToHtml, scalePathData, unplaceGroupFrame,
+  fitTextShapeHeight,
+  invalidateTextMeasureCaches,
+  layoutText,
+  placeGroupChild,
+  placeGroupFrame,
+  renderElementToSvg,
+  renderSlideToSvg,
+  renderTextBodyToHtml,
+  scalePathData,
+  unplaceGroupFrame,
 };
-export {
-  releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate,
-  reparsePptxSlideWithLayout,
-};
+export { releasePptxLayoutReparseSession, reparsePptxLayoutTemplate, reparsePptxMasterTemplate, reparsePptxSlideWithLayout };
 export type { RenderElementOptions, RenderElementResult, RenderOptions } from './render/svg';
 export type { RenderTextBodyHtmlOptions } from './render/text-html';
 export type {
-  TextLayout, TextLayoutCaret, TextLayoutLine, TextLayoutOptions, TextLayoutSegment, TextMeasure,
+  TextLayout,
+  TextLayoutCaret,
+  TextLayoutLine,
+  TextLayoutOptions,
+  TextLayoutSegment,
+  TextMeasure,
 } from './render/text-layout';
 export { isKnownPreset, resolveGeomPath };
 export type {
-  Adj, CustomGeometry, CustomGeometryCloseCommand, CustomGeometryCommand, CustomGeometryGuide, CustomGeometryPath,
-  CustomGeometryPoint, CustomGeometryScalar, Geom, GeomSpec,
+  Adj,
+  CustomGeometry,
+  CustomGeometryCloseCommand,
+  CustomGeometryCommand,
+  CustomGeometryGuide,
+  CustomGeometryPath,
+  CustomGeometryPoint,
+  CustomGeometryScalar,
+  Geom,
+  GeomSpec,
 } from './geometry/index';
 export { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
 export { presentationToPrintableHtml, slideToPng, slideToSvgFile } from './browser-export';
@@ -117,10 +137,7 @@ function encryptedStreams(bytes: Uint8Array): { info: Uint8Array | null; pkg: Ui
 }
 
 /** 按魔数自动识别 .pptx（Zip）/ .ppt（CFB）并解析为统一 Schema */
-export async function parse(
-  input: File | Blob | ArrayBuffer | Uint8Array,
-  opts: ParseOptions = {},
-): Promise<Presentation> {
+export async function parse(input: File | Blob | ArrayBuffer | Uint8Array, opts: ParseOptions = {}): Promise<Presentation> {
   let bytes: Uint8Array;
   if (input instanceof Uint8Array) bytes = input;
   else if (input instanceof ArrayBuffer) bytes = new Uint8Array(input);
@@ -149,7 +166,7 @@ function rehydrateAssets(pres: Presentation, urls: (string | null)[]): void {
   const map = (v: string | undefined | null): string | null | undefined => {
     if (typeof v !== 'string' || !v.startsWith('asset:')) return v;
     const i = Number(v.slice(6));
-    return Number.isInteger(i) ? urls[i] ?? null : null;
+    return Number.isInteger(i) ? (urls[i] ?? null) : null;
   };
 
   const fixFill = (f: unknown): void => {
@@ -203,14 +220,20 @@ export function parseInWorker(
   input: ArrayBuffer | Uint8Array,
   options: Pick<ParseOptions, 'zip'> = {},
 ): Promise<Presentation> {
-  const bytes = input instanceof Uint8Array
-    ? input.slice().buffer as ArrayBuffer
-    : input;
+  const bytes = input instanceof Uint8Array ? (input.slice().buffer as ArrayBuffer) : input;
   const id = ++workerSeq;
 
   return new Promise<Presentation>((resolve, reject) => {
-    const onMessage = (e: MessageEvent<{ id: number; ok: boolean; presentation?: Presentation;
-      assets?: { mime: string; data: ArrayBuffer }[]; error?: string; reason?: ZipSafetyReason }>): void => {
+    const onMessage = (
+      e: MessageEvent<{
+        id: number;
+        ok: boolean;
+        presentation?: Presentation;
+        assets?: { mime: string; data: ArrayBuffer }[];
+        error?: string;
+        reason?: ZipSafetyReason;
+      }>,
+    ): void => {
       if (e.data.id !== id) return;
       worker.removeEventListener('message', onMessage);
       if (!e.data.ok || !e.data.presentation) {

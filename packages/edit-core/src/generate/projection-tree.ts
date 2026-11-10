@@ -1,8 +1,6 @@
 import type { SlideElement } from '@web-ppt/core';
 import { initialFractionalIndex } from '../fractional-index';
-import {
-  changedLayout, projectedLayoutElements, projectionContentIds,
-} from '../layout-projection';
+import { changedLayout, projectedLayoutElements, projectionContentIds } from '../layout-projection';
 import { effectiveElement } from '../projection';
 import type { EditDoc, ElementRecord, SlideId } from '../types';
 
@@ -11,17 +9,13 @@ export interface GeneratedProjectionTree {
   readonly sourceRecords: Record<string, ElementRecord>;
 }
 
-export function allocatedProjectionSpids(
-  records: Readonly<Record<string, ElementRecord>>,
-  roots: readonly string[],
-): Map<string, number> {
+export function allocatedProjectionSpids(records: Readonly<Record<string, ElementRecord>>, roots: readonly string[]): Map<string, number> {
   const used = new Set<number>([1]);
   const result = new Map<string, number>();
   let next = 2;
   const visit = (id: string): void => {
     const sourceId = records[id].src.id;
-    let spid = sourceId && Number.isSafeInteger(sourceId) && sourceId > 1 && !used.has(sourceId)
-      ? sourceId : 0;
+    let spid = sourceId && Number.isSafeInteger(sourceId) && sourceId > 1 && !used.has(sourceId) ? sourceId : 0;
     while (!spid && used.has(next)) next++;
     if (!spid) spid = next++;
     used.add(spid);
@@ -46,24 +40,28 @@ export function generatedProjectionTree(doc: EditDoc, slideId: SlideId): Generat
   const addVirtual = (element: SlideElement, parent: string, index: number): string => {
     const id = virtualId();
     const record: ElementRecord = {
-      id, parent, z: initialFractionalIndex(index), src: structuredClone(element), ovr: {},
+      id,
+      parent,
+      z: initialFractionalIndex(index),
+      src: structuredClone(element),
+      ovr: {},
       meta: {
-        editable: 'full', created: true,
+        editable: 'full',
+        created: true,
         ...(element.editInfo?.geom ? { geom: structuredClone(element.editInfo.geom) } : {}),
-        ...(element.editInfo?.customGeometry
-          ? { customGeometry: structuredClone(element.editInfo.customGeometry) } : {}),
+        ...(element.editInfo?.customGeometry ? { customGeometry: structuredClone(element.editInfo.customGeometry) } : {}),
       },
     };
     sourceRecords[id] = record;
     if (element.kind === 'group') {
-      record.children = element.children.map((child, childIndex) =>
-        addVirtual(child, id, childIndex));
+      record.children = element.children.map((child, childIndex) => addVirtual(child, id, childIndex));
     }
     return id;
   };
   if (changedLayout(doc, slideId)) {
-    const virtual = projectedLayoutElements(doc, slideId, (id) => effectiveElement(doc, id))
-      .filter((element) => !element.editInfo?.placeholder);
+    const virtual = projectedLayoutElements(doc, slideId, (id) => effectiveElement(doc, id)).filter(
+      (element) => !element.editInfo?.placeholder,
+    );
     virtual.forEach((element, index) => roots.push(addVirtual(element, slideId, index)));
   }
   const visitSource = (id: string): void => {

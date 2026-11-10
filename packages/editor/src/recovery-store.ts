@@ -49,9 +49,7 @@ export interface RecoveryCandidate {
 }
 
 export type RecoveryDecision = 'restore' | 'discard' | 'cancel';
-export type RecoveryDecisionHandler = (
-  candidate: RecoveryCandidate,
-) => RecoveryDecision | Promise<RecoveryDecision>;
+export type RecoveryDecisionHandler = (candidate: RecoveryCandidate) => RecoveryDecision | Promise<RecoveryDecision>;
 
 export interface RecoveryOptions {
   readonly store: RecoveryStore;

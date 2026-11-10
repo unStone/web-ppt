@@ -49,8 +49,7 @@ export class EditorKeyboardController {
       this.nudge.breakSequence();
       return true;
     }
-    if (event.key === 'Tab' && !event.ctrlKey && !event.metaKey && !event.altKey
-      && !shouldYieldKeyboardEvent(event)) {
+    if (event.key === 'Tab' && !event.ctrlKey && !event.metaKey && !event.altKey && !shouldYieldKeyboardEvent(event)) {
       // 活动手势必须继续持有键盘焦点，否则浏览器会把后续按键送往画布外部。
       if (this.options.gestureActive()) {
         event.preventDefault();
@@ -59,17 +58,17 @@ export class EditorKeyboardController {
       const doc = this.options.editor.doc;
       const slideId = this.options.slideId();
       const selection = this.options.editor.selection;
-      const enteredGroup = selection.kind === 'elements'
-        ? enteredGroupOnSlide(doc, selection.enteredGroup, slideId) : null;
+      const enteredGroup = selection.kind === 'elements' ? enteredGroupOnSlide(doc, selection.enteredGroup, slideId) : null;
       const candidates = directSelectableChildIds(doc, slideId, enteredGroup);
       if (!candidates.length) return false;
-      const selected = selection.kind === 'elements'
-        ? selection.ids.map((id) => candidates.indexOf(id)).filter((index) => index >= 0) : [];
-      const edge = selected.length
-        ? event.shiftKey ? Math.min(...selected) : Math.max(...selected) : -1;
-      const index = edge < 0
-        ? event.shiftKey ? candidates.length - 1 : 0
-        : (edge + (event.shiftKey ? -1 : 1) + candidates.length) % candidates.length;
+      const selected = selection.kind === 'elements' ? selection.ids.map((id) => candidates.indexOf(id)).filter((index) => index >= 0) : [];
+      const edge = selected.length ? (event.shiftKey ? Math.min(...selected) : Math.max(...selected)) : -1;
+      const index =
+        edge < 0
+          ? event.shiftKey
+            ? candidates.length - 1
+            : 0
+          : (edge + (event.shiftKey ? -1 : 1) + candidates.length) % candidates.length;
       this.options.editor.select({ kind: 'elements', ids: [candidates[index]], enteredGroup });
       event.preventDefault();
       return true;
@@ -77,6 +76,10 @@ export class EditorKeyboardController {
     return this.nudge.keyDown(event);
   }
 
-  keyUp(event: KeyboardEvent): boolean { return this.nudge.keyUp(event); }
-  breakSequence(): void { this.nudge.breakSequence(); }
+  keyUp(event: KeyboardEvent): boolean {
+    return this.nudge.keyUp(event);
+  }
+  breakSequence(): void {
+    this.nudge.breakSequence();
+  }
 }

@@ -11,11 +11,11 @@ const containsHandleFormula = (source) => /adj1"\s*,\s*"val 18750/.test(source);
 
 if (target === 'core') {
   const names = readdirSync(join(root, 'packages/core/dist'));
-  const defaults = names.filter((name) => name.endsWith('.js') && name !== 'geometry-handles.js')
+  const defaults = names
+    .filter((name) => name.endsWith('.js') && name !== 'geometry-handles.js')
     .map((name) => read(`packages/core/dist/${name}`));
   const optional = read('packages/core/dist/geometry-handles.js');
-  if (names.some((name) => name.startsWith('guides-'))
-    || defaults.some(containsHandleFormula) || !containsHandleFormula(optional)) {
+  if (names.some((name) => name.startsWith('guides-')) || defaults.some(containsHandleFormula) || !containsHandleFormula(optional)) {
     throw new Error('预设句柄定义没有只留在 core/geometry/handles 按需入口');
   }
 } else if (target === 'edit-core') {
