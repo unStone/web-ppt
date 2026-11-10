@@ -49,16 +49,23 @@ interface PageJob {
   readonly fileName: string;
 }
 
-function optionsOf(options: PresentationImageZipOptions): Required<Pick<
-  PresentationImageZipOptions, 'scale' | 'skipHidden' | 'concurrency'
->> & Pick<PresentationImageZipOptions, 'onProgress' | 'showComments'> {
+function optionsOf(
+  options: PresentationImageZipOptions,
+): Required<Pick<PresentationImageZipOptions, 'scale' | 'skipHidden' | 'concurrency'>> &
+  Pick<PresentationImageZipOptions, 'onProgress' | 'showComments'> {
   const scale = options.scale ?? 2;
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
   if (!Number.isFinite(scale) || scale <= 0) throw new RangeError('scale 必须是大于 0 的有限数');
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > MAX_CONCURRENCY) {
     throw new RangeError(`concurrency 必须是 1–${MAX_CONCURRENCY} 的整数`);
   }
-  return { scale, concurrency, skipHidden: options.skipHidden ?? false, onProgress: options.onProgress, showComments: options.showComments };
+  return {
+    scale,
+    concurrency,
+    skipHidden: options.skipHidden ?? false,
+    onProgress: options.onProgress,
+    showComments: options.showComments,
+  };
 }
 
 function jobsOf(pres: Presentation, skipHidden: boolean): PageJob[] {
@@ -87,17 +94,16 @@ async function renderPage(pres: Presentation, job: PageJob, scale: number, showC
  * 将整份演示导出为 PNG ZIP。PNG 已压缩，因此 ZIP 使用 pass-through，既避免无效二次压缩，
  * 又能以固定批次释放 canvas 与 Blob；任何一页失败都只拒绝 Promise，不暴露半成品。
  */
-export async function presentationToImageZip(
-  pres: Presentation,
-  options: PresentationImageZipOptions = {},
-): Promise<Blob> {
+export async function presentationToImageZip(pres: Presentation, options: PresentationImageZipOptions = {}): Promise<Blob> {
   const normalized = optionsOf(options);
   validateRasterSize(pres, normalized.scale);
   const jobs = jobsOf(pres, normalized.skipHidden);
   const chunks: Uint8Array[] = [];
   let zipError: Error | undefined;
   let finish: (() => void) | undefined;
-  const done = new Promise<void>((resolve) => { finish = resolve; });
+  const done = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
   const zip = new Zip((error, chunk, final) => {
     if (error) zipError = error;
     else if (chunk) chunks.push(chunk);
@@ -109,9 +115,7 @@ export async function presentationToImageZip(
     // 固定大小批次让最坏情况下同时存活的 canvas、Blob 与未写入 PNG 都有明确上界。
     for (let start = 0; start < jobs.length; start += normalized.concurrency) {
       const batch = jobs.slice(start, start + normalized.concurrency);
-      const outcomes = await Promise.allSettled(
-        batch.map((job) => renderPage(pres, job, normalized.scale, normalized.showComments)),
-      );
+      const outcomes = await Promise.allSettled(batch.map((job) => renderPage(pres, job, normalized.scale, normalized.showComments)));
       const failed = outcomes.find((outcome) => outcome.status === 'rejected');
       if (failed?.status === 'rejected') throw failed.reason;
       const images = outcomes.map((outcome) => (outcome as PromiseFulfilledResult<Uint8Array>).value);
@@ -139,9 +143,7 @@ export async function presentationToImageZip(
     zip.end();
     await done;
     if (zipError) throw zipError;
-    const parts = chunks.map((chunk) => chunk.buffer.slice(
-      chunk.byteOffset, chunk.byteOffset + chunk.byteLength,
-    ) as ArrayBuffer);
+    const parts = chunks.map((chunk) => chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength) as ArrayBuffer);
     return new Blob(parts, { type: 'application/zip' });
   } catch (error) {
     zip.terminate();

@@ -67,20 +67,18 @@ export function encodePng(rgba: Uint8Array, w: number, h: number): Uint8Array {
   const dv = new DataView(ihdr.buffer);
   dv.setUint32(0, w);
   dv.setUint32(4, h);
-  ihdr[8] = 8;   // bit depth
-  ihdr[9] = 6;   // color type RGBA
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 6; // color type RGBA
   const sig = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  const parts = [
-    sig,
-    chunk('IHDR', ihdr),
-    chunk('IDAT', zlibSync(raw, { level: 6 })),
-    chunk('IEND', new Uint8Array(0)),
-  ];
+  const parts = [sig, chunk('IHDR', ihdr), chunk('IDAT', zlibSync(raw, { level: 6 })), chunk('IEND', new Uint8Array(0))];
   let total = 0;
   for (const p of parts) total += p.length;
   const out = new Uint8Array(total);
   let off = 0;
-  for (const p of parts) { out.set(p, off); off += p.length; }
+  for (const p of parts) {
+    out.set(p, off);
+    off += p.length;
+  }
   return out;
 }
 
@@ -88,15 +86,25 @@ export function encodePng(rgba: Uint8Array, w: number, h: number): Uint8Array {
 
 const MAX_PIXELS = 8192 * 8192;
 
-interface Dib { w: number; h: number; rgba: Uint8Array }
+interface Dib {
+  w: number;
+  h: number;
+  rgba: Uint8Array;
+}
 
 function maskShift(mask: number): { shift: number; scale: number } {
   if (!mask) return { shift: 0, scale: 0 };
   let shift = 0;
   let m = mask;
-  while ((m & 1) === 0) { m >>>= 1; shift++; }
+  while ((m & 1) === 0) {
+    m >>>= 1;
+    shift++;
+  }
   let bits = 0;
-  while (m & 1) { m >>>= 1; bits++; }
+  while (m & 1) {
+    m >>>= 1;
+    bits++;
+  }
   return { shift, scale: bits > 0 ? 255 / ((1 << bits) - 1) : 0 };
 }
 
@@ -111,14 +119,13 @@ function maskShift(mask: number): { shift: number; scale: number } {
  * RLE 位图恒为自底向上，所以从最后一行开始往回填。
  * 越界一律当作图结束——真实世界的文件经常在末尾缺几个字节。
  */
-function decodeRle(
-  buf: Uint8Array, start: number, avail: number, w: number, h: number, rle4: boolean,
-): Uint8Array | null {
+function decodeRle(buf: Uint8Array, start: number, avail: number, w: number, h: number, rle4: boolean): Uint8Array | null {
   if (!(w > 0) || !(h > 0)) return null;
   const idx = new Uint8Array(w * h);
   let p = start;
   const end = Math.min(buf.length, start + avail);
-  let x = 0, y = h - 1;
+  let x = 0,
+    y = h - 1;
 
   const put = (v: number): void => {
     if (x >= 0 && x < w && y >= 0 && y < h) idx[y * w + x] = v;
@@ -131,16 +138,22 @@ function decodeRle(
     if (n > 0) {
       // 编码模式
       if (rle4) {
-        const hi = (b >> 4) & 0x0f, lo = b & 0x0f;
+        const hi = (b >> 4) & 0x0f,
+          lo = b & 0x0f;
         for (let i = 0; i < n; i++) put(i % 2 === 0 ? hi : lo);
       } else {
         for (let i = 0; i < n; i++) put(b);
       }
       continue;
     }
-    if (b === 0) { x = 0; y--; continue; }          // 行结束
-    if (b === 1) break;                              // 图结束
-    if (b === 2) {                                   // 位移
+    if (b === 0) {
+      x = 0;
+      y--;
+      continue;
+    } // 行结束
+    if (b === 1) break; // 图结束
+    if (b === 2) {
+      // 位移
       if (p + 1 >= end) break;
       x += buf[p++];
       y -= buf[p++];
@@ -154,11 +167,11 @@ function decodeRle(
         const byte = buf[p + (i >> 1)];
         put(i % 2 === 0 ? (byte >> 4) & 0x0f : byte & 0x0f);
       }
-      p += bytes + (bytes & 1);                      // 字对齐
+      p += bytes + (bytes & 1); // 字对齐
     } else {
       if (p + b > end) break;
       for (let i = 0; i < b; i++) put(buf[p + i]);
-      p += b + (b & 1);                              // 字对齐
+      p += b + (b & 1); // 字对齐
     }
   }
   return idx;
@@ -172,15 +185,32 @@ function decodeDib(buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: num
   if (bmiOff < 0 || bmiLen < 12 || bmiOff + 12 > buf.length) return null;
   const r = new Reader(buf, bmiOff, Math.min(buf.length, bmiOff + Math.max(bmiLen, 12)));
   const hdrSize = r.u32();
-  let w: number, h: number, bpp: number, comp = 0, clrUsed = 0;
+  let w: number,
+    h: number,
+    bpp: number,
+    comp = 0,
+    clrUsed = 0;
   let core = false;
   if (hdrSize === 12) {
     core = true;
-    w = r.i16(); h = r.i16(); r.u16(); bpp = r.u16();
+    w = r.i16();
+    h = r.i16();
+    r.u16();
+    bpp = r.u16();
   } else if (hdrSize >= 16) {
-    w = r.i32(); h = r.i32(); r.u16(); bpp = r.u16();
-    if (hdrSize >= 24) { comp = r.u32(); r.u32(); }
-    if (hdrSize >= 36) { r.u32(); r.u32(); clrUsed = r.u32(); }
+    w = r.i32();
+    h = r.i32();
+    r.u16();
+    bpp = r.u16();
+    if (hdrSize >= 24) {
+      comp = r.u32();
+      r.u32();
+    }
+    if (hdrSize >= 36) {
+      r.u32();
+      r.u32();
+      clrUsed = r.u32();
+    }
   } else return null;
 
   const topDown = h < 0;
@@ -190,19 +220,31 @@ function decodeDib(buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: num
   // BI_JPEG / BI_PNG：像素段本身就是完整图片
   if (comp === 4 || comp === 5) return null;
   // comp: 0=BI_RGB 1=BI_RLE8 2=BI_RLE4 3=BI_BITFIELDS
-  const rle8 = comp === 1, rle4 = comp === 2;
+  const rle8 = comp === 1,
+    rle4 = comp === 2;
   if (comp !== 0 && comp !== 3 && !rle8 && !rle4) return null;
   if (rle8 && bpp !== 8) return null;
   if (rle4 && bpp !== 4) return null;
   if (![1, 4, 8, 16, 24, 32].includes(bpp)) return null;
 
   // 位域掩码
-  let rm = 0, gm = 0, bm = 0;
+  let rm = 0,
+    gm = 0,
+    bm = 0;
   if (comp === 3) {
     const mr = new Reader(buf, bmiOff + hdrSize, buf.length);
-    rm = mr.u32(); gm = mr.u32(); bm = mr.u32();
-  } else if (bpp === 16) { rm = 0x7c00; gm = 0x03e0; bm = 0x001f; }
-  else if (bpp === 32) { rm = 0xff0000; gm = 0x00ff00; bm = 0x0000ff; }
+    rm = mr.u32();
+    gm = mr.u32();
+    bm = mr.u32();
+  } else if (bpp === 16) {
+    rm = 0x7c00;
+    gm = 0x03e0;
+    bm = 0x001f;
+  } else if (bpp === 32) {
+    rm = 0xff0000;
+    gm = 0x00ff00;
+    bm = 0x0000ff;
+  }
 
   // 调色板
   let pal: Uint8Array | null = null;
@@ -213,13 +255,17 @@ function decodeDib(buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: num
     pal = new Uint8Array(entries * 3);
     const pr = new Reader(buf, palOff, buf.length);
     for (let i = 0; i < entries; i++) {
-      const b = pr.u8(), g = pr.u8(), rr = pr.u8();
+      const b = pr.u8(),
+        g = pr.u8(),
+        rr = pr.u8();
       if (entrySize === 4) pr.u8();
-      pal[i * 3] = rr; pal[i * 3 + 1] = g; pal[i * 3 + 2] = b;
+      pal[i * 3] = rr;
+      pal[i * 3 + 1] = g;
+      pal[i * 3 + 2] = b;
     }
   }
 
-  const stride = (((w * bpp + 31) >> 5) << 2);
+  const stride = ((w * bpp + 31) >> 5) << 2;
   const start = bitsOff;
   const avail = Math.min(bitsLen > 0 ? bitsLen : buf.length - start, buf.length - start);
   if (start < 0 || start >= buf.length) return null;
@@ -232,7 +278,11 @@ function decodeDib(buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: num
     for (let i = 0; i < idx.length; i++) {
       const pi = idx[i] * 3;
       const o = i * 4;
-      if (pal && pi + 2 < pal.length) { rgba[o] = pal[pi]; rgba[o + 1] = pal[pi + 1]; rgba[o + 2] = pal[pi + 2]; }
+      if (pal && pi + 2 < pal.length) {
+        rgba[o] = pal[pi];
+        rgba[o + 1] = pal[pi + 1];
+        rgba[o + 2] = pal[pi + 2];
+      }
       rgba[o + 3] = 255;
     }
     return { w, h, rgba };
@@ -243,7 +293,9 @@ function decodeDib(buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: num
   if (rows <= 0) return null;
 
   const rgba = new Uint8Array(w * h * 4);
-  const rs = maskShift(rm), gs = maskShift(gm), bs = maskShift(bm);
+  const rs = maskShift(rm),
+    gs = maskShift(gm),
+    bs = maskShift(bm);
   let anyAlpha = false;
 
   for (let sy = 0; sy < rows; sy++) {
@@ -251,9 +303,15 @@ function decodeDib(buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: num
     let src = start + sy * stride;
     let dst = dy * w * 4;
     for (let x = 0; x < w; x++) {
-      let rr = 0, gg = 0, bb = 0, aa = 255;
+      let rr = 0,
+        gg = 0,
+        bb = 0,
+        aa = 255;
       if (bpp === 24) {
-        bb = buf[src]; gg = buf[src + 1]; rr = buf[src + 2]; src += 3;
+        bb = buf[src];
+        gg = buf[src + 1];
+        rr = buf[src + 2];
+        src += 3;
       } else if (bpp === 32) {
         const v = buf[src] | (buf[src + 1] << 8) | (buf[src + 2] << 16) | (buf[src + 3] << 24);
         rr = rs.scale ? ((v & rm) >>> rs.shift) * rs.scale : 0;
@@ -271,14 +329,20 @@ function decodeDib(buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: num
       } else {
         const bitPos = x * bpp;
         const byte = buf[start + sy * stride + (bitPos >> 3)] ?? 0;
-        const idx = bpp === 8 ? byte
-          : bpp === 4 ? (bitPos % 8 === 0 ? byte >> 4 : byte & 0x0f)
-            : (byte >> (7 - (bitPos & 7))) & 1;
+        const idx = bpp === 8 ? byte : bpp === 4 ? (bitPos % 8 === 0 ? byte >> 4 : byte & 0x0f) : (byte >> (7 - (bitPos & 7))) & 1;
         const pi = idx * 3;
-        if (pal && pi + 2 < pal.length) { rr = pal[pi]; gg = pal[pi + 1]; bb = pal[pi + 2]; }
-        else { rr = gg = bb = idx ? 255 : 0; }
+        if (pal && pi + 2 < pal.length) {
+          rr = pal[pi];
+          gg = pal[pi + 1];
+          bb = pal[pi + 2];
+        } else {
+          rr = gg = bb = idx ? 255 : 0;
+        }
       }
-      rgba[dst] = rr | 0; rgba[dst + 1] = gg | 0; rgba[dst + 2] = bb | 0; rgba[dst + 3] = aa;
+      rgba[dst] = rr | 0;
+      rgba[dst + 1] = gg | 0;
+      rgba[dst + 2] = bb | 0;
+      rgba[dst + 3] = aa;
       dst += 4;
     }
   }
@@ -290,9 +354,7 @@ function decodeDib(buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: num
 }
 
 /** DIB → data URI；失败返回 null（调用方跳过该记录）*/
-export function dibToDataUri(
-  buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: number, bitsLen: number,
-): string | null {
+export function dibToDataUri(buf: Uint8Array, bmiOff: number, bmiLen: number, bitsOff: number, bitsLen: number): string | null {
   try {
     // BI_JPEG / BI_PNG 直通
     if (bmiOff >= 0 && bmiOff + 20 <= buf.length) {

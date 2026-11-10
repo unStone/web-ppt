@@ -1,4 +1,6 @@
 export { createPresetAdjustmentEditor } from './preset-adjustment-editor';
 export type {
-  PresetAdjustmentEditor, PresetAdjustmentEditorFactory, PresetAdjustmentEditorOptions,
+  PresetAdjustmentEditor,
+  PresetAdjustmentEditorFactory,
+  PresetAdjustmentEditorOptions,
 } from './types';

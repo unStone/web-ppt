@@ -22,10 +22,7 @@ import { fileURLToPath } from 'node:url';
 function assertReadmeUnambiguous(dir, name) {
   const rogue = readdirSync(dir).filter((f) => /^readme\..+/i.test(f) && f !== 'README.md');
   if (rogue.length) {
-    throw new Error(
-      `${name}: ${rogue.join(' / ')} 会被 npm 当成 README 顶掉 README.md —— ` +
-      `本地化版本改用连字符（README-zh-CN.md）`,
-    );
+    throw new Error(`${name}: ${rogue.join(' / ')} 会被 npm 当成 README 顶掉 README.md —— ` + `本地化版本改用连字符（README-zh-CN.md）`);
   }
 }
 

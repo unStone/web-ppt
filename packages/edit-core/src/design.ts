@@ -4,7 +4,5 @@ import { toMasterCanvas } from './master';
 import type { DesignTarget, EditDoc } from './types';
 
 export function toDesignCanvas(doc: EditDoc, target: DesignTarget): Slide {
-  return target.kind === 'layout'
-    ? toLayoutCanvas(doc, target)
-    : toMasterCanvas(doc, target);
+  return target.kind === 'layout' ? toLayoutCanvas(doc, target) : toMasterCanvas(doc, target);
 }

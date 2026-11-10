@@ -7,10 +7,18 @@ import { normalizePicture, normalizeScene, sourcePicture, sourceScene } from './
 import type { AppearanceState, PictureFx } from './types';
 
 export function materializeAppearance(tree: XmlDocument, record: ElementRecord, generated: boolean, xml: EditElementXml): void {
-  const { findXmlChild, xmlElementChildren, removeXmlChild, insertXmlChildUnchecked,
-    setXmlAttribute, insertXmlInOrder, locateElementHost, namespacedElement, appendDrawingColor } = xml;
-  const child = (parent: XmlElement, name: string, ns = DRAWINGML_NS) =>
-    findXmlChild(parent, { localName: name, namespaceUri: ns });
+  const {
+    findXmlChild,
+    xmlElementChildren,
+    removeXmlChild,
+    insertXmlChildUnchecked,
+    setXmlAttribute,
+    insertXmlInOrder,
+    locateElementHost,
+    namespacedElement,
+    appendDrawingColor,
+  } = xml;
+  const child = (parent: XmlElement, name: string, ns = DRAWINGML_NS) => findXmlChild(parent, { localName: name, namespaceUri: ns });
   const emu = (value: number) => String(Math.round(value * 9525));
   function add(parent: XmlElement, name: string, attrs: Record<string, string> = {}): XmlElement {
     const node = namespacedElement(parent, DRAWINGML_NS, name);
@@ -50,9 +58,12 @@ export function materializeAppearance(tree: XmlDocument, record: ElementRecord, 
     const camera = add(sceneNode, 'camera', { prst: scene.camera ?? 'orthographicFront' });
     if (scene.fieldOfView !== undefined) setXmlAttribute(camera, 'fov', String(Math.round(scene.fieldOfView * 60000)));
     if (scene.zoom !== undefined) setXmlAttribute(camera, 'zoom', String(Math.round(scene.zoom * 100000)));
-    if (scene.rotX !== undefined || scene.rotY !== undefined || scene.rotZ !== undefined) add(camera, 'rot', {
-      lat: String(Math.round((scene.rotX ?? 0) * 60000)), lon: String(Math.round((scene.rotY ?? 0) * 60000)), rev: String(Math.round((scene.rotZ ?? 0) * 60000)),
-    });
+    if (scene.rotX !== undefined || scene.rotY !== undefined || scene.rotZ !== undefined)
+      add(camera, 'rot', {
+        lat: String(Math.round((scene.rotX ?? 0) * 60000)),
+        lon: String(Math.round((scene.rotY ?? 0) * 60000)),
+        rev: String(Math.round((scene.rotZ ?? 0) * 60000)),
+      });
     add(sceneNode, 'lightRig', { rig: scene.lightRig ?? 'threePt', dir: scene.lightDirection ?? 't' });
     const shape = namespacedElement(properties, DRAWINGML_NS, 'sp3d');
     insertXmlInOrder(properties, shape);
@@ -60,20 +71,20 @@ export function materializeAppearance(tree: XmlDocument, record: ElementRecord, 
     if (scene.z !== undefined) setXmlAttribute(shape, 'z', emu(scene.z));
     if (scene.contourWidth !== undefined) setXmlAttribute(shape, 'contourW', emu(scene.contourWidth));
     if (scene.material) setXmlAttribute(shape, 'prstMaterial', scene.material);
-    if (scene.bevelTop !== undefined || scene.bevelTopWidth !== undefined) add(shape, 'bevelT', { w: emu(scene.bevelTopWidth ?? scene.bevelTop ?? 0), h: emu(scene.bevelTop ?? 4), prst: 'circle' });
-    if (scene.bevelBottom !== undefined || scene.bevelBottomWidth !== undefined) add(shape, 'bevelB', { w: emu(scene.bevelBottomWidth ?? scene.bevelBottom ?? 0), h: emu(scene.bevelBottom ?? 4), prst: 'circle' });
+    if (scene.bevelTop !== undefined || scene.bevelTopWidth !== undefined)
+      add(shape, 'bevelT', { w: emu(scene.bevelTopWidth ?? scene.bevelTop ?? 0), h: emu(scene.bevelTop ?? 4), prst: 'circle' });
+    if (scene.bevelBottom !== undefined || scene.bevelBottomWidth !== undefined)
+      add(shape, 'bevelB', { w: emu(scene.bevelBottomWidth ?? scene.bevelBottom ?? 0), h: emu(scene.bevelBottom ?? 4), prst: 'circle' });
     if (scene.extrusionColor) appendDrawingColor(add(shape, 'extrusionClr'), scene.extrusionColor);
     if (scene.contourColor) appendDrawingColor(add(shape, 'contourClr'), scene.contourColor);
   }
 
-
   const state = record.ovr.extensions?.appearance as AppearanceState | undefined;
   const picture = record.src.kind === 'image' && (state?.picture !== undefined || generated);
-  const scene = record.src.kind === 'shape' && (state?.scene !== undefined || generated && record.src.scene3d);
+  const scene = record.src.kind === 'shape' && (state?.scene !== undefined || (generated && record.src.scene3d));
   if (!picture && !scene) return;
   const { host } = locateElementHost(tree, record);
-  if (picture && record.src.kind === 'image') materializePicture(host, state?.picture !== undefined
-    ? normalizePicture(JSON.parse(state.picture)) : sourcePicture(record.src));
-  if (scene) materializeScene(host, state?.scene !== undefined
-    ? normalizeScene(JSON.parse(state.scene)) : sourceScene(record.src.scene3d));
+  if (picture && record.src.kind === 'image')
+    materializePicture(host, state?.picture !== undefined ? normalizePicture(JSON.parse(state.picture)) : sourcePicture(record.src));
+  if (scene) materializeScene(host, state?.scene !== undefined ? normalizeScene(JSON.parse(state.scene)) : sourceScene(record.src.scene3d));
 }

@@ -1,6 +1,10 @@
 import {
-  elementEditParentToSlideMatrix, inverseTransformSpaceVector, slideToElementEditParentPoint,
-  spaceOrientationParity, transformSpacePoint, transformSpaceVector,
+  elementEditParentToSlideMatrix,
+  inverseTransformSpaceVector,
+  slideToElementEditParentPoint,
+  spaceOrientationParity,
+  transformSpacePoint,
+  transformSpaceVector,
 } from '@web-ppt/edit-core';
 import type { EditDoc, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import type { TransformFrame } from './transform-frame';
@@ -8,11 +12,11 @@ import type { TransformFrame } from './transform-frame';
 export const ROTATION_SNAP_DEGREES = 15;
 
 export function pointerAngle(center: SpacePoint, pointer: SpacePoint): number {
-  return Math.atan2(pointer.y - center.y, pointer.x - center.x) * 180 / Math.PI;
+  return (Math.atan2(pointer.y - center.y, pointer.x - center.x) * 180) / Math.PI;
 }
 
 export function shortestRotationDelta(degrees: number): number {
-  const normalized = ((degrees + 180) % 360 + 360) % 360 - 180;
+  const normalized = ((((degrees + 180) % 360) + 360) % 360) - 180;
   return normalized === -180 ? 180 : normalized;
 }
 
@@ -21,7 +25,7 @@ export function constrainedRotation(degrees: number, shiftKey: boolean): number 
 }
 
 export function rotatePointAround(point: SpacePoint, center: SpacePoint, degrees: number): SpacePoint {
-  const radians = degrees * Math.PI / 180;
+  const radians = (degrees * Math.PI) / 180;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   const x = point.x - center.x;
@@ -48,14 +52,15 @@ export function rotateElementAroundSlideCenter(
   const center = transformSpacePoint(parent, { x: source.x + source.w / 2, y: source.y + source.h / 2 });
   const nextCenter = rotatePointAround(center, selectionCenter, degrees);
   const nextParentCenter = slideToElementEditParentPoint(doc, id, nextCenter);
-  const radians = source.rot * Math.PI / 180;
+  const radians = (source.rot * Math.PI) / 180;
   const sourceWorldAxis = transformSpaceVector(parent, {
-    x: Math.cos(radians), y: Math.sin(radians),
+    x: Math.cos(radians),
+    y: Math.sin(radians),
   });
   const nextWorldAxis = rotatePointAround(sourceWorldAxis, { x: 0, y: 0 }, degrees);
   const nextParentAxis = inverseTransformSpaceVector(parent, nextWorldAxis);
   const rot = nearestEquivalentAngle(
-    Math.atan2(nextParentAxis.y, nextParentAxis.x) * 180 / Math.PI,
+    (Math.atan2(nextParentAxis.y, nextParentAxis.x) * 180) / Math.PI,
     source.rot + degrees * spaceOrientationParity(parent),
   );
   return {

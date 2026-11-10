@@ -44,10 +44,7 @@ export function bindSlideGrid(options: {
   presentButtons?: HTMLButtonElement[];
   onJump?: () => void;
 }): SlideGrid {
-  const {
-    viewer, thumbsVisible, keysActive,
-    browseButtons = [], presentButtons = [], onJump,
-  } = options;
+  const { viewer, thumbsVisible, keysActive, browseButtons = [], presentButtons = [], onJump } = options;
   const buttons = [...browseButtons, ...presentButtons];
 
   const overlay = document.createElement('div');
@@ -55,13 +52,13 @@ export function bindSlideGrid(options: {
   overlay.hidden = true;
   overlay.setAttribute('aria-hidden', 'true');
   overlay.innerHTML =
-    '<div class="slide-grid-panel">' +
-    '<header class="slide-grid-head">' +
-    '<strong class="slide-grid-title"></strong>' +
-    '<button type="button" class="slide-grid-close"></button>' +
-    '</header>' +
-    '<div class="slide-grid-list"></div>' +
-    '</div>';
+    '<div class="slide-grid-panel">'
+    + '<header class="slide-grid-head">'
+    + '<strong class="slide-grid-title"></strong>'
+    + '<button type="button" class="slide-grid-close"></button>'
+    + '</header>'
+    + '<div class="slide-grid-list"></div>'
+    + '</div>';
 
   const title = overlay.querySelector<HTMLElement>('.slide-grid-title')!;
   const closeBtn = overlay.querySelector<HTMLButtonElement>('.slide-grid-close')!;
@@ -134,14 +131,17 @@ export function bindSlideGrid(options: {
     observer?.disconnect();
     list.innerHTML = '';
     const ratio = `${current.presentation.width} / ${current.presentation.height}`;
-    observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const div = entry.target as HTMLElement;
-        observer?.unobserve(div);
-        renderItem(div);
-      }
-    }, { root: list, rootMargin: '200px 0px' });
+    observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const div = entry.target as HTMLElement;
+          observer?.unobserve(div);
+          renderItem(div);
+        }
+      },
+      { root: list, rootMargin: '200px 0px' },
+    );
 
     for (let i = 0; i < current.count; i++) {
       const div = document.createElement('button');
@@ -250,9 +250,7 @@ export function bindSlideGrid(options: {
   };
 
   const onListClick = (event: MouseEvent): void => {
-    const item = event.target instanceof Element
-      ? event.target.closest<HTMLElement>('.slide-grid-item')
-      : null;
+    const item = event.target instanceof Element ? event.target.closest<HTMLElement>('.slide-grid-item') : null;
     if (!item || !list.contains(item)) return;
     event.preventDefault();
     event.stopPropagation();
@@ -260,8 +258,7 @@ export function bindSlideGrid(options: {
   };
 
   const onKey = (event: KeyboardEvent): void => {
-    const typing = event.target instanceof Element
-      && !!event.target.closest('input,select,textarea,[contenteditable]');
+    const typing = event.target instanceof Element && !!event.target.closest('input,select,textarea,[contenteditable]');
     if (open && event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
@@ -289,7 +286,9 @@ export function bindSlideGrid(options: {
   list.addEventListener('click', onListClick);
   closeBtn.addEventListener('click', close);
   for (const btn of buttons) btn.addEventListener('click', toggle);
-  const onFullscreen = (): void => { if (open) placeOverlay(); };
+  const onFullscreen = (): void => {
+    if (open) placeOverlay();
+  };
   document.addEventListener('keydown', onKey, true);
   document.addEventListener('fullscreenchange', onFullscreen);
   const langWatch = new MutationObserver(() => paintChrome());

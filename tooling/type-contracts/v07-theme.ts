@@ -9,7 +9,8 @@ async function themeJourney(input: Uint8Array): Promise<void> {
   const theme = listThemes(session.editor.doc)[0];
   const state: ThemeState = queryTheme(session.editor.doc, theme.id);
   const command: SetThemeCommand = {
-    type: 'SetTheme', id: state.id,
+    type: 'SetTheme',
+    id: state.id,
     clrScheme: { accent1: '#112233' },
     fontScheme: { minor: { latin: 'Theme Latin' } },
   };

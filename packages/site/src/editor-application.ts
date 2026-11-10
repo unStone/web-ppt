@@ -14,8 +14,12 @@ export interface EditorApplication {
   readonly opening?: Context['editorOpening'];
   readonly tools?: Context['editorTools'];
   readonly page?: Context['editorPage'];
-  replace(session: EditorSession, viewOptions: SlideEditorOptions, modules: DocumentModules,
-    signal: AbortSignal): Promise<EditorDocument | undefined>;
+  replace(
+    session: EditorSession,
+    viewOptions: SlideEditorOptions,
+    modules: DocumentModules,
+    signal: AbortSignal,
+  ): Promise<EditorDocument | undefined>;
   dispose(): Promise<void>;
 }
 
@@ -25,28 +29,46 @@ export async function createSiteEditorApplication(): Promise<EditorApplication> 
     await context.plugin(editorPagePlugin);
     const page = context.editorPage;
     const application = await startApplication(context, page.host, page.notice, page.fileHost, page.openHost);
-    try { page.connect(application); }
-    catch (error) { await application.dispose(); throw error; }
+    try {
+      page.connect(application);
+    } catch (error) {
+      await application.dispose();
+      throw error;
+    }
     return application;
-  } catch (error) { await context.fiber.dispose(); throw error; }
+  } catch (error) {
+    await context.fiber.dispose();
+    throw error;
+  }
 }
 
 /** 产品层拥有文稿插件的生命周期；可发布的编辑 SDK 无需认识 Cordis。 */
-export async function createEditorApplication(host: EditorHost, notice: SiteNotice, fileHost?: EditorFileHost,
-  openHost?: EditorOpenHost): Promise<EditorApplication> {
+export async function createEditorApplication(
+  host: EditorHost,
+  notice: SiteNotice,
+  fileHost?: EditorFileHost,
+  openHost?: EditorOpenHost,
+): Promise<EditorApplication> {
   return startApplication(new Context(), host, notice, fileHost, openHost);
 }
 
-async function startApplication(context: Context, host: EditorHost, notice: SiteNotice, fileHost?: EditorFileHost,
-  openHost?: EditorOpenHost): Promise<EditorApplication> {
+async function startApplication(
+  context: Context,
+  host: EditorHost,
+  notice: SiteNotice,
+  fileHost?: EditorFileHost,
+  openHost?: EditorOpenHost,
+): Promise<EditorApplication> {
   context.provide('editorHost', host);
   try {
     if (host.tools) await context.plugin(editorToolsPlugin, { notice, host: host.tools });
     await context.plugin(editorRecoveryPlugin, { notice });
     await context.plugin(editorFilesPlugin, { notice, host: fileHost });
     if (openHost) await context.plugin(editorOpenPlugin, { notice, host: openHost });
+  } catch (error) {
+    await context.fiber.dispose();
+    throw error;
   }
-  catch (error) { await context.fiber.dispose(); throw error; }
   const recovery = context.editorRecovery;
   const files = context.editorFiles;
   const opening = context.get('editorOpening');
@@ -66,60 +88,76 @@ async function startApplication(context: Context, host: EditorHost, notice: Site
     opening,
     tools,
     page,
-    replace(session: EditorSession, viewOptions: SlideEditorOptions, modules: DocumentModules,
-      signal: AbortSignal): Promise<EditorDocument | undefined> {
+    replace(
+      session: EditorSession,
+      viewOptions: SlideEditorOptions,
+      modules: DocumentModules,
+      signal: AbortSignal,
+    ): Promise<EditorDocument | undefined> {
       const owner = ++revision;
       initializing?.abort();
       const stale = () => disposed || owner !== revision || signal.aborted;
-      const task = pending.catch(() => {}).then(async () => {
-        let adopted = false;
-        let installed: Fiber | undefined;
-        const resumeFiles = files.pause();
-        try {
-          if (stale()) return;
-          // 此处开始关闭旧文稿；取消工具后即使替换过期，也要完成旧作用域的释放。
-          const stopAgentTools = active?.ctx.get('editorDocument')?.stopAgentTools;
-          stopAgentTools?.();
-          await files.whenIdle();
-          if (stale() && !stopAgentTools) return;
-          tools?.reset();
-          await active?.dispose();
-          await recovery.flush(currentSession ?? null);
-          active = undefined;
-          currentSession = undefined;
-          if (stale()) return;
-          host.canvas.replaceChildren();
-          host.objects.replaceChildren();
-          const scope = context.isolate('editorDocument').isolate('editorFonts');
-          const loading = new AbortController(), cancel = () => loading.abort();
-          initializing = loading;
-          signal.addEventListener('abort',cancel,{once:true});
-          const workspace = scope.plugin(documentWorkspace, { session, viewOptions, modules,signal:loading.signal });
-          active = installed = workspace;
-          currentSession = session;
-          try { await workspace; }
-          finally {
-            signal.removeEventListener('abort',cancel);
-            if (initializing === loading) initializing = undefined;
-          }
-          if (!stale()) {
-            const document = scope.editorDocument;
-            adopted = true;
-            return document;
-          }
-        } finally {
+      const task = pending
+        .catch(() => {})
+        .then(async () => {
+          let adopted = false;
+          let installed: Fiber | undefined;
+          const resumeFiles = files.pause();
           try {
-            // 请求可能在插件开始执行前过期，不能只依赖插件内部尚未注册的清理。
-            if (!adopted) {
-              await installed?.dispose();
-              if (active === installed) { active = undefined; currentSession = undefined; }
-              session.dispose();
-              await recovery.flush(session);
+            if (stale()) return;
+            // 此处开始关闭旧文稿；取消工具后即使替换过期，也要完成旧作用域的释放。
+            const stopAgentTools = active?.ctx.get('editorDocument')?.stopAgentTools;
+            stopAgentTools?.();
+            await files.whenIdle();
+            if (stale() && !stopAgentTools) return;
+            tools?.reset();
+            await active?.dispose();
+            await recovery.flush(currentSession ?? null);
+            active = undefined;
+            currentSession = undefined;
+            if (stale()) return;
+            host.canvas.replaceChildren();
+            host.objects.replaceChildren();
+            const scope = context.isolate('editorDocument').isolate('editorFonts');
+            const loading = new AbortController(),
+              cancel = () => loading.abort();
+            initializing = loading;
+            signal.addEventListener('abort', cancel, { once: true });
+            const workspace = scope.plugin(documentWorkspace, { session, viewOptions, modules, signal: loading.signal });
+            active = installed = workspace;
+            currentSession = session;
+            try {
+              await workspace;
+            } finally {
+              signal.removeEventListener('abort', cancel);
+              if (initializing === loading) initializing = undefined;
             }
-          } finally { resumeFiles(); }
-        }
-      });
-      pending = task.then(() => {}, () => {});
+            if (!stale()) {
+              const document = scope.editorDocument;
+              adopted = true;
+              return document;
+            }
+          } finally {
+            try {
+              // 请求可能在插件开始执行前过期，不能只依赖插件内部尚未注册的清理。
+              if (!adopted) {
+                await installed?.dispose();
+                if (active === installed) {
+                  active = undefined;
+                  currentSession = undefined;
+                }
+                session.dispose();
+                await recovery.flush(session);
+              }
+            } finally {
+              resumeFiles();
+            }
+          }
+        });
+      pending = task.then(
+        () => {},
+        () => {},
+      );
       return task;
     },
     dispose(): Promise<void> {
@@ -133,14 +171,14 @@ async function startApplication(context: Context, host: EditorHost, notice: Site
       recovery.cancelPending();
       const opened = opening?.dispose();
       const saved = files.dispose();
-      return closing = Promise.all([pending, opened, saved]).then(async () => {
+      return (closing = Promise.all([pending, opened, saved]).then(async () => {
         await active?.dispose();
         // 会话销毁会排空内存中的恢复帧；落盘完成后才能关闭应用级存储连接。
         await recovery.flush(currentSession ?? null);
         active = undefined;
         currentSession = undefined;
         await context.fiber.dispose();
-      });
+      }));
     },
   };
 }

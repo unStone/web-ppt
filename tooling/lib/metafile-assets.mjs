@@ -30,21 +30,36 @@ export function readCanonicalMetafiles(directory) {
   } catch (cause) {
     throw new Error(`无法读取 canonical metafile JSON 清单 ${manifestPath}：${cause.message}`, { cause });
   }
-  if (manifest?.version !== 1 || manifest.generator !== 'tooling/make-metafile-assets.mjs' ||
-      !isDeepStrictEqual(manifest.source, METAFILE_SOURCE) || !Array.isArray(manifest.assets) || manifest.assets.length !== METAFILE_PARTS.length) {
+  if (
+    manifest?.version !== 1
+    || manifest.generator !== 'tooling/make-metafile-assets.mjs'
+    || !isDeepStrictEqual(manifest.source, METAFILE_SOURCE)
+    || !Array.isArray(manifest.assets)
+    || manifest.assets.length !== METAFILE_PARTS.length
+  ) {
     throw new Error(`canonical metafile 清单无效：${manifestPath}；预期版本 1、固定来源和两个媒体`);
   }
-  return Object.fromEntries(METAFILE_PARTS.map(({ name, part }, index) => {
-    const entry = manifest.assets[index];
-    if (!entry || entry.name !== name || entry.part !== part || !Number.isSafeInteger(entry.bytes) || entry.bytes <= 0 ||
-        typeof entry.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(entry.sha256)) {
-      throw new Error(`canonical metafile 资产记录无效：${manifestPath}；预期 ${name} / ${part} 的字节数和 SHA256`);
-    }
-    const path = join(directory, name);
-    const bytes = readRequiredFile(path);
-    if (bytes.length !== entry.bytes) throw new Error(`canonical metafile 字节数不符：${path}；实际 ${bytes.length}，预期 ${entry.bytes}`);
-    const hash = sha256(bytes);
-    if (hash !== entry.sha256) throw new Error(`canonical metafile SHA256 不符：${path}；实际 ${hash}，预期 ${entry.sha256}`);
-    return [name, bytes];
-  }));
+  return Object.fromEntries(
+    METAFILE_PARTS.map(({ name, part }, index) => {
+      const entry = manifest.assets[index];
+      if (
+        !entry
+        || entry.name !== name
+        || entry.part !== part
+        || !Number.isSafeInteger(entry.bytes)
+        || entry.bytes <= 0
+        || typeof entry.sha256 !== 'string'
+        || !/^[0-9a-f]{64}$/.test(entry.sha256)
+      ) {
+        throw new Error(`canonical metafile 资产记录无效：${manifestPath}；预期 ${name} / ${part} 的字节数和 SHA256`);
+      }
+      const path = join(directory, name);
+      const bytes = readRequiredFile(path);
+      if (bytes.length !== entry.bytes)
+        throw new Error(`canonical metafile 字节数不符：${path}；实际 ${bytes.length}，预期 ${entry.bytes}`);
+      const hash = sha256(bytes);
+      if (hash !== entry.sha256) throw new Error(`canonical metafile SHA256 不符：${path}；实际 ${hash}，预期 ${entry.sha256}`);
+      return [name, bytes];
+    }),
+  );
 }

@@ -4,16 +4,21 @@ const targetFill = (tag) => {
 };
 
 function pathBounds(pathTag) {
-  const coordinates = pathTag?.match(/\bd="([^"]+)"/)?.[1]
-    ?.match(/-?[\d.]+/g)?.map(Number) ?? [];
+  const coordinates =
+    pathTag
+      ?.match(/\bd="([^"]+)"/)?.[1]
+      ?.match(/-?[\d.]+/g)
+      ?.map(Number) ?? [];
   if (coordinates.length < 8 || coordinates.length % 2) {
     throw new Error('LibreOffice spAutoFit SVG path 坐标无效');
   }
   const xs = coordinates.filter((_, index) => index % 2 === 0);
   const ys = coordinates.filter((_, index) => index % 2 === 1);
   return {
-    left: Math.min(...xs), right: Math.max(...xs),
-    top: Math.min(...ys), bottom: Math.max(...ys),
+    left: Math.min(...xs),
+    right: Math.max(...xs),
+    top: Math.min(...ys),
+    bottom: Math.max(...ys),
   };
 }
 
@@ -49,10 +54,14 @@ export function runShapeAutofitLibreOfficeContract({ exportSvg, savedPath, sourc
   const growth = source.bounds.left - saved.bounds.left;
   const sourceWidth = source.bounds.right - source.bounds.left;
   if (stableEdgeError > 3 || growth <= sourceWidth * 2) {
-    throw new Error(`LibreOffice spAutoFit 相对几何无效：${JSON.stringify({
-      source: source.bounds, saved: saved.bounds, stableEdgeError, growth,
-    })}`);
+    throw new Error(
+      `LibreOffice spAutoFit 相对几何无效：${JSON.stringify({
+        source: source.bounds,
+        saved: saved.bounds,
+        stableEdgeError,
+        growth,
+      })}`,
+    );
   }
-  return `，spAutoFit 旋转 frame 向左增长 ${growth.toFixed(3)} SVG unit，`
-    + `固定边最大偏差 ${stableEdgeError.toFixed(3)}`;
+  return `，spAutoFit 旋转 frame 向左增长 ${growth.toFixed(3)} SVG unit，` + `固定边最大偏差 ${stableEdgeError.toFixed(3)}`;
 }

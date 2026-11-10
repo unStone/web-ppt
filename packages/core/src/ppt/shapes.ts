@@ -6,15 +6,40 @@ import type { ElementBase, Fill, GroupElement, ImageElement, ShapeElement, Slide
 import { presetGeom } from '../geometry';
 import type { AutoNum } from './autonum';
 import {
-  ESCHER, EscherProps, MSO_SHAPE, P, Scheme, SP_FLAG, complexString,
-  isTableGroup, MSO_PICTURE_FRAME, parseOpt, readAnchor, readChildAnchor, readSp, readSpgr,
-  shapeCrop, shapeFill, shapeShadow, shapeStroke, tableRowHeights,
+  ESCHER,
+  EscherProps,
+  MSO_SHAPE,
+  P,
+  Scheme,
+  SP_FLAG,
+  complexString,
+  isTableGroup,
+  MSO_PICTURE_FRAME,
+  parseOpt,
+  readAnchor,
+  readChildAnchor,
+  readSp,
+  readSpgr,
+  shapeCrop,
+  shapeFill,
+  shapeShadow,
+  shapeStroke,
+  tableRowHeights,
 } from './escher';
 import { ansi, findAll, findRec, Rec, records, RT, utf16 } from './records';
 import { customPath } from './custom-path';
 import {
-  buildTextBody, LevelStyle, LinkRange, MasterStyles, ParaProps, PH_TEXT_TYPE, parseStyleTextProp,
-  StyledText, TextEnv, TextRunProps, TX,
+  buildTextBody,
+  LevelStyle,
+  LinkRange,
+  MasterStyles,
+  ParaProps,
+  PH_TEXT_TYPE,
+  parseStyleTextProp,
+  StyledText,
+  TextEnv,
+  TextRunProps,
+  TX,
 } from './text';
 import { buildTable, looksLikeGrid, mergeCellLayers } from './table';
 
@@ -81,11 +106,7 @@ function levelStyleOf(ctx: Ctx, textType: number, lvl: number): LevelStyle {
     if (!list || !list.length) return undefined;
     return list[Math.min(lvl, list.length - 1)];
   };
-  const chain = [
-    pick(ctx.envStyles, TX.OTHER),
-    pick(ctx.styles, TX.OTHER),
-    pick(ctx.styles, textType),
-  ];
+  const chain = [pick(ctx.envStyles, TX.OTHER), pick(ctx.styles, TX.OTHER), pick(ctx.styles, textType)];
   const merged: LevelStyle = {
     para: Object.assign({}, ...chain.map((s) => s?.para ?? {})) as ParaProps,
     char: Object.assign({}, ...chain.map((s) => s?.char ?? {})) as TextRunProps,
@@ -198,7 +219,10 @@ function elementBase(
 ): ElementBase {
   const rotationRaw = props.simple.get(P.rotation);
   const base: ElementBase = {
-    x: box.x, y: box.y, w: box.w, h: box.h,
+    x: box.x,
+    y: box.y,
+    w: box.w,
+    h: box.h,
     rot: rotationRaw !== undefined ? (rotationRaw / 65536) % 360 : 0,
     // 翻转标志在 Sp 记录的 flags 里，不在属性表
     flipH: (sp.flags & SP_FLAG.FLIPH) !== 0,
@@ -248,14 +272,18 @@ function parseSpContainer(ctx: Ctx, rec: Rec, origin: Origin): SlideElement | nu
   // 预览图不能代表可重建的嵌入对象；保留静态预览，但编辑能力必须降为框架级。
   if (sp.flags & SP_FLAG.OLE) {
     return {
-      kind: 'unsupported', ...base, label: '不支持编辑的旧版 OLE 对象',
+      kind: 'unsupported',
+      ...base,
+      label: '不支持编辑的旧版 OLE 对象',
       ...(preview ? { preview } : {}),
     };
   }
   if (pib !== undefined && (shapeType === MSO_PICTURE_FRAME || pib > 0)) {
     if (preview) {
       const img: ImageElement = {
-        kind: 'image', ...base, src: preview,
+        kind: 'image',
+        ...base,
+        src: preview,
         crop: shapeCrop(props),
         stroke: shapeStroke(props, ctx.scheme),
       };
@@ -276,7 +304,8 @@ function parseSpContainer(ctx: Ctx, rec: Rec, origin: Origin): SlideElement | nu
   const preset = MSO_SHAPE[shapeType] ?? (shapeType === 0x0fff ? 'rect' : null);
   if (!path && !preset) {
     return {
-      kind: 'unsupported', ...base,
+      kind: 'unsupported',
+      ...base,
       label: `不支持的旧版形状（MSOSPT ${shapeType}）`,
     };
   }
@@ -302,9 +331,13 @@ function parseSpContainer(ctx: Ctx, rec: Rec, origin: Origin): SlideElement | nu
   if (!text && (!fill || fill.type === 'none') && !stroke) return null;
 
   const shape: ShapeElement = {
-    kind: 'shape', ...base, path,
+    kind: 'shape',
+    ...base,
+    path,
     fill: openGeom ? { type: 'none' } : fill,
-    stroke, text, openGeom: openGeom || undefined,
+    stroke,
+    text,
+    openGeom: openGeom || undefined,
   };
   return shape;
 }
@@ -322,8 +355,10 @@ function msoAdjusts(props: EscherProps, shapeType: number): Record<string, numbe
   const isAngle = ANGLE_SHAPES.has(shapeType);
   const out: Record<string, number> = {};
   const ids: [number, string][] = [
-    [P.adjustValue, 'adj1'], [P.adjust2Value, 'adj2'],
-    [P.adjust3Value, 'adj3'], [P.adjust4Value, 'adj4'],
+    [P.adjustValue, 'adj1'],
+    [P.adjust2Value, 'adj2'],
+    [P.adjust3Value, 'adj3'],
+    [P.adjust4Value, 'adj4'],
   ];
   for (const [id, key] of ids) {
     const raw = props.simple.get(id);
@@ -392,7 +427,10 @@ function parseSpgrContainer(ctx: Ctx, rec: Rec, parent: Origin, depth = 0): Slid
   // 表格组：子形状即单元格，按行高与列边界还原成表格元素
   if (self && isTableGroup(self.props)) {
     const cells = childShapes(flat);
-    const table = buildTable(cells, tableRowHeights(dv, self.props).map((h) => h * ctx.scale));
+    const table = buildTable(
+      cells,
+      tableRowHeights(dv, self.props).map((h) => h * ctx.scale),
+    );
     if (table) return [table];
     return cells;
   }
@@ -450,7 +488,7 @@ function readGroupSelf(ctx: Ctx, rec: Rec, parent: Origin): GroupSelf | null {
   const spRec = findRec(dv, rec.start, rec.start + rec.len, ESCHER.Sp);
   if (!spgr || !spRec) return null;
   const sp = readSp(dv, spRec);
-  if (!(sp.flags & SP_FLAG.GROUP) || (sp.flags & SP_FLAG.PATRIARCH)) return null;
+  if (!(sp.flags & SP_FLAG.GROUP) || sp.flags & SP_FLAG.PATRIARCH) return null;
   const space = readSpgr(dv, spgr);
   const box = anchorBox(ctx, rec, parent);
   if (!space || !box || space.w <= 0 || space.h <= 0 || box.w <= 0 || box.h <= 0) return null;

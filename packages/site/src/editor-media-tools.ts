@@ -13,14 +13,20 @@ interface MediaContext {
 
 /** 异步校验保存词条身份，读取期间切语言后仍按显示时的语言呈现。 */
 class MediaInputError extends Error {
-  constructor(readonly notice: SiteMessage) { super(notice.source); }
+  constructor(readonly notice: SiteMessage) {
+    super(notice.source);
+  }
 }
 
 async function readBytes(file: File | undefined, maximum: number, label: '媒体文件' | '海报'): Promise<Uint8Array> {
   if (!file) throw new MediaInputError(message(label === '媒体文件' ? '请选择媒体文件' : '请选择新的海报'));
-  if (!file.size || file.size > maximum) throw new MediaInputError(message('{label}必须非空且不超过 {maximum} MiB', {
-    label: message(label), maximum: maximum / 1024 / 1024,
-  }));
+  if (!file.size || file.size > maximum)
+    throw new MediaInputError(
+      message('{label}必须非空且不超过 {maximum} MiB', {
+        label: message(label),
+        maximum: maximum / 1024 / 1024,
+      }),
+    );
   return new Uint8Array(await file.arrayBuffer());
 }
 
@@ -33,9 +39,7 @@ async function readPoster(file: File | undefined): Promise<MediaPoster | undefin
 }
 
 /** 对话框连同媒体校验一起按需加载；读文件期间切换文稿不能把旧选择插入新会话。 */
-export function showMediaTools(
-  context: () => MediaContext, notice: SiteNotice, onClose: () => void,
-): (() => void) | undefined {
+export function showMediaTools(context: () => MediaContext, notice: SiteNotice, onClose: () => void): (() => void) | undefined {
   if (document.querySelector('#mediaDialog')) return;
   const { session, view, writable } = context();
   if (!session || !view || !writable) return;
@@ -43,8 +47,12 @@ export function showMediaTools(
   const selection = session.editor.selection;
   const selectedId = selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null;
   const record = selectedId ? session.editor.doc.elements[selectedId] : undefined;
-  const canReplace = record?.src.kind === 'image' && !!record.src.media && record.meta.editable === 'frame'
-    && !record.meta.locked && !record.src.editInfo?.requiresOriginal;
+  const canReplace =
+    record?.src.kind === 'image'
+    && !!record.src.media
+    && record.meta.editable === 'frame'
+    && !record.meta.locked
+    && !record.src.editInfo?.requiresOriginal;
   const dialog = document.createElement('dialog');
   dialog.id = 'mediaDialog';
   dialog.setAttribute('aria-labelledby', 'mediaDialogTitle');
@@ -71,14 +79,22 @@ export function showMediaTools(
 <div class="media-actions"><button id="closeMediaDialog" class="button" type="button"></button><button id="insertMedia" class="button primary" type="submit"></button></div>
 </form>`;
   for (const [selector, label] of [
-    ['#mediaDialogTitle', '音视频与海报'], ['#mediaActionLabel', '操作'],
-    ['#mediaAction option[value="insert"]', '插入新媒体'], ['#mediaAction option[value="poster"]', '替换选中媒体的海报'],
-    ['#mediaKindLabel', '媒体类型'], ['#mediaKind option[value="audio"]', '音频 · PCM WAV'],
-    ['#mediaKind option[value="video"]', '视频 · MP4'], ['#mediaSourceLabel', '媒体来源'],
-    ['#mediaSource option[value="embedded"]', '本机文件（嵌入）'], ['#mediaSource option[value="external"]', 'HTTP(S) 外链'],
-    ['#mediaFileLabel', '媒体文件'], ['#mediaUrlLabel', '外链地址'], ['#mediaPosterLabel', '海报图片'],
+    ['#mediaDialogTitle', '音视频与海报'],
+    ['#mediaActionLabel', '操作'],
+    ['#mediaAction option[value="insert"]', '插入新媒体'],
+    ['#mediaAction option[value="poster"]', '替换选中媒体的海报'],
+    ['#mediaKindLabel', '媒体类型'],
+    ['#mediaKind option[value="audio"]', '音频 · PCM WAV'],
+    ['#mediaKind option[value="video"]', '视频 · MP4'],
+    ['#mediaSourceLabel', '媒体来源'],
+    ['#mediaSource option[value="embedded"]', '本机文件（嵌入）'],
+    ['#mediaSource option[value="external"]', 'HTTP(S) 外链'],
+    ['#mediaFileLabel', '媒体文件'],
+    ['#mediaUrlLabel', '外链地址'],
+    ['#mediaPosterLabel', '海报图片'],
     ['#closeMediaDialog', '取消'],
-  ] as const) setText(dialog.querySelector(selector)!, label);
+  ] as const)
+    setText(dialog.querySelector(selector)!, label);
   const get = <T extends HTMLElement>(id: string): T => dialog.querySelector<T>(`#${id}`)!;
   const kind = get<HTMLSelectElement>('mediaKind');
   const action = get<HTMLSelectElement>('mediaAction');
@@ -91,17 +107,25 @@ export function showMediaTools(
   const posterInput = get<HTMLInputElement>('mediaPoster');
   const error = get<HTMLElement>('mediaError');
   const submit = get<HTMLButtonElement>('insertMedia');
-  const selectedMedia = record?.src.kind === 'image' && record.src.media
-    ? session.editor.effectiveElement(record.id) : null;
-  const preview = selectedMedia?.kind === 'image' ? createMediaPreview(selectedMedia, () => {
-    const current = context();
-    return current.session === session && current.view === view && view.slideId === slideId
-      && !!selectedId && !!session.editor.doc.elements[selectedId];
-  }) : null;
+  const selectedMedia = record?.src.kind === 'image' && record.src.media ? session.editor.effectiveElement(record.id) : null;
+  const preview =
+    selectedMedia?.kind === 'image'
+      ? createMediaPreview(selectedMedia, () => {
+          const current = context();
+          return (
+            current.session === session
+            && current.view === view
+            && view.slideId === slideId
+            && !!selectedId
+            && !!session.editor.doc.elements[selectedId]
+          );
+        })
+      : null;
   if (preview) dialog.insertBefore(preview.element, get('mediaForm'));
   let pending = false;
   const sync = (): void => {
-    const external = source.value === 'external', video = kind.value === 'video';
+    const external = source.value === 'external',
+      video = kind.value === 'video';
     const replacing = action.value === 'poster';
     get('mediaInsertionFields').hidden = replacing;
     setText(submit, replacing ? '替换海报' : '插入');
@@ -109,17 +133,28 @@ export function showMediaTools(
     get('mediaUrlField').hidden = !external;
     url.disabled = !external || replacing;
     file.accept = video ? '.mp4,video/mp4' : '.wav,audio/wav';
-    setText(get('mediaSourceHint'), external
-      ? '外链不会下载或嵌入 PPTX；播放时会访问该地址，需要网络，且不保证浏览器支持其编码。'
-      : '文件最大 25 MiB，保存在 PPTX 内，不会上传或转码。');
-    setText(get('mediaPosterHint'), replacing ? '仅替换海报，不改变音视频源；图片最大 5 MiB。'
-      : video ? '视频必须提供海报；图片最大 5 MiB。'
-      : '音频可省略海报，使用内置喇叭图标；图片最大 5 MiB。');
+    setText(
+      get('mediaSourceHint'),
+      external
+        ? '外链不会下载或嵌入 PPTX；播放时会访问该地址，需要网络，且不保证浏览器支持其编码。'
+        : '文件最大 25 MiB，保存在 PPTX 内，不会上传或转码。',
+    );
+    setText(
+      get('mediaPosterHint'),
+      replacing
+        ? '仅替换海报，不改变音视频源；图片最大 5 MiB。'
+        : video
+          ? '视频必须提供海报；图片最大 5 MiB。'
+          : '音频可省略海报，使用内置喇叭图标；图片最大 5 MiB。',
+    );
   };
   kind.onchange = source.onchange = action.onchange = sync;
   const close = (): void => {
     if (!dialog.isConnected) return;
-    preview?.destroy(); restoreLanguage(); dialog.close(); dialog.remove();
+    preview?.destroy();
+    restoreLanguage();
+    dialog.close();
+    dialog.remove();
     onClose();
   };
   get('closeMediaDialog').onclick = close;
@@ -127,11 +162,15 @@ export function showMediaTools(
   get<HTMLFormElement>('mediaForm').onsubmit = (event) => {
     event.preventDefault();
     if (pending) return;
-    pending = true; submit.disabled = true; setMessage(error, '');
+    pending = true;
+    submit.disabled = true;
+    setMessage(error, '');
     void (async () => {
-      const video = kind.value === 'video', external = source.value === 'external';
+      const video = kind.value === 'video',
+        external = source.value === 'external';
       const replacing = action.value === 'poster';
-      const address = url.value, mediaFile = file.files?.[0];
+      const address = url.value,
+        mediaFile = file.files?.[0];
       const poster = await readPoster(posterInput.files?.[0]);
       if ((video || replacing) && !poster) throw new MediaInputError(message(replacing ? '请选择新的海报' : '视频必须提供海报'));
       const bytes = external || replacing ? null : await readBytes(mediaFile, MAX_MEDIA_BYTES, '媒体文件');
@@ -146,27 +185,54 @@ export function showMediaTools(
           throw new MediaInputError(message('选中对象已变化或不能替换海报，请重新选择媒体'));
         }
         createMediaEditor(session.editor).exec({ type: 'ReplaceMediaPoster', id: selectedId, poster: poster! });
-        close(); view.element.focus(); notice(message('海报已替换'), 'success');
+        close();
+        view.element.focus();
+        notice(message('海报已替换'), 'success');
         return;
       }
-      const rect = { x: session.editor.doc.meta.width * .3, y: session.editor.doc.meta.height * .3,
-        w: session.editor.doc.meta.width * .4, h: session.editor.doc.meta.height * .3 };
-      const command: AddMediaCommand = video ? {
-        type: 'AddMedia', slideId, rect, poster: poster!,
-        source: external ? { kind: 'external', mediaKind: 'video', url: address }
-          : { kind: 'embedded', bytes: bytes!, mime: 'video/mp4' },
-      } : {
-        type: 'AddMedia', slideId, rect, ...(poster ? { poster } : {}),
-        source: external ? { kind: 'external', mediaKind: 'audio', url: address }
-          : { kind: 'embedded', bytes: bytes!, mime: 'audio/wav' },
+      const rect = {
+        x: session.editor.doc.meta.width * 0.3,
+        y: session.editor.doc.meta.height * 0.3,
+        w: session.editor.doc.meta.width * 0.4,
+        h: session.editor.doc.meta.height * 0.3,
       };
+      const command: AddMediaCommand = video
+        ? {
+            type: 'AddMedia',
+            slideId,
+            rect,
+            poster: poster!,
+            source: external
+              ? { kind: 'external', mediaKind: 'video', url: address }
+              : { kind: 'embedded', bytes: bytes!, mime: 'video/mp4' },
+          }
+        : {
+            type: 'AddMedia',
+            slideId,
+            rect,
+            ...(poster ? { poster } : {}),
+            source: external
+              ? { kind: 'external', mediaKind: 'audio', url: address }
+              : { kind: 'embedded', bytes: bytes!, mime: 'audio/wav' },
+          };
       createMediaEditor(session.editor).exec(command);
-      close(); view.element.focus();
+      close();
+      view.element.focus();
       notice(message(video ? '已插入视频' : '已插入音频'), 'success');
-    })().catch((failure: unknown) => {
-      if (dialog.open) setMessage(error, failure instanceof MediaInputError ? failure.notice
-        : message('无法完成媒体操作：{detail}', { detail: failure instanceof Error ? failure.message : String(failure) }));
-    }).finally(() => { pending = false; submit.disabled = false; });
+    })()
+      .catch((failure: unknown) => {
+        if (dialog.open)
+          setMessage(
+            error,
+            failure instanceof MediaInputError
+              ? failure.notice
+              : message('无法完成媒体操作：{detail}', { detail: failure instanceof Error ? failure.message : String(failure) }),
+          );
+      })
+      .finally(() => {
+        pending = false;
+        submit.disabled = false;
+      });
   };
   sync();
   document.body.append(dialog);

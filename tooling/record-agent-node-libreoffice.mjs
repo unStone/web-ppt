@@ -25,23 +25,30 @@ mkdirSync(out, { recursive: true });
 
 const soffice = requireSoffice();
 
-const REF_W = 1280, REF_H = 720;
+const REF_W = 1280,
+  REF_H = 720;
 const filter = `png:impress_png_Export:{"PixelWidth":{"type":"long","value":${REF_W}},"PixelHeight":{"type":"long","value":${REF_H}}}`;
 
 const requested = process.argv.slice(2).filter((a) => !a.startsWith('--'));
-const FIXTURES = (requested.length ? requested : ['sample.pptx', 'showcase.pptx', 'sample-cjk-squeeze.pptx'])
-  .map((name) => join(root, 'fixtures', name));
+const FIXTURES = (requested.length ? requested : ['sample.pptx', 'showcase.pptx', 'sample-cjk-squeeze.pptx']).map((name) =>
+  join(root, 'fixtures', name),
+);
 
 // Node 渲染入口：与 parity 测试同构（字体 Provider + HarfBuzz 注入）
 const outApi = resolve(root, 'out/agent-node-render');
 const entry = join(outApi, 'libreoffice-entry.ts');
-writeFileSync(entry,
+writeFileSync(
+  entry,
   `export * from '${join(root, 'packages/core/src/node-export.ts')}';\n`
-  + `export * from '${join(root, 'packages/core/src/index.ts')}';\n`
-  + `export * from '${join(root, 'packages/fonts/src/glyphs/index.ts')}';\n`
-  + `export * from '${join(root, 'packages/fonts/src/glyphs/harfbuzz.ts')}';\n`);
+    + `export * from '${join(root, 'packages/core/src/index.ts')}';\n`
+    + `export * from '${join(root, 'packages/fonts/src/glyphs/index.ts')}';\n`
+    + `export * from '${join(root, 'packages/fonts/src/glyphs/harfbuzz.ts')}';\n`,
+);
 const bundle = join(outApi, 'libreoffice-bundle.mjs');
-execFileSync('npx', ['esbuild', entry, '--bundle', '--format=esm', '--platform=node', '--log-level=warning', `--outfile=${bundle}`], { cwd: root, stdio: 'inherit' });
+execFileSync('npx', ['esbuild', entry, '--bundle', '--format=esm', '--platform=node', '--log-level=warning', `--outfile=${bundle}`], {
+  cwd: root,
+  stdio: 'inherit',
+});
 const lib = await import(pathToFileURL(bundle).href);
 const { createFontProvider, withFontMeasurement } = lib;
 const { fontSample } = await import('./lib/font-glyph-samples.mjs');
@@ -63,7 +70,10 @@ for (const fixture of FIXTURES) {
   for (const f of readdirSync(dir)) {
     if (f.endsWith('.png') && !f.startsWith('node-')) unlinkSync(join(dir, f));
   }
-  execFileSync(soffice, ['--headless', '--norestore', '--convert-to', filter, '--outdir', dir, fixture], { stdio: 'ignore', timeout: 300_000 });
+  execFileSync(soffice, ['--headless', '--norestore', '--convert-to', filter, '--outdir', dir, fixture], {
+    stdio: 'ignore',
+    timeout: 300_000,
+  });
   for (const f of readdirSync(dir)) {
     if (f.endsWith('.png') && !f.startsWith('node-')) renameSync(join(dir, f), refPath);
   }
@@ -74,15 +84,21 @@ for (const fixture of FIXTURES) {
   // 与 LibreOffice 的对照不受「同一字体」约束：先用注入字体的精确测量，样本字体
   // 缺字时退到与 core 估算同式的确定测量（宿主策略，入口的强制注入不受影响）。
   let measureText;
-  const measured = await withFontMeasurement(provider, (measure) => lib.renderSlideSvgInNode(pres, slide, { measureText: measure }),
-    { purpose: 'edit', language: 'zh', faceForRun });
+  const measured = await withFontMeasurement(provider, (measure) => lib.renderSlideSvgInNode(pres, slide, { measureText: measure }), {
+    purpose: 'edit',
+    language: 'zh',
+    faceForRun,
+  });
   if (measured.ok) measureText = measured.value.measureText;
   else if (measured.reason !== 'missing-glyphs') throw new Error(`${name}：注入测量失败 ${measured.reason}`);
   else {
     measureText = (text, run, scale) => {
       let width = 0;
       const size = run.size * scale * (run.baseline ? 0.65 : 1);
-      for (const char of text) width += /[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6]/.test(char) ? size : size * 0.55;
+      for (const char of text)
+        width += /[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6]/.test(char)
+          ? size
+          : size * 0.55;
       return width + (run.spacing ?? 0) * text.length;
     };
   }
@@ -95,7 +111,8 @@ for (const fixture of FIXTURES) {
   const nodePng = PNG.sync.read(Buffer.from(png));
   const officePng = PNG.sync.read(readFileSync(refPath));
   writeFileSync(join(dir, 'node-1.png'), Buffer.from(png));
-  const w = Math.min(nodePng.width, officePng.width), h = Math.min(nodePng.height, officePng.height);
+  const w = Math.min(nodePng.width, officePng.width),
+    h = Math.min(nodePng.height, officePng.height);
   const m = grayMetrics(grayFromRgba(nodePng.data, w, h), grayFromRgba(officePng.data, w, h), w, h);
   report.push({ name, page: 1, size: `${nodePng.width}x${nodePng.height}`, ...m });
 }

@@ -9,7 +9,9 @@ export class EvaluationHostError extends Error {
   }
 }
 
-const fail = message => { throw new EvaluationHostError('eval-path-not-allowed', message); };
+const fail = (message) => {
+  throw new EvaluationHostError('eval-path-not-allowed', message);
+};
 const inside = (base, path) => {
   const difference = relative(base, path);
   return difference !== '' && difference !== '..' && !difference.startsWith(`..${sep}`) && !isAbsolute(difference);
@@ -32,12 +34,22 @@ async function canonicalFile(path, { required = false } = {}) {
 
 export async function createPathPolicy(config) {
   const keys = ['version', 'condition', 'inputPath', 'outputPath', 'renderDirectory', 'protocolPath', 'maxCalls'];
-  if (!config || typeof config !== 'object' || Array.isArray(config)
-    || Object.keys(config).some(key => !keys.includes(key)) || keys.some(key => !Object.hasOwn(config, key))) {
+  if (
+    !config
+    || typeof config !== 'object'
+    || Array.isArray(config)
+    || Object.keys(config).some((key) => !keys.includes(key))
+    || keys.some((key) => !Object.hasOwn(config, key))
+  ) {
     throw new EvaluationHostError('eval-invalid-config', `host 配置必须且仅包含 ${keys.join(', ')}`);
   }
-  if (config.version !== 1 || !['with-lint', 'without-lint'].includes(config.condition)
-    || !Number.isSafeInteger(config.maxCalls) || config.maxCalls < 1 || config.maxCalls > 10000) {
+  if (
+    config.version !== 1
+    || !['with-lint', 'without-lint'].includes(config.condition)
+    || !Number.isSafeInteger(config.maxCalls)
+    || config.maxCalls < 1
+    || config.maxCalls > 10000
+  ) {
     throw new EvaluationHostError('eval-invalid-config', 'host 需要 version=1、有效 condition 和 1–10000 的 maxCalls');
   }
   for (const key of ['inputPath', 'outputPath', 'renderDirectory', 'protocolPath']) {
@@ -57,7 +69,7 @@ export async function createPathPolicy(config) {
     throw new EvaluationHostError('eval-invalid-config', 'renderDirectory 必须是输入工作目录中的独立子目录');
   }
 
-  const resolveRequested = async value => {
+  const resolveRequested = async (value) => {
     if (typeof value !== 'string' || !value.trim() || (!isAbsolute(value) && URL.canParse(value))) {
       fail(`只允许评测本地文件路径，收到 ${String(value)}`);
     }
@@ -69,7 +81,11 @@ export async function createPathPolicy(config) {
     }
   };
   return {
-    inputPath, outputPath, protocolPath, renderDirectory, workspace,
+    inputPath,
+    outputPath,
+    protocolPath,
+    renderDirectory,
+    workspace,
     async validate(name, args) {
       if (name === 'ppt_open') {
         const path = await resolveRequested(args.path);

@@ -1,14 +1,22 @@
 export async function runStandaloneCommentsBrowserContract({ evaluate, request, waitFor, click }) {
   const upload = async (name) => {
-    await evaluate(`(async () => {
+    await evaluate(
+      `(async () => {
       const bytes=await fetch('/fixtures/sample-editor-comments.pptx').then(r=>r.arrayBuffer());
       const files=new DataTransfer();files.items.add(new File([bytes],${JSON.stringify(name)}));
       const input=document.querySelector('#fileInput');input.files=files.files;input.dispatchEvent(new Event('change',{bubbles:true}));
-    })()`, true);
+    })()`,
+      true,
+    );
     await waitFor(`document.querySelector('#fileInfo').textContent.includes(${JSON.stringify(name)})`, '独立查看器文稿');
   };
-  await request('Page.navigate', { url: await evaluate("new URL('/standalone.html?file=/fixtures/sample-editor-comments.pptx', location.href).href") });
-  await waitFor("document.querySelector('#fileInfo')?.textContent.includes('sample-editor-comments.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'", '独立查看器入口');
+  await request('Page.navigate', {
+    url: await evaluate("new URL('/standalone.html?file=/fixtures/sample-editor-comments.pptx', location.href).href"),
+  });
+  await waitFor(
+    "document.querySelector('#fileInfo')?.textContent.includes('sample-editor-comments.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'",
+    '独立查看器入口',
+  );
   await upload('comments.pptx');
   await click('#btnComments');
   await waitFor("document.querySelectorAll('#commentsPanel li').length === 2", '独立查看器批注');

@@ -5,82 +5,281 @@ import { fileURLToPath } from 'node:url';
 import { label, makePng, makeZip, NS, nvGrp, px, slideXml, solid, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const W = 1280, H = 720;
+const W = 1280,
+  H = 720;
 
 const image1 = makePng(120, 90, (x, y) =>
-  (Math.floor(x / 15) + Math.floor(y / 15)) % 2 === 0
-    ? [68, 114, 196]
-    : [Math.round((x / 120) * 255), Math.round((y / 90) * 255), 190]);
+  (Math.floor(x / 15) + Math.floor(y / 15)) % 2 === 0 ? [68, 114, 196] : [Math.round((x / 120) * 255), Math.round((y / 90) * 255), 190],
+);
 
 // ---------- 1. 形状库 ----------
 
 const SHAPES = [
-  'rect', 'roundRect', 'round1Rect', 'round2DiagRect', 'snip1Rect', 'snip2DiagRect', 'plaque', 'bevel',
-  'frame', 'halfFrame', 'corner', 'diagStripe', 'foldedCorner', 'ellipse', 'triangle', 'rtTriangle',
-  'diamond', 'parallelogram', 'trapezoid', 'pentagon', 'hexagon', 'heptagon', 'octagon', 'decagon',
-  'homePlate', 'chevron', 'plus', 'teardrop', 'can', 'cube', 'donut', 'noSmoking',
-  'pie', 'chord', 'blockArc', 'cloud', 'heart', 'lightningBolt', 'sun', 'moon',
-  'smileyFace', 'irregularSeal1', 'gear6', 'funnel', 'star4', 'star5', 'star6', 'star8',
-  'star12', 'star24', 'rightArrow', 'leftRightArrow', 'upDownArrow', 'quadArrow', 'bentArrow', 'uturnArrow',
-  'curvedRightArrow', 'curvedUpArrow', 'stripedRightArrow', 'notchedRightArrow', 'circularArrow', 'rightArrowCallout', 'leftRightArrowCallout', 'mathPlus',
-  'mathMultiply', 'mathDivide', 'mathEqual', 'mathNotEqual', 'ribbon', 'ribbon2', 'verticalScroll', 'horizontalScroll',
-  'wave', 'doubleWave', 'wedgeRectCallout', 'wedgeRoundRectCallout', 'wedgeEllipseCallout', 'cloudCallout', 'leftBracket', 'bracketPair',
-  'leftBrace', 'bracePair', 'flowChartProcess', 'flowChartDecision', 'flowChartInputOutput', 'flowChartPredefinedProcess', 'flowChartInternalStorage', 'flowChartDocument',
-  'flowChartMultidocument', 'flowChartTerminator', 'flowChartPreparation', 'flowChartManualInput', 'flowChartManualOperation', 'flowChartConnector', 'flowChartOffpageConnector', 'flowChartPunchedCard',
-  'flowChartPunchedTape', 'flowChartSummingJunction', 'flowChartOr', 'flowChartCollate', 'flowChartSort', 'flowChartExtract', 'flowChartMerge', 'flowChartOnlineStorage',
-  'flowChartMagneticTape', 'flowChartMagneticDisk', 'flowChartMagneticDrum', 'flowChartDisplay', 'flowChartDelay', 'actionButtonHome', 'actionButtonForwardNext', 'actionButtonInformation',
-  'actionButtonReturn', 'actionButtonSound', 'actionButtonMovie', 'actionButtonHelp', 'chartX', 'chartPlus', 'chartStar', 'gear9',
-  'bentUpArrow', 'leftUpArrow', 'leftCircularArrow', 'leftRightCircularArrow', 'swooshArrow', 'quadArrowCallout', 'upDownArrowCallout', 'pieWedge',
-  'ellipseRibbon', 'ellipseRibbon2', 'leftRightRibbon', 'cornerTabs', 'squareTabs', 'plaqueTabs', 'lineInv', 'flowChartOfflineStorage',
-  'callout3', 'borderCallout3', 'accentCallout1', 'accentCallout2', 'accentCallout3', 'accentBorderCallout1', 'accentBorderCallout2', 'accentBorderCallout3',
+  'rect',
+  'roundRect',
+  'round1Rect',
+  'round2DiagRect',
+  'snip1Rect',
+  'snip2DiagRect',
+  'plaque',
+  'bevel',
+  'frame',
+  'halfFrame',
+  'corner',
+  'diagStripe',
+  'foldedCorner',
+  'ellipse',
+  'triangle',
+  'rtTriangle',
+  'diamond',
+  'parallelogram',
+  'trapezoid',
+  'pentagon',
+  'hexagon',
+  'heptagon',
+  'octagon',
+  'decagon',
+  'homePlate',
+  'chevron',
+  'plus',
+  'teardrop',
+  'can',
+  'cube',
+  'donut',
+  'noSmoking',
+  'pie',
+  'chord',
+  'blockArc',
+  'cloud',
+  'heart',
+  'lightningBolt',
+  'sun',
+  'moon',
+  'smileyFace',
+  'irregularSeal1',
+  'gear6',
+  'funnel',
+  'star4',
+  'star5',
+  'star6',
+  'star8',
+  'star12',
+  'star24',
+  'rightArrow',
+  'leftRightArrow',
+  'upDownArrow',
+  'quadArrow',
+  'bentArrow',
+  'uturnArrow',
+  'curvedRightArrow',
+  'curvedUpArrow',
+  'stripedRightArrow',
+  'notchedRightArrow',
+  'circularArrow',
+  'rightArrowCallout',
+  'leftRightArrowCallout',
+  'mathPlus',
+  'mathMultiply',
+  'mathDivide',
+  'mathEqual',
+  'mathNotEqual',
+  'ribbon',
+  'ribbon2',
+  'verticalScroll',
+  'horizontalScroll',
+  'wave',
+  'doubleWave',
+  'wedgeRectCallout',
+  'wedgeRoundRectCallout',
+  'wedgeEllipseCallout',
+  'cloudCallout',
+  'leftBracket',
+  'bracketPair',
+  'leftBrace',
+  'bracePair',
+  'flowChartProcess',
+  'flowChartDecision',
+  'flowChartInputOutput',
+  'flowChartPredefinedProcess',
+  'flowChartInternalStorage',
+  'flowChartDocument',
+  'flowChartMultidocument',
+  'flowChartTerminator',
+  'flowChartPreparation',
+  'flowChartManualInput',
+  'flowChartManualOperation',
+  'flowChartConnector',
+  'flowChartOffpageConnector',
+  'flowChartPunchedCard',
+  'flowChartPunchedTape',
+  'flowChartSummingJunction',
+  'flowChartOr',
+  'flowChartCollate',
+  'flowChartSort',
+  'flowChartExtract',
+  'flowChartMerge',
+  'flowChartOnlineStorage',
+  'flowChartMagneticTape',
+  'flowChartMagneticDisk',
+  'flowChartMagneticDrum',
+  'flowChartDisplay',
+  'flowChartDelay',
+  'actionButtonHome',
+  'actionButtonForwardNext',
+  'actionButtonInformation',
+  'actionButtonReturn',
+  'actionButtonSound',
+  'actionButtonMovie',
+  'actionButtonHelp',
+  'chartX',
+  'chartPlus',
+  'chartStar',
+  'gear9',
+  'bentUpArrow',
+  'leftUpArrow',
+  'leftCircularArrow',
+  'leftRightCircularArrow',
+  'swooshArrow',
+  'quadArrowCallout',
+  'upDownArrowCallout',
+  'pieWedge',
+  'ellipseRibbon',
+  'ellipseRibbon2',
+  'leftRightRibbon',
+  'cornerTabs',
+  'squareTabs',
+  'plaqueTabs',
+  'lineInv',
+  'flowChartOfflineStorage',
+  'callout3',
+  'borderCallout3',
+  'accentCallout1',
+  'accentCallout2',
+  'accentCallout3',
+  'accentBorderCallout1',
+  'accentBorderCallout2',
+  'accentBorderCallout3',
 ];
 
-const COLS = 16, CELL_W = 76, CELL_H = 62, SHAPE_W = 50, SHAPE_H = 34;
+const COLS = 16,
+  CELL_W = 76,
+  CELL_H = 62,
+  SHAPE_W = 50,
+  SHAPE_H = 34;
 
 const shapeGallery = SHAPES.map((prst, i) => {
-  const col = i % COLS, row = Math.floor(i / COLS);
-  const x = 16 + col * CELL_W, y = 48 + row * CELL_H;
+  const col = i % COLS,
+    row = Math.floor(i / COLS);
+  const x = 16 + col * CELL_W,
+    y = 48 + row * CELL_H;
   const accent = `accent${(i % 6) + 1}`;
   return (
-    sp({ x: x + (CELL_W - SHAPE_W) / 2, y, w: SHAPE_W, h: SHAPE_H, prst, fill: solid(accent), ln: '<a:ln w="9525"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:ln>', name: prst }) +
-    sp({ x, y: y + SHAPE_H + 1, w: CELL_W, h: 14, prst: 'rect', fill: '<a:noFill/>', text: label(prst.replace(/^flowChart|^actionButton/, ''), 600, '666666') })
+    sp({
+      x: x + (CELL_W - SHAPE_W) / 2,
+      y,
+      w: SHAPE_W,
+      h: SHAPE_H,
+      prst,
+      fill: solid(accent),
+      ln: '<a:ln w="9525"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:ln>',
+      name: prst,
+    })
+    + sp({
+      x,
+      y: y + SHAPE_H + 1,
+      w: CELL_W,
+      h: 14,
+      prst: 'rect',
+      fill: '<a:noFill/>',
+      text: label(prst.replace(/^flowChart|^actionButton/, ''), 600, '666666'),
+    })
   );
 }).join('');
 
 const slide1 = slideXml(
-  sp({ x: 16, y: 8, w: 700, h: 34, prst: 'rect', fill: '<a:noFill/>', text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>预设形状库（${SHAPES.length} 个）</a:t></a:r></a:p>` }) +
-  shapeGallery,
+  sp({
+    x: 16,
+    y: 8,
+    w: 700,
+    h: 34,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>预设形状库（${SHAPES.length} 个）</a:t></a:r></a:p>`,
+  }) + shapeGallery,
 );
 
 // ---------- 2. 效果与填充 ----------
 
 const effectDemos = [
-  ['外阴影', '<a:effectLst><a:outerShdw blurRad="76200" dist="63500" dir="2700000"><a:srgbClr val="000000"><a:alpha val="45000"/></a:srgbClr></a:outerShdw></a:effectLst>', solid('accent1')],
-  ['发光', '<a:effectLst><a:glow rad="152400"><a:schemeClr val="accent2"><a:alpha val="80000"/></a:schemeClr></a:glow></a:effectLst>', solid('accent2')],
+  [
+    '外阴影',
+    '<a:effectLst><a:outerShdw blurRad="76200" dist="63500" dir="2700000"><a:srgbClr val="000000"><a:alpha val="45000"/></a:srgbClr></a:outerShdw></a:effectLst>',
+    solid('accent1'),
+  ],
+  [
+    '发光',
+    '<a:effectLst><a:glow rad="152400"><a:schemeClr val="accent2"><a:alpha val="80000"/></a:schemeClr></a:glow></a:effectLst>',
+    solid('accent2'),
+  ],
   ['柔化边缘', '<a:effectLst><a:softEdge rad="114300"/></a:effectLst>', solid('accent6')],
-  ['阴影+发光', '<a:effectLst><a:glow rad="76200"><a:schemeClr val="accent4"/></a:glow><a:outerShdw blurRad="50800" dist="38100" dir="5400000"><a:srgbClr val="000000"><a:alpha val="50000"/></a:srgbClr></a:outerShdw></a:effectLst>', solid('accent4')],
+  [
+    '阴影+发光',
+    '<a:effectLst><a:glow rad="76200"><a:schemeClr val="accent4"/></a:glow><a:outerShdw blurRad="50800" dist="38100" dir="5400000"><a:srgbClr val="000000"><a:alpha val="50000"/></a:srgbClr></a:outerShdw></a:effectLst>',
+    solid('accent4'),
+  ],
 ];
 
 const fillDemos = [
-  ['线性渐变 45°', '<a:gradFill><a:gsLst><a:gs pos="0"><a:schemeClr val="accent1"/></a:gs><a:gs pos="100000"><a:schemeClr val="accent2"/></a:gs></a:gsLst><a:lin ang="2700000"/></a:gradFill>'],
-  ['三色渐变 0°', '<a:gradFill><a:gsLst><a:gs pos="0"><a:srgbClr val="FF5252"/></a:gs><a:gs pos="50000"><a:srgbClr val="FFD740"/></a:gs><a:gs pos="100000"><a:srgbClr val="69F0AE"/></a:gs></a:gsLst><a:lin ang="0"/></a:gradFill>'],
-  ['径向渐变', '<a:gradFill><a:gsLst><a:gs pos="0"><a:srgbClr val="FFFFFF"/></a:gs><a:gs pos="100000"><a:schemeClr val="accent5"/></a:gs></a:gsLst><a:path path="circle"><a:fillToRect l="50000" t="50000" r="50000" b="50000"/></a:path></a:gradFill>'],
-  ['图案 diagCross', '<a:pattFill prst="diagCross"><a:fgClr><a:schemeClr val="accent1"/></a:fgClr><a:bgClr><a:srgbClr val="FFFFFF"/></a:bgClr></a:pattFill>'],
-  ['图案 horz', '<a:pattFill prst="horz"><a:fgClr><a:schemeClr val="accent6"/></a:fgClr><a:bgClr><a:srgbClr val="F2F2F2"/></a:bgClr></a:pattFill>'],
+  [
+    '线性渐变 45°',
+    '<a:gradFill><a:gsLst><a:gs pos="0"><a:schemeClr val="accent1"/></a:gs><a:gs pos="100000"><a:schemeClr val="accent2"/></a:gs></a:gsLst><a:lin ang="2700000"/></a:gradFill>',
+  ],
+  [
+    '三色渐变 0°',
+    '<a:gradFill><a:gsLst><a:gs pos="0"><a:srgbClr val="FF5252"/></a:gs><a:gs pos="50000"><a:srgbClr val="FFD740"/></a:gs><a:gs pos="100000"><a:srgbClr val="69F0AE"/></a:gs></a:gsLst><a:lin ang="0"/></a:gradFill>',
+  ],
+  [
+    '径向渐变',
+    '<a:gradFill><a:gsLst><a:gs pos="0"><a:srgbClr val="FFFFFF"/></a:gs><a:gs pos="100000"><a:schemeClr val="accent5"/></a:gs></a:gsLst><a:path path="circle"><a:fillToRect l="50000" t="50000" r="50000" b="50000"/></a:path></a:gradFill>',
+  ],
+  [
+    '图案 diagCross',
+    '<a:pattFill prst="diagCross"><a:fgClr><a:schemeClr val="accent1"/></a:fgClr><a:bgClr><a:srgbClr val="FFFFFF"/></a:bgClr></a:pattFill>',
+  ],
+  [
+    '图案 horz',
+    '<a:pattFill prst="horz"><a:fgClr><a:schemeClr val="accent6"/></a:fgClr><a:bgClr><a:srgbClr val="F2F2F2"/></a:bgClr></a:pattFill>',
+  ],
   ['半透明 40%', '<a:solidFill><a:schemeClr val="accent3"><a:alpha val="40000"/></a:schemeClr></a:solidFill>'],
   ['lumMod 75%', '<a:solidFill><a:schemeClr val="accent1"><a:lumMod val="75000"/></a:schemeClr></a:solidFill>'],
   ['tint 40%', '<a:solidFill><a:schemeClr val="accent2"><a:tint val="40000"/></a:schemeClr></a:solidFill>'],
 ];
 
 const slide2 = slideXml(
-  sp({ x: 24, y: 14, w: 600, h: 34, prst: 'rect', fill: '<a:noFill/>', text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>效果 · 填充</a:t></a:r></a:p>` }) +
-  effectDemos.map(([name, effect, fill], i) =>
-    sp({ x: 40 + i * 300, y: 80, w: 190, h: 110, prst: 'roundRect', fill, effect, text: label(name, 1000, 'FFFFFF') })).join('') +
-  fillDemos.map(([name, fill], i) => {
-    const x = 40 + (i % 4) * 300, y = 260 + Math.floor(i / 4) * 190;
-    return sp({ x, y, w: 240, h: 110, prst: 'rect', fill, ln: '<a:ln w="6350"><a:solidFill><a:srgbClr val="999999"/></a:solidFill></a:ln>' }) +
-      sp({ x, y: y + 114, w: 240, h: 20, prst: 'rect', fill: '<a:noFill/>', text: label(name, 900) });
-  }).join(''),
+  sp({
+    x: 24,
+    y: 14,
+    w: 600,
+    h: 34,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>效果 · 填充</a:t></a:r></a:p>`,
+  })
+    + effectDemos
+      .map(([name, effect, fill], i) =>
+        sp({ x: 40 + i * 300, y: 80, w: 190, h: 110, prst: 'roundRect', fill, effect, text: label(name, 1000, 'FFFFFF') }),
+      )
+      .join('')
+    + fillDemos
+      .map(([name, fill], i) => {
+        const x = 40 + (i % 4) * 300,
+          y = 260 + Math.floor(i / 4) * 190;
+        return (
+          sp({ x, y, w: 240, h: 110, prst: 'rect', fill, ln: '<a:ln w="6350"><a:solidFill><a:srgbClr val="999999"/></a:solidFill></a:ln>' })
+          + sp({ x, y: y + 114, w: 240, h: 20, prst: 'rect', fill: '<a:noFill/>', text: label(name, 900) })
+        );
+      })
+      .join(''),
 );
 
 // ---------- 3. 线条与箭头 ----------
@@ -94,25 +293,45 @@ const cxn = (x, y, w, h, ln, prst = 'straightConnector1') =>
 <a:prstGeom prst="${prst}"><a:avLst/></a:prstGeom>${ln}</p:spPr></p:cxnSp>`;
 
 const slide3 = slideXml(
-  sp({ x: 24, y: 14, w: 600, h: 34, prst: 'rect', fill: '<a:noFill/>', text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>线条 · 箭头 · 连接线</a:t></a:r></a:p>` }) +
-  LINE_ENDS.map((end, i) => {
-    const y = 74 + i * 44;
-    const ln = `<a:ln w="28575"><a:solidFill><a:schemeClr val="accent1"/></a:solidFill><a:headEnd type="${end}" w="med" len="med"/><a:tailEnd type="${end}" w="lg" len="lg"/></a:ln>`;
-    return cxn(180, y, 320, 0, ln) +
-      sp({ x: 24, y: y - 12, w: 150, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label(end, 900) });
-  }).join('') +
-  DASHES.map((dash, i) => {
-    const y = 74 + i * 38;
-    const ln = `<a:ln w="19050"><a:solidFill><a:schemeClr val="accent2"/></a:solidFill><a:prstDash val="${dash}"/></a:ln>`;
-    return cxn(700, y, 300, 0, ln) +
-      sp({ x: 540, y: y - 12, w: 150, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label(dash, 900) });
-  }).join('') +
-  ['bentConnector2', 'bentConnector3', 'curvedConnector3', 'curvedConnector4'].map((prst, i) =>
-    cxn(60 + i * 300, 400, 200, 120, `<a:ln w="22225"><a:solidFill><a:schemeClr val="accent6"/></a:solidFill><a:tailEnd type="triangle"/></a:ln>`, prst) +
-    sp({ x: 60 + i * 300, y: 530, w: 200, h: 22, prst: 'rect', fill: '<a:noFill/>', text: label(prst, 900) })).join('') +
-  ['flat', 'rnd', 'sq'].map((cap, i) =>
-    cxn(100 + i * 320, 620, 220, 0, `<a:ln w="47625" cap="${cap}"><a:solidFill><a:schemeClr val="accent4"/></a:solidFill></a:ln>`) +
-    sp({ x: 100 + i * 320, y: 640, w: 220, h: 22, prst: 'rect', fill: '<a:noFill/>', text: label('cap=' + cap, 900) })).join(''),
+  sp({
+    x: 24,
+    y: 14,
+    w: 600,
+    h: 34,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>线条 · 箭头 · 连接线</a:t></a:r></a:p>`,
+  })
+    + LINE_ENDS.map((end, i) => {
+      const y = 74 + i * 44;
+      const ln = `<a:ln w="28575"><a:solidFill><a:schemeClr val="accent1"/></a:solidFill><a:headEnd type="${end}" w="med" len="med"/><a:tailEnd type="${end}" w="lg" len="lg"/></a:ln>`;
+      return cxn(180, y, 320, 0, ln) + sp({ x: 24, y: y - 12, w: 150, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label(end, 900) });
+    }).join('')
+    + DASHES.map((dash, i) => {
+      const y = 74 + i * 38;
+      const ln = `<a:ln w="19050"><a:solidFill><a:schemeClr val="accent2"/></a:solidFill><a:prstDash val="${dash}"/></a:ln>`;
+      return cxn(700, y, 300, 0, ln) + sp({ x: 540, y: y - 12, w: 150, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label(dash, 900) });
+    }).join('')
+    + ['bentConnector2', 'bentConnector3', 'curvedConnector3', 'curvedConnector4']
+      .map(
+        (prst, i) =>
+          cxn(
+            60 + i * 300,
+            400,
+            200,
+            120,
+            `<a:ln w="22225"><a:solidFill><a:schemeClr val="accent6"/></a:solidFill><a:tailEnd type="triangle"/></a:ln>`,
+            prst,
+          ) + sp({ x: 60 + i * 300, y: 530, w: 200, h: 22, prst: 'rect', fill: '<a:noFill/>', text: label(prst, 900) }),
+      )
+      .join('')
+    + ['flat', 'rnd', 'sq']
+      .map(
+        (cap, i) =>
+          cxn(100 + i * 320, 620, 220, 0, `<a:ln w="47625" cap="${cap}"><a:solidFill><a:schemeClr val="accent4"/></a:solidFill></a:ln>`)
+          + sp({ x: 100 + i * 320, y: 640, w: 220, h: 22, prst: 'rect', fill: '<a:noFill/>', text: label('cap=' + cap, 900) }),
+      )
+      .join(''),
 );
 
 // ---------- 4. 文字特性 ----------
@@ -121,8 +340,16 @@ const textPara = (runs, extra = '') => `<a:p>${extra}${runs}</a:p>`;
 const run = (t, rPr = '') => `<a:r>${rPr ? `<a:rPr ${rPr.attrs ?? ''}>${rPr.body ?? ''}</a:rPr>` : ''}<a:t>${t}</a:t></a:r>`;
 
 const slide4 = slideXml(
-  sp({ x: 24, y: 14, w: 600, h: 34, prst: 'rect', fill: '<a:noFill/>', text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>文字特性</a:t></a:r></a:p>` }) +
-  `<p:sp><p:nvSpPr><p:cNvPr id="401" name="TextFeatures"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
+  sp({
+    x: 24,
+    y: 14,
+    w: 600,
+    h: 34,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>文字特性</a:t></a:r></a:p>`,
+  })
+    + `<p:sp><p:nvSpPr><p:cNvPr id="401" name="TextFeatures"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(30)}" y="${px(70)}"/><a:ext cx="${px(600)}" cy="${px(400)}"/></a:xfrm>
 <a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>
 <p:txBody><a:bodyPr/><a:lstStyle/>
@@ -140,16 +367,16 @@ ${textPara(run('二级项目符号', { attrs: 'sz="1300"' }), '<a:pPr lvl="1" ma
 ${textPara(run('罗马数字编号一', { attrs: 'sz="1300"' }), '<a:pPr marL="342900" indent="-342900"><a:buAutoNum type="romanLcPeriod"/></a:pPr>')}
 ${textPara(run('罗马数字编号二', { attrs: 'sz="1300"' }), '<a:pPr marL="342900" indent="-342900"><a:buAutoNum type="romanLcPeriod"/></a:pPr>')}
 ${textPara(run('带括号编号', { attrs: 'sz="1300"' }), '<a:pPr marL="342900" indent="-342900"><a:buAutoNum type="alphaLcParenBoth"/></a:pPr>')}
-</p:txBody></p:sp>` +
-  // 竖排文字
-  `<p:sp><p:nvSpPr><p:cNvPr id="410" name="Vertical"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
+</p:txBody></p:sp>`
+    // 竖排文字
+    + `<p:sp><p:nvSpPr><p:cNvPr id="410" name="Vertical"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(680)}" y="${px(70)}"/><a:ext cx="${px(90)}" cy="${px(280)}"/></a:xfrm>
 <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${solid('accent5')}</p:spPr>
 <p:txBody><a:bodyPr vert="eaVert" anchor="ctr"/><a:lstStyle/>
 <a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1600"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>竖排文字测试</a:t></a:r></a:p>
-</p:txBody></p:sp>` +
-  // 分栏 + 自动缩放
-  `<p:sp><p:nvSpPr><p:cNvPr id="411" name="Cols"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
+</p:txBody></p:sp>`
+    // 分栏 + 自动缩放
+    + `<p:sp><p:nvSpPr><p:cNvPr id="411" name="Cols"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(800)}" y="${px(70)}"/><a:ext cx="${px(450)}" cy="${px(170)}"/></a:xfrm>
 <a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="F5F7FA"/></a:solidFill></p:spPr>
 <p:txBody><a:bodyPr numCol="2" spcCol="228600"/><a:lstStyle/>
@@ -158,38 +385,52 @@ ${textPara(run('带括号编号', { attrs: 'sz="1300"' }), '<a:pPr marL="342900"
 <a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1100"/><a:t>文本要足够长才会真的溢出左栏流进右栏：只有发生换栏，分栏的断点计算与右栏的横向偏移才算被验证过。</a:t></a:r></a:p>
 <a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1100"/><a:t>再补一段把左栏彻底填满，剩余内容必须出现在右栏，否则这条分支等于没测。</a:t></a:r></a:p>
 <a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1100"/><a:t>Latin filler keeps the column break deterministic because the headless text metric falls back to a per-character estimate that under-measures CJK; this sentence is long enough to overflow the left column under either measurement path.</a:t></a:r></a:p>
-</p:txBody></p:sp>` +
-  `<p:sp><p:nvSpPr><p:cNvPr id="412" name="AutoFit"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
+</p:txBody></p:sp>`
+    + `<p:sp><p:nvSpPr><p:cNvPr id="412" name="AutoFit"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(800)}" y="${px(270)}"/><a:ext cx="${px(450)}" cy="${px(120)}"/></a:xfrm>
 <a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="FFF8E1"/></a:solidFill></p:spPr>
 <p:txBody><a:bodyPr><a:normAutofit fontScale="70000" lnSpcReduction="10000"/></a:bodyPr><a:lstStyle/>
 <a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="2000"/><a:t>normAutofit：字号缩放到 70%，行距压缩 10%，用于验证自动适应文本框。</a:t></a:r></a:p>
-</p:txBody></p:sp>` +
-  // 超链接
-  `<p:sp><p:nvSpPr><p:cNvPr id="413" name="Links"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
+</p:txBody></p:sp>`
+    // 超链接
+    + `<p:sp><p:nvSpPr><p:cNvPr id="413" name="Links"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(680)}" y="${px(420)}"/><a:ext cx="${px(560)}" cy="${px(90)}"/></a:xfrm>
 <a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>
 <p:txBody><a:bodyPr/><a:lstStyle/>
 <a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1400"><a:hlinkClick xmlns:r="${NS.r}" r:id="rId5"/></a:rPr><a:t>外部超链接（example.com）</a:t></a:r></a:p>
 <a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr sz="1400"><a:hlinkClick xmlns:r="${NS.r}" r:id="" action="ppaction://hlinkshowjump?jump=firstslide"/></a:rPr><a:t>跳转到第 1 页</a:t></a:r></a:p>
-</p:txBody></p:sp>` +
-  // 旋转与翻转
-  ['rot="1800000"', 'rot="-1800000"', 'flipH', 'flipV'].map((mode, i) => {
-    const opts = { x: 30 + i * 150, y: 520, w: 120, h: 70, prst: 'homePlate', fill: solid(`accent${i + 1}`), text: label(mode.replace(/"/g, ''), 800, 'FFFFFF') };
-    if (mode.startsWith('rot')) opts.rot = mode.match(/-?\d+/)[0];
-    if (mode === 'flipH') opts.flipH = true;
-    if (mode === 'flipV') opts.flipV = true;
-    return sp(opts);
-  }).join(''),
+</p:txBody></p:sp>`
+    // 旋转与翻转
+    + ['rot="1800000"', 'rot="-1800000"', 'flipH', 'flipV']
+      .map((mode, i) => {
+        const opts = {
+          x: 30 + i * 150,
+          y: 520,
+          w: 120,
+          h: 70,
+          prst: 'homePlate',
+          fill: solid(`accent${i + 1}`),
+          text: label(mode.replace(/"/g, ''), 800, 'FFFFFF'),
+        };
+        if (mode.startsWith('rot')) opts.rot = mode.match(/-?\d+/)[0];
+        if (mode === 'flipH') opts.flipH = true;
+        if (mode === 'flipV') opts.flipV = true;
+        return sp(opts);
+      })
+      .join(''),
 );
 
 // ---------- 5. 表格 ----------
 
-const tcell = (t, opts = {}) => `<a:tc${opts.gridSpan ? ` gridSpan="${opts.gridSpan}"` : ''}${opts.rowSpan ? ` rowSpan="${opts.rowSpan}"` : ''}${opts.hMerge ? ' hMerge="1"' : ''}${opts.vMerge ? ' vMerge="1"' : ''}>
+const tcell = (
+  t,
+  opts = {},
+) => `<a:tc${opts.gridSpan ? ` gridSpan="${opts.gridSpan}"` : ''}${opts.rowSpan ? ` rowSpan="${opts.rowSpan}"` : ''}${opts.hMerge ? ' hMerge="1"' : ''}${opts.vMerge ? ' vMerge="1"' : ''}>
 <a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="${opts.algn ?? 'l'}"/><a:r><a:rPr sz="${opts.sz ?? 1200}"${opts.b ? ' b="1"' : ''}>${opts.color ? `<a:solidFill><a:srgbClr val="${opts.color}"/></a:solidFill>` : ''}</a:rPr><a:t>${t}</a:t></a:r></a:p></a:txBody>
 <a:tcPr${opts.anchor ? ` anchor="${opts.anchor}"` : ''}>${opts.fill ?? ''}${opts.bdr ?? ''}</a:tcPr></a:tc>`;
 
-const BORDER = (c = '4472C4', w = 12700) => `<a:lnL w="${w}"><a:solidFill><a:srgbClr val="${c}"/></a:solidFill></a:lnL><a:lnR w="${w}"><a:solidFill><a:srgbClr val="${c}"/></a:solidFill></a:lnR><a:lnT w="${w}"><a:solidFill><a:srgbClr val="${c}"/></a:solidFill></a:lnT><a:lnB w="${w}"><a:solidFill><a:srgbClr val="${c}"/></a:solidFill></a:lnB>`;
+const BORDER = (c = '4472C4', w = 12700) =>
+  `<a:lnL w="${w}"><a:solidFill><a:srgbClr val="${c}"/></a:solidFill></a:lnL><a:lnR w="${w}"><a:solidFill><a:srgbClr val="${c}"/></a:solidFill></a:lnR><a:lnT w="${w}"><a:solidFill><a:srgbClr val="${c}"/></a:solidFill></a:lnT><a:lnB w="${w}"><a:solidFill><a:srgbClr val="${c}"/></a:solidFill></a:lnB>`;
 
 const tableXml = `<p:graphicFrame>
 <p:nvGraphicFramePr><p:cNvPr id="500" name="Table"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>
@@ -213,28 +454,63 @@ ${tcell('备注', { b: true, sz: 1300, color: 'FFFFFF', algn: 'ctr', anchor: 'ct
 </a:graphicData></a:graphic></p:graphicFrame>`;
 
 const slide5 = slideXml(
-  sp({ x: 24, y: 14, w: 600, h: 34, prst: 'rect', fill: '<a:noFill/>', text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>表格 · 图片</a:t></a:r></a:p>` }) +
-  tableXml +
-  // 图片：原图 / 裁剪 / 裁进形状 / 半透明 / 灰度
-  [
-    ['原图', '<a:stretch><a:fillRect/></a:stretch>', 'rect', ''],
-    ['裁剪 25%', '<a:srcRect l="25000" t="25000" r="25000" b="25000"/><a:stretch><a:fillRect/></a:stretch>', 'rect', ''],
-    ['裁进圆形', '<a:stretch><a:fillRect/></a:stretch>', 'ellipse', ''],
-    ['裁进星形', '<a:stretch><a:fillRect/></a:stretch>', 'star5', ''],
-  ].map(([name, fillMod, prst], i) => {
-    const x = 790, y = 90 + i * 145;
-    return `<p:pic>
+  sp({
+    x: 24,
+    y: 14,
+    w: 600,
+    h: 34,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>表格 · 图片</a:t></a:r></a:p>`,
+  })
+    + tableXml
+    // 图片：原图 / 裁剪 / 裁进形状 / 半透明 / 灰度
+    + [
+      ['原图', '<a:stretch><a:fillRect/></a:stretch>', 'rect', ''],
+      ['裁剪 25%', '<a:srcRect l="25000" t="25000" r="25000" b="25000"/><a:stretch><a:fillRect/></a:stretch>', 'rect', ''],
+      ['裁进圆形', '<a:stretch><a:fillRect/></a:stretch>', 'ellipse', ''],
+      ['裁进星形', '<a:stretch><a:fillRect/></a:stretch>', 'star5', ''],
+    ]
+      .map(([name, fillMod, prst], i) => {
+        const x = 790,
+          y = 90 + i * 145;
+        return (
+          `<p:pic>
 <p:nvPicPr><p:cNvPr id="${520 + i}" name="${name}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>
 <p:blipFill><a:blip r:embed="rId2"/>${fillMod}</p:blipFill>
 <p:spPr><a:xfrm><a:off x="${px(x)}" y="${px(y)}"/><a:ext cx="${px(160)}" cy="${px(120)}"/></a:xfrm>
-<a:prstGeom prst="${prst}"><a:avLst/></a:prstGeom></p:spPr></p:pic>` +
-      sp({ x: x + 175, y: y + 45, w: 140, h: 30, prst: 'rect', fill: '<a:noFill/>', text: label(name, 1000) });
-  }).join('') +
-  // 图片填充形状 + 平铺
-  sp({ x: 1090, y: 90, w: 150, h: 120, prst: 'roundRect', fill: `<a:blipFill><a:blip r:embed="rId2"/><a:srcRect l="20000" t="20000" r="20000" b="20000"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>` }) +
-  sp({ x: 1090, y: 235, w: 150, h: 120, prst: 'rect', fill: `<a:blipFill><a:blip r:embed="rId2"><a:alphaModFix amt="45000"/></a:blip><a:tile sx="30000" sy="30000"/></a:blipFill>` }) +
-  sp({ x: 1090, y: 380, w: 150, h: 30, prst: 'rect', fill: '<a:noFill/>', text: label('平铺+透明', 900) }) +
-  sp({ x: 40, y: 480, w: 700, h: 30, prst: 'rect', fill: '<a:noFill/>', text: label('表格样式：首行强调 + 条纹行 + 合并单元格 + 自定义边框 + 垂直对齐', 1000) }),
+<a:prstGeom prst="${prst}"><a:avLst/></a:prstGeom></p:spPr></p:pic>`
+          + sp({ x: x + 175, y: y + 45, w: 140, h: 30, prst: 'rect', fill: '<a:noFill/>', text: label(name, 1000) })
+        );
+      })
+      .join('')
+    // 图片填充形状 + 平铺
+    + sp({
+      x: 1090,
+      y: 90,
+      w: 150,
+      h: 120,
+      prst: 'roundRect',
+      fill: `<a:blipFill><a:blip r:embed="rId2"/><a:srcRect l="20000" t="20000" r="20000" b="20000"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`,
+    })
+    + sp({
+      x: 1090,
+      y: 235,
+      w: 150,
+      h: 120,
+      prst: 'rect',
+      fill: `<a:blipFill><a:blip r:embed="rId2"><a:alphaModFix amt="45000"/></a:blip><a:tile sx="30000" sy="30000"/></a:blipFill>`,
+    })
+    + sp({ x: 1090, y: 380, w: 150, h: 30, prst: 'rect', fill: '<a:noFill/>', text: label('平铺+透明', 900) })
+    + sp({
+      x: 40,
+      y: 480,
+      w: 700,
+      h: 30,
+      prst: 'rect',
+      fill: '<a:noFill/>',
+      text: label('表格样式：首行强调 + 条纹行 + 合并单元格 + 自定义边框 + 垂直对齐', 1000),
+    }),
 );
 
 // ---------- 6. custGeom / 组合 / 嵌套 ----------
@@ -285,33 +561,103 @@ ${sp({ x: 0, y: 30, w: 60, h: 25, prst: 'ellipse', fill: solid('accent4'), text:
 </p:grpSp>`;
 
 const slide6 = slideXml(
-  sp({ x: 24, y: 14, w: 700, h: 34, prst: 'rect', fill: '<a:noFill/>', text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>自定义几何 · 组合嵌套 · 调节值</a:t></a:r></a:p>` }) +
-  custShape + arcShape + nestedGroup +
-  sp({ x: 60, y: 360, w: 260, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('custGeom + gdLst 公式', 900) }) +
-  sp({ x: 360, y: 360, w: 260, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('custGeom arcTo + 箭头（开放路径）', 900) }) +
-  sp({ x: 680, y: 360, w: 520, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('嵌套组合 + 组旋转 + 子坐标系缩放', 900) }) +
-  // 调节值变化
-  [10000, 25000, 45000].map((adj, i) =>
-    sp({ x: 60 + i * 150, y: 410, w: 120, h: 100, prst: 'roundRect', avLst: `<a:gd name="adj" fmla="val ${adj}"/>`, fill: solid('accent1'), text: label(`adj ${adj / 1000}%`, 800, 'FFFFFF') })).join('') +
-  [10000, 30000, 48000].map((adj, i) =>
-    sp({ x: 540 + i * 150, y: 410, w: 120, h: 100, prst: 'donut', avLst: `<a:gd name="adj" fmla="val ${adj}"/>`, fill: solid('accent2') })).join('') +
-  [[0, 90], [45, 270], [180, 90]].map(([st, sw], i) =>
-    sp({ x: 60 + i * 150, y: 545, w: 120, h: 110, prst: 'pie', avLst: `<a:gd name="adj1" fmla="val ${st * 60000}"/><a:gd name="adj2" fmla="val ${(st + sw) * 60000}"/>`, fill: solid('accent4') })).join('') +
-  [[180, 90], [225, 270]].map(([st, sw], i) =>
-    sp({ x: 540 + i * 150, y: 545, w: 120, h: 110, prst: 'blockArc', avLst: `<a:gd name="adj1" fmla="val ${st * 60000}"/><a:gd name="adj2" fmla="val ${(st + sw) * 60000}"/><a:gd name="adj3" fmla="val 25000"/>`, fill: solid('accent6') })).join('') +
-  sp({ x: 60, y: 665, w: 620, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('调节值：roundRect / donut / pie / blockArc', 900) }),
+  sp({
+    x: 24,
+    y: 14,
+    w: 700,
+    h: 34,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>自定义几何 · 组合嵌套 · 调节值</a:t></a:r></a:p>`,
+  })
+    + custShape
+    + arcShape
+    + nestedGroup
+    + sp({ x: 60, y: 360, w: 260, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('custGeom + gdLst 公式', 900) })
+    + sp({ x: 360, y: 360, w: 260, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('custGeom arcTo + 箭头（开放路径）', 900) })
+    + sp({ x: 680, y: 360, w: 520, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('嵌套组合 + 组旋转 + 子坐标系缩放', 900) })
+    // 调节值变化
+    + [10000, 25000, 45000]
+      .map((adj, i) =>
+        sp({
+          x: 60 + i * 150,
+          y: 410,
+          w: 120,
+          h: 100,
+          prst: 'roundRect',
+          avLst: `<a:gd name="adj" fmla="val ${adj}"/>`,
+          fill: solid('accent1'),
+          text: label(`adj ${adj / 1000}%`, 800, 'FFFFFF'),
+        }),
+      )
+      .join('')
+    + [10000, 30000, 48000]
+      .map((adj, i) =>
+        sp({
+          x: 540 + i * 150,
+          y: 410,
+          w: 120,
+          h: 100,
+          prst: 'donut',
+          avLst: `<a:gd name="adj" fmla="val ${adj}"/>`,
+          fill: solid('accent2'),
+        }),
+      )
+      .join('')
+    + [
+      [0, 90],
+      [45, 270],
+      [180, 90],
+    ]
+      .map(([st, sw], i) =>
+        sp({
+          x: 60 + i * 150,
+          y: 545,
+          w: 120,
+          h: 110,
+          prst: 'pie',
+          avLst: `<a:gd name="adj1" fmla="val ${st * 60000}"/><a:gd name="adj2" fmla="val ${(st + sw) * 60000}"/>`,
+          fill: solid('accent4'),
+        }),
+      )
+      .join('')
+    + [
+      [180, 90],
+      [225, 270],
+    ]
+      .map(([st, sw], i) =>
+        sp({
+          x: 540 + i * 150,
+          y: 545,
+          w: 120,
+          h: 110,
+          prst: 'blockArc',
+          avLst: `<a:gd name="adj1" fmla="val ${st * 60000}"/><a:gd name="adj2" fmla="val ${(st + sw) * 60000}"/><a:gd name="adj3" fmla="val 25000"/>`,
+          fill: solid('accent6'),
+        }),
+      )
+      .join('')
+    + sp({
+      x: 60,
+      y: 665,
+      w: 620,
+      h: 24,
+      prst: 'rect',
+      fill: '<a:noFill/>',
+      text: label('调节值：roundRect / donut / pie / blockArc', 900),
+    }),
 );
 
 // ---------- 7. 立体效果 + 动画 ----------
 
 const sp3d = (extrusionH, bevel, contour, material, rot) =>
-  `<a:scene3d><a:camera prst="orthographicFront"${rot ? `><a:rot lat="${rot[1] * 60000}" lon="0" rev="${rot[0] * 60000}"/></a:camera>` : '/>'}` +
-  `<a:lightRig rig="threePt" dir="t"/></a:scene3d>` +
-  `<a:sp3d extrusionH="${extrusionH}"${contour ? ` contourW="${contour}"` : ''}${material ? ` prstMaterial="${material}"` : ''}>` +
-  `<a:extrusionClr><a:schemeClr val="accent1"><a:shade val="60000"/></a:schemeClr></a:extrusionClr>` +
-  (contour ? `<a:contourClr><a:schemeClr val="tx2"/></a:contourClr>` : '') +
-  (bevel ? `<a:bevelT w="${bevel}" h="${bevel}" prst="circle"/>` : '') +
-  `</a:sp3d>`;
+  `<a:scene3d><a:camera prst="orthographicFront"${rot ? `><a:rot lat="${rot[1] * 60000}" lon="0" rev="${rot[0] * 60000}"/></a:camera>` : '/>'}`
+  + `<a:lightRig rig="threePt" dir="t"/></a:scene3d>`
+  + `<a:sp3d extrusionH="${extrusionH}"${contour ? ` contourW="${contour}"` : ''}${material ? ` prstMaterial="${material}"` : ''}>`
+  + `<a:extrusionClr><a:schemeClr val="accent1"><a:shade val="60000"/></a:schemeClr></a:extrusionClr>`
+  + (contour ? `<a:contourClr><a:schemeClr val="tx2"/></a:contourClr>` : '')
+  + (bevel ? `<a:bevelT w="${bevel}" h="${bevel}" prst="circle"/>` : '')
+  + `</a:sp3d>`;
 
 const D3_DEMOS = [
   ['挤出 6pt', sp3d(76200, 0, 0, null, null), 'roundRect', 'accent1'],
@@ -337,31 +683,69 @@ const MOTION_SHAPES = [
 ];
 
 const slide7 = slideXml(
-  sp({ x: 24, y: 14, w: 700, h: 34, prst: 'rect', fill: '<a:noFill/>', text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>立体效果 · 动画</a:t></a:r></a:p>` }) +
-  D3_DEMOS.map(([name, scene, prst, accent], i) => {
-    const x = 50 + (i % 3) * 260, y = 80 + Math.floor(i / 3) * 200;
-    return sp({ x, y, w: 170, h: 110, prst, fill: solid(accent), effect: scene, name }) +
-      sp({ x, y: y + 122, w: 170, h: 22, prst: 'rect', fill: '<a:noFill/>', text: label(name, 900) });
-  }).join('') +
-  sp({ x: 830, y: 80, w: 400, h: 26, prst: 'rect', fill: '<a:noFill/>', text: label('下面 5 个方块带入场动画，最后一个还会退场（演示模式逐次点击）', 1000) }) +
-  sp({ x: 50, y: 520, w: 400, h: 24, prst: 'rect', fill: '<a:noFill/>', text: label('下面 2 个走运动路径（直线 / 三次曲线闭合）', 1000) }) +
-  MOTION_SHAPES.map(([id, name, accent], i) =>
-    `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="motion${i}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+  sp({
+    x: 24,
+    y: 14,
+    w: 700,
+    h: 34,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="1800" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>立体效果 · 动画</a:t></a:r></a:p>`,
+  })
+    + D3_DEMOS.map(([name, scene, prst, accent], i) => {
+      const x = 50 + (i % 3) * 260,
+        y = 80 + Math.floor(i / 3) * 200;
+      return (
+        sp({ x, y, w: 170, h: 110, prst, fill: solid(accent), effect: scene, name })
+        + sp({ x, y: y + 122, w: 170, h: 22, prst: 'rect', fill: '<a:noFill/>', text: label(name, 900) })
+      );
+    }).join('')
+    + sp({
+      x: 830,
+      y: 80,
+      w: 400,
+      h: 26,
+      prst: 'rect',
+      fill: '<a:noFill/>',
+      text: label('下面 5 个方块带入场动画，最后一个还会退场（演示模式逐次点击）', 1000),
+    })
+    + sp({
+      x: 50,
+      y: 520,
+      w: 400,
+      h: 24,
+      prst: 'rect',
+      fill: '<a:noFill/>',
+      text: label('下面 2 个走运动路径（直线 / 三次曲线闭合）', 1000),
+    })
+    + MOTION_SHAPES.map(
+      ([id, name, accent], i) =>
+        `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="motion${i}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(60 + i * 220)}" y="${px(556)}"/><a:ext cx="${px(180)}" cy="${px(80)}"/></a:xfrm>
 <a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom>${solid(accent)}</p:spPr>
-<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1200" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>${name}</a:t></a:r></a:p></p:txBody></p:sp>`).join('') +
-  ANIM_SHAPES.map(([id, name, accent], i) =>
-    `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="anim${i}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1200" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>${name}</a:t></a:r></a:p></p:txBody></p:sp>`,
+    ).join('')
+    + ANIM_SHAPES.map(
+      ([id, name, accent], i) =>
+        `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="anim${i}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(840)}" y="${px(130 + i * 92)}"/><a:ext cx="${px(380)}" cy="${px(72)}"/></a:xfrm>
 <a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom>${solid(accent)}</p:spPr>
-<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1400" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>${name}</a:t></a:r></a:p></p:txBody></p:sp>`).join(''),
+<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1400" b="1"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>${name}</a:t></a:r></a:p></p:txBody></p:sp>`,
+    ).join(''),
 );
 
 /** 逐个点击触发的入场动画时间树 */
 const ANIM_TIMING = `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>
 <p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>
-${[[701, 2, 8, 'slide(fromLeft)'], [702, 10, 0, 'fade'], [703, 21, 4, 'wipe(up)'], [704, 22, 16, 'box(in)'], [705, 15, 0, 'fade']]
-  .map(([spid, presetID, subtype, filter], i) => `
+${[
+  [701, 2, 8, 'slide(fromLeft)'],
+  [702, 10, 0, 'fade'],
+  [703, 21, 4, 'wipe(up)'],
+  [704, 22, 16, 'box(in)'],
+  [705, 15, 0, 'fade'],
+]
+  .map(
+    ([spid, presetID, subtype, filter], i) => `
 <p:par><p:cTn id="${10 + i * 3}" fill="hold" nodeType="clickEffect">
 <p:stCondLst><p:cond delay="indefinite"/></p:stCondLst>
 <p:childTnLst><p:par><p:cTn id="${11 + i * 3}" presetID="${presetID}" presetClass="entr" presetSubtype="${subtype}" fill="hold" nodeType="clickEffect">
@@ -369,16 +753,24 @@ ${[[701, 2, 8, 'slide(fromLeft)'], [702, 10, 0, 'fade'], [703, 21, 4, 'wipe(up)'
 <p:childTnLst>
 <p:set><p:cBhvr><p:cTn id="${12 + i * 3}" dur="1" fill="hold"/><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set>
 <p:animEffect transition="in" filter="${filter}"><p:cBhvr><p:cTn dur="600"/><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl></p:cBhvr></p:animEffect>
-</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>`).join('')}
-${[[706, 'M 0 0 L 0.25 -0.18 L 0.42 0.05 E'], [707, 'M 0 0 C 0.1 -0.22 0.3 -0.22 0.36 0 C 0.3 0.14 0.1 0.14 0 0 Z E']]
-  .map(([spid, path], i) => `
+</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>`,
+  )
+  .join('')}
+${[
+  [706, 'M 0 0 L 0.25 -0.18 L 0.42 0.05 E'],
+  [707, 'M 0 0 C 0.1 -0.22 0.3 -0.22 0.36 0 C 0.3 0.14 0.1 0.14 0 0 Z E'],
+]
+  .map(
+    ([spid, path], i) => `
 <p:par><p:cTn id="${40 + i * 3}" fill="hold" nodeType="clickEffect">
 <p:stCondLst><p:cond delay="indefinite"/></p:stCondLst>
 <p:childTnLst><p:par><p:cTn id="${41 + i * 3}" presetID="0" presetClass="path" fill="hold" nodeType="clickEffect">
 <p:stCondLst><p:cond delay="0"/></p:stCondLst>
 <p:childTnLst>
 <p:animMotion origin="layout" path="${path}" pathEditMode="relative"><p:cBhvr><p:cTn id="${42 + i * 3}" dur="2000" fill="hold"/><p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl><p:attrNameLst><p:attrName>ppt_x</p:attrName><p:attrName>ppt_y</p:attrName></p:attrNameLst></p:cBhvr></p:animMotion>
-</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>`).join('')}
+</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par>`,
+  )
+  .join('')}
 <p:par><p:cTn id="70" fill="hold" nodeType="clickEffect">
 <p:stCondLst><p:cond delay="indefinite"/></p:stCondLst>
 <p:childTnLst><p:par><p:cTn id="71" presetID="10" presetClass="exit" presetSubtype="0" fill="hold" nodeType="clickEffect">
@@ -398,11 +790,11 @@ const slide7WithTiming = slide7.replace('</p:sld>', `${ANIM_TIMING}</p:sld>`);
  * Choice 里放新效果、Fallback 里放老版本能认的。解析必须取 Choice。
  */
 const alt = (choice, requires, fallback) =>
-  `<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
-  `<mc:Choice xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" ` +
-  `xmlns:p159="http://schemas.microsoft.com/office/powerpoint/2015/09/main" Requires="${requires}">` +
-  `<p:transition spd="slow" p14:dur="1400">${choice}</p:transition></mc:Choice>` +
-  `<mc:Fallback><p:transition spd="slow">${fallback}</p:transition></mc:Fallback></mc:AlternateContent>`;
+  `<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">`
+  + `<mc:Choice xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" `
+  + `xmlns:p159="http://schemas.microsoft.com/office/powerpoint/2015/09/main" Requires="${requires}">`
+  + `<p:transition spd="slow" p14:dur="1400">${choice}</p:transition></mc:Choice>`
+  + `<mc:Fallback><p:transition spd="slow">${fallback}</p:transition></mc:Fallback></mc:AlternateContent>`;
 
 /** 每页配一种切换效果 */
 const TRANSITIONS = [
@@ -415,8 +807,9 @@ const TRANSITIONS = [
   alt('<p14:prism/>', 'p14', '<p:dissolve/>'),
 ];
 
-const SLIDES = [slide1, slide2, slide3, slide4, slide5, slide6, slide7WithTiming]
-  .map((xml, i) => xml.replace('<p:clrMapOvr>', `${TRANSITIONS[i] ?? ''}<p:clrMapOvr>`));
+const SLIDES = [slide1, slide2, slide3, slide4, slide5, slide6, slide7WithTiming].map((xml, i) =>
+  xml.replace('<p:clrMapOvr>', `${TRANSITIONS[i] ?? ''}<p:clrMapOvr>`),
+);
 
 const contentTypes = `${XML}<Types xmlns="${NS.ct}">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -547,10 +940,18 @@ const notesSlide = (i) => `${XML}<p:notes xmlns:a="${NS.a}" xmlns:r="${NS.r}" xm
 </p:spTree></p:cSld></p:notes>`;
 
 const slideRels = (i) => {
-  const rels = [`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`];
-  rels.push(`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>`);
-  rels.push(`<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide" Target="../notesSlides/notesSlide${i + 1}.xml"/>`);
-  rels.push(`<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com" TargetMode="External"/>`);
+  const rels = [
+    `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`,
+  ];
+  rels.push(
+    `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>`,
+  );
+  rels.push(
+    `<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide" Target="../notesSlides/notesSlide${i + 1}.xml"/>`,
+  );
+  rels.push(
+    `<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com" TargetMode="External"/>`,
+  );
   return `${XML}<Relationships xmlns="${NS.rel}">${rels.join('\n')}</Relationships>`;
 };
 

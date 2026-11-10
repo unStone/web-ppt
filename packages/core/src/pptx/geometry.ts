@@ -6,13 +6,15 @@ import { attr, kid, kids, numAttr } from '../xml';
 // 写全 /index：dist 同时存在 geometry.js 与 geometry/，声明文件里的 '../geometry' 会被解析到无类型的 JS 产物
 import { ep, n, rad } from '../geometry/index';
 import type { Adj, Geom, Pt } from '../geometry/index';
-import {
-  builtinGuideValues, DRAWINGML_DEGREE, evaluateGuideDefinitions, guideToken,
-} from '../geometry/guides';
+import { builtinGuideValues, DRAWINGML_DEGREE, evaluateGuideDefinitions, guideToken } from '../geometry/guides';
 import type { GuideDefinition } from '../geometry/guides';
 import type {
-  CustomGeometry, CustomGeometryCommand, CustomGeometryGuide, CustomGeometryPoint,
-  CustomGeometryPointRole, CustomGeometryScalar,
+  CustomGeometry,
+  CustomGeometryCommand,
+  CustomGeometryGuide,
+  CustomGeometryPoint,
+  CustomGeometryPointRole,
+  CustomGeometryScalar,
 } from '../geometry/custom';
 
 export { isKnownPreset, presetGeom, resolveGeomPath } from '../geometry/index';
@@ -62,10 +64,9 @@ export function customGeometryModel(custGeom: Element, w: number, h: number): Cu
       const parsed = source in values ? values[source] : Number(source);
       return { expression: source, value: Number.isFinite(parsed) ? parsed : 0 };
     };
-    const point = (
-      element: Element | undefined, id: string, role: CustomGeometryPointRole,
-    ): CustomGeometryPoint => ({
-      id, role,
+    const point = (element: Element | undefined, id: string, role: CustomGeometryPointRole): CustomGeometryPoint => ({
+      id,
+      role,
       x: scalar(attr(element ?? null, 'x')),
       y: scalar(attr(element ?? null, 'y')),
     });
@@ -84,7 +85,8 @@ export function customGeometryModel(custGeom: Element, w: number, h: number): Cu
       if (element.localName === 'moveTo' || element.localName === 'lnTo') {
         const anchor = point(commandPoints[0], `${id}-a`, 'anchor');
         commands.push({
-          id, type: element.localName === 'moveTo' ? 'move' : 'line',
+          id,
+          type: element.localName === 'moveTo' ? 'move' : 'line',
           points: [anchor],
         });
       } else if (element.localName === 'cubicBezTo') {
@@ -94,19 +96,22 @@ export function customGeometryModel(custGeom: Element, w: number, h: number): Cu
           point(commandPoints[2], `${id}-a`, 'anchor'),
         ] as const;
         commands.push({
-          id, type: 'cubic', points,
+          id,
+          type: 'cubic',
+          points,
         });
       } else if (element.localName === 'quadBezTo') {
-        const points = [
-          point(commandPoints[0], `${id}-c0`, 'control'),
-          point(commandPoints[1], `${id}-a`, 'anchor'),
-        ] as const;
+        const points = [point(commandPoints[0], `${id}-c0`, 'control'), point(commandPoints[1], `${id}-a`, 'anchor')] as const;
         commands.push({
-          id, type: 'quadratic', points,
+          id,
+          type: 'quadratic',
+          points,
         });
       } else if (element.localName === 'arcTo') {
         commands.push({
-          id, type: 'arc', points: [],
+          id,
+          type: 'arc',
+          points: [],
           widthRadius: scalar(attr(element, 'wR')),
           heightRadius: scalar(attr(element, 'hR')),
           startAngle: scalar(attr(element, 'stAng')),
@@ -118,11 +123,14 @@ export function customGeometryModel(custGeom: Element, w: number, h: number): Cu
       }
     });
     return {
-      id: `p${pathIndex}`, width, height,
+      id: `p${pathIndex}`,
+      width,
+      height,
       fill: attr(path, 'fill') ?? 'norm',
       stroke: !['0', 'false'].includes(attr(path, 'stroke') ?? '1'),
       extrusionOk: !['0', 'false'].includes(attr(path, 'extrusionOk') ?? '1'),
-      closed, commands,
+      closed,
+      commands,
     };
   });
   return { adjustments, guides, paths };
@@ -159,7 +167,10 @@ export function custGeomPath(custGeom: Element, w: number, h: number): Geom | nu
     const st = attr(p, 'stroke');
     if (st !== '0' && st !== 'false') anyStroke = true;
 
-    let cx = 0, cy = 0, startX = 0, startY = 0;
+    let cx = 0,
+      cy = 0,
+      startX = 0,
+      startY = 0;
     for (let cmd = p.firstElementChild; cmd; cmd = cmd.nextElementSibling) {
       const pts = kids(cmd, 'pt');
       switch (cmd.localName) {

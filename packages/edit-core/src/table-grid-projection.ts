@@ -5,17 +5,28 @@ import { emptyTableCell, tableRowsWithoutTextOverrides } from './table-rows';
 import type { EditDoc, ElementRecord } from './types';
 
 export function hasTableStructureOverrides(record: ElementRecord): boolean {
-  return !!record.ovr.tableRows || !!record.ovr.tableColumns
-    || !!record.ovr.tableRemovedRows || !!record.ovr.tableRemovedColumns
-    || !!record.ovr.tableRowHeights || !!record.ovr.tableColumnWidths
-    || record.ovr.tableMerges !== undefined;
+  return (
+    !!record.ovr.tableRows
+    || !!record.ovr.tableColumns
+    || !!record.ovr.tableRemovedRows
+    || !!record.ovr.tableRemovedColumns
+    || !!record.ovr.tableRowHeights
+    || !!record.ovr.tableColumnWidths
+    || record.ovr.tableMerges !== undefined
+  );
 }
 
 export function hasComplexTableStructureOverrides(record: ElementRecord): boolean {
   if (record.src.kind !== 'table') return false;
-  if (record.ovr.tableColumns || record.ovr.tableRemovedRows || record.ovr.tableRemovedColumns
-    || record.ovr.tableRowHeights || record.ovr.tableColumnWidths
-    || record.ovr.tableMerges !== undefined) return true;
+  if (
+    record.ovr.tableColumns
+    || record.ovr.tableRemovedRows
+    || record.ovr.tableRemovedColumns
+    || record.ovr.tableRowHeights
+    || record.ovr.tableColumnWidths
+    || record.ovr.tableMerges !== undefined
+  )
+    return true;
   const sourceLast = initialFractionalIndex(record.src.rows.length - 1);
   return Object.values(record.ovr.tableRows ?? {}).some((row) => row.order <= sourceLast);
 }
@@ -38,9 +49,10 @@ export function projectTableStructure(record: ElementRecord, base: TableElement)
     const templateRow = baseRows[r] ?? source.rows[rowTemplate];
     const cells = columns.map((columnEntry) => {
       const columnTemplate = columnEntry.source ?? columnEntry.template ?? source.colWidths.length - 1;
-      const template = columnEntry.source === null
-        ? templateRow.cells[columnTemplate] ?? templateRow.cells[templateRow.cells.length - 1]
-        : templateRow.cells[columnEntry.source];
+      const template =
+        columnEntry.source === null
+          ? (templateRow.cells[columnTemplate] ?? templateRow.cells[templateRow.cells.length - 1])
+          : templateRow.cells[columnEntry.source];
       if (!template) throw new Error(`表格 ${record.id} 缺少单元格模板`);
       return normalizedCell(template, rowEntry.source === null || columnEntry.source === null);
     });
@@ -61,18 +73,26 @@ export function projectTableStructure(record: ElementRecord, base: TableElement)
     const left = Math.min(c1, c2);
     const right = Math.max(c1, c2);
     projectedRows[top].cells[left] = {
-      ...projectedRows[top].cells[left], rowSpan: bottom - top + 1, colSpan: right - left + 1,
+      ...projectedRows[top].cells[left],
+      rowSpan: bottom - top + 1,
+      colSpan: right - left + 1,
     };
-    for (let r = top; r <= bottom; r++) for (let c = left; c <= right; c++) {
-      if (r !== top || c !== left) projectedRows[r].cells[c] = {
-        ...projectedRows[r].cells[c], merged: true, rowSpan: 1, colSpan: 1,
-      };
-    }
+    for (let r = top; r <= bottom; r++)
+      for (let c = left; c <= right; c++) {
+        if (r !== top || c !== left)
+          projectedRows[r].cells[c] = {
+            ...projectedRows[r].cells[c],
+            merged: true,
+            rowSpan: 1,
+            colSpan: 1,
+          };
+      }
   }
-  const colWidths = columns.map((entry) => record.ovr.tableColumnWidths?.[entry.id]
-    ?? (entry.source === null
-      ? source.colWidths[entry.template ?? source.colWidths.length - 1]
-      : source.colWidths[entry.source]));
+  const colWidths = columns.map(
+    (entry) =>
+      record.ovr.tableColumnWidths?.[entry.id]
+      ?? (entry.source === null ? source.colWidths[entry.template ?? source.colWidths.length - 1] : source.colWidths[entry.source]),
+  );
   const sourceWidth = source.colWidths.reduce((sum, width) => sum + width, 0);
   const sourceHeight = source.rows.reduce((sum, row) => sum + row.height, 0);
   const baseWidth = typeof record.ovr.w === 'number' ? record.ovr.w : base.w;
@@ -83,7 +103,7 @@ export function projectTableStructure(record: ElementRecord, base: TableElement)
     ...base,
     colWidths,
     rows: projectedRows,
-    w: sourceWidth > 0 ? width * baseWidth / sourceWidth : width,
-    h: sourceHeight > 0 ? height * baseHeight / sourceHeight : height,
+    w: sourceWidth > 0 ? (width * baseWidth) / sourceWidth : width,
+    h: sourceHeight > 0 ? (height * baseHeight) / sourceHeight : height,
   };
 }

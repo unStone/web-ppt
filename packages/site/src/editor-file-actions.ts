@@ -1,6 +1,6 @@
 import type { EditorSession } from '@web-ppt/editor';
 import { message, type SiteNotice } from './i18n/message';
-import type {DocumentFontService} from './editor-document-fonts';
+import type { DocumentFontService } from './editor-document-fonts';
 
 interface EditorFileActionsOptions {
   readonly notice: SiteNotice;
@@ -42,7 +42,9 @@ export function createEditorFileActions(options: EditorFileActionsOptions): Edit
   let pauses = 0;
   let pending = Promise.resolve();
   const exportLifetime = new AbortController();
-  const notice: SiteNotice = (...args) => { if (!disposed) options.notice(...args); };
+  const notice: SiteNotice = (...args) => {
+    if (!disposed) options.notice(...args);
+  };
   let targets = new WeakMap<EditorSession, WritableHandle>();
   let documentFonts = new WeakMap<EditorSession, DocumentFontService>();
   const localAvailable = (): boolean => isSecureContext && typeof (window as PickerWindow).showSaveFilePicker === 'function';
@@ -50,39 +52,59 @@ export function createEditorFileActions(options: EditorFileActionsOptions): Edit
   function run(failure: FailureMessage, action: () => Promise<void>): Promise<void>;
   function run<T>(failure: null, action: () => Promise<T>, session: EditorSession): Promise<T>;
   function run<T>(failure: FailureMessage | null, action: () => Promise<T>, session?: EditorSession): Promise<T | void> {
-    const reason = disposed || session?.disposed ? 'session-disposed'
-      : session && !documentFonts.has(session) ? 'document-stale' : busy || pauses ? 'document-busy' : null;
-    if (reason) return failure ? Promise.resolve()
-      : Promise.reject(Object.assign(new Error(`文稿任务不可执行：${reason}`), { reason }));
+    const reason =
+      disposed || session?.disposed
+        ? 'session-disposed'
+        : session && !documentFonts.has(session)
+          ? 'document-stale'
+          : busy || pauses
+            ? 'document-busy'
+            : null;
+    if (reason) return failure ? Promise.resolve() : Promise.reject(Object.assign(new Error(`文稿任务不可执行：${reason}`), { reason }));
     busy = true;
     // 先公布任务，再调用宿主回调；回调中触发卸载时也必须等到本次交付结束。
     let resolve!: (value: Promise<T | void>) => void;
-    const completion = new Promise<T | void>(done => { resolve = done; });
-    pending = completion.then(() => {}, () => {});
-    resolve((async () => {
-      try {
-        options.onBusyChange();
-        return await action();
-      } catch (error) {
-        if (failure === null) throw error;
-        notice(message(failure, { detail: error instanceof Error ? error.message : String(error) }), 'error');
-      } finally {
-        busy = false;
-        if (!disposed) options.onBusyChange();
-      }
-    })());
+    const completion = new Promise<T | void>((done) => {
+      resolve = done;
+    });
+    pending = completion.then(
+      () => {},
+      () => {},
+    );
+    resolve(
+      (async () => {
+        try {
+          options.onBusyChange();
+          return await action();
+        } catch (error) {
+          if (failure === null) throw error;
+          notice(message(failure, { detail: error instanceof Error ? error.message : String(error) }), 'error');
+        } finally {
+          busy = false;
+          if (!disposed) options.onBusyChange();
+        }
+      })(),
+    );
     return completion;
   }
 
   return {
-    bindDocument(session,fonts) {
+    bindDocument(session, fonts) {
       if (disposed) return () => {};
-      documentFonts.set(session,fonts);
-      return () => { if (documentFonts.get(session) === fonts) documentFonts.delete(session); };
+      documentFonts.set(session, fonts);
+      return () => {
+        if (documentFonts.get(session) === fonts) documentFonts.delete(session);
+      };
     },
-    get busy() { return busy; },
-    get localAvailable() { return localAvailable(); },
-    whenIdle() { return pending; },
+    get busy() {
+      return busy;
+    },
+    get localAvailable() {
+      return localAvailable();
+    },
+    whenIdle() {
+      return pending;
+    },
     withDocumentTask(session, action) {
       return run(null, action, session);
     },
@@ -104,7 +126,9 @@ export function createEditorFileActions(options: EditorFileActionsOptions): Edit
       documentFonts = new WeakMap();
       return pending;
     },
-    localTarget(session) { return session ? targets.get(session)?.name : undefined; },
+    localTarget(session) {
+      return session ? targets.get(session)?.name : undefined;
+    },
     saveLocal(session, name, chooseAgain = false) {
       return run('保存失败：{detail}', async () => {
         let handle = chooseAgain ? undefined : targets.get(session);
@@ -113,26 +137,37 @@ export function createEditorFileActions(options: EditorFileActionsOptions): Edit
           try {
             // 权限选择必须先于动态加载和序列化，否则长任务会耗尽用户激活。
             handle = await (window as PickerWindow).showSaveFilePicker!({
-              suggestedName: name, types: [{ accept: { [PPTX_MIME]: ['.pptx'] } }], excludeAcceptAllOption: true,
+              suggestedName: name,
+              types: [{ accept: { [PPTX_MIME]: ['.pptx'] } }],
+              excludeAcceptAllOption: true,
             });
           } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') {
-              notice(message('已取消保存，文稿未改变')); return;
+              notice(message('已取消保存，文稿未改变'));
+              return;
             }
             throw error;
           }
-        } else if (handle.requestPermission && await handle.requestPermission({ mode: 'readwrite' }) !== 'granted') {
-          notice(message('未获准写入文件；可重试或下载保存副本'), 'error'); return;
+        } else if (handle.requestPermission && (await handle.requestPermission({ mode: 'readwrite' })) !== 'granted') {
+          notice(message('未获准写入文件；可重试或下载保存副本'), 'error');
+          return;
         }
         if (!/\.pptx$/i.test(handle.name)) {
-          notice(message('请选择 .pptx 文件；未写入任何内容'), 'error'); return;
+          notice(message('请选择 .pptx 文件；未写入任何内容'), 'error');
+          return;
         }
         notice(message('正在写入 {name}…', { name: handle.name }));
         const target = handle;
         const { saveDocumentLocal } = await import('./editor-file-delivery');
-        await saveDocumentLocal(session, target, notice, () => {
-          if (!disposed) targets.set(session, target);
-        }, options.onSaved);
+        await saveDocumentLocal(
+          session,
+          target,
+          notice,
+          () => {
+            if (!disposed) targets.set(session, target);
+          },
+          options.onSaved,
+        );
       });
     },
     saveCopy(session, name) {
@@ -147,10 +182,17 @@ export function createEditorFileActions(options: EditorFileActionsOptions): Edit
         const presentation = session.toPresentation();
         const fonts = documentFonts.get(session);
         const { showDocumentExport } = await import('./editor-export-tools');
-        await showDocumentExport(presentation, name, showComments, async () => {
-          const { savePpt } = await import('@web-ppt/edit-core/ppt');
-          return savePpt(session.editor.doc);
-        }, exportLifetime.signal,fonts);
+        await showDocumentExport(
+          presentation,
+          name,
+          showComments,
+          async () => {
+            const { savePpt } = await import('@web-ppt/edit-core/ppt');
+            return savePpt(session.editor.doc);
+          },
+          exportLifetime.signal,
+          fonts,
+        );
       });
     },
     exportImages(session, name, showComments = false) {

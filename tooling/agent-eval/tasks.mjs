@@ -3,18 +3,36 @@ import assert from 'node:assert/strict';
 export const FONT_FAMILY = 'WebPPT Template Fill Latin';
 export const TITLE_NAME = 'Evaluation title';
 export const EXPECTED_TITLE = 'Approved quarterly report';
-const kinds = ['clean', 'text-overflow', 'element-overlap', 'off-canvas', 'low-contrast',
-  'missing-font', 'placeholder-prompt-left', 'image-distorted'];
+const kinds = [
+  'clean',
+  'text-overflow',
+  'element-overlap',
+  'off-canvas',
+  'low-contrast',
+  'missing-font',
+  'placeholder-prompt-left',
+  'image-distorted',
+];
 
-export const TASKS = Object.freeze(kinds.map((kind, index) => {
-  const id = `case-${String(index + 1).padStart(2, '0')}`;
-  return Object.freeze({ version: 1, id, kind, expectedTitle: EXPECTED_TITLE, titleName: TITLE_NAME,
-    fontFamily: FONT_FAMILY, minFontSize: 12,
-    fixtureName: `${id}-input.pptx`, referenceName: `${id}-reference.pptx` });
-}));
+export const TASKS = Object.freeze(
+  kinds.map((kind, index) => {
+    const id = `case-${String(index + 1).padStart(2, '0')}`;
+    return Object.freeze({
+      version: 1,
+      id,
+      kind,
+      expectedTitle: EXPECTED_TITLE,
+      titleName: TITLE_NAME,
+      fontFamily: FONT_FAMILY,
+      minFontSize: 12,
+      fixtureName: `${id}-input.pptx`,
+      referenceName: `${id}-reference.pptx`,
+    });
+  }),
+);
 
 export function getTask(id) {
-  const task = TASKS.find(item => item.id === id);
+  const task = TASKS.find((item) => item.id === id);
   assert(task, `Unknown Agent evaluation task: ${String(id)}`);
   return task;
 }

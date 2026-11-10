@@ -1,10 +1,10 @@
-import type {
-  EditDoc, ElementInsertionResource, ParagraphProperties, ParagraphPropertyOverrides, TextOverride,
-} from './types';
+import type { EditDoc, ElementInsertionResource, ParagraphProperties, ParagraphPropertyOverrides, TextOverride } from './types';
 import { assertDataObject } from './data-validation';
 import {
-  assertParagraphPropertyOverrides, assertSourceParagraphBullet,
-  PARAGRAPH_ALIGNMENTS, PARAGRAPH_PROPERTY_FIELDS,
+  assertParagraphPropertyOverrides,
+  assertSourceParagraphBullet,
+  PARAGRAPH_ALIGNMENTS,
+  PARAGRAPH_PROPERTY_FIELDS,
 } from './paragraph-property-schema';
 import { TEXT_ATOM } from './text-position';
 import { assertTextBodyPropertyOverrides } from './body-property-schema';
@@ -17,8 +17,7 @@ function validateParagraphOverrides(value: ParagraphPropertyOverrides): void {
 
 function validateInherited(value: ParagraphProperties): void {
   assertDataObject(value, PARAGRAPH_PROPERTY_FIELDS, '继承段落格式');
-  if (Reflect.ownKeys(value).length !== PARAGRAPH_PROPERTY_FIELDS.length
-    || PARAGRAPH_PROPERTY_FIELDS.some((field) => !(field in value))) {
+  if (Reflect.ownKeys(value).length !== PARAGRAPH_PROPERTY_FIELDS.length || PARAGRAPH_PROPERTY_FIELDS.some((field) => !(field in value))) {
     throw new Error('继承段落格式字段不完整');
   }
   if (!PARAGRAPH_ALIGNMENTS.includes(value.align)) throw new Error('继承段落对齐无效');
@@ -27,8 +26,7 @@ function validateInherited(value: ParagraphProperties): void {
     if (fieldValue !== null && (typeof fieldValue !== 'number' || !Number.isFinite(fieldValue))) {
       throw new Error(`继承段落格式 ${field} 无效`);
     }
-    if (field === 'level' && fieldValue !== null
-      && (!Number.isInteger(fieldValue) || fieldValue < 0 || fieldValue > 8)) {
+    if (field === 'level' && fieldValue !== null && (!Number.isInteger(fieldValue) || fieldValue < 0 || fieldValue > 8)) {
       throw new Error('继承段落格式 level 无效');
     }
   }
@@ -37,8 +35,11 @@ function validateInherited(value: ParagraphProperties): void {
 function validateDirect(value: Readonly<Partial<Record<keyof ParagraphProperties, true>>>): void {
   assertDataObject(value, PARAGRAPH_PROPERTY_FIELDS, '直接段落格式索引');
   for (const key of Reflect.ownKeys(value)) {
-    if (typeof key !== 'string' || !PARAGRAPH_PROPERTY_FIELDS.includes(key as keyof ParagraphProperties)
-      || value[key as keyof ParagraphProperties] !== true) {
+    if (
+      typeof key !== 'string'
+      || !PARAGRAPH_PROPERTY_FIELDS.includes(key as keyof ParagraphProperties)
+      || value[key as keyof ParagraphProperties] !== true
+    ) {
       throw new Error(`直接段落格式索引无效：${String(key)}`);
     }
   }
@@ -59,13 +60,23 @@ export function validateFlatTextOverride(
     assertTextBodyPropertyOverrides(override.bodyOverrides, '文字框属性覆盖');
   }
   for (const paragraph of override.paragraphs) {
-    assertDataObject(paragraph as unknown, [
-      'text', 'props', 'marks', 'sourceParagraph', 'paragraphOverrides',
-      'inheritedParagraphProps', 'directParagraphProps', 'sourceBullet', 'inheritedBullet',
-      'bulletImageOverride',
-    ], '扁平文本段落');
-    if (!paragraph || typeof paragraph !== 'object'
-      || typeof paragraph.text !== 'string' || !Array.isArray(paragraph.marks)) {
+    assertDataObject(
+      paragraph as unknown,
+      [
+        'text',
+        'props',
+        'marks',
+        'sourceParagraph',
+        'paragraphOverrides',
+        'inheritedParagraphProps',
+        'directParagraphProps',
+        'sourceBullet',
+        'inheritedBullet',
+        'bulletImageOverride',
+      ],
+      '扁平文本段落',
+    );
+    if (!paragraph || typeof paragraph !== 'object' || typeof paragraph.text !== 'string' || !Array.isArray(paragraph.marks)) {
       throw new Error('扁平文本段落无效');
     }
     if (paragraph.paragraphOverrides) validateParagraphOverrides(paragraph.paragraphOverrides);
@@ -77,10 +88,7 @@ export function validateFlatTextOverride(
     }
     if (paragraph.bulletImageOverride) {
       if (!imageContext?.part) throw new Error('图片项目符号缺少可写回来源 part');
-      assertImageReplacement(
-        paragraph.bulletImageOverride, imageContext.part, imageContext.resources,
-        '图片项目符号资源闭包',
-      );
+      assertImageReplacement(paragraph.bulletImageOverride, imageContext.part, imageContext.resources, '图片项目符号资源闭包');
       const bullet = paragraph.paragraphOverrides?.bullet;
       if (bullet?.kind !== 'blip' || bullet.image.src !== paragraph.bulletImageOverride.src) {
         throw new Error('图片项目符号语义与资源闭包不一致');
@@ -90,12 +98,16 @@ export function validateFlatTextOverride(
     }
     let offset = 0;
     for (const mark of paragraph.marks) {
-      if (!Number.isInteger(mark.from) || !Number.isInteger(mark.to)
-        || mark.from !== offset || mark.to < mark.from || mark.to > paragraph.text.length) {
+      if (
+        !Number.isInteger(mark.from)
+        || !Number.isInteger(mark.to)
+        || mark.from !== offset
+        || mark.to < mark.from
+        || mark.to > paragraph.text.length
+      ) {
         throw new Error('文字格式区间必须连续覆盖段落');
       }
-      if (mark.atomText !== undefined
-        && (mark.to - mark.from !== 1 || paragraph.text.slice(mark.from, mark.to) !== TEXT_ATOM)) {
+      if (mark.atomText !== undefined && (mark.to - mark.from !== 1 || paragraph.text.slice(mark.from, mark.to) !== TEXT_ATOM)) {
         throw new Error('公式标记必须覆盖单个原子');
       }
       if (mark.runOverrides) {
@@ -112,9 +124,7 @@ export function validateFlatTextOverride(
   }
 }
 
-export function validateEmptyTextOverride(
-  override: Extract<TextOverride, { kind: 'empty' }>,
-): void {
+export function validateEmptyTextOverride(override: Extract<TextOverride, { kind: 'empty' }>): void {
   assertDataObject(override, ['kind', 'body', 'bodyOverrides'], '空文字覆盖');
   if (override.bodyOverrides && !override.body) throw new Error('空文字覆盖缺少文字框属性正文');
   if (override.bodyOverrides) {

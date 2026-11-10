@@ -1,7 +1,12 @@
 import type { EditDoc, Editor, ElementId } from '@web-ppt/edit-core';
 import {
-  createChartDataEditor, listEditableCharts, queryChartData,
-  type ChartDataEditor, type ChartDataset, type ChartPointId, type ChartSeriesId,
+  createChartDataEditor,
+  listEditableCharts,
+  queryChartData,
+  type ChartDataEditor,
+  type ChartDataset,
+  type ChartPointId,
+  type ChartSeriesId,
 } from '@web-ppt/edit-core/chart';
 import * as editorChart from '@web-ppt/editor/chart';
 import * as reactChart from '@web-ppt/react/chart';

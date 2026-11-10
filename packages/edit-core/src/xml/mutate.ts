@@ -4,8 +4,7 @@ import type { XmlAttribute, XmlElement, XmlQuote } from './types';
 import { rebindXmlNamespaces } from './namespace';
 import { assertXmlQName, namespaceForQName, splitQName } from './qname';
 
-const mutableAttributes = (element: XmlElement): XmlAttribute[] =>
-  element.attributes as XmlAttribute[];
+const mutableAttributes = (element: XmlElement): XmlAttribute[] => element.attributes as XmlAttribute[];
 
 const setAttributeValue = (attribute: XmlAttribute, value: string): void => {
   (attribute as { value: string }).value = value;
@@ -30,15 +29,11 @@ function restoredIndex(element: XmlElement, attribute: XmlAttribute): number {
 }
 
 /** 按限定名设置属性；已有属性保持原位置、空白与引号，新属性追加到现有属性之后。 */
-export function setXmlAttribute(
-  element: XmlElement,
-  name: string,
-  value: string,
-  quote: XmlQuote = '"',
-): XmlAttribute {
+export function setXmlAttribute(element: XmlElement, name: string, value: string, quote: XmlQuote = '"'): XmlAttribute {
   assertXmlQName(name, '属性');
   const state = elementState(element);
-  let attribute = state.sourceAttributes.find((candidate) => candidate.name === name)
+  let attribute =
+    state.sourceAttributes.find((candidate) => candidate.name === name)
     ?? mutableAttributes(element).find((candidate) => candidate.name === name);
   if (attribute) {
     const attrState = attributeStates.get(attribute)!;
@@ -136,8 +131,9 @@ export function serializeElementOpen(element: XmlElement): string {
   const inserted = element.attributes.filter((attribute) => !attributeStates.get(attribute)!.source);
   if (inserted.length) {
     const point = insertionPoint(result);
-    const markup = inserted.map((attribute) =>
-      ` ${attribute.name}=${attribute.quote}${encodeAttribute(attribute.value, attribute.quote)}${attribute.quote}`).join('');
+    const markup = inserted
+      .map((attribute) => ` ${attribute.name}=${attribute.quote}${encodeAttribute(attribute.value, attribute.quote)}${attribute.quote}`)
+      .join('');
     result = result.slice(0, point) + markup + result.slice(point);
   }
   if (state.sourceSelfClosing && element.children.length) result = result.replace(/\s*\/\s*>$/, '>');

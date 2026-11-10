@@ -5,9 +5,7 @@ async function pressKey(request, name, value, code = name) {
 }
 
 function installFullscreen(root) {
-  const target = root == null
-    ? 'document.documentElement'
-    : `document.querySelector(${JSON.stringify(root)})`;
+  const target = root == null ? 'document.documentElement' : `document.querySelector(${JSON.stringify(root)})`;
   return `(() => {
     const el = ${target};
     globalThis.__nativeRequestFullscreenPrev = el.requestFullscreen.bind(el);
@@ -16,9 +14,7 @@ function installFullscreen(root) {
 }
 
 function restoreFullscreen(root) {
-  const target = root == null
-    ? 'document.documentElement'
-    : `document.querySelector(${JSON.stringify(root)})`;
+  const target = root == null ? 'document.documentElement' : `document.querySelector(${JSON.stringify(root)})`;
   return `(() => {
     const el = ${target};
     if (el && globalThis.__nativeRequestFullscreenPrev) {
@@ -47,32 +43,34 @@ function dispatchKey(key, extra = '') {
  * 放映中裸 P 走上一步。浏览、搜索、页码、遮罩、网格、Home/End、备注、Esc、换文件不改义。
  * Ctrl / ⌘+P 是打印或画笔，不能退批次，也不能 preventDefault。
  */
-export async function runPresentPrevLetterContract({ evaluate, request, click, waitFor }, {
-  trigger,
-  fullscreenRoot = null,
-  host,
-  stage,
-  pager,
-  prevButton,
-  nextButton,
-  presenting,
-  notesOpen,
-  fileInput = null,
-  fileLabel = null,
-  restoreSample = null,
-  restoreText = null,
-  search = null,
-  hint = null,
-  animLabel = null,
-}) {
+export async function runPresentPrevLetterContract(
+  { evaluate, request, click, waitFor },
+  {
+    trigger,
+    fullscreenRoot = null,
+    host,
+    stage,
+    pager,
+    prevButton,
+    nextButton,
+    presenting,
+    notesOpen,
+    fileInput = null,
+    fileLabel = null,
+    restoreSample = null,
+    restoreText = null,
+    search = null,
+    hint = null,
+    animLabel = null,
+  },
+) {
   const pageExpr = `document.querySelector(${JSON.stringify(pager)}).textContent`;
   const hidden = hiddenExpr(stage);
   const oneSlide = `document.querySelectorAll(${JSON.stringify(`${stage} svg`)}).length === 1`;
-  const animExpr = animLabel
-    ? `document.querySelector(${JSON.stringify(animLabel)})?.textContent || ''`
-    : null;
+  const animExpr = animLabel ? `document.querySelector(${JSON.stringify(animLabel)})?.textContent || ''` : null;
   const chipSel = JSON.stringify(`${host} .slide-number`);
-  const chipOn = (text) => `(() => { const el = document.querySelector(${chipSel}); return !!el && !el.hidden && el.textContent === ${JSON.stringify(text)}; })()`;
+  const chipOn = (text) =>
+    `(() => { const el = document.querySelector(${chipSel}); return !!el && !el.hidden && el.textContent === ${JSON.stringify(text)}; })()`;
   const chipOff = `(() => { const el = document.querySelector(${chipSel}); return !el || el.hidden || el.textContent === ''; })()`;
   const veilOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on`)})`;
   const whiteOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on.is-white`)})`;
@@ -84,7 +82,9 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
     if (!text.includes('Backspace 上一步')) throw new Error(`提示条把退格写丢了：${text}`);
   }
 
-  await evaluate(`document.querySelector(${JSON.stringify(fullscreenRoot ?? stage)})?.scrollIntoView({ block: 'nearest', behavior: 'instant' })`);
+  await evaluate(
+    `document.querySelector(${JSON.stringify(fullscreenRoot ?? stage)})?.scrollIntoView({ block: 'nearest', behavior: 'instant' })`,
+  );
   await evaluate(`(() => {
     const prev = document.querySelector(${JSON.stringify(prevButton)});
     const pager = document.querySelector(${JSON.stringify(pager)});
@@ -102,11 +102,11 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
   try {
     await click(nextButton);
     await waitFor(`${pageExpr} === ${JSON.stringify(page(2))}`, '浏览态先到第二页');
-    if (await evaluate(dispatchKey('p')) !== true || await evaluate(pageExpr) !== page(2)) {
+    if ((await evaluate(dispatchKey('p'))) !== true || (await evaluate(pageExpr)) !== page(2)) {
       throw new Error('浏览态 P 被拦截或翻了页');
     }
     await pressKey(request, 'p', 80, 'KeyP');
-    if (await evaluate(pageExpr) !== page(2)) throw new Error('浏览态真实 P 翻了页');
+    if ((await evaluate(pageExpr)) !== page(2)) throw new Error('浏览态真实 P 翻了页');
 
     if (fileInput) {
       const typed = await evaluate(`(() => {
@@ -117,7 +117,7 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
         input.blur();
         return kept;
       })()`);
-      if (typed !== true || await evaluate(pageExpr) !== page(2)) throw new Error('文件框里的 P 翻了页');
+      if (typed !== true || (await evaluate(pageExpr)) !== page(2)) throw new Error('文件框里的 P 翻了页');
     }
 
     if (search) {
@@ -131,7 +131,7 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
         input.blur();
         return kept && value === 'qq';
       })()`);
-      if (typed !== true || await evaluate(pageExpr) !== page(2)) throw new Error('搜索框里的 P 翻了页或清掉了查询');
+      if (typed !== true || (await evaluate(pageExpr)) !== page(2)) throw new Error('搜索框里的 P 翻了页或清掉了查询');
     }
 
     await click(trigger);
@@ -148,7 +148,7 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
         input.blur();
         return kept && value === 'qq';
       })()`);
-      if (typed !== true || await evaluate(pageExpr) !== page(2)) throw new Error('放映中搜索框里的 P 翻了页');
+      if (typed !== true || (await evaluate(pageExpr)) !== page(2)) throw new Error('放映中搜索框里的 P 翻了页');
     }
 
     await pressKey(request, 'End', 35, 'End');
@@ -157,27 +157,21 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
     const startAnim = animExpr ? await evaluate(animExpr) : '';
 
     await pressKey(request, 'ArrowRight', 39, 'ArrowRight');
-    await waitFor(
-      `${pageExpr} === ${JSON.stringify(page(7))} && ${hidden} !== ${JSON.stringify(startHidden)}`,
-      '最后一页下一步先播一批',
-    );
+    await waitFor(`${pageExpr} === ${JSON.stringify(page(7))} && ${hidden} !== ${JSON.stringify(startHidden)}`, '最后一页下一步先播一批');
     const playedHidden = await evaluate(hidden);
     if (animExpr && !String(await evaluate(animExpr)).startsWith('动画 1/')) {
       throw new Error(`播完一批后计数应为 1，实际 ${await evaluate(animExpr)}`);
     }
 
-    if (await evaluate(dispatchKey('Delete')) !== true) throw new Error('向前删除被 preventDefault');
+    if ((await evaluate(dispatchKey('Delete'))) !== true) throw new Error('向前删除被 preventDefault');
     await pressKey(request, 'Delete', 46, 'Delete');
-    if (await evaluate(pageExpr) !== page(7) || await evaluate(hidden) !== playedHidden) {
+    if ((await evaluate(pageExpr)) !== page(7) || (await evaluate(hidden)) !== playedHidden) {
       throw new Error('Delete 退了批次或翻了页');
     }
 
     await pressKey(request, 'p', 80, 'KeyP');
-    await waitFor(
-      `${pageExpr} === ${JSON.stringify(page(7))} && ${hidden} === ${JSON.stringify(startHidden)}`,
-      'P 收回这一批且页码不动',
-    );
-    if (animExpr && await evaluate(animExpr) !== startAnim) {
+    await waitFor(`${pageExpr} === ${JSON.stringify(page(7))} && ${hidden} === ${JSON.stringify(startHidden)}`, 'P 收回这一批且页码不动');
+    if (animExpr && (await evaluate(animExpr)) !== startAnim) {
       throw new Error(`P 后计数没有回到 ${startAnim}`);
     }
 
@@ -198,7 +192,11 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
       ['Shift', 'P', ', shiftKey: true'],
       ['输入法', 'p', ', isComposing: true'],
     ]) {
-      if (await evaluate(dispatchKey(key, extra)) !== true || await evaluate(hidden) !== playedHidden || await evaluate(pageExpr) !== page(7)) {
+      if (
+        (await evaluate(dispatchKey(key, extra))) !== true
+        || (await evaluate(hidden)) !== playedHidden
+        || (await evaluate(pageExpr)) !== page(7)
+      ) {
         throw new Error(`${label}+P 退了批次或被拦截`);
       }
     }
@@ -224,15 +222,16 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
     await pressKey(request, 'w', 87, 'KeyW');
     await waitFor(whiteOn, '白屏');
     await pressKey(request, 'p', 80, 'KeyP');
-    await waitFor(
-      `!${veilOn} && ${hidden} === ${JSON.stringify(playedHidden)}`,
-      '白屏中的 P 只揭遮罩',
-    );
+    await waitFor(`!${veilOn} && ${hidden} === ${JSON.stringify(playedHidden)}`, '白屏中的 P 只揭遮罩');
 
     await pressKey(request, 'Home', 36, 'Home');
     await waitFor(`${pageExpr} === ${JSON.stringify(page(1))}`, 'Home 仍回第一页');
     await pressKey(request, 'End', 35, 'End');
-    await waitFor(`${pageExpr} === ${JSON.stringify(page(7))} && ${oneSlide} && ${hidden} === ${JSON.stringify(startHidden)}`, 'End 仍从最后一页开头开始', 200);
+    await waitFor(
+      `${pageExpr} === ${JSON.stringify(page(7))} && ${oneSlide} && ${hidden} === ${JSON.stringify(startHidden)}`,
+      'End 仍从最后一页开头开始',
+      200,
+    );
     await pressKey(request, 'p', 80, 'KeyP');
     await waitFor(`${pageExpr} === ${JSON.stringify(page(6))}`, '本页开头的 P 才去上一页');
 
@@ -240,11 +239,11 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
     await waitFor(`${pageExpr} === ${JSON.stringify(page(7))} && ${oneSlide}`, '网格测试回到最后一页', 200);
     const beforeNotes = await evaluate(hidden);
     await pressKey(request, 'n', 78, 'KeyN');
-    if (await evaluate(pageExpr) !== page(7) || await evaluate(hidden) !== beforeNotes) {
+    if ((await evaluate(pageExpr)) !== page(7) || (await evaluate(hidden)) !== beforeNotes) {
       throw new Error('N 被当成了下一页');
     }
     if (notesOpen.includes('notesPanel')) {
-      if (!await evaluate(`document.querySelector('#notesPanel').hidden`)) {
+      if (!(await evaluate(`document.querySelector('#notesPanel').hidden`))) {
         await pressKey(request, 'n', 78, 'KeyN');
       }
     } else if (await evaluate(notesOpen)) {
@@ -263,7 +262,7 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
 
     if (notesOpen.includes('notesPanel')) {
       await pressKey(request, 's', 83, 'KeyS');
-      if (!await evaluate(`document.querySelector('#notesPanel').hidden`)) throw new Error('查看器放映中 s 打开了浏览备注');
+      if (!(await evaluate(`document.querySelector('#notesPanel').hidden`))) throw new Error('查看器放映中 s 打开了浏览备注');
     } else {
       await pressKey(request, 's', 83, 'KeyS');
       await waitFor(`${notesOpen} && ${pageExpr} === ${JSON.stringify(page(7))}`, 's 仍打开备注且 P 没有把它关掉');
@@ -276,21 +275,24 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
     await pressKey(request, 'Escape', 27, 'Escape');
     await waitFor(`!${presenting}`, 'Esc 离开放映');
     const left = await evaluate(pageExpr);
-    if (await evaluate(dispatchKey('p')) !== true || await evaluate(pageExpr) !== left) {
+    if ((await evaluate(dispatchKey('p'))) !== true || (await evaluate(pageExpr)) !== left) {
       throw new Error('退出后浏览态 P 又翻了页');
     }
 
     if (fileInput && fileLabel) {
       await click(trigger);
       await waitFor(presenting, '换文件前再进放映');
-      await evaluate(`(async () => {
+      await evaluate(
+        `(async () => {
         const bytes = await fetch('/demo/showcase.pptx').then((response) => response.arrayBuffer());
         const input = document.querySelector(${JSON.stringify(fileInput)});
         const transfer = new DataTransfer();
         transfer.items.add(new File([bytes], 'present-prev-letter.pptx'));
         input.files = transfer.files;
         input.dispatchEvent(new Event('change', { bubbles: true }));
-      })()`, true);
+      })()`,
+        true,
+      );
       await waitFor(
         `document.querySelector(${JSON.stringify(fileLabel)}).textContent.includes('present-prev-letter.pptx') && ${pageExpr}.startsWith('1 /') && !${presenting}`,
         '换文件后离开放映',
@@ -313,7 +315,7 @@ export async function runPresentPrevLetterContract({ evaluate, request, click, w
       if (await evaluate(gridOn)) await pressKey(request, 'Escape', 27, 'Escape');
       if (await evaluate(veilOn)) await pressKey(request, 'b', 66, 'KeyB');
       if (await evaluate(presenting)) await pressKey(request, 'Escape', 27, 'Escape');
-      if (!notesOpen.includes('notesPanel') && await evaluate(notesOpen)) await click(`${host} .speaker-aids-close`);
+      if (!notesOpen.includes('notesPanel') && (await evaluate(notesOpen))) await click(`${host} .speaker-aids-close`);
     } catch (cleanup) {
       failure ??= cleanup;
     }
@@ -331,7 +333,7 @@ export async function runStandalonePresentPrevLetterContract({ evaluate, request
   await request('Page.navigate', { url: await standalone('/missing.pptx') });
   await waitFor("document.querySelector('#fileInfo')?.textContent === '未打开文件'", 'P 契约打开失败');
   await pressKey(request, 'p', 80, 'KeyP');
-  if (await evaluate("document.querySelector('#pageIndicator')?.textContent") !== '- / -') {
+  if ((await evaluate("document.querySelector('#pageIndicator')?.textContent")) !== '- / -') {
     throw new Error('打开失败后 P 翻了页');
   }
 
@@ -340,21 +342,24 @@ export async function runStandalonePresentPrevLetterContract({ evaluate, request
     "document.querySelector('#fileInfo')?.textContent.includes('showcase.pptx') && document.querySelector('#pageIndicator')?.textContent.startsWith('1 /') && !document.querySelector('#searchInput').disabled",
     'P 契约打开 showcase',
   );
-  await runPresentPrevLetterContract({ evaluate, request, click, waitFor }, {
-    trigger: '#btnPresent',
-    host: '#presenter',
-    stage: '#stage',
-    pager: '#pageIndicator',
-    prevButton: '#btnPrev',
-    nextButton: '#btnNext',
-    presenting: "!document.querySelector('#presenter').hidden",
-    notesOpen: "!document.querySelector('#notesPanel').hidden",
-    fileInput: '#fileInput',
-    fileLabel: '#fileInfo',
-    search: '#searchInput',
-    hint: '.hint',
-    animLabel: '#pvAnim',
-  });
+  await runPresentPrevLetterContract(
+    { evaluate, request, click, waitFor },
+    {
+      trigger: '#btnPresent',
+      host: '#presenter',
+      stage: '#stage',
+      pager: '#pageIndicator',
+      prevButton: '#btnPrev',
+      nextButton: '#btnNext',
+      presenting: "!document.querySelector('#presenter').hidden",
+      notesOpen: "!document.querySelector('#notesPanel').hidden",
+      fileInput: '#fileInput',
+      fileLabel: '#fileInfo',
+      search: '#searchInput',
+      hint: '.hint',
+      animLabel: '#pvAnim',
+    },
+  );
   await request('Page.navigate', { url: await standalone('/demo/showcase.pptx') });
   await waitFor(
     "document.querySelector('#fileInfo')?.textContent.includes('showcase.pptx') && document.querySelector('#pageIndicator')?.textContent.startsWith('1 /') && document.querySelector('#presenter').hidden",

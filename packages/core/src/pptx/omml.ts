@@ -63,22 +63,26 @@ function parseNode(el: Element, depth: number): MathNode[] | null {
 
     case 'f': {
       const type = pv(kid(el, 'fPr'), 'type');
-      return [{
-        kind: 'frac',
-        num: arg(el, 'num', d),
-        den: arg(el, 'den', d),
-        type: type === 'noBar' || type === 'skw' || type === 'lin' ? type : 'bar',
-      }];
+      return [
+        {
+          kind: 'frac',
+          num: arg(el, 'num', d),
+          den: arg(el, 'den', d),
+          type: type === 'noBar' || type === 'skw' || type === 'lin' ? type : 'bar',
+        },
+      ];
     }
 
     case 'rad': {
       // degHide 为真时是平方根，此时 m:deg 里常有残留内容，必须忽略
       const hide = pv(kid(el, 'radPr'), 'degHide');
-      return [{
-        kind: 'rad',
-        deg: hide === '1' || hide === 'on' || hide === 'true' ? [] : arg(el, 'deg', d),
-        base: arg(el, 'e', d),
-      }];
+      return [
+        {
+          kind: 'rad',
+          deg: hide === '1' || hide === 'on' || hide === 'true' ? [] : arg(el, 'deg', d),
+          base: arg(el, 'e', d),
+        },
+      ];
     }
 
     case 'sSup':
@@ -99,34 +103,40 @@ function parseNode(el: Element, depth: number): MathNode[] | null {
       const chr = pv(pr, 'chr') ?? '∫';
       const hideSub = pv(pr, 'subHide') === '1';
       const hideSup = pv(pr, 'supHide') === '1';
-      return [{
-        kind: 'nary',
-        chr,
-        sub: hideSub ? [] : arg(el, 'sub', d),
-        sup: hideSup ? [] : arg(el, 'sup', d),
-        base: arg(el, 'e', d),
-        // 求和 / 连乘默认上下限在正上下，积分默认在右侧
-        underOver: loc ? loc === 'undOvr' : chr !== '∫' && chr !== '∮' && chr !== '∬' && chr !== '∭',
-      }];
+      return [
+        {
+          kind: 'nary',
+          chr,
+          sub: hideSub ? [] : arg(el, 'sub', d),
+          sup: hideSup ? [] : arg(el, 'sup', d),
+          base: arg(el, 'e', d),
+          // 求和 / 连乘默认上下限在正上下，积分默认在右侧
+          underOver: loc ? loc === 'undOvr' : chr !== '∫' && chr !== '∮' && chr !== '∬' && chr !== '∭',
+        },
+      ];
     }
 
     case 'd': {
       const pr = kid(el, 'dPr');
       const items = kids(el, 'e').map((e) => parseNodes(e, d));
-      return [{
-        kind: 'delim',
-        beg: pv(pr, 'begChr') ?? '(',
-        end: pv(pr, 'endChr') ?? ')',
-        sep: pv(pr, 'sepChr') ?? ',',
-        items: items.length ? items : [[]],
-      }];
+      return [
+        {
+          kind: 'delim',
+          beg: pv(pr, 'begChr') ?? '(',
+          end: pv(pr, 'endChr') ?? ')',
+          sep: pv(pr, 'sepChr') ?? ',',
+          items: items.length ? items : [[]],
+        },
+      ];
     }
 
     case 'm':
-      return [{
-        kind: 'matrix',
-        rows: kids(el, 'mr').map((row) => kids(row, 'e').map((e) => parseNodes(e, d))),
-      }];
+      return [
+        {
+          kind: 'matrix',
+          rows: kids(el, 'mr').map((row) => kids(row, 'e').map((e) => parseNodes(e, d))),
+        },
+      ];
 
     case 'acc':
       return [{ kind: 'acc', chr: pv(kid(el, 'accPr'), 'chr') ?? '̂', base: arg(el, 'e', d) }];
@@ -164,11 +174,27 @@ function parseNode(el: Element, depth: number): MathNode[] | null {
       return [{ kind: 'run', text: ' '.repeat(Math.max(1, deepText(el).length)), sty: 'p' }];
 
     // 属性节点与批注不产出内容
-    case 'rPr': case 'ctrlPr': case 'argPr': case 'fPr': case 'radPr':
-    case 'naryPr': case 'dPr': case 'mPr': case 'accPr': case 'barPr':
-    case 'groupChrPr': case 'limLowPr': case 'limUppPr': case 'funcPr':
-    case 'eqArrPr': case 'boxPr': case 'phantPr': case 'sSupPr':
-    case 'sSubPr': case 'sSubSupPr': case 'sPrePr':
+    case 'rPr':
+    case 'ctrlPr':
+    case 'argPr':
+    case 'fPr':
+    case 'radPr':
+    case 'naryPr':
+    case 'dPr':
+    case 'mPr':
+    case 'accPr':
+    case 'barPr':
+    case 'groupChrPr':
+    case 'limLowPr':
+    case 'limUppPr':
+    case 'funcPr':
+    case 'eqArrPr':
+    case 'boxPr':
+    case 'phantPr':
+    case 'sSupPr':
+    case 'sSubPr':
+    case 'sSubSupPr':
+    case 'sPrePr':
       return null;
 
     default: {
@@ -197,9 +223,15 @@ export function mathPlainText(nodes: MathNode[]): string {
   let out = '';
   for (const n of nodes) {
     switch (n.kind) {
-      case 'run': out += n.text; break;
-      case 'frac': out += `${mathPlainText(n.num)}/${mathPlainText(n.den)}`; break;
-      case 'rad': out += `√(${mathPlainText(n.base)})`; break;
+      case 'run':
+        out += n.text;
+        break;
+      case 'frac':
+        out += `${mathPlainText(n.num)}/${mathPlainText(n.den)}`;
+        break;
+      case 'rad':
+        out += `√(${mathPlainText(n.base)})`;
+        break;
       case 'script':
         out += mathPlainText(n.base);
         if (n.sub?.length) out += `_${mathPlainText(n.sub)}`;
@@ -217,9 +249,15 @@ export function mathPlainText(nodes: MathNode[]): string {
       case 'matrix':
         out += n.rows.map((r) => r.map((c) => mathPlainText(c)).join(' ')).join('; ');
         break;
-      case 'acc': out += mathPlainText(n.base) + n.chr; break;
-      case 'lim': out += `${mathPlainText(n.base)}(${mathPlainText(n.limit)})`; break;
-      case 'stack': out += n.rows.map((r) => mathPlainText(r)).join(' '); break;
+      case 'acc':
+        out += mathPlainText(n.base) + n.chr;
+        break;
+      case 'lim':
+        out += `${mathPlainText(n.base)}(${mathPlainText(n.limit)})`;
+        break;
+      case 'stack':
+        out += n.rows.map((r) => mathPlainText(r)).join(' ');
+        break;
     }
   }
   return out;

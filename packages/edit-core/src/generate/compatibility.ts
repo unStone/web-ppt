@@ -13,8 +13,12 @@ import { remapCompatibilityReferences } from './compatibility-references';
 
 /** 整个 MC 外壳是一个框架对象；隐藏表示和只读组后代不能按普通图形重新生成。 */
 export function compatibilityInsertion(
-  doc: EditDoc, record: ElementRecord, targetPart: string, targetSpid: number,
-  usedSpids: Set<number>, parts: CompatibilityParts,
+  doc: EditDoc,
+  record: ElementRecord,
+  targetPart: string,
+  targetSpid: number,
+  usedSpids: Set<number>,
+  parts: CompatibilityParts,
 ): ElementInsertionSource {
   const origin = record.meta.origin ?? record.src.editInfo?.origin;
   if (!origin) throw new Error(`兼容对象 ${record.id} 缺少原包来源`);
@@ -27,8 +31,7 @@ export function compatibilityInsertion(
   if (!insertion && !bytes) throw new Error(`兼容对象 ${record.id} 缺少原包来源`);
   parts.registerMedia(insertion?.resources ?? []);
   const probe = { ...record, meta: { ...record.meta, editable: 'frame' as const, origin } };
-  const tree = insertion
-    ? materializeInsertionFragment(doc, owner!) : parseXmlTree(bytes!);
+  const tree = insertion ? materializeInsertionFragment(doc, owner!) : parseXmlTree(bytes!);
   const host = locateElementHost(tree, probe).host;
   if (insertion) remapCompatibilityReferences(host, insertion.spids);
   // 别名先收敛，再统一分配新 ID；否则未选分支会被误认为已经删除的孩子。
@@ -62,11 +65,18 @@ export function compatibilityInsertion(
   const relationships = relationshipIds(host, true).map((id, index) => {
     const relation = relations.find((entry) => entry.targetId === id);
     if (!relation) throw new Error(`兼容对象缺少原包关系：${id}`);
-    return parts.relocate({ ...relation, sourceId: id }, insertion ? origin.part : sourcePart,
-      targetPart, `rIdCompat${targetSpid}_${index + 1}`);
+    return parts.relocate(
+      { ...relation, sourceId: id },
+      insertion ? origin.part : sourcePart,
+      targetPart,
+      `rIdCompat${targetSpid}_${index + 1}`,
+    );
   });
   return {
-    markup: serializeXmlNode(host), namespaces, spids, relationships,
+    markup: serializeXmlNode(host),
+    namespaces,
+    spids,
+    relationships,
     unmodeledSpids: Object.values(spids).filter((id) => id !== targetSpid),
   };
 }

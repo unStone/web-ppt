@@ -31,12 +31,10 @@ export function normalizeSvg(svg) {
   out = out.replace(/url\(#([^)]+)\)/g, (m, id) => (map.has(id) ? `url(#${map.get(id)})` : m));
   // href="#id" / xlink:href="#id"（倒影用 <use> 引用本体）同样要跟着重编号，
   // 否则任一 fixture 元素数变化都会让无关文件的快照虚假漂移。
-  out = out.replace(/((?:xlink:)?href)="#([^"]+)"/g,
-    (m, attr, id) => (map.has(id) ? `${attr}="#${map.get(id)}"` : m));
+  out = out.replace(/((?:xlink:)?href)="#([^"]+)"/g, (m, attr, id) => (map.has(id) ? `${attr}="#${map.get(id)}"` : m));
 
   // 每个标签一行，diff 才有可读性
   return out.replace(/></g, '>\n<');
 }
 
-export const snapshotName = (file, page, mode) =>
-  `${file.replace(/\./g, '_')}-p${String(page).padStart(2, '0')}-${mode}.svg`;
+export const snapshotName = (file, page, mode) => `${file.replace(/\./g, '_')}-p${String(page).padStart(2, '0')}-${mode}.svg`;

@@ -17,10 +17,18 @@ export function createOwnedPackage(
   let disposed = false;
   const handle = {
     format: 'pptx' as const,
-    get bytes(): Uint8Array { return currentBytes; },
-    get parts(): Readonly<Record<string, Uint8Array>> { return currentParts; },
-    get assets(): OpcPackage['assets'] { return currentAssets; },
-    get disposed(): boolean { return disposed; },
+    get bytes(): Uint8Array {
+      return currentBytes;
+    },
+    get parts(): Readonly<Record<string, Uint8Array>> {
+      return currentParts;
+    },
+    get assets(): OpcPackage['assets'] {
+      return currentAssets;
+    },
+    get disposed(): boolean {
+      return disposed;
+    },
   } as OwnedOpcPackage;
   Object.defineProperty(handle, 'dispose', {
     value: () => {

@@ -1,63 +1,112 @@
 name: 官网
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [master, main]
   workflow_dispatch:
+    inputs:
+      run_id:
+        description: 已成功完成的 master / main push CI 运行 ID
+        required: true
+        type: string
 
-# 只允许一个部署在跑，新的推送取消排队中的旧任务
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-${{ github.event.workflow_run.id || github.run_id }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
+  actions: read
+  pages: read
 
 jobs:
-  build:
+  prepare:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.id == github.event.repository.id)
     runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.source.outputs.deploy }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: npm
-      - run: npm ci
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: pip
-          cache-dependency-path: tooling/font-glyph-requirements.txt
-
-      - name: 安装字体与 PDF 独立读取依赖
-        run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt
-
-      # 站点直接消费 web-ppt / @web-ppt/viewer-core 的 dist，必须先构建
-      - name: 构建依赖包
-        run: npm run build
-
-      - name: 构建站点
-        run: npm run build -w @web-ppt/site
+      - name: 校验可信 CI 与站点产物
+        id: source
+        uses: actions/github-script@v9
         env:
-          SITE_BASE: /web-ppt/
-
-      - name: 双语静态产物与浏览器回归
-        run: node tooling/test-site-i18n-static.mjs --built
-
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+          REQUESTED_RUN_ID: ${{ inputs.run_id }}
         with:
-          path: packages/site/dist
+          script: |
+            const input = context.eventName === 'workflow_dispatch'
+              ? process.env.REQUESTED_RUN_ID : String(context.payload.workflow_run.id);
+            if (!/^[1-9]\d*$/.test(input)) throw new Error(`无效的 CI run_id: ${input}`);
+            const runId = Number(input);
+            if (!Number.isSafeInteger(runId)) throw new Error(`CI run_id 超出安全整数范围: ${input}`);
+            const { data: run } = await github.rest.actions.getWorkflowRun({ ...context.repo, run_id: runId });
+            const repositoryId = context.payload.repository.id;
+            if (run.repository.id !== repositoryId || run.head_repository?.id !== repositoryId ||
+                run.event !== 'push' || !['master', 'main'].includes(run.head_branch) ||
+                run.path !== '.github/workflows/ci.yml' || run.name !== 'CI' ||
+                run.status !== 'completed' || run.conclusion !== 'success') {
+              throw new Error(`CI ${runId} 必须是本仓库 master / main 上成功完成的 push CI`);
+            }
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts,
+              { ...context.repo, run_id: runId, per_page: 100 });
+            const sites = artifacts.filter(artifact => artifact.name === 'site-dist');
+            if (sites.length === 0 && context.eventName === 'workflow_run') {
+              const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun,
+                { ...context.repo, run_id: runId, filter: 'latest', per_page: 100 });
+              const documentationOnly = ['changes', 'check'].every(name =>
+                jobs.some(job => job.name === name && job.conclusion === 'success')) &&
+                jobs.every(job => ['changes', 'check'].includes(job.name)
+                  ? job.conclusion === 'success' : job.conclusion === 'skipped');
+              if (documentationOnly) {
+                core.notice(`CI ${runId} 仅执行文档路径检查，跳过站点部署`);
+                core.setOutput('deploy', 'false');
+                return;
+              }
+            }
+            if (sites.length !== 1 || sites[0].expired) {
+              throw new Error(`CI ${runId} 必须包含一份未过期的 site-dist，实际 ${sites.length} 份`);
+            }
+            if (context.eventName === 'workflow_run') {
+              const { data: branch } = await github.rest.repos.getBranch({ ...context.repo, branch: run.head_branch });
+              if (branch.commit.sha !== run.head_sha) {
+                core.notice(`CI ${runId} 已完成，但 ${run.head_branch} 已有更新提交，跳过过期部署`);
+                core.setOutput('deploy', 'false');
+                return;
+              }
+            }
+            core.setOutput('run-id', input);
+            core.setOutput('artifact-id', String(sites[0].id));
+            core.setOutput('deploy', 'true');
+      - uses: actions/download-artifact@v8
+        if: steps.source.outputs.deploy == 'true'
+        with:
+          artifact-ids: ${{ steps.source.outputs.artifact-id }}
+          run-id: ${{ steps.source.outputs.run-id }}
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: site
+      - uses: actions/configure-pages@v6
+        if: steps.source.outputs.deploy == 'true'
+      - uses: actions/upload-pages-artifact@v5
+        if: steps.source.outputs.deploy == 'true'
+        with:
+          path: site
 
   deploy:
-    needs: build
+    needs: prepare
+    if: needs.prepare.outputs.deploy == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

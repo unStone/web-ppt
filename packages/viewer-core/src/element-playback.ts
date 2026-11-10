@@ -1,7 +1,16 @@
 import type { AnimStep } from '@web-ppt/core';
 import {
-  blindsClip, boxInMask, boxOutClip, checkerboardClip, dissolveClip,
-  irisClip, randomBarsClip, splitClip, stripsClip, wheelClip, type ClipRegion,
+  blindsClip,
+  boxInMask,
+  boxOutClip,
+  checkerboardClip,
+  dissolveClip,
+  irisClip,
+  randomBarsClip,
+  splitClip,
+  stripsClip,
+  wheelClip,
+  type ClipRegion,
 } from './reveal-clip';
 import { scheduleMediaCommand, type ScheduledMediaCommand } from './media-playback';
 
@@ -19,22 +28,30 @@ interface Keyframes {
 
 function flyOffset(dir: string | undefined): [number, number] {
   switch (dir) {
-    case 'l': return [-100 * OFFSET, 0];
-    case 'r': return [100 * OFFSET, 0];
-    case 'u': return [0, -100 * OFFSET];
-    case 'd': return [0, 100 * OFFSET];
-    case 'lu': return [-100 * OFFSET, -100 * OFFSET];
-    case 'ru': return [100 * OFFSET, -100 * OFFSET];
-    case 'ld': return [-100 * OFFSET, 100 * OFFSET];
-    case 'rd': return [100 * OFFSET, 100 * OFFSET];
-    default: return [0, 100 * OFFSET];
+    case 'l':
+      return [-100 * OFFSET, 0];
+    case 'r':
+      return [100 * OFFSET, 0];
+    case 'u':
+      return [0, -100 * OFFSET];
+    case 'd':
+      return [0, 100 * OFFSET];
+    case 'lu':
+      return [-100 * OFFSET, -100 * OFFSET];
+    case 'ru':
+      return [100 * OFFSET, -100 * OFFSET];
+    case 'ld':
+      return [-100 * OFFSET, 100 * OFFSET];
+    case 'rd':
+      return [100 * OFFSET, 100 * OFFSET];
+    default:
+      return [0, 100 * OFFSET];
   }
 }
 
 function offSlideTransform(container: Element, node: Element, dir: string | undefined): string | null {
   const svg = container.querySelector('svg');
-  if (!svg || typeof svg.getBoundingClientRect !== 'function'
-    || typeof node.getBoundingClientRect !== 'function') return null;
+  if (!svg || typeof svg.getBoundingClientRect !== 'function' || typeof node.getBoundingClientRect !== 'function') return null;
   const slide = svg.getBoundingClientRect();
   const box = node.getBoundingClientRect();
   if (slide.width < 1 || slide.height < 1 || box.width < 1 || box.height < 1) return null;
@@ -98,22 +115,20 @@ function paragraphElements(node: Element, range: AnimStep['paragraphRange']): El
   return found;
 }
 
-function paragraphClipFrames(
-  step: AnimStep, host: HTMLElement, shapeFrames: readonly Keyframe[],
-): Keyframe[] | null {
-  if (step.kind !== 'emphasis' && step.kind !== 'motion'
-    && step.effect === 'zoom' && (step.dir === 'in' || step.dir === 'out')) {
+function paragraphClipFrames(step: AnimStep, host: HTMLElement, shapeFrames: readonly Keyframe[]): Keyframe[] | null {
+  if (step.kind !== 'emphasis' && step.kind !== 'motion' && step.effect === 'zoom' && (step.dir === 'in' || step.dir === 'out')) {
     const region = elementContentRegion(host);
     if (region) {
-      const entrance = step.dir === 'in'
-        ? {
-            from: boxInMask(false, region),
-            to: boxInMask(true, region),
-          }
-        : {
-            from: { opacity: 1, clipPath: boxOutClip(false, region) },
-            to: { opacity: 1, clipPath: boxOutClip(true, region) },
-          };
+      const entrance =
+        step.dir === 'in'
+          ? {
+              from: boxInMask(false, region),
+              to: boxInMask(true, region),
+            }
+          : {
+              from: { opacity: 1, clipPath: boxOutClip(false, region) },
+              to: { opacity: 1, clipPath: boxOutClip(true, region) },
+            };
       const pair = step.kind === 'exit' ? [entrance.to, entrance.from] : [entrance.from, entrance.to];
       return htmlClipFrames(pair);
     }
@@ -142,12 +157,18 @@ export function wipeClip(dir: string | undefined, hidden: boolean): string {
   // inset(top right bottom left)：hidden 时把内容完全裁掉
   const full = hidden ? 100 : 0;
   switch (dir) {
-    case 'l': return `inset(0 ${full}% 0 0)`;
-    case 'r': return `inset(0 0 0 ${full}%)`;
-    case 'u': return `inset(0 0 ${full}% 0)`;
-    case 'horz': return `inset(0 ${full / 2}% 0 ${full / 2}%)`;
-    case 'vert': return `inset(${full / 2}% 0 ${full / 2}% 0)`;
-    default: return `inset(${full}% 0 0 0)`;
+    case 'l':
+      return `inset(0 ${full}% 0 0)`;
+    case 'r':
+      return `inset(0 0 0 ${full}%)`;
+    case 'u':
+      return `inset(0 0 ${full}% 0)`;
+    case 'horz':
+      return `inset(0 ${full / 2}% 0 ${full / 2}%)`;
+    case 'vert':
+      return `inset(${full / 2}% 0 ${full / 2}% 0)`;
+    default:
+      return `inset(${full}% 0 0 0)`;
   }
 }
 
@@ -210,8 +231,14 @@ function entranceFrames(step: AnimStep): Keyframes {
       };
     case 'grow':
       return {
-        from: { opacity: 1, transform: `${scaleTransform(step.scale?.fromX ?? 0, step.scale?.fromY ?? 0)} rotate(${step.rotation?.from ?? 0}deg)` },
-        to: { opacity: 1, transform: `${scaleTransform(step.scale?.toX ?? 1, step.scale?.toY ?? 1)} rotate(${step.rotation?.to ?? 90}deg)` },
+        from: {
+          opacity: 1,
+          transform: `${scaleTransform(step.scale?.fromX ?? 0, step.scale?.fromY ?? 0)} rotate(${step.rotation?.from ?? 0}deg)`,
+        },
+        to: {
+          opacity: 1,
+          transform: `${scaleTransform(step.scale?.toX ?? 1, step.scale?.toY ?? 1)} rotate(${step.rotation?.to ?? 90}deg)`,
+        },
       };
     case 'spin':
       return { from: { opacity: 0, transform: 'rotate(-180deg) scale(0.4)' }, to: { opacity: 1, transform: 'rotate(0) scale(1)' } };
@@ -333,9 +360,8 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
   let previousEnd = 0;
 
   for (const step of group) {
-    const start = step.trigger === 'afterPrev'
-      ? previousEnd + step.delayMs
-      : step.trigger === 'withPrev' ? previousStart + step.delayMs : step.delayMs;
+    const start =
+      step.trigger === 'afterPrev' ? previousEnd + step.delayMs : step.trigger === 'withPrev' ? previousStart + step.delayMs : step.delayMs;
     previousStart = start;
     previousEnd = start + step.durationMs;
     const node = container.querySelector(`[data-el="${step.target}"]`) as HTMLElement | null;
@@ -369,59 +395,67 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
     const distance = distances?.[distances.length - 1] ?? 0;
     const frames: Keyframe[] = step.motionPath?.length
       ? step.motionPath.map(([dx, dy], index) => ({
-        transform: `translate(${dx}px, ${dy}px)`,
-        offset: distance > 0 ? distances![index] / distance : index / (step.motionPath!.length - 1),
-      }))
+          transform: `translate(${dx}px, ${dy}px)`,
+          offset: distance > 0 ? distances![index] / distance : index / (step.motionPath!.length - 1),
+        }))
       : step.effect === 'randomBar'
         ? Array.from({ length: 13 }, (_, index) => ({
-          ...randomBarsClip(step.dir, step.kind === 'exit' ? 1 - index / 12 : index / 12),
-          offset: index / 12,
-        }))
+            ...randomBarsClip(step.dir, step.kind === 'exit' ? 1 - index / 12 : index / 12),
+            offset: index / 12,
+          }))
         : step.effect === 'strips'
           ? Array.from({ length: 21 }, (_, index) => ({
-            ...stripsClip(step.dir, step.kind === 'exit' ? 1 - index / 20 : index / 20),
-            offset: index / 20,
-          }))
+              ...stripsClip(step.dir, step.kind === 'exit' ? 1 - index / 20 : index / 20),
+              offset: index / 20,
+            }))
           : step.effect === 'wheel'
             ? Array.from({ length: 73 }, (_, index) => ({
-              ...wheelClip(step.dir, step.kind === 'exit' ? 1 - index / 72 : index / 72),
-              offset: index / 72,
-            }))
-          : (step.effect === 'circle' || step.effect === 'diamond'
-            || step.effect === 'plus' && step.dir !== 'in')
-            ? Array.from({ length: 37 }, (_, index) => ({
-              ...irisClip(step.effect as 'circle' | 'diamond' | 'plus', step.dir,
-                step.kind === 'exit' ? 1 - index / 36 : index / 36),
-              offset: index / 36,
-            }))
-        : step.effect === 'dissolve'
-          ? Array.from({ length: 9 }, (_, index) => ({
-            ...dissolveClip(step.kind === 'exit' ? 1 - index / 8 : index / 8, step.target),
-            offset: index / 8,
-          }))
-        : step.effect === 'swivel' && (step.kind === 'entrance' || step.kind === 'exit')
-          ? Array.from({ length: 41 }, (_, index) => ({
-            ...swivelFrame(step.dir, step.kind === 'exit' ? 1 - index / 40 : index / 40),
-            offset: index / 40,
-          }))
-        : step.effect === 'bounce' && step.kind === 'entrance'
-          ? [
-            { opacity: 0, transform: 'translateY(-60%)', offset: 0 },
-            { opacity: 1, transform: 'translateY(10%)', offset: 0.5 },
-            { opacity: 1, transform: 'translateY(-8%)', offset: 0.7 },
-            { opacity: 1, transform: 'translateY(3%)', offset: 0.85 },
-            { opacity: 1, transform: 'translateY(0)', offset: 1 },
-          ]
-      : [from, to];
+                ...wheelClip(step.dir, step.kind === 'exit' ? 1 - index / 72 : index / 72),
+                offset: index / 72,
+              }))
+            : step.effect === 'circle' || step.effect === 'diamond' || (step.effect === 'plus' && step.dir !== 'in')
+              ? Array.from({ length: 37 }, (_, index) => ({
+                  ...irisClip(step.effect as 'circle' | 'diamond' | 'plus', step.dir, step.kind === 'exit' ? 1 - index / 36 : index / 36),
+                  offset: index / 36,
+                }))
+              : step.effect === 'dissolve'
+                ? Array.from({ length: 9 }, (_, index) => ({
+                    ...dissolveClip(step.kind === 'exit' ? 1 - index / 8 : index / 8, step.target),
+                    offset: index / 8,
+                  }))
+                : step.effect === 'swivel' && (step.kind === 'entrance' || step.kind === 'exit')
+                  ? Array.from({ length: 41 }, (_, index) => ({
+                      ...swivelFrame(step.dir, step.kind === 'exit' ? 1 - index / 40 : index / 40),
+                      offset: index / 40,
+                    }))
+                  : step.effect === 'bounce' && step.kind === 'entrance'
+                    ? [
+                        { opacity: 0, transform: 'translateY(-60%)', offset: 0 },
+                        { opacity: 1, transform: 'translateY(10%)', offset: 0.5 },
+                        { opacity: 1, transform: 'translateY(-8%)', offset: 0.7 },
+                        { opacity: 1, transform: 'translateY(3%)', offset: 0.85 },
+                        { opacity: 1, transform: 'translateY(0)', offset: 1 },
+                      ]
+                    : [from, to];
 
     try {
-      const easing = step.motionPath?.length || step.effect === 'randomBar'
-        || step.effect === 'strips' || step.effect === 'wheel'
-        || step.effect === 'circle' || step.effect === 'diamond' || step.effect === 'plus'
-        || step.effect === 'dissolve' || step.effect === 'bounce' || step.effect === 'swivel' ? 'linear'
-        : step.effect === 'appear' && step.kind === 'entrance' ? 'steps(1, start)'
-          : step.effect === 'appear' && step.kind === 'exit' ? 'steps(1, end)'
-            : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      const easing =
+        step.motionPath?.length
+        || step.effect === 'randomBar'
+        || step.effect === 'strips'
+        || step.effect === 'wheel'
+        || step.effect === 'circle'
+        || step.effect === 'diamond'
+        || step.effect === 'plus'
+        || step.effect === 'dissolve'
+        || step.effect === 'bounce'
+        || step.effect === 'swivel'
+          ? 'linear'
+          : step.effect === 'appear' && step.kind === 'entrance'
+            ? 'steps(1, start)'
+            : step.effect === 'appear' && step.kind === 'exit'
+              ? 'steps(1, end)'
+              : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
       const anim = node.animate(frames, {
         duration: step.durationMs,
         delay: start,
@@ -430,27 +464,29 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
         fill: 'both',
       });
       if (step.kind === 'exit') {
-        anim.finished.then(() => {
-          if (!cancelled) node.style.visibility = 'hidden';
-        }).catch(() => undefined);
+        anim.finished
+          .then(() => {
+            if (!cancelled) node.style.visibility = 'hidden';
+          })
+          .catch(() => undefined);
       }
       anims.push(anim);
       const textFrames = htmlClipFrames(frames);
       if (!textFrames || typeof node.querySelectorAll !== 'function') continue;
       const paragraphs = paragraphElements(node, step.paragraphRange);
-      const hosts = paragraphs.length
-        ? paragraphs
-        : node.querySelectorAll('foreignObject > :first-child');
+      const hosts = paragraphs.length ? paragraphs : node.querySelectorAll('foreignObject > :first-child');
       for (const host of hosts) {
         if (!(host instanceof HTMLElement)) continue;
         const local = paragraphs.length ? paragraphClipFrames(step, host, frames) : textFrames;
         if (!local) continue;
-        anims.push(host.animate(local, {
-          duration: step.durationMs,
-          delay: start,
-          easing,
-          fill: 'both',
-        }));
+        anims.push(
+          host.animate(local, {
+            duration: step.durationMs,
+            delay: start,
+            easing,
+            fill: 'both',
+          }),
+        );
       }
     } catch {
       // 浏览器不支持某个属性时直接落到终态
@@ -463,7 +499,13 @@ export function playGroup(container: Element, group: AnimStep[]): PlayHandle {
     animations: anims,
     cancel: () => {
       cancelled = true;
-      anims.forEach((a) => { try { a.finish(); } catch { /* 已结束 */ } });
+      anims.forEach((a) => {
+        try {
+          a.finish();
+        } catch {
+          /* 已结束 */
+        }
+      });
       mediaCommands.forEach((command) => command.cancel());
       for (const node of exits) node.style.visibility = 'hidden';
     },

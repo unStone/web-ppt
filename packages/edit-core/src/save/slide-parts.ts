@@ -1,8 +1,6 @@
 import { relativeTarget, resolveRelationshipTarget } from '../clipboard-source';
 import type { EditDoc, SlideRecord } from '../types';
-import {
-  createXmlElement, createXmlText, insertXmlChildUnchecked, removeXmlChild, reorderXmlChildren,
-} from '../xml/nodes';
+import { createXmlElement, createXmlText, insertXmlChildUnchecked, removeXmlChild, reorderXmlChildren } from '../xml/nodes';
 import { removeXmlAttribute, setXmlAttribute } from '../xml/mutate';
 import { namespacedElement } from './xml-element';
 import { findXmlAttribute, findXmlChild, findXmlDescendant, xmlElementChildren } from '../xml/query';
@@ -38,10 +36,11 @@ export function createdSlideRelationships(slide: SlideRecord, source?: Uint8Arra
 }
 
 function availableRelationshipId(source?: Uint8Array): string {
-  const used = new Set(source
-    ? xmlElementChildren(parseXmlTree(source).root, { localName: 'Relationship' })
-      .flatMap((node) => elementAttribute(node, 'Id') ?? [])
-    : []);
+  const used = new Set(
+    source
+      ? xmlElementChildren(parseXmlTree(source).root, { localName: 'Relationship' }).flatMap((node) => elementAttribute(node, 'Id') ?? [])
+      : [],
+  );
   for (let serial = 1; ; serial++) if (!used.has(`rId${serial}`)) return `rId${serial}`;
 }
 
@@ -50,31 +49,36 @@ export function patchSlideLayoutRelationship(slide: SlideRecord, source?: Uint8A
   if (!slide.origin || !slide.layoutId) throw new Error(`页面 ${slide.id} 缺少版式写回身份`);
   if (!source) {
     const id = slide.creation?.layoutRelationshipId ?? availableRelationshipId();
-    return patchRelationshipPart(undefined, [{
-      sourceId: id,
-      targetId: id,
-      type: LAYOUT_REL,
-      target: relativeTarget(slide.origin.part, slide.layoutId),
-    }]);
+    return patchRelationshipPart(undefined, [
+      {
+        sourceId: id,
+        targetId: id,
+        type: LAYOUT_REL,
+        target: relativeTarget(slide.origin.part, slide.layoutId),
+      },
+    ]);
   }
   const tree = parseXmlTree(source);
   const relationships = xmlElementChildren(tree.root, { localName: 'Relationship' });
-  const relation = relationships.find((node) => elementAttribute(node, 'Type')?.endsWith('/slideLayout')
-    && elementAttribute(node, 'TargetMode') !== 'External'
-    && (slide.creation === undefined
-      || elementAttribute(node, 'Id') === slide.creation.layoutRelationshipId));
+  const relation = relationships.find(
+    (node) =>
+      elementAttribute(node, 'Type')?.endsWith('/slideLayout')
+      && elementAttribute(node, 'TargetMode') !== 'External'
+      && (slide.creation === undefined || elementAttribute(node, 'Id') === slide.creation.layoutRelationshipId),
+  );
   if (!relation) {
     const id = slide.creation?.layoutRelationshipId ?? availableRelationshipId(source);
-    return patchRelationshipPart(source, [{
-      sourceId: id,
-      targetId: id,
-      type: LAYOUT_REL,
-      target: relativeTarget(slide.origin.part, slide.layoutId),
-    }]);
+    return patchRelationshipPart(source, [
+      {
+        sourceId: id,
+        targetId: id,
+        type: LAYOUT_REL,
+        target: relativeTarget(slide.origin.part, slide.layoutId),
+      },
+    ]);
   }
   const target = relativeTarget(slide.origin.part, slide.layoutId);
-  if (elementAttribute(relation, 'Target') === target
-    && elementAttribute(relation, 'TargetMode') === undefined) return source;
+  if (elementAttribute(relation, 'Target') === target && elementAttribute(relation, 'TargetMode') === undefined) return source;
   setXmlAttribute(relation, 'Target', target);
   removeXmlAttribute(relation, 'TargetMode');
   return serializeXmlTreeBytes(tree);
@@ -87,11 +91,13 @@ export function patchSlideNumberFields(source: Uint8Array, slideNumber: number):
   let changed = false;
   const visit = (parent: XmlElement): void => {
     for (const child of xmlElementChildren(parent)) {
-      if (child.namespaceUri === DRAWINGML_NS && child.localName === 'fld'
-        && elementAttribute(child, 'type')?.toLowerCase() === 'slidenum') {
+      if (
+        child.namespaceUri === DRAWINGML_NS
+        && child.localName === 'fld'
+        && elementAttribute(child, 'type')?.toLowerCase() === 'slidenum'
+      ) {
         const text = findXmlChild(child, { localName: 't', namespaceUri: DRAWINGML_NS });
-        if (text && !(text.children.length === 1
-          && text.children[0]?.type === 'text' && text.children[0].value === value)) {
+        if (text && !(text.children.length === 1 && text.children[0]?.type === 'text' && text.children[0].value === value)) {
           for (const node of [...text.children]) removeXmlChild(text, node);
           insertXmlChildUnchecked(text, createXmlText(value));
           changed = true;
@@ -119,20 +125,17 @@ function elementAttribute(element: XmlElement, localName: string): string | unde
   return findXmlAttribute(element, { localName, namespaceUri: null })?.value;
 }
 
-function insertBeforeTrailingUnknown(
-  parent: XmlElement,
-  child: XmlElement,
-  knownLocalName: string,
-  knownNamespace: string,
-): void {
-  const before = xmlElementChildren(parent).find((candidate) =>
-    candidate.localName !== knownLocalName || candidate.namespaceUri !== knownNamespace) ?? null;
+function insertBeforeTrailingUnknown(parent: XmlElement, child: XmlElement, knownLocalName: string, knownNamespace: string): void {
+  const before =
+    xmlElementChildren(parent).find((candidate) => candidate.localName !== knownLocalName || candidate.namespaceUri !== knownNamespace)
+    ?? null;
   insertXmlChildUnchecked(parent, child, before);
 }
 
 function sectionListFor(root: XmlElement, create: boolean): XmlElement | null {
   let sectionList = findXmlDescendant(root, {
-    localName: 'sectionLst', namespaceUri: POWERPOINT_2010_NS,
+    localName: 'sectionLst',
+    namespaceUri: POWERPOINT_2010_NS,
   });
   if (sectionList || !create) return sectionList;
   let extensions = findXmlChild(root, { localName: 'extLst', namespaceUri: PRESENTATIONML_NS });
@@ -148,47 +151,49 @@ function sectionListFor(root: XmlElement, create: boolean): XmlElement | null {
   return sectionList;
 }
 
-function patchEditedSections(
-  root: XmlElement,
-  doc: EditDoc,
-  ids: ReadonlyMap<string, number>,
-): void {
+function patchEditedSections(root: XmlElement, doc: EditDoc, ids: ReadonlyMap<string, number>): void {
   const state = canonicalSectionState(doc);
   const sectionList = sectionListFor(root, state.order.length > 0);
   if (!sectionList) return;
   const sourceSections = xmlElementChildren(sectionList, {
-    localName: 'section', namespaceUri: POWERPOINT_2010_NS,
+    localName: 'section',
+    namespaceUri: POWERPOINT_2010_NS,
   });
-  const sourceById = new Map(sourceSections.flatMap((section) => {
-    const id = elementAttribute(section, 'id');
-    return id ? [[id, section] as const] : [];
-  }));
+  const sourceById = new Map(
+    sourceSections.flatMap((section) => {
+      const id = elementAttribute(section, 'id');
+      return id ? [[id, section] as const] : [];
+    }),
+  );
   const desiredSections = state.order.map((sectionId) => {
     const section = state.records[sectionId];
-    const node = sourceById.get(section.presentationId)
-      ?? namespacedElement(sectionList, POWERPOINT_2010_NS, 'section');
+    const node = sourceById.get(section.presentationId) ?? namespacedElement(sectionList, POWERPOINT_2010_NS, 'section');
     setXmlAttribute(node, 'name', section.name);
     setXmlAttribute(node, 'id', section.presentationId);
     let list = findXmlChild(node, {
-      localName: 'sldIdLst', namespaceUri: POWERPOINT_2010_NS,
+      localName: 'sldIdLst',
+      namespaceUri: POWERPOINT_2010_NS,
     });
     if (!list) {
       list = namespacedElement(node, POWERPOINT_2010_NS, 'sldIdLst');
       insertXmlChildUnchecked(node, list);
     }
     const sourceNodes = xmlElementChildren(list, {
-      localName: 'sldId', namespaceUri: POWERPOINT_2010_NS,
+      localName: 'sldId',
+      namespaceUri: POWERPOINT_2010_NS,
     });
     const nodesById = new Map(sourceNodes.map((child) => [Number(elementAttribute(child, 'id')), child]));
-    const desired = section.slideIds.map((slideId) => {
-      const id = ids.get(slideId);
-      if (id === undefined) throw new Error(`节 ${section.id} 的页面无法映射 presentation id：${slideId}`);
-      const current = nodesById.get(id);
-      if (current) return [current];
-      const child = namespacedElement(list, POWERPOINT_2010_NS, 'sldId');
-      setXmlAttribute(child, 'id', String(id));
-      return [child];
-    }).flat();
+    const desired = section.slideIds
+      .map((slideId) => {
+        const id = ids.get(slideId);
+        if (id === undefined) throw new Error(`节 ${section.id} 的页面无法映射 presentation id：${slideId}`);
+        const current = nodesById.get(id);
+        if (current) return [current];
+        const child = namespacedElement(list, POWERPOINT_2010_NS, 'sldId');
+        setXmlAttribute(child, 'id', String(id));
+        return [child];
+      })
+      .flat();
     for (const child of sourceNodes) {
       if (!desired.includes(child)) removeXmlChild(list, child);
     }
@@ -219,38 +224,47 @@ function patchSourceSections(
   removedSlideIds: ReadonlySet<number>,
 ): void {
   const sectionList = findXmlDescendant(root, {
-    localName: 'sectionLst', namespaceUri: POWERPOINT_2010_NS,
+    localName: 'sectionLst',
+    namespaceUri: POWERPOINT_2010_NS,
   });
   if (!sectionList) return;
   for (const section of xmlElementChildren(sectionList, {
-    localName: 'section', namespaceUri: POWERPOINT_2010_NS,
+    localName: 'section',
+    namespaceUri: POWERPOINT_2010_NS,
   })) {
     const list = findXmlChild(section, {
-      localName: 'sldIdLst', namespaceUri: POWERPOINT_2010_NS,
+      localName: 'sldIdLst',
+      namespaceUri: POWERPOINT_2010_NS,
     });
     if (!list) continue;
     const sourceNodes = xmlElementChildren(list, {
-      localName: 'sldId', namespaceUri: POWERPOINT_2010_NS,
+      localName: 'sldId',
+      namespaceUri: POWERPOINT_2010_NS,
     });
     // 锚点页本次同时删除时，副本仍继承复制瞬间的节归属。
-    const members = new Set(sourceNodes.flatMap((node) => {
-      const id = elementAttribute(node, 'id');
-      return id ? [Number(id)] : [];
-    }));
+    const members = new Set(
+      sourceNodes.flatMap((node) => {
+        const id = elementAttribute(node, 'id');
+        return id ? [Number(id)] : [];
+      }),
+    );
     for (const node of sourceNodes) {
       const id = Number(elementAttribute(node, 'id'));
       if (removedSlideIds.has(id)) removeXmlChild(list, node);
     }
-    const existing = sourceNodes.filter((node) =>
-      !removedSlideIds.has(Number(elementAttribute(node, 'id'))));
+    const existing = sourceNodes.filter((node) => !removedSlideIds.has(Number(elementAttribute(node, 'id'))));
     let advanced = true;
     while (advanced) {
       advanced = false;
       for (const slide of slides) {
         const creation = slide.creation;
-        if (!creation || members.has(creation.presentationSlideId)
+        if (
+          !creation
+          || members.has(creation.presentationSlideId)
           || creation.sectionAfterSlideId === undefined
-          || !members.has(creation.sectionAfterSlideId)) continue;
+          || !members.has(creation.sectionAfterSlideId)
+        )
+          continue;
         members.add(creation.presentationSlideId);
         advanced = true;
       }
@@ -293,11 +307,7 @@ export function patchGeneratedPresentationMetadata(source: Uint8Array, doc: Edit
   return serializeXmlTreeBytes(tree);
 }
 
-export function patchPresentationSlides(
-  source: Uint8Array,
-  relationships: Uint8Array,
-  doc: EditDoc,
-): Uint8Array {
+export function patchPresentationSlides(source: Uint8Array, relationships: Uint8Array, doc: EditDoc): Uint8Array {
   const tree = parseXmlTree(source);
   const list = findXmlChild(tree.root, { localName: 'sldIdLst', namespaceUri: PRESENTATIONML_NS });
   if (!list) throw new Error('presentation.xml 缺少 p:sldIdLst');
@@ -307,7 +317,8 @@ export function patchPresentationSlides(
   const removedSlideIds = new Set<number>();
   for (const node of xmlElementChildren(list, { localName: 'sldId', namespaceUri: PRESENTATIONML_NS })) {
     const rid = findXmlAttribute(node, {
-      localName: 'id', namespaceUri: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+      localName: 'id',
+      namespaceUri: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
     })?.value;
     const part = rid ? targets.get(rid) : undefined;
     if (part && removedParts.has(part)) {
@@ -337,9 +348,7 @@ export function patchPresentationSlides(
   reorderXmlChildren(list, desired);
   const finalSlideIds = desired.map((node) => Number(elementAttribute(node, 'id')));
   if (doc.sections.edited) {
-    patchEditedSections(tree.root, doc, new Map(doc.slideOrder.map((id, index) => [
-      id, finalSlideIds[index],
-    ])));
+    patchEditedSections(tree.root, doc, new Map(doc.slideOrder.map((id, index) => [id, finalSlideIds[index]])));
   } else {
     patchSourceSections(tree.root, activeCreated, finalSlideIds, removedSlideIds);
   }
@@ -361,44 +370,56 @@ export function patchPresentationRelationships(source: Uint8Array, doc: EditDoc)
       removeXmlChild(tree.root, node);
     }
   }
-  return patchRelationshipPart(serializeXmlTreeBytes(tree), createdSlides(doc).map((slide) => ({
-    sourceId: slide.creation!.presentationRelationshipId,
-    targetId: slide.creation!.presentationRelationshipId,
-    type: SLIDE_REL,
-    target: relativeTarget('ppt/presentation.xml', slide.origin!.part),
-  })));
+  return patchRelationshipPart(
+    serializeXmlTreeBytes(tree),
+    createdSlides(doc).map((slide) => ({
+      sourceId: slide.creation!.presentationRelationshipId,
+      targetId: slide.creation!.presentationRelationshipId,
+      type: SLIDE_REL,
+      target: relativeTarget('ppt/presentation.xml', slide.origin!.part),
+    })),
+  );
 }
 
-export function patchSlideContentTypes(
-  source: Uint8Array,
-  doc: EditDoc,
-  removedParts: ReadonlySet<string> = new Set(),
-): Uint8Array {
+export function patchSlideContentTypes(source: Uint8Array, doc: EditDoc, removedParts: ReadonlySet<string> = new Set()): Uint8Array {
   const tree = parseXmlTree(source);
   for (const node of xmlElementChildren(tree.root, { localName: 'Override' })) {
     const part = findXmlAttribute(node, { localName: 'PartName', namespaceUri: null })?.value;
     if (part && removedParts.has(part.replace(/^\//, ''))) removeXmlChild(tree.root, node);
   }
-  const existing = new Set(xmlElementChildren(tree.root, { localName: 'Override' })
-    .flatMap((node) => {
+  const existing = new Set(
+    xmlElementChildren(tree.root, { localName: 'Override' }).flatMap((node) => {
       const part = findXmlAttribute(node, { localName: 'PartName', namespaceUri: null })?.value;
       return part ? [part] : [];
-    }));
+    }),
+  );
   for (const slide of createdSlides(doc)) {
     const part = `/${slide.origin!.part}`;
     if (!existing.has(part)) {
-      insertXmlChildUnchecked(tree.root, createXmlElement('Override', {
-        attributes: [['PartName', part], ['ContentType', SLIDE_CONTENT_TYPE]],
-      }));
+      insertXmlChildUnchecked(
+        tree.root,
+        createXmlElement('Override', {
+          attributes: [
+            ['PartName', part],
+            ['ContentType', SLIDE_CONTENT_TYPE],
+          ],
+        }),
+      );
       existing.add(part);
     }
   }
   for (const slide of Object.values(doc.slides)) {
     const notesPart = slide.notes?.targetPart;
     if (!notesPart || existing.has(`/${notesPart}`)) continue;
-    insertXmlChildUnchecked(tree.root, createXmlElement('Override', {
-      attributes: [['PartName', `/${notesPart}`], ['ContentType', NOTES_CONTENT_TYPE]],
-    }));
+    insertXmlChildUnchecked(
+      tree.root,
+      createXmlElement('Override', {
+        attributes: [
+          ['PartName', `/${notesPart}`],
+          ['ContentType', NOTES_CONTENT_TYPE],
+        ],
+      }),
+    );
     existing.add(`/${notesPart}`);
   }
   return serializeXmlTreeBytes(tree);

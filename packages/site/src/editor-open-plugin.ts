@@ -22,7 +22,9 @@ export interface EditorOpening {
 }
 
 declare module 'cordis' {
-  interface Context { editorOpening: EditorOpening }
+  interface Context {
+    editorOpening: EditorOpening;
+  }
 }
 
 /** 本地选择与拖放共用同一入口，避免两套替换/忙碌判断逐渐分叉。 */
@@ -32,12 +34,22 @@ function bindEditorFileOpen(
   open: (file: File | undefined) => void,
   signal: AbortSignal,
 ): void {
-  input.addEventListener('change', () => {
-    open(input.files?.[0]);
-    input.value = '';
-  }, { signal });
+  input.addEventListener(
+    'change',
+    () => {
+      open(input.files?.[0]);
+      input.value = '';
+    },
+    { signal },
+  );
   let dragDepth = 0;
-  signal.addEventListener('abort', () => { dropLayer.hidden = true; }, { once: true });
+  signal.addEventListener(
+    'abort',
+    () => {
+      dropLayer.hidden = true;
+    },
+    { once: true },
+  );
   const inDialog = (event: DragEvent): boolean => {
     const target = event.target;
     if (!(target instanceof Element) || !target.closest('dialog[open]')) return false;
@@ -47,27 +59,46 @@ function bindEditorFileOpen(
     if (!(target instanceof HTMLInputElement && target.type === 'file')) event.preventDefault();
     return true;
   };
-  window.addEventListener('dragenter', (event) => {
-    if (inDialog(event)) return;
-    if (!event.dataTransfer?.types.includes('Files')) return;
-    event.preventDefault();
-    dragDepth++;
-    dropLayer.hidden = false;
-  }, { signal });
-  window.addEventListener('dragover', (event) => {
-    if (inDialog(event)) return;
-    if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
-  }, { signal });
-  window.addEventListener('dragleave', () => {
-    if (--dragDepth <= 0) { dragDepth = 0; dropLayer.hidden = true; }
-  }, { signal });
-  window.addEventListener('drop', (event) => {
-    if (inDialog(event)) return;
-    event.preventDefault();
-    dragDepth = 0;
-    dropLayer.hidden = true;
-    open(event.dataTransfer?.files[0]);
-  }, { signal });
+  window.addEventListener(
+    'dragenter',
+    (event) => {
+      if (inDialog(event)) return;
+      if (!event.dataTransfer?.types.includes('Files')) return;
+      event.preventDefault();
+      dragDepth++;
+      dropLayer.hidden = false;
+    },
+    { signal },
+  );
+  window.addEventListener(
+    'dragover',
+    (event) => {
+      if (inDialog(event)) return;
+      if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
+    },
+    { signal },
+  );
+  window.addEventListener(
+    'dragleave',
+    () => {
+      if (--dragDepth <= 0) {
+        dragDepth = 0;
+        dropLayer.hidden = true;
+      }
+    },
+    { signal },
+  );
+  window.addEventListener(
+    'drop',
+    (event) => {
+      if (inDialog(event)) return;
+      event.preventDefault();
+      dragDepth = 0;
+      dropLayer.hidden = true;
+      open(event.dataTransfer?.files[0]);
+    },
+    { signal },
+  );
 }
 
 /** 打开意图跨解析、恢复和模板选择持续存在；应用卸载必须取消整条链路。 */
@@ -76,18 +107,30 @@ export const editorOpenPlugin = {
   inject: ['editorRecovery', 'editorFiles'],
   apply(ctx: Context, { host, notice }: { host: EditorOpenHost; notice: SiteNotice }) {
     ctx.effect(function* () {
-      const lifetime = new AbortController(), tasks = new Set<Promise<void>>();
-      let generation = 0, disposed = false, request: AbortController | undefined;
+      const lifetime = new AbortController(),
+        tasks = new Set<Promise<void>>();
+      let generation = 0,
+        disposed = false,
+        request: AbortController | undefined;
       let example: AbortController | undefined;
       let closing: Promise<void> | undefined;
       const track = (action: () => Promise<void>) => {
         if (disposed) return Promise.resolve();
         let resolve!: () => void, reject!: (error: unknown) => void;
-        const task = new Promise<void>((done, fail) => { resolve = done; reject = fail; });
+        const task = new Promise<void>((done, fail) => {
+          resolve = done;
+          reject = fail;
+        });
         tasks.add(task);
-        void task.then(() => tasks.delete(task), () => tasks.delete(task));
-        try { void action().then(resolve, reject); }
-        catch (error) { reject(error); }
+        void task.then(
+          () => tasks.delete(task),
+          () => tasks.delete(task),
+        );
+        try {
+          void action().then(resolve, reject);
+        } catch (error) {
+          reject(error);
+        }
         return task;
       };
       const begin = () => {
@@ -107,7 +150,9 @@ export const editorOpenPlugin = {
         return host.confirmReplacement();
       };
       const service: EditorOpening = {
-        get generation() { return generation; },
+        get generation() {
+          return generation;
+        },
         open(source, name) {
           return track(() => host.open(source, name, {}, begin()));
         },
@@ -120,7 +165,10 @@ export const editorOpenPlugin = {
               if (signal.aborted) return;
               const created = await chooseNewDocument(signal);
               if (signal.aborted) return;
-              if (!created) { host.cancelled(); return; }
+              if (!created) {
+                host.cancelled();
+                return;
+              }
               await host.open(created.bytes, created.fileName, { newDocument: true }, signal);
             } catch (error) {
               if (signal.aborted) return;
@@ -133,7 +181,7 @@ export const editorOpenPlugin = {
           if (generation) return Promise.resolve();
           return track(async () => {
             example?.abort();
-            const controller = example = new AbortController();
+            const controller = (example = new AbortController());
             try {
               const response = await fetch(url, { signal: controller.signal });
               if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -141,8 +189,8 @@ export const editorOpenPlugin = {
               // 示例下载不代表用户意图，迟到的结果不能覆盖本地打开或模板选择。
               if (!controller.signal.aborted && !generation) await service.open(bytes, name);
             } catch (error) {
-              if (!controller.signal.aborted && !generation) host.failed(message(
-                '示例下载失败：{detail}。仍可打开本地文件或新建文稿。', { detail: whyFailed(error) }));
+              if (!controller.signal.aborted && !generation)
+                host.failed(message('示例下载失败：{detail}。仍可打开本地文件或新建文稿。', { detail: whyFailed(error) }));
             }
           });
         },
@@ -154,15 +202,26 @@ export const editorOpenPlugin = {
           request?.abort();
           example?.abort();
           ctx.editorRecovery.cancelPending();
-          return closing = Promise.allSettled([...tasks]).then(() => {});
+          return (closing = Promise.allSettled([...tasks]).then(() => {}));
         },
       };
       yield () => service.dispose();
       yield ctx.provide('editorOpening', service);
-      host.newFile.addEventListener('click', () => { void service.create(); }, { signal: lifetime.signal });
-      bindEditorFileOpen(host.input, host.dropLayer, file => {
-        if (file && allowed(false)) void service.open(file, file.name);
-      }, lifetime.signal);
+      host.newFile.addEventListener(
+        'click',
+        () => {
+          void service.create();
+        },
+        { signal: lifetime.signal },
+      );
+      bindEditorFileOpen(
+        host.input,
+        host.dropLayer,
+        (file) => {
+          if (file && allowed(false)) void service.open(file, file.name);
+        },
+        lifetime.signal,
+      );
     });
   },
 };

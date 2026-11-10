@@ -1,11 +1,11 @@
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const textOf = (element) => element.text.paragraphs
-  .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n');
+const textOf = (element) => element.text.paragraphs.map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n');
 
 function selectFirstCharacter(root) {
-  const marker = [...root.querySelectorAll('[data-r][data-from]')]
-    .find((candidate) => Number(candidate.dataset.to) > Number(candidate.dataset.from));
+  const marker = [...root.querySelectorAll('[data-r][data-from]')].find(
+    (candidate) => Number(candidate.dataset.to) > Number(candidate.dataset.from),
+  );
   const walker = document.createTreeWalker(marker, NodeFilter.SHOW_TEXT);
   const text = walker.nextNode();
   if (!text?.textContent.length) throw new Error('engine 固件缺少可选文字');
@@ -23,9 +23,11 @@ function linePositionError(root) {
   let error = 0;
   for (const line of root.querySelectorAll('[data-engine-line]')) {
     const lineBox = line.getBoundingClientRect();
-    error = Math.max(error,
+    error = Math.max(
+      error,
       Math.abs(lineBox.left - box.left - Number(line.dataset.x)),
-      Math.abs(lineBox.top - box.top - Number(line.dataset.y)));
+      Math.abs(lineBox.top - box.top - Number(line.dataset.y)),
+    );
   }
   return error;
 }
@@ -76,7 +78,11 @@ export async function runEditorEngineAutoProbeBrowserContract() {
     }
   <\/script>`;
   document.body.append(frame);
-  try { return await result; } finally { frame.remove(); }
+  try {
+    return await result;
+  } finally {
+    frame.remove();
+  }
 }
 
 /** Safari 安全编辑面在真实 Chrome 中也必须以 engine 行盒完整上屏。 */
@@ -88,19 +94,27 @@ export async function runEditorEngineTextBrowserContract({ openEditor, load }) {
   mount.className = 'contract-offscreen';
   document.body.append(mount);
   const view = session.mount(mount, { mode: 'edit', textMode: 'svg', zoom: 1 });
-  const record = Object.values(session.editor.doc.elements)
-    .find((candidate) => candidate.src.name === 'Engine 跨行基准');
+  const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === 'Engine 跨行基准');
   const partition = mount.querySelector(`[data-edit-id="${record.id}"]`);
-  partition.dispatchEvent(new MouseEvent('dblclick', {
-    bubbles: true, composed: true, cancelable: true,
-  }));
+  partition.dispatchEvent(
+    new MouseEvent('dblclick', {
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    }),
+  );
   let editable = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
   let engine = editable?.querySelector('[data-layout="engine"]');
   const initialLines = engine?.querySelectorAll('[data-engine-line]').length ?? 0;
   const positionError = engine ? linePositionError(engine) : Number.POSITIVE_INFINITY;
-  if (!engine || initialLines < 4 || engine.style.whiteSpace !== 'pre'
-    || positionError > 0.25 || mount.querySelector('[data-ppt-layer="static"] foreignObject')
-    || !mount.querySelector('[data-ppt-layer="static"] text')) {
+  if (
+    !engine
+    || initialLines < 4
+    || engine.style.whiteSpace !== 'pre'
+    || positionError > 0.25
+    || mount.querySelector('[data-ppt-layer="static"] foreignObject')
+    || !mount.querySelector('[data-ppt-layer="static"] text')
+  ) {
     throw new Error(`真实 engine 行盒偏差 ${positionError.toFixed(3)}px，行数=${initialLines}`);
   }
 
@@ -112,23 +126,29 @@ export async function runEditorEngineTextBrowserContract({ openEditor, load }) {
     selectFirstCharacter(editable);
     const started = performance.now();
     const event = new InputEvent('beforeinput', {
-      bubbles: true, composed: true, cancelable: true, inputType: 'insertText', data: inserted,
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+      inputType: 'insertText',
+      data: inserted,
     });
     const accepted = editable.dispatchEvent(event);
     engine = mount.querySelector(`[data-ppt-text-editor="${record.id}"] [data-layout="engine"]`);
     engine?.getBoundingClientRect();
     samples.push(performance.now() - started);
     const currentLength = textOf(session.editor.effectiveElement(record.id)).length;
-    if (accepted || currentLength !== originalLength - 1 + inserted.length
-      || (engine?.querySelectorAll('[data-engine-line]').length ?? 0) <= initialLines) {
+    if (
+      accepted
+      || currentLength !== originalLength - 1 + inserted.length
+      || (engine?.querySelectorAll('[data-engine-line]').length ?? 0) <= initialLines
+    ) {
       throw new Error('2,000 字符没有进入 engine 模型并完成行盒重算');
     }
     session.editor.undo();
   }
   samples.sort((left, right) => left - right);
   const p95 = samples[Math.floor(samples.length * 0.95)];
-  if (session.editor.history.undoCount !== 0
-    || textOf(session.editor.effectiveElement(record.id)).length !== originalLength) {
+  if (session.editor.history.undoCount !== 0 || textOf(session.editor.effectiveElement(record.id)).length !== originalLength) {
     throw new Error('engine 2,000 字符输入撤销后的模型或历史不一致');
   }
   recordPerformanceBudget('engine 2,000 字符完整上屏 p95', p95, 30);

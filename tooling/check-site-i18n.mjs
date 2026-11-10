@@ -10,8 +10,20 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/site-i18n');
 mkdirSync(out, { recursive: true });
 const bundle = join(out, 'build.mjs');
-execFileSync('npx', ['esbuild', 'packages/site/i18n-build.ts', '--bundle', '--format=esm',
-  '--platform=node', '--packages=external', '--log-level=error', `--outfile=${bundle}`], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    'packages/site/i18n-build.ts',
+    '--bundle',
+    '--format=esm',
+    '--platform=node',
+    '--packages=external',
+    '--log-level=error',
+    `--outfile=${bundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const { siteI18n } = await import(pathToFileURL(bundle).href);
 const transform = siteI18n().transformIndexHtml.handler;
 for (const page of SITE_PAGES) {
@@ -29,7 +41,10 @@ if (!process.argv.includes('--source-only')) {
       if (entry.isDirectory()) inspect(path);
       else if (/\.(?:c|m)?js$/.test(entry.name)) {
         const source = readFileSync(path, 'utf8');
-        assert.ok(sentinels.every((sentinel) => !source.includes(sentinel)), `站点词条泄漏到发布包：${path}`);
+        assert.ok(
+          sentinels.every((sentinel) => !source.includes(sentinel)),
+          `站点词条泄漏到发布包：${path}`,
+        );
       }
     }
   }
@@ -53,17 +68,26 @@ if (!process.argv.includes('--source-only')) {
   const siteRoot = join(root, 'packages/site') + sep;
   const assertBoundary = (path) => {
     const graph = JSON.parse(readFileSync(path, 'utf8'));
-    assert.ok(Object.keys(graph.inputs).every((file) => !resolve(root, file).startsWith(siteRoot)),
-      '发布入口依赖图不能包含站点模块');
-    assert.ok(Object.values(graph.inputs).every((module) => module.imports.every((dependency) =>
-      !/^@web-ppt\/site(?:\/|$)/.test(dependency.path))), '发布入口不能外置导入站点包');
+    assert.ok(
+      Object.keys(graph.inputs).every((file) => !resolve(root, file).startsWith(siteRoot)),
+      '发布入口依赖图不能包含站点模块',
+    );
+    assert.ok(
+      Object.values(graph.inputs).every((module) => module.imports.every((dependency) => !/^@web-ppt\/site(?:\/|$)/.test(dependency.path))),
+      '发布入口不能外置导入站点包',
+    );
   };
-  execFileSync('npx', [...args, ...entryPoints, '--splitting', `--metafile=${metadata}`, `--outdir=${join(out, 'published')}`], { cwd: root, stdio: 'inherit' });
+  execFileSync('npx', [...args, ...entryPoints, '--splitting', `--metafile=${metadata}`, `--outdir=${join(out, 'published')}`], {
+    cwd: root,
+    stdio: 'inherit',
+  });
   assertBoundary(metadata);
   // 只泄漏编辑页目录时不含首页哨兵；用真实构建图证明这类泄漏也会被拒绝。
   const probe = join(out, 'boundary-probe.json');
   execFileSync('npx', [...args, `--metafile=${probe}`, `--outfile=${join(out, 'boundary-probe.js')}`], {
-    cwd: root, input: "export { editorMessages } from './packages/site/src/i18n/en-editor.ts';", stdio: ['pipe', 'inherit', 'inherit'],
+    cwd: root,
+    input: "export { editorMessages } from './packages/site/src/i18n/en-editor.ts';",
+    stdio: ['pipe', 'inherit', 'inherit'],
   });
   assert.throws(() => assertBoundary(probe), /发布入口依赖图不能包含站点模块/);
 }

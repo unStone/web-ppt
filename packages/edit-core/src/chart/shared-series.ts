@@ -15,16 +15,17 @@ export function projectSharedSeries(state: ChartDatasetState, removals: SharedSe
 
 /** 删除的是图表中的系列；只有全部原生视图都释放的单元格才可清空。 */
 export function unusedSharedCells(doc: EditDoc, workbook: string): Set<string> {
-  const owned = new Set<string>(), live = new Set<string>();
+  const owned = new Set<string>(),
+    live = new Set<string>();
   const group = sharedGroupForWorkbook(doc, workbook);
   if (!group) return owned;
   for (const { state: source } of group.charts) {
     const current = projectSharedDataset(doc, group, structuredClone(source));
-    const paths = new Set(sharedCellFields(current).map(field => JSON.stringify(field.path)));
+    const paths = new Set(sharedCellFields(current).map((field) => JSON.stringify(field.path)));
     for (const field of sharedCellFields(source)) {
       owned.add(field.key);
       if (paths.has(JSON.stringify(field.path))) live.add(field.key);
     }
   }
-  return new Set([...owned].filter(key => !live.has(key)));
+  return new Set([...owned].filter((key) => !live.has(key)));
 }

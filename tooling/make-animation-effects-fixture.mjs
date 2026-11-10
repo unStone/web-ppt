@@ -6,33 +6,52 @@ import { deck, label, nextShapeId, px, slideXml } from './lib/ooxml.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const groups = [
   [
-    ['appear', 1, 0, ''], ['fade', 10, 0, 'fade'],
-    ['fly-bottom', 2, 4, 'slide(fromBottom)'], ['fly-left', 2, 8, 'slide(fromLeft)'],
-    ['wipe-up', 22, 1, 'wipe(up)'], ['zoom', 23, 16, 'scale'],
-    ['box-in', 4, 16, 'box(in)'], ['box-out', 4, 32, 'box(out)'],
+    ['appear', 1, 0, ''],
+    ['fade', 10, 0, 'fade'],
+    ['fly-bottom', 2, 4, 'slide(fromBottom)'],
+    ['fly-left', 2, 8, 'slide(fromLeft)'],
+    ['wipe-up', 22, 1, 'wipe(up)'],
+    ['zoom', 23, 16, 'scale'],
+    ['box-in', 4, 16, 'box(in)'],
+    ['box-out', 4, 32, 'box(out)'],
   ],
   [
-    ['blinds-h', 3, 5, 'blinds(horizontal)'], ['blinds-v', 3, 10, 'blinds(vertical)'],
-    ['checker-across', 5, 5, 'checkerboard(across)'], ['checker-down', 5, 10, 'checkerboard(down)'],
-    ['random-bars-h', 14, 5, 'randombar(horizontal)'], ['random-bars-v', 14, 10, 'randombar(vertical)'],
-    ['strips-dl', 18, 12, 'strips(downLeft)'], ['strips-ul', 18, 9, 'strips(upLeft)'],
+    ['blinds-h', 3, 5, 'blinds(horizontal)'],
+    ['blinds-v', 3, 10, 'blinds(vertical)'],
+    ['checker-across', 5, 5, 'checkerboard(across)'],
+    ['checker-down', 5, 10, 'checkerboard(down)'],
+    ['random-bars-h', 14, 5, 'randombar(horizontal)'],
+    ['random-bars-v', 14, 10, 'randombar(vertical)'],
+    ['strips-dl', 18, 12, 'strips(downLeft)'],
+    ['strips-ul', 18, 9, 'strips(upLeft)'],
   ],
   [
-    ['strips-dr', 18, 3, 'strips(downRight)'], ['strips-ur', 18, 6, 'strips(upRight)'],
-    ['circle-in', 6, 16, 'circle(in)'], ['circle-out', 6, 32, 'circle(out)'],
-    ['diamond-in', 8, 16, 'diamond(in)'], ['diamond-out', 8, 32, 'diamond(out)'],
-    ['plus-in', 13, 16, 'plus(in)'], ['plus-out', 13, 32, 'plus(out)'],
+    ['strips-dr', 18, 3, 'strips(downRight)'],
+    ['strips-ur', 18, 6, 'strips(upRight)'],
+    ['circle-in', 6, 16, 'circle(in)'],
+    ['circle-out', 6, 32, 'circle(out)'],
+    ['diamond-in', 8, 16, 'diamond(in)'],
+    ['diamond-out', 8, 32, 'diamond(out)'],
+    ['plus-in', 13, 16, 'plus(in)'],
+    ['plus-out', 13, 32, 'plus(out)'],
   ],
   [
-    ['split-out-v', 16, 42, 'barn(outVertical)'], ['split-in-v', 16, 26, 'barn(inVertical)'],
-    ['split-out-h', 16, 37, 'barn(outHorizontal)'], ['wheel-1', 21, 1, 'wheel(1)'],
-    ['wheel-4', 21, 4, 'wheel(4)'], ['wheel-8', 21, 8, 'wheel(8)'],
-    ['grow-turn', 31, 0, 'scale'], ['spin-in', 61, 0, 'rotation'],
+    ['split-out-v', 16, 42, 'barn(outVertical)'],
+    ['split-in-v', 16, 26, 'barn(inVertical)'],
+    ['split-out-h', 16, 37, 'barn(outHorizontal)'],
+    ['wheel-1', 21, 1, 'wheel(1)'],
+    ['wheel-4', 21, 4, 'wheel(4)'],
+    ['wheel-8', 21, 8, 'wheel(8)'],
+    ['grow-turn', 31, 0, 'scale'],
+    ['spin-in', 61, 0, 'rotation'],
   ],
   [
-    ['float', 30, 0, 'slide(fromBottom)'], ['bounce', 26, 0, 'slide(fromTop)'],
-    ['dissolve', 9, 0, 'dissolve'], ['stretch', 17, 10, 'scale'],
-    ['swivel', 19, 0, 'rotation'], ['random', 24, 0, 'fade'],
+    ['float', 30, 0, 'slide(fromBottom)'],
+    ['bounce', 26, 0, 'slide(fromTop)'],
+    ['dissolve', 9, 0, 'dissolve'],
+    ['stretch', 17, 10, 'scale'],
+    ['swivel', 19, 0, 'rotation'],
+    ['random', 24, 0, 'fade'],
   ],
   [
     ['exit-circle', 6, 16, 'circle(in)', 'exit'],
@@ -44,10 +63,14 @@ const groups = [
   ],
   // PowerPoint 实际写出的伸展 / 挥舞：没有 animScale / animRot，只有 ppt_* 属性动画。
   [
-    ['stretch-across', 17, 10, 'ppt-stretch'], ['stretch-bottom', 17, 4, 'ppt-stretch'],
-    ['stretch-left', 17, 8, 'ppt-stretch'], ['stretch-top', 17, 1, 'ppt-stretch'],
-    ['stretch-right', 17, 2, 'ppt-stretch'], ['swivel-vert', 19, 10, 'ppt-swivel'],
-    ['swivel-horz', 19, 5, 'ppt-swivel'], ['exit-stretch-bottom', 17, 4, 'ppt-stretch', 'exit'],
+    ['stretch-across', 17, 10, 'ppt-stretch'],
+    ['stretch-bottom', 17, 4, 'ppt-stretch'],
+    ['stretch-left', 17, 8, 'ppt-stretch'],
+    ['stretch-top', 17, 1, 'ppt-stretch'],
+    ['stretch-right', 17, 2, 'ppt-stretch'],
+    ['swivel-vert', 19, 10, 'ppt-swivel'],
+    ['swivel-horz', 19, 5, 'ppt-swivel'],
+    ['exit-stretch-bottom', 17, 4, 'ppt-stretch', 'exit'],
   ],
 ];
 
@@ -60,7 +83,7 @@ const STRETCH_ANCHOR = {
 };
 
 function propertyAnim(id, target, name, from, to, formula) {
-  const value = (raw) => /^[0-9.]+$/.test(raw) ? `<p:fltVal val="${raw}"/>` : `<p:strVal val="${raw}"/>`;
+  const value = (raw) => (/^[0-9.]+$/.test(raw) ? `<p:fltVal val="${raw}"/>` : `<p:strVal val="${raw}"/>`);
   return `<p:anim calcmode="lin" valueType="num"><p:cBhvr><p:cTn id="${id}" dur="1200" fill="hold"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl><p:attrNameLst><p:attrName>${name}</p:attrName></p:attrNameLst></p:cBhvr><p:tavLst><p:tav tm="0"${formula ? ` fmla="${formula}"` : ''}><p:val>${value(from)}</p:val></p:tav><p:tav tm="100000"><p:val>${value(to)}</p:val></p:tav></p:tavLst></p:anim>`;
 }
 
@@ -69,17 +92,21 @@ function powerPointBody(filter, subtype, kind, target, index) {
   if (filter === 'ppt-swivel') {
     const turning = subtype === 5 ? 'ppt_h' : 'ppt_w';
     const fixed = subtype === 5 ? 'ppt_w' : 'ppt_h';
-    return propertyAnim(id, target, turning, '0', '1', `#${turning}*sin(2.5*pi*$)`)
+    return (
+      propertyAnim(id, target, turning, '0', '1', `#${turning}*sin(2.5*pi*$)`)
       + propertyAnim(id + 1, target, fixed, `#${fixed}`, `#${fixed}`)
-      + `<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${id + 2}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animEffect>`;
+      + `<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${id + 2}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animEffect>`
+    );
   }
   // 退场把起止对调：从原尺寸缩回同一条边。
-  const pair = (from, to) => kind === 'exit' ? [to, from] : [from, to];
+  const pair = (from, to) => (kind === 'exit' ? [to, from] : [from, to]);
   const [x, y, w, h] = STRETCH_ANCHOR[subtype];
-  return propertyAnim(id, target, 'ppt_x', ...pair(x, '#ppt_x'))
+  return (
+    propertyAnim(id, target, 'ppt_x', ...pair(x, '#ppt_x'))
     + propertyAnim(id + 1, target, 'ppt_y', ...pair(y, '#ppt_y'))
     + propertyAnim(id + 2, target, 'ppt_w', ...pair(w, '#ppt_w'))
-    + propertyAnim(id + 3, target, 'ppt_h', ...pair(h, '#ppt_h'));
+    + propertyAnim(id + 3, target, 'ppt_h', ...pair(h, '#ppt_h'))
+  );
 }
 
 function shape(index, entry) {
@@ -100,12 +127,12 @@ function effect(entry, target, index) {
   const body = filter.startsWith('ppt-')
     ? powerPointBody(filter, subtype, kind, target, index)
     : filter === ''
-    ? `<p:set><p:cBhvr><p:cTn id="${index + 200}" dur="1"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set>`
-    : filter === 'scale'
-    ? `<p:animScale><p:cBhvr><p:cTn id="${index + 200}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr><p:from x="${scaleFrom}" y="${scaleFrom}"/><p:to x="100000" y="100000"/></p:animScale>${name === 'grow-turn' ? `<p:animRot by="5400000"><p:cBhvr><p:cTn id="${index + 300}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animRot>` : ''}`
-    : filter === 'rotation'
-      ? `<p:animRot by="10800000"><p:cBhvr><p:cTn id="${index + 200}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animRot>`
-      : `<p:animEffect transition="${kind === 'exit' ? 'out' : 'in'}" filter="${filter}"><p:cBhvr><p:cTn id="${index + 200}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animEffect>`;
+      ? `<p:set><p:cBhvr><p:cTn id="${index + 200}" dur="1"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set>`
+      : filter === 'scale'
+        ? `<p:animScale><p:cBhvr><p:cTn id="${index + 200}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr><p:from x="${scaleFrom}" y="${scaleFrom}"/><p:to x="100000" y="100000"/></p:animScale>${name === 'grow-turn' ? `<p:animRot by="5400000"><p:cBhvr><p:cTn id="${index + 300}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animRot>` : ''}`
+        : filter === 'rotation'
+          ? `<p:animRot by="10800000"><p:cBhvr><p:cTn id="${index + 200}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animRot>`
+          : `<p:animEffect transition="${kind === 'exit' ? 'out' : 'in'}" filter="${filter}"><p:cBhvr><p:cTn id="${index + 200}" dur="1200"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animEffect>`;
   const category = kind === 'exit' ? 'exit' : kind === 'emph' ? 'emph' : 'entr';
   return `<p:par><p:cTn id="${index + 10}" presetID="${preset}" presetSubtype="${subtype}" presetClass="${category}" nodeType="clickEffect" dur="1200" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>${body}</p:childTnLst></p:cTn></p:par>`;
 }

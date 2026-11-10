@@ -1,8 +1,16 @@
 import { TEXT_RUN_DIRECT_BITS } from '../edit-metadata';
 import { tableStyleCellAppearance } from '../table-style';
 import type {
-  CellBorders, ElementBase, Fill, Stroke, TableCell, TableCreationDefaults, TableElement,
-  TableRow, TableStyleDefinition, TableStylePart,
+  CellBorders,
+  ElementBase,
+  Fill,
+  Stroke,
+  TableCell,
+  TableCreationDefaults,
+  TableElement,
+  TableRow,
+  TableStyleDefinition,
+  TableStylePart,
 } from '../types';
 import { attr, boolAttr, emu, kid, kids, numAttr, parseXml } from '../xml';
 import { childColor } from './color';
@@ -67,9 +75,7 @@ function resolvedStyle(tableStyles: Element | null, styleId: string | null): Res
   const fallback = list.find((style) => attr(style, 'styleId')?.toUpperCase() === def?.toUpperCase());
   if (fallback && tableStyles) return { style: fallback, namespaceRoot: tableStyles, source: 'document' };
   const builtInFallback = builtInTableStyle(def);
-  return builtInFallback
-    ? { ...builtInFallback, namespaceRoot: builtInFallback.root, source: 'builtin' }
-    : null;
+  return builtInFallback ? { ...builtInFallback, namespaceRoot: builtInFallback.root, source: 'builtin' } : null;
 }
 
 function styleParts(style: Element | null): TableStyleParts | null {
@@ -99,11 +105,7 @@ const BORDER_SIDES: readonly [keyof CellBorders, string, string][] = [
   ['b', 'bottom', 'lnB'],
 ];
 
-function semanticPart(
-  part: Element | null,
-  env: Env,
-  format: TableFormatReader,
-): TableStylePart | undefined {
+function semanticPart(part: Element | null, env: Env, format: TableFormatReader): TableStylePart | undefined {
   if (!part) return undefined;
   const tcStyle = kid(part, 'tcStyle');
   const fill = format.fill(kid(tcStyle, 'fill') ?? tcStyle, env);
@@ -128,8 +130,7 @@ function semanticPart(
 }
 
 function escapeXml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function namespaceAttributes(root: Element): readonly { name: string; value: string }[] {
@@ -148,30 +149,38 @@ function elementMarkup(
   const attributes = [
     ...inheritedNamespaces.filter((item) => !own.has(item.name)),
     ...Array.from(element.attributes).map((item) => ({ name: item.name, value: item.value })),
-  ].map((item) => ` ${item.name}="${escapeXml(item.value)}"`).join('');
+  ]
+    .map((item) => ` ${item.name}="${escapeXml(item.value)}"`)
+    .join('');
   const nodes = Array.from((element as unknown as { childNodes: readonly unknown[] }).childNodes);
   if (!nodes.length) return `<${tagName}${attributes}/>`;
-  const content = nodes.map((node) => {
-    if (typeof node === 'string') return escapeXml(node);
-    const child = node as { nodeType?: number; nodeValue?: string | null; tagName?: string };
-    return child.nodeType === 1 || child.tagName
-      ? elementMarkup(node as Element)
-      : escapeXml(child.nodeValue ?? '');
-  }).join('');
+  const content = nodes
+    .map((node) => {
+      if (typeof node === 'string') return escapeXml(node);
+      const child = node as { nodeType?: number; nodeValue?: string | null; tagName?: string };
+      return child.nodeType === 1 || child.tagName ? elementMarkup(node as Element) : escapeXml(child.nodeValue ?? '');
+    })
+    .join('');
   return `<${tagName}${attributes}>${content}</${tagName}>`;
 }
 
 const PART_NAMES = [
-  'wholeTbl', 'band1H', 'band2H', 'band1V', 'band2V',
-  'firstRow', 'lastRow', 'firstCol', 'lastCol',
-  'nwCell', 'neCell', 'swCell', 'seCell',
+  'wholeTbl',
+  'band1H',
+  'band2H',
+  'band1V',
+  'band2V',
+  'firstRow',
+  'lastRow',
+  'firstCol',
+  'lastCol',
+  'nwCell',
+  'neCell',
+  'swCell',
+  'seCell',
 ] as const;
 
-function styleDefinition(
-  resolved: ResolvedStyle,
-  env: Env,
-  format: TableFormatReader,
-): TableStyleDefinition | null {
+function styleDefinition(resolved: ResolvedStyle, env: Env, format: TableFormatReader): TableStyleDefinition | null {
   const styleId = attr(resolved.style, 'styleId')?.trim();
   if (!styleId) return null;
   const parts: TableStyleDefinition['parts'] = {};
@@ -183,19 +192,13 @@ function styleDefinition(
     styleId,
     name: attr(resolved.style, 'styleName')?.trim() || resolved.fallbackName || styleId,
     source: resolved.source,
-    markup: elementMarkup(
-      resolved.style, resolved.style.tagName, namespaceAttributes(resolved.namespaceRoot),
-    ),
+    markup: elementMarkup(resolved.style, resolved.style.tagName, namespaceAttributes(resolved.namespaceRoot)),
     parts,
   };
 }
 
 /** 目录按文档原顺序优先，内置项只补同 GUID 的缺口。 */
-export function tableStyleCatalog(
-  tableStyles: Element | null,
-  env: Env,
-  format: TableFormatReader,
-): TableStyleDefinition[] {
+export function tableStyleCatalog(tableStyles: Element | null, env: Env, format: TableFormatReader): TableStyleDefinition[] {
   const catalog: TableStyleDefinition[] = [];
   const seen = new Set<string>();
   const append = (definition: TableStyleDefinition | null): void => {
@@ -209,18 +212,23 @@ export function tableStyleCatalog(
   }
   for (const builtin of builtInTableStyleCatalog()) {
     const parsed = builtInTableStyle(builtin.styleId)!;
-    append(styleDefinition({
-      style: parsed.style, namespaceRoot: parsed.root, source: 'builtin', fallbackName: builtin.name,
-    }, env, format));
+    append(
+      styleDefinition(
+        {
+          style: parsed.style,
+          namespaceRoot: parsed.root,
+          source: 'builtin',
+          fallbackName: builtin.name,
+        },
+        env,
+        format,
+      ),
+    );
   }
   return catalog;
 }
 
-function directCellAppearance(
-  cell: Element,
-  env: Env,
-  format: TableFormatReader,
-): { fill: Fill | null; borders: CellBorders } {
+function directCellAppearance(cell: Element, env: Env, format: TableFormatReader): { fill: Fill | null; borders: CellBorders } {
   const properties = kid(cell, 'tcPr');
   const fill = format.fill(properties, env);
   const borders: CellBorders = {};
@@ -231,13 +239,7 @@ function directCellAppearance(
   return { fill, borders };
 }
 
-export function parseTable(
-  table: Element,
-  frame: ElementBase,
-  env: Env,
-  format: TableFormatReader,
-  name?: string,
-): TableElement {
+export function parseTable(table: Element, frame: ElementBase, env: Env, format: TableFormatReader, name?: string): TableElement {
   const properties = kid(table, 'tblPr');
   const sourceStyleId = kid(properties, 'tableStyleId')?.textContent?.trim() ?? null;
   const resolved = resolvedStyle(env.tableStyles, sourceStyleId);
@@ -259,9 +261,9 @@ export function parseTable(
     return {
       height: emu(numAttr(row, 'h')),
       cells: cellElements.map((cell, columnIndex): TableCell => {
-        const styled = definition ? tableStyleCellAppearance(
-          definition, settings, rowIndex, columnIndex, rowCount, cellElements.length,
-        ) : { fill: null, borders: {}, text: undefined };
+        const styled = definition
+          ? tableStyleCellAppearance(definition, settings, rowIndex, columnIndex, rowCount, cellElements.length)
+          : { fill: null, borders: {}, text: undefined };
         const direct = directCellAppearance(cell, env, format);
         const borders: CellBorders = structuredClone(styled.borders);
         for (const [side, stroke] of Object.entries(direct.borders)) {
@@ -278,25 +280,22 @@ export function parseTable(
           edit: env.edit,
         };
         const text = parseTextBody(textBody, textEnv);
-        const textTemplate = !text && env.edit
-          ? parseTextBody(textBody, textEnv, true) ?? undefined
-          : undefined;
+        const textTemplate = !text && env.edit ? (parseTextBody(textBody, textEnv, true) ?? undefined) : undefined;
         if (styled.text?.b !== undefined) {
           for (const body of [text, textTemplate]) {
             if (!body) continue;
-            for (const paragraph of body.paragraphs) for (const run of paragraph.runs) {
-              const directRun = (paragraph.editInfo?.directRun ?? 0) | (run.editInfo?.direct ?? 0);
-              if (!(directRun & TEXT_RUN_DIRECT_BITS.b)) run.b = styled.text.b;
-            }
+            for (const paragraph of body.paragraphs)
+              for (const run of paragraph.runs) {
+                const directRun = (paragraph.editInfo?.directRun ?? 0) | (run.editInfo?.direct ?? 0);
+                if (!(directRun & TEXT_RUN_DIRECT_BITS.b)) run.b = styled.text.b;
+              }
           }
         }
         let styleBase: NonNullable<TableCell['editInfo']>['styleBase'];
         if (env.edit) {
           const baseTextEnv = { ...textEnv, defaultColor: null };
           const baseText = parseTextBody(textBody, baseTextEnv);
-          const baseTemplate = !baseText
-            ? parseTextBody(textBody, baseTextEnv, true) ?? undefined
-            : undefined;
+          const baseTemplate = !baseText ? (parseTextBody(textBody, baseTextEnv, true) ?? undefined) : undefined;
           styleBase = {
             fill: direct.fill,
             borders: direct.borders,
@@ -316,26 +315,24 @@ export function parseTable(
           fill: direct.fill ?? styled.fill,
           text,
           borders,
-          margins: [
-            margin('marT', 45720), margin('marR', 91440),
-            margin('marB', 45720), margin('marL', 91440),
-          ],
-          vAlign: attr(cellProperties, 'anchor') === 'ctr' ? 'middle'
-            : attr(cellProperties, 'anchor') === 'b' ? 'bottom' : 'top',
-          vert: attr(cellProperties, 'vert') === 'vert' ? 'vert'
-            : attr(cellProperties, 'vert') === 'vert270' ? 'vert270' : undefined,
-          ...(textTemplate || styleBase ? { editInfo: {
-            ...(textTemplate ? { textTemplate } : {}),
-            ...(styleBase ? { styleBase } : {}),
-          } } : {}),
+          margins: [margin('marT', 45720), margin('marR', 91440), margin('marB', 45720), margin('marL', 91440)],
+          vAlign: attr(cellProperties, 'anchor') === 'ctr' ? 'middle' : attr(cellProperties, 'anchor') === 'b' ? 'bottom' : 'top',
+          vert: attr(cellProperties, 'vert') === 'vert' ? 'vert' : attr(cellProperties, 'vert') === 'vert270' ? 'vert270' : undefined,
+          ...(textTemplate || styleBase
+            ? {
+                editInfo: {
+                  ...(textTemplate ? { textTemplate } : {}),
+                  ...(styleBase ? { styleBase } : {}),
+                },
+              }
+            : {}),
         };
       }),
     };
   };
 
   const rows = rowElements.map((row, index) => parseRow(row, index, rowElements.length));
-  let editInfo: TableElement['editInfo'] = env.edit && sourceStyleId
-    ? { tableStyle: settings } : undefined;
+  let editInfo: TableElement['editInfo'] = env.edit && sourceStyleId ? { tableStyle: settings } : undefined;
   const template = rowElements[rowElements.length - 1];
   if (env.edit && template) {
     const next = rowElements.length;
@@ -354,7 +351,8 @@ export function parseTable(
 const creationTables = new WeakMap<Element, Map<string, Element>>();
 let fallbackCreationTable: Element | null = null;
 const CREATION_TABLE_TEXT = '<a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="zh-CN"/></a:p></a:txBody>';
-const NEUTRAL_TABLE_TEXT = '<a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="zh-CN" b="0"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></a:endParaRPr></a:p></a:txBody>';
+const NEUTRAL_TABLE_TEXT =
+  '<a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="zh-CN" b="0"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></a:endParaRPr></a:p></a:txBody>';
 const NEUTRAL_BORDER_FILL = '<a:solidFill><a:schemeClr val="tx1"><a:alpha val="25000"/></a:schemeClr></a:solidFill>';
 
 function tableCellPropertiesMarkup(parts: TableStyleParts | null, rowPart: Element | null): string {
@@ -365,9 +363,7 @@ function tableCellPropertiesMarkup(parts: TableStyleParts | null, rowPart: Eleme
       const candidate = kid(kid(kid(layer, 'tcStyle'), 'tcBdr'), styleTag);
       if (candidate) line = kid(candidate, 'ln');
     }
-    return line
-      ? elementMarkup(line, `a:${cellTag}`)
-      : `<a:${cellTag} w="9525">${NEUTRAL_BORDER_FILL}</a:${cellTag}>`;
+    return line ? elementMarkup(line, `a:${cellTag}`) : `<a:${cellTag} w="9525">${NEUTRAL_BORDER_FILL}</a:${cellTag}>`;
   }).join('');
   const neutralFill = parts ? '' : '<a:solidFill><a:schemeClr val="lt1"/></a:solidFill>';
   return `<a:tcPr>${borders}${neutralFill}</a:tcPr>`;
@@ -409,18 +405,29 @@ export function defaultTableEditInfo(env: Env, format: TableFormatReader): Table
     tableCellPropertiesMarkup(parts, parts?.band2H ?? null),
   ] as const;
   const textBodyMarkup = parts ? CREATION_TABLE_TEXT : NEUTRAL_TABLE_TEXT;
-  const table = parseTable(defaultTableSource(
-    cellPropertiesMarkup, textBodyMarkup, parts ? env.tableStyles : null,
-  ), {
-    x: 0, y: 0, w: 1, h: 3, rot: 0, flipH: false, flipV: false,
-  }, env, format);
+  const table = parseTable(
+    defaultTableSource(cellPropertiesMarkup, textBodyMarkup, parts ? env.tableStyles : null),
+    {
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 3,
+      rot: 0,
+      flipH: false,
+      flipV: false,
+    },
+    env,
+    format,
+  );
   const [first, band1, band2] = table.rows.map((row) => row.cells[0]);
-  if (!first?.editInfo?.textTemplate || !band1?.editInfo?.textTemplate
-    || !band2?.editInfo?.textTemplate) {
+  if (!first?.editInfo?.textTemplate || !band1?.editInfo?.textTemplate || !band2?.editInfo?.textTemplate) {
     throw new Error('无法构造新增表格单元格模板');
   }
   return {
-    ...(styleId ? { styleId } : {}), textBodyMarkup, cellPropertiesMarkup,
-    firstRow: first, bandRows: [band1, band2],
+    ...(styleId ? { styleId } : {}),
+    textBodyMarkup,
+    cellPropertiesMarkup,
+    firstRow: first,
+    bandRows: [band1, band2],
   };
 }

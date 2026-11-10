@@ -10,6 +10,12 @@ export function describePresentation(doc: EditDoc, options: DescribeOptions = {}
 
 export { DescribeError } from './types';
 export type {
-  DescribeFailureReason, DescribeOptions, DescriptionElement, DescriptionParagraph,
-  DescriptionPlaceholder, DescriptionReference, DescriptionSlide, PresentationDescription,
+  DescribeFailureReason,
+  DescribeOptions,
+  DescriptionElement,
+  DescriptionParagraph,
+  DescriptionPlaceholder,
+  DescriptionReference,
+  DescriptionSlide,
+  PresentationDescription,
 } from './types';

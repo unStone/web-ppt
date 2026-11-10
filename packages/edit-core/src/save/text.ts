@@ -5,10 +5,7 @@ import { flattenTextBody } from '../text-model';
 import { tableCellKeyResolver, tableCellStableRefFromKey } from '../table-cell';
 import { tableRowsWithoutTextOverrides } from '../table-rows';
 import { hasComplexTableStructureOverrides, projectTableStructure } from '../table-grid-projection';
-import {
-  cloneXmlNode, createXmlElement, createXmlText, insertXmlChildUnchecked, removeXmlChild,
-  replaceXmlChildren,
-} from '../xml/nodes';
+import { cloneXmlNode, createXmlElement, createXmlText, insertXmlChildUnchecked, removeXmlChild, replaceXmlChildren } from '../xml/nodes';
 import { insertXmlInOrder } from '../xml/order';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { findXmlChild, findXmlDescendant, xmlElementChildren } from '../xml/query';
@@ -25,8 +22,7 @@ import { applyParagraphOverrides } from './paragraph-overrides';
 const TEXT_UNIT_NAMES = new Set(['r', 'fld', 'br', 'm', 'oMath', 'oMathPara', 'AlternateContent']);
 
 export function hasTextOverrides(record: ElementRecord): boolean {
-  return record.ovr.text !== undefined || Object.values(record.ovr.tableCells ?? {})
-    .some((cell) => cell.text !== undefined);
+  return record.ovr.text !== undefined || Object.values(record.ovr.tableCells ?? {}).some((cell) => cell.text !== undefined);
 }
 
 function textUnits(paragraph: XmlElement): XmlElement[] {
@@ -62,32 +58,31 @@ function assignPreservedNodes(
     const nodesByGap = preservedNodesByRunGap(source);
     const unitCount = textUnits(source).length;
     for (const [gap, nodes] of nodesByGap) {
-      const candidates = paragraphs.map((paragraph, index) => ({
-        index,
-        runs: paragraph.marks.filter((mark) => mark.preserveSource
-          && mark.source?.paragraph === sourceIndex).map((mark) => mark.source!.run),
-      })).filter((candidate) => candidate.runs.length);
-      const candidate = gap < unitCount
-        ? candidates.find((entry) => entry.runs.some((run) => run >= gap))
-        : candidates[candidates.length - 1];
-      const target = candidate?.index ?? paragraphs.findIndex((paragraph) =>
-        paragraph.sourceParagraph === sourceIndex);
+      const candidates = paragraphs
+        .map((paragraph, index) => ({
+          index,
+          runs: paragraph.marks
+            .filter((mark) => mark.preserveSource && mark.source?.paragraph === sourceIndex)
+            .map((mark) => mark.source!.run),
+        }))
+        .filter((candidate) => candidate.runs.length);
+      const candidate =
+        gap < unitCount ? candidates.find((entry) => entry.runs.some((run) => run >= gap)) : candidates[candidates.length - 1];
+      const target = candidate?.index ?? paragraphs.findIndex((paragraph) => paragraph.sourceParagraph === sourceIndex);
       if (target >= 0) assigned[target].set(gap, nodes);
     }
   });
   return assigned;
 }
 
-function sourceUnit(
-  paragraphs: readonly XmlElement[],
-  paragraph: FlatTextParagraph,
-  mark: TextMark,
-): XmlElement | null {
+function sourceUnit(paragraphs: readonly XmlElement[], paragraph: FlatTextParagraph, mark: TextMark): XmlElement | null {
   const paragraphIndex = mark.source?.paragraph ?? paragraph.sourceParagraph;
   if (paragraphIndex === undefined) return null;
   const sourceParagraph = paragraphs[paragraphIndex];
-  return textUnits(sourceParagraph)?.[mark.source?.run ?? 0]
-    ?? findXmlChild(sourceParagraph, { localName: 'endParaRPr', namespaceUri: DRAWINGML_NS });
+  return (
+    textUnits(sourceParagraph)?.[mark.source?.run ?? 0]
+    ?? findXmlChild(sourceParagraph, { localName: 'endParaRPr', namespaceUri: DRAWINGML_NS })
+  );
 }
 
 function patchSourceRunProperties(
@@ -106,8 +101,10 @@ function patchSourceRunProperties(
 }
 
 function hasPropertyContent(properties: XmlElement): boolean {
-  return properties.attributes.some((attribute) => !attribute.name.startsWith('xmlns'))
-    || properties.children.some((child) => child.type !== 'text' || !!child.value.trim());
+  return (
+    properties.attributes.some((attribute) => !attribute.name.startsWith('xmlns'))
+    || properties.children.some((child) => child.type !== 'text' || !!child.value.trim())
+  );
 }
 
 function paragraphProperties(
@@ -140,10 +137,12 @@ function appendCopiedRunProperties(
   links?: HyperlinkSaveContext,
   clearedFallback?: Partial<RunProperties>,
 ): void {
-  const sourceProperties = source?.localName === 'endParaRPr' ? source
-    : source && ['r', 'fld', 'br'].includes(source.localName)
-      ? findXmlChild(source, { localName: 'rPr', namespaceUri: DRAWINGML_NS })
-      : null;
+  const sourceProperties =
+    source?.localName === 'endParaRPr'
+      ? source
+      : source && ['r', 'fld', 'br'].includes(source.localName)
+        ? findXmlChild(source, { localName: 'rPr', namespaceUri: DRAWINGML_NS })
+        : null;
   const properties = namespacedElement(run, DRAWINGML_NS, 'rPr');
   if (sourceProperties) {
     for (const attribute of sourceProperties.attributes) {
@@ -182,14 +181,18 @@ function appendMark(
   links?: HyperlinkSaveContext,
   clearedFallback?: Partial<RunProperties>,
 ): void {
-  if (mark.preserveSource && mark.atomText !== undefined && source
-    && ['m', 'oMath', 'oMathPara', 'AlternateContent'].includes(source.localName)) {
+  if (
+    mark.preserveSource
+    && mark.atomText !== undefined
+    && source
+    && ['m', 'oMath', 'oMathPara', 'AlternateContent'].includes(source.localName)
+  ) {
     insertXmlChildUnchecked(paragraph, cloneXmlNode(source));
     return;
   }
   if (mark.preserveSource && source?.localName === 'fld' && mark.atomText === undefined) {
     const value = findXmlChild(source, { localName: 't', namespaceUri: DRAWINGML_NS });
-    const sourceText = value?.children.map((child) => child.type === 'text' ? child.value : '').join('') ?? '';
+    const sourceText = value?.children.map((child) => (child.type === 'text' ? child.value : '')).join('') ?? '';
     // 未修改字段必须继续是动态字段；空 a:t 的日期/页码由解析器给出显示值，也直接保留来源节点。
     if (!sourceText || sourceText === text) {
       const field = cloneXmlNode(source);
@@ -231,9 +234,7 @@ function appendFlatParagraph(
   // detached 节点没有父级 xmlns，按 namespaceUri 查找会把同一个 pPr 误判为缺失。
   insertXmlInOrder(body, paragraph);
   const sourceParagraph = flat.sourceParagraph === undefined ? null : sourceParagraphs[flat.sourceParagraph];
-  const pPr = sourceParagraph
-    ? findXmlChild(sourceParagraph, { localName: 'pPr', namespaceUri: DRAWINGML_NS })
-    : null;
+  const pPr = sourceParagraph ? findXmlChild(sourceParagraph, { localName: 'pPr', namespaceUri: DRAWINGML_NS }) : null;
   if (pPr) insertXmlChildUnchecked(paragraph, cloneXmlNode(pPr));
   paragraphProperties(paragraph, flat, lnSpcReduction, !sourceParagraph);
   const remainingNodes = new Map(preservedNodes);
@@ -247,46 +248,57 @@ function appendFlatParagraph(
   for (const mark of flat.marks) {
     if (mark.preserveSource && mark.source) appendPreservedNodes(mark.source.run);
     appendMark(
-      paragraph, mark, flat.text.slice(mark.from, mark.to),
-      sourceUnit(sourceParagraphs, flat, mark), links,
+      paragraph,
+      mark,
+      flat.text.slice(mark.from, mark.to),
+      sourceUnit(sourceParagraphs, flat, mark),
+      links,
       clearedLevelRunFallback(source, flat, mark),
     );
   }
   appendPreservedNodes();
-  const end = sourceParagraph
-    ? findXmlChild(sourceParagraph, { localName: 'endParaRPr', namespaceUri: DRAWINGML_NS })
-    : null;
+  const end = sourceParagraph ? findXmlChild(sourceParagraph, { localName: 'endParaRPr', namespaceUri: DRAWINGML_NS }) : null;
   const nextEnd = end ? cloneXmlNode(end) : namespacedElement(paragraph, DRAWINGML_NS, 'endParaRPr');
   if (!flat.text.length && flat.marks[0]) {
-    applyRunOverrides(
-      nextEnd, flat.marks[0], links,
-      clearedLevelRunFallback(source, flat, flat.marks[0]),
-    );
+    applyRunOverrides(nextEnd, flat.marks[0], links, clearedLevelRunFallback(source, flat, flat.marks[0]));
   }
   insertXmlChildUnchecked(paragraph, nextEnd);
 }
 
 function nonParagraphFormatProps(props: FlatTextParagraph['props']): object {
   const {
-    lvl: _lvl, align: _align, marL: _marL, indent: _indent, lineHeight: _lineHeight,
-    spaceBefore: _spaceBefore, spaceAfter: _spaceAfter,
-    bullet: _bullet, bulletColor: _bulletColor, bulletFont: _bulletFont,
-    bulletSize: _bulletSize, bulletImage: _bulletImage, rtl: _rtl, ...rest
+    lvl: _lvl,
+    align: _align,
+    marL: _marL,
+    indent: _indent,
+    lineHeight: _lineHeight,
+    spaceBefore: _spaceBefore,
+    spaceAfter: _spaceAfter,
+    bullet: _bullet,
+    bulletColor: _bulletColor,
+    bulletFont: _bulletFont,
+    bulletSize: _bulletSize,
+    bulletImage: _bulletImage,
+    rtl: _rtl,
+    ...rest
   } = props;
   return rest;
 }
 
 function isFormatOnly(source: TextBody, flat: Extract<TextOverride, { kind: 'flat' }>): boolean {
   const baseline = flattenTextBody(source);
-  return flat.paragraphs.length === baseline.paragraphs.length
+  return (
+    flat.paragraphs.length === baseline.paragraphs.length
     && flat.paragraphs.every((paragraph, index) => {
       const original = baseline.paragraphs[index];
-      return paragraph.text === original.text
+      return (
+        paragraph.text === original.text
         && paragraph.sourceParagraph === index
-        && JSON.stringify(nonParagraphFormatProps(paragraph.props))
-          === JSON.stringify(nonParagraphFormatProps(original.props))
-        && paragraph.marks.every((mark) => mark.preserveSource && mark.source?.paragraph === index);
-    });
+        && JSON.stringify(nonParagraphFormatProps(paragraph.props)) === JSON.stringify(nonParagraphFormatProps(original.props))
+        && paragraph.marks.every((mark) => mark.preserveSource && mark.source?.paragraph === index)
+      );
+    })
+  );
 }
 
 /** 纯格式操作只替换受影响 run 的原槽位；段落、未知节点与其它 run 保持原树身份。 */
@@ -300,9 +312,9 @@ function patchFormatOnly(
   flat.paragraphs.forEach((paragraph, paragraphIndex) => {
     const sourceParagraph = sourceParagraphs[paragraphIndex];
     paragraphProperties(sourceParagraph, paragraph, flat.body.lnSpcReduction ?? 0);
-    const changed = new Set(paragraph.marks
-      .filter((mark) => mark.runOverrides || mark.clearDirectFormatting)
-      .map((mark) => mark.source!.run));
+    const changed = new Set(
+      paragraph.marks.filter((mark) => mark.runOverrides || mark.clearDirectFormatting).map((mark) => mark.source!.run),
+    );
     if (!changed.size) return;
     const units = textUnits(sourceParagraph);
     if (!paragraph.text.length) {
@@ -320,18 +332,20 @@ function patchFormatOnly(
       if (!sourceUnitNode) throw new Error(`字符格式来源 run 不存在：${paragraphIndex}.${runIndex}`);
       const fragments = paragraph.marks.filter((mark) => mark.source?.run === runIndex);
       if (fragments.length === 1 && ['r', 'fld', 'br'].includes(sourceUnitNode.localName)) {
-        patchSourceRunProperties(
-          sourceUnitNode, fragments[0], links,
-          clearedLevelRunFallback(source, paragraph, fragments[0]),
-        );
+        patchSourceRunProperties(sourceUnitNode, fragments[0], links, clearedLevelRunFallback(source, paragraph, fragments[0]));
         continue;
       }
       const staging = createXmlElement('a:p', {
-        selfClosing: false, attributes: [['xmlns:a', DRAWINGML_NS]],
+        selfClosing: false,
+        attributes: [['xmlns:a', DRAWINGML_NS]],
       });
       for (const mark of fragments) {
         appendMark(
-          staging, mark, paragraph.text.slice(mark.from, mark.to), sourceUnitNode, links,
+          staging,
+          mark,
+          paragraph.text.slice(mark.from, mark.to),
+          sourceUnitNode,
+          links,
           clearedLevelRunFallback(source, paragraph, mark),
         );
       }
@@ -344,12 +358,7 @@ function patchFormatOnly(
 }
 
 /** 只替换段落序列；bodyPr、lstStyle、命名空间与宿主身份全部原样保留。 */
-function patchTextBody(
-  body: XmlElement,
-  source: TextBody,
-  override: TextOverride,
-  links?: HyperlinkSaveContext,
-): void {
+function patchTextBody(body: XmlElement, source: TextBody, override: TextOverride, links?: HyperlinkSaveContext): void {
   const bodyProperties = findXmlChild(body, { localName: 'bodyPr', namespaceUri: DRAWINGML_NS });
   if (!bodyProperties) throw new Error('文本体缺少必需的 a:bodyPr');
   patchTextBodyProperties(bodyProperties, override.bodyOverrides);
@@ -361,10 +370,7 @@ function patchTextBody(
   if (override.kind === 'flat') {
     const preservedNodes = assignPreservedNodes(sourceParagraphs, override.paragraphs);
     for (const [index, paragraph] of override.paragraphs.entries()) {
-      appendFlatParagraph(
-        body, sourceParagraphs, source, paragraph, override.body.lnSpcReduction ?? 0,
-        preservedNodes[index], links,
-      );
+      appendFlatParagraph(body, sourceParagraphs, source, paragraph, override.body.lnSpcReduction ?? 0, preservedNodes[index], links);
     }
     return;
   }
@@ -375,11 +381,7 @@ function patchTextBody(
 }
 
 /** 形状与表格只在宿主定位上不同，段落保留算法必须共用。 */
-export function patchElementText(
-  document: XmlDocument,
-  record: ElementRecord,
-  links?: HyperlinkSaveContext,
-): void {
+export function patchElementText(document: XmlDocument, record: ElementRecord, links?: HyperlinkSaveContext): void {
   if (!hasTextOverrides(record)) return;
   if (record.meta.editable !== 'full') throw new Error(`元素 ${record.id} 不能写回文本`);
   const { host } = locateElementHost(document, record);
@@ -396,7 +398,8 @@ export function patchElementText(
   if (!table) throw new Error(`表格 ${record.id} 缺少 a:tbl`);
   const rows = xmlElementChildren(table, { localName: 'tr', namespaceUri: DRAWINGML_NS });
   const sourceRows = hasComplexTableStructureOverrides(record)
-    ? projectTableStructure(record, record.src).rows : tableRowsWithoutTextOverrides(record);
+    ? projectTableStructure(record, record.src).rows
+    : tableRowsWithoutTextOverrides(record);
   const resolveCell = tableCellKeyResolver(record);
   for (const [key, cellOverride] of Object.entries(record.ovr.tableCells)) {
     if (!cellOverride.text) continue;
@@ -407,9 +410,7 @@ export function patchElementText(
     const { r, c } = address;
     const source = sourceRows[r]?.cells[c];
     const sourceText = source?.text ?? source?.editInfo?.textTemplate;
-    const cell = rows[r] && xmlElementChildren(
-      rows[r], { localName: 'tc', namespaceUri: DRAWINGML_NS },
-    )[c];
+    const cell = rows[r] && xmlElementChildren(rows[r], { localName: 'tc', namespaceUri: DRAWINGML_NS })[c];
     const body = cell && findXmlChild(cell, { localName: 'txBody', namespaceUri: DRAWINGML_NS });
     // 合并占位格的覆盖只在投影中休眠；仍要写回其 txBody，重开后拆分才能恢复同一逻辑格。
     if (!sourceText || !body) {

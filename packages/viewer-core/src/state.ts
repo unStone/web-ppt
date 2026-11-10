@@ -282,11 +282,8 @@ export class PresentationState {
   resolveLink(href: string): number | null {
     if (!href.startsWith('slide:')) return null;
     const raw = href.slice(6);
-    const n = raw === 'next' ? this.idx + 2
-      : raw === 'previous' ? this.idx
-      : raw === 'first' ? 1
-      : raw === 'last' ? this.count
-      : Number(raw);
+    const n =
+      raw === 'next' ? this.idx + 2 : raw === 'previous' ? this.idx : raw === 'first' ? 1 : raw === 'last' ? this.count : Number(raw);
     return Number.isFinite(n) ? this.clamp(n - 1) : null;
   }
 

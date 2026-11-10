@@ -14,31 +14,67 @@ const root = resolve('.');
 const out = join(root, 'out/video-audio');
 mkdirSync(out, { recursive: true });
 let ffprobe = null;
-try { execFileSync('ffprobe', ['-version'], { stdio: 'ignore' }); ffprobe = 'ffprobe'; }
-catch { console.log('  ffprobe 不在本机：跳过音轨独立核对'); }
+try {
+  execFileSync('ffprobe', ['-version'], { stdio: 'ignore' });
+  ffprobe = 'ffprobe';
+} catch {
+  console.log('  ffprobe 不在本机：跳过音轨独立核对');
+}
 let ffmpeg = null;
-try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); ffmpeg = 'ffmpeg'; }
-catch { console.log('  ffmpeg 不在本机：提轨带声样本降级跳过'); }
+try {
+  execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' });
+  ffmpeg = 'ffmpeg';
+} catch {
+  console.log('  ffmpeg 不在本机：提轨带声样本降级跳过');
+}
 // 0.4s 440Hz 单声道 AAC@16k：参数全部固定，字节只进 out/（不入 fixtures），有 ffmpeg 即重生成
-if (ffmpeg) execFileSync(ffmpeg, ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=0.4',
-  '-ar', '24000', '-ac', '1', '-c:a', 'aac', '-b:a', '16k', join(out, 'tone.mp4')]);
+if (ffmpeg)
+  execFileSync(ffmpeg, [
+    '-y',
+    '-v',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=0.4',
+    '-ar',
+    '24000',
+    '-ac',
+    '1',
+    '-c:a',
+    'aac',
+    '-b:a',
+    '16k',
+    join(out, 'tone.mp4'),
+  ]);
 
 const entry = join(out, 'entry.mjs');
-writeFileSync(entry, `export { parse } from '${root}/packages/core/src/index.ts';
+writeFileSync(
+  entry,
+  `export { parse } from '${root}/packages/core/src/index.ts';
 export { presentationToVideo } from '${root}/packages/viewer-core/src/video.ts';
-export { WebmWriter } from '${root}/packages/viewer-core/src/video/webm.ts';`);
-await bundleBrowser({ root, entry, output: join(out, 'contract.mjs'), aliases: [
-  ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
-  ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
-] });
+export { WebmWriter } from '${root}/packages/viewer-core/src/video/webm.ts';`,
+);
+await bundleBrowser({
+  root,
+  entry,
+  output: join(out, 'contract.mjs'),
+  aliases: [
+    ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
+    ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
+  ],
+});
 const bundledModule = await import(join(out, 'contract.mjs'));
 
 let failures = 0;
 // 本套件断言几乎全部依赖 ffmpeg/ffprobe 与样例生成，计数会随环境漂移——与 test-video.mjs
 // 同一口径：不写入 counts.json，verify 不对这些环境条件断言做规模核对。
-const check = (label, ok, detail = '') => { console.log(`  ${ok ? '✓' : '✗'} ${label}${ok || !detail ? '' : ` — ${detail}`}`); if (!ok) failures++; };
+const check = (label, ok, detail = '') => {
+  console.log(`  ${ok ? '✓' : '✗'} ${label}${ok || !detail ? '' : ` — ${detail}`}`);
+  if (!ok) failures++;
+};
 
-await withChartBrowser(root, async browser => {
+await withChartBrowser(root, async (browser) => {
   const bytes = await browser.evaluate(`(async()=>{
     const { parse, presentationToVideo } = await import('/out/video-audio/contract.mjs');
     const pres = await parse(new Uint8Array(await (await fetch('/fixtures/sample-media.pptx')).arrayBuffer()), { lazy: false });
@@ -105,11 +141,23 @@ await withChartBrowser(root, async browser => {
     return { warnings, elapsedMs, type: blob.type, size: blob.size };
   })()`);
   const overlayWarnings = [...overlayFailure.warnings].sort((a, b) => a[2].localeCompare(b[2]));
-  check('视频合成失败：损坏 / 超时各报一次 video-overlay-unavailable（含页号与元素名）',
-    JSON.stringify(overlayWarnings) === JSON.stringify([['video-overlay-unavailable', 1, '损坏视频'], ['video-overlay-unavailable', 1, '超时视频']].sort((a, b) => a[2].localeCompare(b[2]))),
-    JSON.stringify(overlayFailure.warnings));
+  check(
+    '视频合成失败：损坏 / 超时各报一次 video-overlay-unavailable（含页号与元素名）',
+    JSON.stringify(overlayWarnings)
+      === JSON.stringify(
+        [
+          ['video-overlay-unavailable', 1, '损坏视频'],
+          ['video-overlay-unavailable', 1, '超时视频'],
+        ].sort((a, b) => a[2].localeCompare(b[2])),
+      ),
+    JSON.stringify(overlayFailure.warnings),
+  );
   check('视频合成超时路径确实等满加载时限', overlayFailure.elapsedMs >= 5000, `${Math.round(overlayFailure.elapsedMs)}ms`);
-  check('视频合成失败不阻断导出', overlayFailure.type === 'video/webm' && overlayFailure.size > 1000, `${overlayFailure.type} ${overlayFailure.size}`);
+  check(
+    '视频合成失败不阻断导出',
+    overlayFailure.type === 'video/webm' && overlayFailure.size > 1000,
+    `${overlayFailure.type} ${overlayFailure.size}`,
+  );
 
   // 提轨两条路径：带声 MP4（AAC）成功混入；无轨 MP4 经 onWarning 显式跳过且不阻断。
   // tone.mp4 由本脚本开头 ffmpeg 现场生成（不进 fixtures）；CI 无 ffmpeg 时降级只跑无轨路径
@@ -135,28 +183,47 @@ await withChartBrowser(root, async browser => {
   if (track && !track.unavailable) {
     const trackWebm = Buffer.from(track.bytes);
     writeFileSync(join(out, 'track.webm'), trackWebm);
-    check('无轨视频：onWarning 稳定 reason 且不阻断', JSON.stringify(track.warnings) === JSON.stringify([['video-audio-decode-failed','无轨视频']]), JSON.stringify(track.warnings));
+    check(
+      '无轨视频：onWarning 稳定 reason 且不阻断',
+      JSON.stringify(track.warnings) === JSON.stringify([['video-audio-decode-failed', '无轨视频']]),
+      JSON.stringify(track.warnings),
+    );
     if (ffprobe) {
       // 双轨封装器的流级核对也集中在此（test-video.mjs 保持环境无关计数）
-      const {WebmWriter} = bundledModule;
-      const dual=new WebmWriter(480,270,12,'VP8',{sampleRate:48000,channels:2});
-      dual.addFrame(new Uint8Array([1,2,3]),0,83333,true);
-      dual.addAudio(new Uint8Array([10,11]),0);
-      dual.addFrame(new Uint8Array([4,5]),83333,83334,false);
-      writeFileSync(join(out,'dual.webm'),Buffer.from(new Uint8Array(await dual.finish().arrayBuffer())));
-      const muxProbe = JSON.parse(execFileSync(ffprobe, ['-v','error','-show_streams','-of','json', join(out,'dual.webm')],{encoding:'utf8'}));
-      check('封装器双轨：ffprobe 识别视频 + Opus 流',
-        muxProbe.streams.length===2 && muxProbe.streams.some(s=>s.codec_name==='opus') && muxProbe.streams.some(s=>s.codec_name.startsWith('vp8')),
-        JSON.stringify(muxProbe.streams.map(s=>s.codec_name)));
+      const { WebmWriter } = bundledModule;
+      const dual = new WebmWriter(480, 270, 12, 'VP8', { sampleRate: 48000, channels: 2 });
+      dual.addFrame(new Uint8Array([1, 2, 3]), 0, 83333, true);
+      dual.addAudio(new Uint8Array([10, 11]), 0);
+      dual.addFrame(new Uint8Array([4, 5]), 83333, 83334, false);
+      writeFileSync(join(out, 'dual.webm'), Buffer.from(new Uint8Array(await dual.finish().arrayBuffer())));
+      const muxProbe = JSON.parse(
+        execFileSync(ffprobe, ['-v', 'error', '-show_streams', '-of', 'json', join(out, 'dual.webm')], { encoding: 'utf8' }),
+      );
+      check(
+        '封装器双轨：ffprobe 识别视频 + Opus 流',
+        muxProbe.streams.length === 2
+          && muxProbe.streams.some((s) => s.codec_name === 'opus')
+          && muxProbe.streams.some((s) => s.codec_name.startsWith('vp8')),
+        JSON.stringify(muxProbe.streams.map((s) => s.codec_name)),
+      );
       // 轨全长≈视频时长（静音段正常编码）；有声区间用响度判：前 0.5s 有信号、全轨均值被后半静音拉低
       const volume = (seconds) => {
         const args = seconds ? ['-t', String(seconds)] : [];
-        const result = spawnSync('ffmpeg', [...args, '-v', 'info', '-i', join(out, 'track.webm'), '-map', '0:a', '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' });
+        const result = spawnSync(
+          'ffmpeg',
+          [...args, '-v', 'info', '-i', join(out, 'track.webm'), '-map', '0:a', '-af', 'volumedetect', '-f', 'null', '-'],
+          { encoding: 'utf8' },
+        );
         // volumedetect 的统计打在 stderr
         return Number(/mean_volume:\s*(-?[\d.]+) dB/.exec(result.stderr ?? '')?.[1] ?? NaN);
       };
-      const head = volume(0.5), full = volume();
-      check('带声视频提轨：AAC 混入 Opus 轨且有声段≈0.4s', Number.isFinite(head) && Number.isFinite(full) && head > -40 && full < head - 3, `head=${head}dB full=${full}dB`);
+      const head = volume(0.5),
+        full = volume();
+      check(
+        '带声视频提轨：AAC 混入 Opus 轨且有声段≈0.4s',
+        Number.isFinite(head) && Number.isFinite(full) && head > -40 && full < head - 3,
+        `head=${head}dB full=${full}dB`,
+      );
     }
   }
   const webm = Buffer.from(bytes.bytes);
@@ -164,17 +231,30 @@ await withChartBrowser(root, async browser => {
   check('封装含 A_OPUS 音轨', webm.includes('A_OPUS'));
   check('封装含 OpusHead', webm.includes('OpusHead'));
   if (ffprobe) {
-    const probe = JSON.parse(execFileSync(ffprobe, ['-v', 'error', '-show_streams', '-of', 'json', join(out, 'audio.webm')], { encoding: 'utf8' }));
-    const video = probe.streams.find(s => s.codec_type === 'video'), audio = probe.streams.find(s => s.codec_type === 'audio');
-    check('双轨（视频 + 音频）', !!video && !!audio, JSON.stringify(probe.streams.map(s => s.codec_type)));
+    const probe = JSON.parse(
+      execFileSync(ffprobe, ['-v', 'error', '-show_streams', '-of', 'json', join(out, 'audio.webm')], { encoding: 'utf8' }),
+    );
+    const video = probe.streams.find((s) => s.codec_type === 'video'),
+      audio = probe.streams.find((s) => s.codec_type === 'audio');
+    check('双轨（视频 + 音频）', !!video && !!audio, JSON.stringify(probe.streams.map((s) => s.codec_type)));
     check('音频流为 Opus', audio?.codec_name === 'opus');
     check('音频流采样率 48kHz', audio?.sample_rate === '48000', audio?.sample_rate);
     // 非循环配音混入后：音轨时长为正且不超过视频时长 + 一个编码包边界
     // WebM 流级 duration 常为 0：容器时长代表视频，音频时长取末包时间戳
-    const container = JSON.parse(execFileSync(ffprobe, ['-v', 'error', '-show_format', '-of', 'json', join(out, 'audio.webm')], { encoding: 'utf8' }));
-    const packets = execFileSync(ffprobe, ['-v', 'error', '-select_streams', 'a', '-show_entries', 'packet=pts_time', '-of', 'csv=p=0', join(out, 'audio.webm')], { encoding: 'utf8' })
-      .trim().split('\n').map(Number).filter(Number.isFinite);
-    const containerS = Number(container.format.duration), audioEndS = packets.length ? Math.max(...packets) : 0;
+    const container = JSON.parse(
+      execFileSync(ffprobe, ['-v', 'error', '-show_format', '-of', 'json', join(out, 'audio.webm')], { encoding: 'utf8' }),
+    );
+    const packets = execFileSync(
+      ffprobe,
+      ['-v', 'error', '-select_streams', 'a', '-show_entries', 'packet=pts_time', '-of', 'csv=p=0', join(out, 'audio.webm')],
+      { encoding: 'utf8' },
+    )
+      .trim()
+      .split('\n')
+      .map(Number)
+      .filter(Number.isFinite);
+    const containerS = Number(container.format.duration),
+      audioEndS = packets.length ? Math.max(...packets) : 0;
     check('音轨时长非零且不超过视频', audioEndS > 0.2 && audioEndS <= containerS + 0.05, `audioEnd=${audioEndS}s container=${containerS}s`);
   } else {
     console.log('  ffprobe 缺失：流级断言跳过（字节级与混音核断言已覆盖）');
@@ -233,36 +313,68 @@ await withChartBrowser(root, async browser => {
   writeFileSync(join(out, 'sync.webm'), Buffer.from(syncResult.syncBytes));
   writeFileSync(join(out, 'loop.webm'), Buffer.from(syncResult.loopBytes));
   check('取消导出抛 AbortError', syncResult.cancelError === 'AbortError', String(syncResult.cancelError));
-  check('取消后编码器与状态已释放：同稿再次导出成功', syncResult.afterCancelType === 'video/webm' && syncResult.afterCancelSize > 1000,
-    `${syncResult.afterCancelType} ${syncResult.afterCancelSize}`);
+  check(
+    '取消后编码器与状态已释放：同稿再次导出成功',
+    syncResult.afterCancelType === 'video/webm' && syncResult.afterCancelSize > 1000,
+    `${syncResult.afterCancelType} ${syncResult.afterCancelSize}`,
+  );
 
   if (ffmpeg && ffprobe) {
     // 画面标记时刻：signalstats 逐帧 YAVG，红方块页的亮度均值显著高于纯色页——
     // 相邻帧哈希受 VP8 编码伪影干扰（静态纯色的首两帧哈希也不同），按绝对阈值判定
-    const stats = spawnSync('ffmpeg', ['-v', 'info', '-i', join(out, 'sync.webm'),
-      '-vf', 'signalstats,metadata=print:key=lavfi.signalstats.YAVG', '-f', 'null', '-'], { encoding: 'utf8', maxBuffer: 1 << 24 });
+    const stats = spawnSync(
+      'ffmpeg',
+      ['-v', 'info', '-i', join(out, 'sync.webm'), '-vf', 'signalstats,metadata=print:key=lavfi.signalstats.YAVG', '-f', 'null', '-'],
+      { encoding: 'utf8', maxBuffer: 1 << 24 },
+    );
     const averages = [...(stats.stderr ?? '').matchAll(/YAVG=([\d.]+)/g)].map((m) => Number(m[1]));
     let changeIndex = -1;
     if (averages.length) {
       const baseline = averages[0];
-      for (let i = 0; i < averages.length; i++) if (Math.abs(averages[i] - baseline) > 25) { changeIndex = i; break; }
+      for (let i = 0; i < averages.length; i++)
+        if (Math.abs(averages[i] - baseline) > 25) {
+          changeIndex = i;
+          break;
+        }
     }
     // 声音起点：silencedetect 的 silence_end 即静音→有声转换时刻
-    const silence = spawnSync('ffmpeg', ['-v', 'info', '-i', join(out, 'sync.webm'), '-af', 'silencedetect=noise=-35dB:d=0.08', '-f', 'null', '-'], { encoding: 'utf8' });
+    const silence = spawnSync(
+      'ffmpeg',
+      ['-v', 'info', '-i', join(out, 'sync.webm'), '-af', 'silencedetect=noise=-35dB:d=0.08', '-f', 'null', '-'],
+      { encoding: 'utf8' },
+    );
     const audioStartS = Number(/silence_end:\s*([\d.]+)/.exec(silence.stderr ?? '')?.[1] ?? NaN);
     const videoStartS = changeIndex >= 0 ? changeIndex / 12 : NaN;
     // 边界 = 1 视频帧（83ms）+ 1 Opus 编码块（20ms）+ 容器毫秒时间戳舍入
-    check('脉冲与画面标记同轴（FFmpeg 独立测量）', Number.isFinite(videoStartS) && Number.isFinite(audioStartS)
-      && Math.abs(videoStartS - audioStartS) <= 0.13, `画面 ${videoStartS}s vs 声音 ${audioStartS}s`);
+    check(
+      '脉冲与画面标记同轴（FFmpeg 独立测量）',
+      Number.isFinite(videoStartS) && Number.isFinite(audioStartS) && Math.abs(videoStartS - audioStartS) <= 0.13,
+      `画面 ${videoStartS}s vs 声音 ${audioStartS}s`,
+    );
     // 跨页循环：音轨末包须越过页 1 边界（1s），且不超过视频总时长 + 一个编码包
-    const loopPackets = execFileSync(ffprobe, ['-v', 'error', '-select_streams', 'a', '-show_entries', 'packet=pts_time', '-of', 'csv=p=0', join(out, 'loop.webm')], { encoding: 'utf8' })
-      .trim().split('\n').map(Number).filter(Number.isFinite);
-    const loopFormat = JSON.parse(execFileSync(ffprobe, ['-v', 'error', '-show_format', '-of', 'json', join(out, 'loop.webm')], { encoding: 'utf8' }));
+    const loopPackets = execFileSync(
+      ffprobe,
+      ['-v', 'error', '-select_streams', 'a', '-show_entries', 'packet=pts_time', '-of', 'csv=p=0', join(out, 'loop.webm')],
+      { encoding: 'utf8' },
+    )
+      .trim()
+      .split('\n')
+      .map(Number)
+      .filter(Number.isFinite);
+    const loopFormat = JSON.parse(
+      execFileSync(ffprobe, ['-v', 'error', '-show_format', '-of', 'json', join(out, 'loop.webm')], { encoding: 'utf8' }),
+    );
     const loopEndS = loopPackets.length ? Math.max(...loopPackets) : 0;
-    check('循环音频跨页持续到末页', loopEndS > 1.0 && loopEndS <= Number(loopFormat.format.duration) + 0.05,
-      `audioEnd=${loopEndS}s container=${loopFormat.format.duration}s`);
+    check(
+      '循环音频跨页持续到末页',
+      loopEndS > 1.0 && loopEndS <= Number(loopFormat.format.duration) + 0.05,
+      `audioEnd=${loopEndS}s container=${loopFormat.format.duration}s`,
+    );
   } else console.log('  ffmpeg/ffprobe 缺失：同轴与跨页循环测量跳过（取消断言不依赖 ffmpeg，已执行）');
 });
 
-if (failures) { console.error(`\x1b[31m✗ 视频音轨浏览器验收失败（${failures} 项）\x1b[0m`); process.exit(1); }
+if (failures) {
+  console.error(`\x1b[31m✗ 视频音轨浏览器验收失败（${failures} 项）\x1b[0m`);
+  process.exit(1);
+}
 console.log('视频音轨浏览器验收通过');

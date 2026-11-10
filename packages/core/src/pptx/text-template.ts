@@ -8,9 +8,7 @@ import { materializeParagraph } from './text-materialization';
 function emptyParagraph(paragraph: Paragraph): Paragraph {
   return {
     ...paragraph,
-    runs: paragraph.runs.length
-      ? [{ ...paragraph.runs[paragraph.runs.length - 1], text: '' }]
-      : [],
+    runs: paragraph.runs.length ? [{ ...paragraph.runs[paragraph.runs.length - 1], text: '' }] : [],
   };
 }
 
@@ -18,11 +16,7 @@ function emptyParagraph(paragraph: Paragraph): Paragraph {
  * 正文常只出现少数级别，但 lstStyle 仍定义完整九级默认值。
  * 编辑解析预先构造九级模板，改级即可按 lvl 重基，无需让 edit-core 认识 OOXML。
  */
-export function completeTextTemplateLevels(
-  source: TextBody,
-  env: TextEnv,
-  preserveExisting = false,
-): TextBody {
+export function completeTextTemplateLevels(source: TextBody, env: TextEnv, preserveExisting = false): TextBody {
   const existing = new Map<number, Paragraph>();
   if (preserveExisting) {
     // 版式目录还承担换版式投影，目标占位符的提示段直设不能被纯 lvl 样式抹掉。

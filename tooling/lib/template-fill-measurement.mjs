@@ -19,19 +19,24 @@ export function createTemplateFillMeasurement(root) {
     const face = new hb.Face(new hb.Blob(new Uint8Array(readFileSync(join(root, 'tooling/template-fill-fonts', name)))));
     return { face, font: new hb.Font(face) };
   };
-  const regular = open('regular.ttf'), bold = open('bold.ttf');
+  const regular = open('regular.ttf'),
+    bold = open('bold.ttf');
   return (text, run, scale) => {
     if (!text) return 0;
     if (run.i) throw new Error('模板填充测试未提供真实斜体字体');
     const { face, font } = run.b ? bold : regular;
     const buffer = new hb.Buffer();
-    buffer.addText(text); buffer.guessSegmentProperties();
-    buffer.setDirection(hb.Direction.LTR); buffer.setScript('Latn'); buffer.setLanguage('en');
+    buffer.addText(text);
+    buffer.guessSegmentProperties();
+    buffer.setDirection(hb.Direction.LTR);
+    buffer.setScript('Latn');
+    buffer.setLanguage('en');
     hb.shape(font, buffer);
-    const infos = buffer.getGlyphInfos(), positions = buffer.getGlyphPositions();
-    if (infos.some(info => info.codepoint === 0)) throw new Error(`模板填充测试字体缺少字形：${text}`);
+    const infos = buffer.getGlyphInfos(),
+      positions = buffer.getGlyphPositions();
+    if (infos.some((info) => info.codepoint === 0)) throw new Error(`模板填充测试字体缺少字形：${text}`);
     if (infos.length !== positions.length) throw new Error('HarfBuzz 字形与位置数量不一致');
     const advance = positions.reduce((sum, glyph) => sum + glyph.xAdvance, 0) / face.upem;
-    return advance * run.size * scale * (run.baseline ? .65 : 1) + (run.spacing ?? 0) * text.length;
+    return advance * run.size * scale * (run.baseline ? 0.65 : 1) + (run.spacing ?? 0) * text.length;
   };
 }

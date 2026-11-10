@@ -10,26 +10,28 @@ import type { XmlDocument, XmlElement } from '../xml/types';
 import { namespacedElement } from './xml-element';
 
 const SUBTYPE: Readonly<Record<string, number>> = Object.freeze({
-  u: 1, r: 2, d: 4, l: 8, rd: 3, ru: 6, lu: 9, ld: 12,
-  horz: 5, vert: 10, in: 16, out: 32,
+  u: 1,
+  r: 2,
+  d: 4,
+  l: 8,
+  rd: 3,
+  ru: 6,
+  lu: 9,
+  ld: 12,
+  horz: 5,
+  vert: 10,
+  in: 16,
+  out: 32,
 });
 
-function child(
-  parent: XmlElement,
-  localName: string,
-  attributes: Readonly<Record<string, string | number>> = {},
-): XmlElement {
+function child(parent: XmlElement, localName: string, attributes: Readonly<Record<string, string | number>> = {}): XmlElement {
   const element = namespacedElement(parent, PRESENTATIONML_NS, localName);
   for (const [name, value] of Object.entries(attributes)) setXmlAttribute(element, name, String(value));
   insertXmlChildUnchecked(parent, element);
   return element;
 }
 
-function commonTimeNode(
-  parent: XmlElement,
-  nextId: () => number,
-  attributes: Readonly<Record<string, string | number>> = {},
-): XmlElement {
+function commonTimeNode(parent: XmlElement, nextId: () => number, attributes: Readonly<Record<string, string | number>> = {}): XmlElement {
   return child(parent, 'cTn', { id: nextId(), ...attributes });
 }
 
@@ -58,13 +60,7 @@ function commonBehavior(
   }
 }
 
-function visibility(
-  parent: XmlElement,
-  target: number,
-  value: 'visible' | 'hidden',
-  delayMs: number,
-  nextId: () => number,
-): void {
+function visibility(parent: XmlElement, target: number, value: 'visible' | 'hidden', delayMs: number, nextId: () => number): void {
   const set = child(parent, 'set');
   const behavior = child(set, 'cBhvr');
   const time = commonTimeNode(behavior, nextId, { dur: 1, fill: 'hold' });
@@ -117,32 +113,29 @@ function motionBehavior(
   doc: EditDoc,
   nextId: () => number,
 ): void {
-  const points = step.motionPath.map(([x, y], index) =>
-    `${index ? 'L' : 'M'} ${decimal(x / doc.meta.width)} ${decimal(y / doc.meta.height)}`).join(' ');
+  const points = step.motionPath
+    .map(([x, y], index) => `${index ? 'L' : 'M'} ${decimal(x / doc.meta.width)} ${decimal(y / doc.meta.height)}`)
+    .join(' ');
   const motion = child(parent, 'animMotion', {
-    origin: 'layout', path: `${points} E`, pathEditMode: 'relative',
+    origin: 'layout',
+    path: `${points} E`,
+    pathEditMode: 'relative',
   });
   commonBehavior(motion, target, step.durationMs, nextId, ['ppt_x', 'ppt_y']);
 }
 
-function appendEffect(
-  parent: XmlElement,
-  step: EditAnimationStep,
-  doc: EditDoc,
-  nextId: () => number,
-): void {
+function appendEffect(parent: XmlElement, step: EditAnimationStep, doc: EditDoc, nextId: () => number): void {
   const record = doc.elements[step.target];
   const target = record?.meta.origin?.spid ?? record?.src.id;
   if (target === undefined) throw new Error(`动画目标缺少 OOXML spid：${step.target}`);
   const effectPar = child(parent, 'par');
   const preset = commonTimeNode(effectPar, nextId, {
     presetID: step.kind === 'motion' ? 0 : animationEffectSpec(step.effect).preset,
-    presetClass: step.kind === 'motion' ? 'path'
-      : step.kind === 'entrance' ? 'entr' : step.kind === 'exit' ? 'exit' : 'emph',
+    presetClass: step.kind === 'motion' ? 'path' : step.kind === 'entrance' ? 'entr' : step.kind === 'exit' ? 'exit' : 'emph',
     ...(step.kind !== 'motion' && step.dir !== undefined ? { presetSubtype: SUBTYPE[step.dir] ?? 0 } : {}),
-    dur: step.durationMs, fill: 'hold',
-    nodeType: step.trigger === 'click' ? 'clickEffect'
-      : step.trigger === 'withPrev' ? 'withEffect' : 'afterEffect',
+    dur: step.durationMs,
+    fill: 'hold',
+    nodeType: step.trigger === 'click' ? 'clickEffect' : step.trigger === 'withPrev' ? 'withEffect' : 'afterEffect',
   });
   startCondition(preset, step.delayMs);
   const behaviors = child(preset, 'childTnLst');
@@ -152,16 +145,14 @@ function appendEffect(
   if (step.kind === 'exit') visibility(behaviors, target, 'hidden', step.durationMs, nextId);
 }
 
-function appendTimeTree(
-  list: XmlElement,
-  steps: readonly EditAnimationStep[],
-  doc: EditDoc,
-): void {
+function appendTimeTree(list: XmlElement, steps: readonly EditAnimationStep[], doc: EditDoc): void {
   let serial = 0;
   const nextId = (): number => ++serial;
   const rootPar = child(list, 'par');
   const root = commonTimeNode(rootPar, nextId, {
-    dur: 'indefinite', restart: 'never', nodeType: 'tmRoot',
+    dur: 'indefinite',
+    restart: 'never',
+    nodeType: 'tmRoot',
   });
   const rootChildren = child(root, 'childTnLst');
   const sequence = child(rootChildren, 'seq', { concurrent: 1, nextAc: 'seek' });
@@ -189,16 +180,14 @@ interface TimingSlot {
 }
 
 function directTimings(parent: XmlElement): XmlElement[] {
-  return xmlElementChildren(parent).filter((element) =>
-    element.namespaceUri === PRESENTATIONML_NS && element.localName === 'timing');
+  return xmlElementChildren(parent).filter((element) => element.namespaceUri === PRESENTATIONML_NS && element.localName === 'timing');
 }
 
 function alternateTimingSlots(alternate: XmlElement): TimingSlot[] {
-  if (alternate.namespaceUri !== MARKUP_COMPATIBILITY_NS
-    || alternate.localName !== 'AlternateContent') return [];
-  const branches = xmlElementChildren(alternate).filter((element) =>
-    element.namespaceUri === MARKUP_COMPATIBILITY_NS
-      && (element.localName === 'Choice' || element.localName === 'Fallback'));
+  if (alternate.namespaceUri !== MARKUP_COMPATIBILITY_NS || alternate.localName !== 'AlternateContent') return [];
+  const branches = xmlElementChildren(alternate).filter(
+    (element) => element.namespaceUri === MARKUP_COMPATIBILITY_NS && (element.localName === 'Choice' || element.localName === 'Fallback'),
+  );
   const timings = branches.map((parent) => ({ parent, timings: directTimings(parent) }));
   if (timings.some(({ timings: found }) => found.length > 1)) {
     throw new Error('mc:AlternateContent 分支包含多个 p:timing');
@@ -209,7 +198,9 @@ function alternateTimingSlots(alternate: XmlElement): TimingSlot[] {
 
 function timingSlots(root: XmlElement): TimingSlot[] {
   const direct = directTimings(root);
-  const alternates = xmlElementChildren(root).map(alternateTimingSlots).filter((slots) => slots.length);
+  const alternates = xmlElementChildren(root)
+    .map(alternateTimingSlots)
+    .filter((slots) => slots.length);
   if (direct.length > 1 || alternates.length > 1 || (direct.length && alternates.length)) {
     throw new Error('幻灯片包含多个 p:timing 载体');
   }
@@ -217,10 +208,7 @@ function timingSlots(root: XmlElement): TimingSlot[] {
   return alternates[0] ?? [];
 }
 
-const TARGET_BEHAVIORS = new Set([
-  'set', 'anim', 'animClr', 'animEffect', 'animMotion', 'animRot', 'animScale',
-  'audio', 'video', 'cmd',
-]);
+const TARGET_BEHAVIORS = new Set(['set', 'anim', 'animClr', 'animEffect', 'animMotion', 'animRot', 'animScale', 'audio', 'video', 'cmd']);
 
 function parentElement(element: XmlElement): XmlElement | null {
   const parent = nodeState(element).parent;
@@ -228,8 +216,7 @@ function parentElement(element: XmlElement): XmlElement | null {
 }
 
 function attributeValue(element: XmlElement, localName: string): string | undefined {
-  return element.attributes.find((attribute) =>
-    attribute.namespaceUri === null && attribute.localName === localName)?.value;
+  return element.attributes.find((attribute) => attribute.namespaceUri === null && attribute.localName === localName)?.value;
 }
 
 function walkElements(root: XmlElement): XmlElement[] {
@@ -257,8 +244,7 @@ function targetOwner(target: XmlElement): XmlElement | null {
   let fallback: XmlElement | null = current?.localName === 'tgtEl' ? current : target;
   while (current) {
     // cBhvr / cond 是最小语义所有者；直接删整个 preset 会误伤同组的其他目标。
-    if (current.namespaceUri === PRESENTATIONML_NS
-      && (current.localName === 'cBhvr' || current.localName === 'cond')) return current;
+    if (current.namespaceUri === PRESENTATIONML_NS && (current.localName === 'cBhvr' || current.localName === 'cond')) return current;
     if (TARGET_BEHAVIORS.has(current.localName)) return current;
     current = parentElement(current);
   }
@@ -267,9 +253,9 @@ function targetOwner(target: XmlElement): XmlElement | null {
 
 function presetTime(owner: XmlElement): XmlElement | undefined {
   if (owner.namespaceUri !== PRESENTATIONML_NS || owner.localName !== 'par') return undefined;
-  return xmlElementChildren(owner).find((child) =>
-    child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cTn'
-      && !!attributeValue(child, 'presetClass'));
+  return xmlElementChildren(owner).find(
+    (child) => child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cTn' && !!attributeValue(child, 'presetClass'),
+  );
 }
 
 function preserveClickBoundaries(timing: XmlElement, removals: ReadonlySet<XmlElement>): void {
@@ -293,12 +279,10 @@ function pruneEmptyTimeContainers(timing: XmlElement): void {
     let changed = false;
     const nodes = walkElements(timing).reverse();
     for (const node of nodes) {
-      if (node.namespaceUri !== PRESENTATIONML_NS
-        || (node.localName !== 'par' && node.localName !== 'seq')) continue;
-      const time = xmlElementChildren(node).find((child) =>
-        child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cTn');
-      const list = time && xmlElementChildren(time).find((child) =>
-        child.namespaceUri === PRESENTATIONML_NS && child.localName === 'childTnLst');
+      if (node.namespaceUri !== PRESENTATIONML_NS || (node.localName !== 'par' && node.localName !== 'seq')) continue;
+      const time = xmlElementChildren(node).find((child) => child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cTn');
+      const list =
+        time && xmlElementChildren(time).find((child) => child.namespaceUri === PRESENTATIONML_NS && child.localName === 'childTnLst');
       const parent = parentElement(node);
       if (list && xmlElementChildren(list).length === 0 && parent) {
         removeXmlChild(parent, node);
@@ -308,33 +292,33 @@ function pruneEmptyTimeContainers(timing: XmlElement): void {
     if (!changed) break;
   }
   for (const node of walkElements(timing).reverse()) {
-    if (node.namespaceUri !== PRESENTATIONML_NS
+    if (
+      node.namespaceUri !== PRESENTATIONML_NS
       || (node.localName !== 'tnLst' && node.localName !== 'bldLst')
-      || xmlElementChildren(node).length !== 0 || materialAttribute(node)) continue;
+      || xmlElementChildren(node).length !== 0
+      || materialAttribute(node)
+    )
+      continue;
     const parent = parentElement(node);
     if (parent) removeXmlChild(parent, node);
   }
 }
 
 function spTargets(root: XmlElement): XmlElement[] {
-  return walkElements(root).filter((element) =>
-    element.namespaceUri === PRESENTATIONML_NS && element.localName === 'spTgt');
+  return walkElements(root).filter((element) => element.namespaceUri === PRESENTATIONML_NS && element.localName === 'spTgt');
 }
 
 function removeTargetNode(target: XmlElement): void {
   const parent = parentElement(target);
   if (!parent) return;
   removeXmlChild(parent, target);
-  if (parent.localName === 'tgtEl' && xmlElementChildren(parent).length === 0
-    && !materialAttribute(parent)) {
+  if (parent.localName === 'tgtEl' && xmlElementChildren(parent).length === 0 && !materialAttribute(parent)) {
     const grandparent = parentElement(parent);
     if (grandparent) removeXmlChild(grandparent, parent);
   }
 }
 
-const STRUCTURAL_BEHAVIOR_PARENTS = new Set([
-  'timing', 'tnLst', 'childTnLst', 'subTnLst', 'par', 'seq', 'cTn',
-]);
+const STRUCTURAL_BEHAVIOR_PARENTS = new Set(['timing', 'tnLst', 'childTnLst', 'subTnLst', 'par', 'seq', 'cTn']);
 
 function behaviorContainers(removals: ReadonlySet<XmlElement>): Set<XmlElement> {
   const parents = new Set<XmlElement>();
@@ -345,8 +329,7 @@ function behaviorContainers(removals: ReadonlySet<XmlElement>): Set<XmlElement> 
   }
   const containers = new Set<XmlElement>();
   for (const parent of parents) {
-    const behaviors = xmlElementChildren(parent).filter((child) =>
-      child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cBhvr');
+    const behaviors = xmlElementChildren(parent).filter((child) => child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cBhvr');
     if (behaviors.length && behaviors.every((child) => removals.has(child))) containers.add(parent);
   }
   return containers;
@@ -361,13 +344,12 @@ function conditionTimeContainers(removals: ReadonlySet<XmlElement>): Set<XmlElem
   }
   const containers = new Set<XmlElement>();
   for (const list of lists) {
-    const conditions = xmlElementChildren(list).filter((child) =>
-      child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cond');
+    const conditions = xmlElementChildren(list).filter((child) => child.namespaceUri === PRESENTATIONML_NS && child.localName === 'cond');
     if (!conditions.length || !conditions.every((child) => removals.has(child))) continue;
     const time = parentElement(list);
     const container = time && parentElement(time);
-    if (container && container.namespaceUri === PRESENTATIONML_NS
-      && (container.localName === 'par' || container.localName === 'seq')) containers.add(container);
+    if (container && container.namespaceUri === PRESENTATIONML_NS && (container.localName === 'par' || container.localName === 'seq'))
+      containers.add(container);
   }
   return containers;
 }
@@ -382,8 +364,8 @@ function insideRemoval(element: XmlElement, removals: ReadonlySet<XmlElement>): 
 function emptyPresetOwners(timing: XmlElement): XmlElement[] {
   return walkElements(timing).filter((owner) => {
     const time = presetTime(owner);
-    const list = time && xmlElementChildren(time).find((child) =>
-      child.namespaceUri === PRESENTATIONML_NS && child.localName === 'childTnLst');
+    const list =
+      time && xmlElementChildren(time).find((child) => child.namespaceUri === PRESENTATIONML_NS && child.localName === 'childTnLst');
     return !!list && xmlElementChildren(list).length === 0;
   });
 }
@@ -398,11 +380,9 @@ function removePlanned(nodes: ReadonlySet<XmlElement>): void {
 function allTimingSlots(root: XmlElement): TimingSlot[] {
   const slots: TimingSlot[] = directTimings(root).map((timing) => ({ parent: root, timing }));
   for (const alternate of xmlElementChildren(root)) {
-    if (alternate.namespaceUri !== MARKUP_COMPATIBILITY_NS
-      || alternate.localName !== 'AlternateContent') continue;
+    if (alternate.namespaceUri !== MARKUP_COMPATIBILITY_NS || alternate.localName !== 'AlternateContent') continue;
     for (const branch of xmlElementChildren(alternate)) {
-      if (branch.namespaceUri !== MARKUP_COMPATIBILITY_NS
-        || (branch.localName !== 'Choice' && branch.localName !== 'Fallback')) continue;
+      if (branch.namespaceUri !== MARKUP_COMPATIBILITY_NS || (branch.localName !== 'Choice' && branch.localName !== 'Fallback')) continue;
       for (const timing of directTimings(branch)) slots.push({ parent: branch, timing });
     }
   }
@@ -410,9 +390,7 @@ function allTimingSlots(root: XmlElement): TimingSlot[] {
 }
 
 /** 删除对象必须保留式清理所有已知/未知行为和 build 对该 spid 的引用。 */
-export function removeSlideAnimationTargets(
-  document: XmlDocument, sourceSpids: readonly number[],
-): void {
+export function removeSlideAnimationTargets(document: XmlDocument, sourceSpids: readonly number[]): void {
   if (!sourceSpids.length) return;
   const spids = new Set(sourceSpids);
   for (const slot of allTimingSlots(document.root)) {
@@ -421,15 +399,17 @@ export function removeSlideAnimationTargets(
     const surgicalTargets = new Set<XmlElement>();
     const targetsByOwner = new Map<XmlElement, XmlElement[]>();
     for (const element of walkElements(timing)) {
-      if (element.namespaceUri === PRESENTATIONML_NS && element.localName === 'spTgt'
-        && spids.has(Number(attributeValue(element, 'spid')))) {
+      if (
+        element.namespaceUri === PRESENTATIONML_NS
+        && element.localName === 'spTgt'
+        && spids.has(Number(attributeValue(element, 'spid')))
+      ) {
         const owner = targetOwner(element);
         if (owner) targetsByOwner.set(owner, [...(targetsByOwner.get(owner) ?? []), element]);
       }
     }
     for (const [owner, targets] of targetsByOwner) {
-      const retained = spTargets(owner).some((target) =>
-        !spids.has(Number(attributeValue(target, 'spid'))));
+      const retained = spTargets(owner).some((target) => !spids.has(Number(attributeValue(target, 'spid'))));
       if (retained) targets.forEach((target) => surgicalTargets.add(target));
       else removals.add(owner);
     }
@@ -448,8 +428,9 @@ export function removeSlideAnimationTargets(
     preserveClickBoundaries(timing, presetRemovals);
     removePlanned(timeContainers);
 
-    for (const buildList of walkElements(timing).filter((element) =>
-      element.namespaceUri === PRESENTATIONML_NS && element.localName === 'bldLst')) {
+    for (const buildList of walkElements(timing).filter(
+      (element) => element.namespaceUri === PRESENTATIONML_NS && element.localName === 'bldLst',
+    )) {
       for (const build of [...xmlElementChildren(buildList)]) {
         if (referencesTarget(build, spids)) removeXmlChild(buildList, build);
       }
@@ -464,12 +445,7 @@ export function removeSlideAnimationTargets(
   }
 }
 
-function patchTiming(
-  parent: XmlElement,
-  timing: XmlElement,
-  steps: readonly EditAnimationStep[],
-  doc: EditDoc,
-): void {
+function patchTiming(parent: XmlElement, timing: XmlElement, steps: readonly EditAnimationStep[], doc: EditDoc): void {
   for (const element of [...xmlElementChildren(timing)]) {
     if (element.namespaceUri === PRESENTATIONML_NS && element.localName === 'tnLst') {
       removeXmlChild(timing, element);
@@ -477,9 +453,10 @@ function patchTiming(
   }
   if (steps.length) {
     const list = namespacedElement(timing, PRESENTATIONML_NS, 'tnLst');
-    const before = xmlElementChildren(timing).find((element) =>
-      element.namespaceUri === PRESENTATIONML_NS
-        && (element.localName === 'bldLst' || element.localName === 'extLst')) ?? null;
+    const before =
+      xmlElementChildren(timing).find(
+        (element) => element.namespaceUri === PRESENTATIONML_NS && (element.localName === 'bldLst' || element.localName === 'extLst'),
+      ) ?? null;
     insertXmlChildUnchecked(timing, list, before);
     appendTimeTree(list, steps, doc);
   } else if (!materialAttribute(timing) && xmlElementChildren(timing).length === 0) {
@@ -488,12 +465,7 @@ function patchTiming(
 }
 
 /** bldLst 按 spid/grpId 描述图表/SmartArt build，不依赖 cTn id；本票只替换 tnLst。 */
-export function patchSlideAnimations(
-  document: XmlDocument,
-  doc: EditDoc,
-  record: SlideRecord,
-  steps: readonly EditAnimationStep[],
-): void {
+export function patchSlideAnimations(document: XmlDocument, doc: EditDoc, record: SlideRecord, steps: readonly EditAnimationStep[]): void {
   let slots = timingSlots(document.root);
   if (!slots.length && steps.length) {
     const timing = namespacedElement(document.root, PRESENTATIONML_NS, 'timing');

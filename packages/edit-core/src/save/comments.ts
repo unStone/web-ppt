@@ -13,16 +13,25 @@ const relations = (bytes: Uint8Array) => children(parseXmlTree(bytes).root, 'Rel
 
 /** 每页拥有自己的批注 part；不能像图片那样共享，否则副本与原页会成为同一组批注。 */
 export function materializeDuplicateComments(
-  doc: EditDoc, slides: readonly SlideRecord[], baselines: Record<string, Uint8Array>,
-  created: Set<string>, changes: Record<string, Uint8Array | null>,
+  doc: EditDoc,
+  slides: readonly SlideRecord[],
+  baselines: Record<string, Uint8Array>,
+  created: Set<string>,
+  changes: Record<string, Uint8Array | null>,
 ): void {
   const source = (part: string) => baselines[part] ?? doc.package?.parts[part];
   const jobs = slides.flatMap((slide) => {
-    const owner = slide.creation?.duplicateSourcePart, target = slide.origin?.part;
+    const owner = slide.creation?.duplicateSourcePart,
+      target = slide.origin?.part;
     const bytes = owner && source(relationshipPartFor(owner));
     if (!bytes || !target) return [];
-    return relations(bytes).filter((r) => attr(r, 'Type')?.endsWith('/comments') && attr(r, 'TargetMode') !== 'External')
-      .map((relation) => ({ slide: target, id: attr(relation, 'Id')!, source: resolveRelationshipTarget(owner!, attr(relation, 'Target')!) }));
+    return relations(bytes)
+      .filter((r) => attr(r, 'Type')?.endsWith('/comments') && attr(r, 'TargetMode') !== 'External')
+      .map((relation) => ({
+        slide: target,
+        id: attr(relation, 'Id')!,
+        source: resolveRelationshipTarget(owner!, attr(relation, 'Target')!),
+      }));
   });
   const previous = [...created].filter((part) => /^ppt\/comments\/(?:_rels\/)?web-ppt-(?!edit-)/.test(part));
   if (!jobs.length && !previous.length) return;
@@ -32,7 +41,8 @@ export function materializeDuplicateComments(
   const authorBytes = authorPart && source(authorPart);
   if (authorPart && authorBytes) baselines[authorPart] ??= authorBytes.slice();
   // 老文件可能只有 authorId 而没有作者表；保留解析器的占位作者，不让复制阻断原本可保存的文稿。
-  const authors = authorBytes ? parseXmlTree(authorBytes) : undefined, counters = new Map<string, number>();
+  const authors = authorBytes ? parseXmlTree(authorBytes) : undefined,
+    counters = new Map<string, number>();
   const used = new Map<string, Set<number>>();
   for (const node of authors ? children(authors.root, 'cmAuthor') : []) {
     counters.set(attr(node, 'id')!, Number(attr(node, 'lastIdx')) || 0);
@@ -72,20 +82,28 @@ export function materializeDuplicateComments(
       while (used.get(author)!.has(idx)) idx++;
       if (idx > 0xffff_ffff) throw new Error('批注索引超出 OOXML 可表示范围');
       used.get(author)!.add(idx);
-      counters.set(author, Math.max(counters.get(author)!, idx)); previousIndex = idx;
+      counters.set(author, Math.max(counters.get(author)!, idx));
+      previousIndex = idx;
       remapped.set(`${author}:${attr(node, 'idx')}`, idx);
       setXmlAttribute(node, 'idx', String(idx));
     }
     for (const node of children(tree.root, 'cm')) {
-      const parent = findXmlDescendant(node, { localName: 'parentCm', namespaceUri: 'http://schemas.microsoft.com/office/powerpoint/2012/main' });
+      const parent = findXmlDescendant(node, {
+        localName: 'parentCm',
+        namespaceUri: 'http://schemas.microsoft.com/office/powerpoint/2012/main',
+      });
       const idx = parent && remapped.get(`${attr(parent, 'authorId')}:${attr(parent, 'idx')}`);
       if (parent && idx !== undefined) setXmlAttribute(parent, 'idx', String(idx));
     }
     const stem = `ppt/comments/web-ppt-${job.slide.slice(job.slide.lastIndexOf('/') + 1).replace(/\.xml$/, '')}`;
-    let part = `${stem}.xml`, suffix = 1;
+    let part = `${stem}.xml`,
+      suffix = 1;
     while (source(part) && !created.has(part)) part = `${stem}-${suffix++}.xml`;
-    changes[part] = serializeXmlTreeBytes(tree); active.add(part); created.add(part);
-    const rels = relationshipPartFor(job.slide), relTree = parseXmlTree(changes[rels] as Uint8Array);
+    changes[part] = serializeXmlTreeBytes(tree);
+    active.add(part);
+    created.add(part);
+    const rels = relationshipPartFor(job.slide),
+      relTree = parseXmlTree(changes[rels] as Uint8Array);
     const relation = children(relTree.root, 'Relationship').find((r) => attr(r, 'Id') === job.id);
     if (!relation) throw new Error('复制批注目标关系缺失');
     setXmlAttribute(relation, 'Target', relativeTarget(job.slide, part));
@@ -100,14 +118,23 @@ export function materializeDuplicateComments(
         const fragment = target.includes('#') ? target.slice(target.indexOf('#')) : '';
         setXmlAttribute(relation, 'Target', relativeTarget(part, resolveRelationshipTarget(job.source, target)) + fragment);
       }
-      changes[path] = serializeXmlTreeBytes(childTree); active.add(path); created.add(path);
+      changes[path] = serializeXmlTreeBytes(childTree);
+      active.add(path);
+      created.add(path);
     }
-    insertXmlChildUnchecked(types.root, createXmlElement('Override', { attributes: [
-      ['PartName', `/${part}`], ['ContentType', 'application/vnd.openxmlformats-officedocument.presentationml.comments+xml'],
-    ] }));
+    insertXmlChildUnchecked(
+      types.root,
+      createXmlElement('Override', {
+        attributes: [
+          ['PartName', `/${part}`],
+          ['ContentType', 'application/vnd.openxmlformats-officedocument.presentationml.comments+xml'],
+        ],
+      }),
+    );
   }
   for (const part of previous) if (!active.has(part)) changes[part] = null;
-  for (const node of authors ? children(authors.root, 'cmAuthor') : []) setXmlAttribute(node, 'lastIdx', String(counters.get(attr(node, 'id')!) ?? 0));
+  for (const node of authors ? children(authors.root, 'cmAuthor') : [])
+    setXmlAttribute(node, 'lastIdx', String(counters.get(attr(node, 'id')!) ?? 0));
   if (authors && authorPart) changes[authorPart] = serializeXmlTreeBytes(authors);
   changes[typesPart] = serializeXmlTreeBytes(types);
 }

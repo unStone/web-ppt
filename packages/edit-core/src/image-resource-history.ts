@@ -67,8 +67,11 @@ export function activeImageResourceHashes(doc: EditDoc): Set<string> {
     collectHashes(record.meta.imageReplacement, output, seen);
     collectHashes(record.ovr, output, seen);
     const source = record.src;
-    collectHashes(source.kind === 'image' ? source.src
-      : source.kind === 'shape' && source.fill?.type === 'image' ? source.fill.src : null, output, seen);
+    collectHashes(
+      source.kind === 'image' ? source.src : source.kind === 'shape' && source.fill?.type === 'image' ? source.fill.src : null,
+      output,
+      seen,
+    );
   }
   for (const record of Object.values(doc.slides)) collectHashes(record.backgroundImage, output, seen);
   // 生成式新图片没有 OOXML insertion 闭包，资源只由上面的 Schema token 引用。
@@ -76,8 +79,11 @@ export function activeImageResourceHashes(doc: EditDoc): Set<string> {
 }
 
 export function imageReachabilityMayChange(patches: readonly Patch[]): boolean {
-  return patches.some((patch) => isElementImageReplacementPatch(patch)
-    || isSlideBackgroundImagePatch(patch)
-    || isElementTextPatch(patch)
-    || (patch.path.length === 2 && (patch.path[0] === 'elements' || patch.path[0] === 'slides')));
+  return patches.some(
+    (patch) =>
+      isElementImageReplacementPatch(patch)
+      || isSlideBackgroundImagePatch(patch)
+      || isElementTextPatch(patch)
+      || (patch.path.length === 2 && (patch.path[0] === 'elements' || patch.path[0] === 'slides')),
+  );
 }

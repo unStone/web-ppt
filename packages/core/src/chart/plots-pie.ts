@@ -5,9 +5,7 @@ import type { SlideElement, ShapeElement, Stroke } from '../types';
 import type { PlotGroup } from './model';
 import { labelVisible } from './model';
 import { Pt, Rect, clamp, darken, formatNumber, lineEl, mix, nf, shapeEl, solid } from './util';
-import {
-  PlotEnv, TAU, circlePath, labelEl, labelString, num, pointFill, pointStroke,
-} from './plot-marks';
+import { PlotEnv, TAU, circlePath, labelEl, labelString, num, pointFill, pointStroke } from './plot-marks';
 
 // ---------- 饼 / 环 ----------
 
@@ -24,8 +22,7 @@ function sectorPath(cx: number, cy: number, r0: number, r1: number, a0: number, 
     return `M ${nf(cx)} ${nf(cy)} L ${P(r1, a0)} A ${nf(r1)} ${nf(r1)} 0 ${large} 1 ${P(r1, a1)} Z`;
   }
   return (
-    `M ${P(r1, a0)} A ${nf(r1)} ${nf(r1)} 0 ${large} 1 ${P(r1, a1)}` +
-    ` L ${P(r0, a1)} A ${nf(r0)} ${nf(r0)} 0 ${large} 0 ${P(r0, a0)} Z`
+    `M ${P(r1, a0)} A ${nf(r1)} ${nf(r1)} 0 ${large} 1 ${P(r1, a1)}` + ` L ${P(r0, a1)} A ${nf(r0)} ${nf(r0)} 0 ${large} 0 ${P(r0, a0)} Z`
   );
 }
 
@@ -43,8 +40,8 @@ function ellipseSector(cx: number, cy: number, rx: number, ry: number, a0: numbe
   const sweep = a1 - a0;
   if (sweep >= TAU - 1e-6) {
     return (
-      `M ${nf(cx - rx)} ${nf(cy)} A ${nf(rx)} ${nf(ry)} 0 1 1 ${nf(cx + rx)} ${nf(cy)}` +
-      ` A ${nf(rx)} ${nf(ry)} 0 1 1 ${nf(cx - rx)} ${nf(cy)} Z`
+      `M ${nf(cx - rx)} ${nf(cy)} A ${nf(rx)} ${nf(ry)} 0 1 1 ${nf(cx + rx)} ${nf(cy)}`
+      + ` A ${nf(rx)} ${nf(ry)} 0 1 1 ${nf(cx - rx)} ${nf(cy)} Z`
     );
   }
   const large = sweep > Math.PI ? 1 : 0;
@@ -65,10 +62,7 @@ function frontArcs(a0: number, a1: number): Array<[number, number]> {
 function wallPath(cx: number, cy: number, rx: number, ry: number, a0: number, a1: number, h: number): string {
   const P = (a: number, dy: number): string => ellipsePt(cx, cy + dy, rx, ry, a);
   const large = a1 - a0 > Math.PI ? 1 : 0;
-  return (
-    `M ${P(a0, 0)} A ${nf(rx)} ${nf(ry)} 0 ${large} 1 ${P(a1, 0)}` +
-    ` L ${P(a1, h)} A ${nf(rx)} ${nf(ry)} 0 ${large} 0 ${P(a0, h)} Z`
-  );
+  return `M ${P(a0, 0)} A ${nf(rx)} ${nf(ry)} 0 ${large} 1 ${P(a1, 0)}` + ` L ${P(a1, h)} A ${nf(rx)} ${nf(ry)} 0 ${large} 0 ${P(a0, h)} Z`;
 }
 
 /** 等轴测伪 3D 饼：压扁椭圆 + 前半圈侧壁，扇区按「前后」排序保证遮挡正确 */
@@ -105,12 +99,7 @@ export function renderPie3D(g: PlotGroup, rect: Rect, env: PlotEnv): SlideElemen
     const stroke = pointStroke(s, i, null, 0);
 
     for (const [b0, b1] of frontArcs(a, a1)) {
-      const el = shapeEl(
-        cx - rx, cy - ry, rx * 2, ry * 2 + wall,
-        wallPath(rx, ry, rx, ry, b0, b1, wall),
-        solid(darken(color)),
-        stroke,
-      );
+      const el = shapeEl(cx - rx, cy - ry, rx * 2, ry * 2 + wall, wallPath(rx, ry, rx, ry, b0, b1, wall), solid(darken(color)), stroke);
       walls.push({ el, depth: Math.sin((b0 + b1) / 2) });
     }
 
@@ -165,17 +154,7 @@ export function renderPie(g: PlotGroup, rect: Rect, env: PlotEnv): SlideElement[
       const cx = cx0 + Math.cos(mid) * boom;
       const cy = cy0 + Math.sin(mid) * boom;
       const { fill } = pointFill(g, s, i, env.ctx);
-      out.push(
-        shapeEl(
-          cx - r1,
-          cy - r1,
-          r1 * 2,
-          r1 * 2,
-          sectorPath(r1, r1, r0, r1, a, a + sweep),
-          fill,
-          pointStroke(s, i, null, 0),
-        ),
-      );
+      out.push(shapeEl(cx - r1, cy - r1, r1 * 2, r1 * 2, sectorPath(r1, r1, r0, r1, a, a + sweep), fill, pointStroke(s, i, null, 0)));
       if (labelVisible(s.dLbls)) {
         const outside = s.dLbls.pos === 'outEnd' || s.dLbls.pos === 'bestFit';
         const lr = outside ? r1 * 1.16 : (r0 + r1) / 2 + (r0 > 0 ? 0 : r1 * 0.12);
@@ -247,7 +226,7 @@ export function renderOfPie(g: PlotGroup, rect: Rect, env: PlotEnv): SlideElemen
   const gapX = rect.w * 0.08;
   const halfW = (rect.w - gapX) / 2;
   const r1 = Math.max(6, Math.min(halfW * (anyLabel ? 0.72 : 0.86), rect.h * (anyLabel ? 0.38 : 0.46)));
-  const r2 = Math.max(4, Math.min(r1 * clamp(spec.secondSize, 5, 200) / 100, halfW * 0.86, rect.h * 0.46));
+  const r2 = Math.max(4, Math.min((r1 * clamp(spec.secondSize, 5, 200)) / 100, halfW * 0.86, rect.h * 0.46));
   const cy = rect.y + rect.h / 2;
   const cx1 = rect.x + halfW / 2;
   const cx2 = rect.x + halfW + gapX + halfW / 2;
@@ -258,9 +237,7 @@ export function renderOfPie(g: PlotGroup, rect: Rect, env: PlotEnv): SlideElemen
 
   const pushLabel = (x: number, y: number, i: number | null, v: number): void => {
     if (!anyLabel) return;
-    const text = i === null
-      ? `其他 ${formatNumber(secSum / total, '0%')}`
-      : labelString(s, i, v, total > 0 ? v / total : null, env);
+    const text = i === null ? `其他 ${formatNumber(secSum / total, '0%')}` : labelString(s, i, v, total > 0 ? v / total : null, env);
     const el = labelEl(x, y, text, s.dLbls, env);
     if (el) labels.push(el);
   };
@@ -303,8 +280,9 @@ export function renderOfPie(g: PlotGroup, rect: Rect, env: PlotEnv): SlideElemen
       const hh = (vals[i] / secTotal) * barH;
       if (!(hh > 0)) continue;
       const { fill } = pointFill(g, s, i, env.ctx);
-      out.push(shapeEl(boxLeft, y, barW, hh,
-        `M 0 0 L ${nf(barW)} 0 L ${nf(barW)} ${nf(hh)} L 0 ${nf(hh)} Z`, fill, pointStroke(s, i, null, 0)));
+      out.push(
+        shapeEl(boxLeft, y, barW, hh, `M 0 0 L ${nf(barW)} 0 L ${nf(barW)} ${nf(hh)} L 0 ${nf(hh)} Z`, fill, pointStroke(s, i, null, 0)),
+      );
       pushLabel(boxLeft + barW / 2, y + hh / 2, i, vals[i]);
       y += hh;
     }

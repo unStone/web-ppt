@@ -1,19 +1,13 @@
 import { parse } from '@web-ppt/core';
 import type { EmbeddedFont, ParseOptions, Presentation } from '@web-ppt/core';
-import {
-  createDoc, disposeDoc, Editor, presentationSlideIdsByPart,
-} from '@web-ppt/edit-core';
+import { createDoc, disposeDoc, Editor, presentationSlideIdsByPart } from '@web-ppt/edit-core';
 import type { CreateDocOptions, EditorOptions, copyElements } from '@web-ppt/edit-core';
 import { registerSession, releaseSession, sessionState } from './session-state';
 import { createSlideEditor } from './slide-editor';
 import type { SlideEditor, SlideEditorOptions } from './slide-editor-types';
 import { RecoverySessionController } from './recovery-session';
-import {
-  RecoveryOpenCancelledError,
-} from './recovery-store';
-import type {
-  EditorRecovery, RecoveryCandidate, RecoveryOptions, RecoveryStoreJournal,
-} from './recovery-store';
+import { RecoveryOpenCancelledError } from './recovery-store';
+import type { EditorRecovery, RecoveryCandidate, RecoveryOptions, RecoveryStoreJournal } from './recovery-store';
 import { fingerprintSourceBytes, sourceBytes } from './source-fingerprint';
 import { createSelectionPane } from './selection-pane';
 import type { SelectionPane, SelectionPaneOptions } from './selection-pane-types';
@@ -77,7 +71,7 @@ export interface EditorSession {
    * 仅更新预览/图片及 SVG 导出的字体资源，不写入 PPTX 或历史；URL 仍由调用者拥有。
    * 宿主已安装并加载 FontFace 时设置 browserFontsReady，DOM 预览可复用它们。
    */
-  setFontResources(fonts: readonly EmbeddedFont[], options?: {browserFontsReady?: boolean}): void;
+  setFontResources(fonts: readonly EmbeddedFont[], options?: { browserFontsReady?: boolean }): void;
   mount(container: HTMLElement, options?: SlideEditorOptions): SlideEditor;
   mountSelectionPane(container: HTMLElement, options?: SelectionPaneOptions): SelectionPane;
   dispose(): void;
@@ -122,8 +116,7 @@ class BrowserEditorSession implements EditorSession {
     }));
     // 先为原始来源页保留身份，即使恢复日志已删除该页，剩余页也不能趁机换号。
     for (const slide of initialSlides) {
-      const value = (slide.part ? this.sourceSlideIdsByPart.get(slide.part) : undefined)
-        ?? sectionIdByIndex.get(slide.index);
+      const value = (slide.part ? this.sourceSlideIdsByPart.get(slide.part) : undefined) ?? sectionIdByIndex.get(slide.index);
       if (value !== undefined) this.claimProjectedSlideId(slide.id, value);
     }
     for (const slide of initialSlides) {
@@ -132,8 +125,7 @@ class BrowserEditorSession implements EditorSession {
     for (const slideId of Object.keys(editor.doc.slides).sort()) {
       if (this.projectedSlideIds.has(slideId)) continue;
       const record = editor.doc.slides[slideId];
-      const exact = record.creation?.presentationSlideId
-        ?? (record.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined);
+      const exact = record.creation?.presentationSlideId ?? (record.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined);
       if (exact !== undefined) this.claimProjectedSlideId(slideId, exact);
     }
     for (const slideId of Object.keys(editor.doc.slides).sort()) {
@@ -142,7 +134,9 @@ class BrowserEditorSession implements EditorSession {
     registerSession(this, presentation, copyFactory);
   }
 
-  get disposed(): boolean { return this.isDisposed; }
+  get disposed(): boolean {
+    return this.isDisposed;
+  }
 
   private claimProjectedSlideId(slideId: string, value: number): boolean {
     if (!Number.isSafeInteger(value) || value < 256 || value > MAX_PRESENTATION_SLIDE_ID) {
@@ -159,8 +153,7 @@ class BrowserEditorSession implements EditorSession {
     const known = this.projectedSlideIds.get(slideId);
     if (known !== undefined) return known;
     const record = this.editor.doc.slides[slideId];
-    const exact = record?.creation?.presentationSlideId
-      ?? (record?.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined);
+    const exact = record?.creation?.presentationSlideId ?? (record?.origin ? this.sourceSlideIdsByPart.get(record.origin.part) : undefined);
     if (exact !== undefined && this.claimProjectedSlideId(slideId, exact)) return exact;
     return this.allocateProjectedSlideId(slideId);
   }
@@ -217,17 +210,14 @@ class BrowserEditorSession implements EditorSession {
     return createSlideEditor(container, this, options);
   }
 
-  setFontResources(fonts: readonly EmbeddedFont[], options: {browserFontsReady?: boolean} = {}): void {
+  setFontResources(fonts: readonly EmbeddedFont[], options: { browserFontsReady?: boolean } = {}): void {
     const state = sessionState(this);
-    state.presentation.embeddedFonts = fonts.map(font => ({ ...font }));
+    state.presentation.embeddedFonts = fonts.map((font) => ({ ...font }));
     state.browserFontsReady = options.browserFontsReady === true;
     for (const refresh of state.fontRefresh) refresh();
   }
 
-  mountSelectionPane(
-    container: HTMLElement,
-    options: SelectionPaneOptions = {},
-  ): SelectionPane {
+  mountSelectionPane(container: HTMLElement, options: SelectionPaneOptions = {}): SelectionPane {
     sessionState(this);
     return createSelectionPane(container, this, options);
   }
@@ -262,28 +252,30 @@ function recoveryCandidate(journal: RecoveryStoreJournal): RecoveryCandidate {
   });
 }
 
-function assertJournal(
-  journal: RecoveryStoreJournal,
-  fingerprint: string,
-  byteLength: number,
-): void {
+function assertJournal(journal: RecoveryStoreJournal, fingerprint: string, byteLength: number): void {
   const latest = journal?.frames?.[journal.frames.length - 1];
-  if (!journal || journal.version !== 1 || !journal.source
-    || journal.source.fingerprint !== fingerprint || journal.source.byteLength !== byteLength
+  if (
+    !journal
+    || journal.version !== 1
+    || !journal.source
+    || journal.source.fingerprint !== fingerprint
+    || journal.source.byteLength !== byteLength
     || typeof journal.idPrefix !== 'string'
-    || typeof journal.epoch !== 'string' || !journal.epoch || !Array.isArray(journal.frames)
-    || !Number.isFinite(journal.createdAt) || !Number.isFinite(journal.updatedAt)
+    || typeof journal.epoch !== 'string'
+    || !journal.epoch
+    || !Array.isArray(journal.frames)
+    || !Number.isFinite(journal.createdAt)
+    || !Number.isFinite(journal.updatedAt)
     || journal.createdAt > journal.updatedAt
-    || !Number.isFinite(journal.estimatedBytes) || journal.estimatedBytes < 0
-    || (latest && (typeof latest.dirty !== 'boolean' || typeof latest.label !== 'string'))) {
+    || !Number.isFinite(journal.estimatedBytes)
+    || journal.estimatedBytes < 0
+    || (latest && (typeof latest.dirty !== 'boolean' || typeof latest.label !== 'string'))
+  ) {
     throw new Error('恢复存储返回了无效日志');
   }
 }
 
-export async function openEditor(
-  input: File | Blob | ArrayBuffer | Uint8Array,
-  options: OpenEditorOptions = {},
-): Promise<EditorSession> {
+export async function openEditor(input: File | Blob | ArrayBuffer | Uint8Array, options: OpenEditorOptions = {}): Promise<EditorSession> {
   if (options.recovery && options.recoveryFrames) {
     throw new Error('recovery 与 recoveryFrames 不能同时使用');
   }
@@ -312,7 +304,8 @@ export async function openEditor(
         const decide = options.recovery.decide;
         if (!decide) throw new Error('发现恢复日志，但没有提供恢复决策函数');
         const decision = await waitForDecision(
-          Promise.resolve().then(() => decide(candidate)), signal,
+          Promise.resolve().then(() => decide(candidate)),
+          signal,
         );
         if (decision === 'cancel') throw new RecoveryOpenCancelledError(candidate);
         if (decision === 'discard') {
@@ -332,7 +325,10 @@ export async function openEditor(
       // 先原子占位再解析；旧页面的迟到追加只能命中代际冲突，不能复活已丢弃日志。
       throwIfAborted(signal);
       await options.recovery.store.reset({
-        source: sourceIdentity, idPrefix, epoch: recoveryEpoch, signal,
+        source: sourceIdentity,
+        idPrefix,
+        epoch: recoveryEpoch,
+        signal,
       });
       throwIfAborted(signal);
     }
@@ -345,9 +341,9 @@ export async function openEditor(
     ...(options.password === undefined ? {} : { password: options.password }),
   });
   try {
-    const copyFactory = !presentation.package ? (await waitForDecision(
-      import('@web-ppt/edit-core/generate'), options.recovery?.signal,
-    )).copyPortableElements : undefined;
+    const copyFactory = !presentation.package
+      ? (await waitForDecision(import('@web-ppt/edit-core/generate'), options.recovery?.signal)).copyPortableElements
+      : undefined;
     throwIfAborted(options.recovery?.signal);
     const doc = createDoc(presentation, { idPrefix });
     const editor = new Editor(doc, {
@@ -356,10 +352,10 @@ export async function openEditor(
       historyByteLimit: options.historyByteLimit,
       recoveryFrames: recovered?.frames ?? options.recoveryFrames,
     });
-    const recovery = options.recovery && sourceIdentity
-      ? new RecoverySessionController(
-        editor, sourceIdentity, options.recovery, recoveryEpoch as string,
-      ) : null;
+    const recovery =
+      options.recovery && sourceIdentity
+        ? new RecoverySessionController(editor, sourceIdentity, options.recovery, recoveryEpoch as string)
+        : null;
     return new BrowserEditorSession(editor, presentation, recovery, copyFactory);
   } catch (error) {
     presentation.dispose?.();

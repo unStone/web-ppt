@@ -42,11 +42,10 @@ interface SuppressedClick {
 const point = (event: PointerEvent): SpacePoint => ({ x: event.clientX, y: event.clientY });
 const pointerId = (event: PointerEvent): number => event.pointerId ?? 0;
 const isTouch = (event: PointerEvent): boolean => event.pointerType === 'touch';
-const centerOf = (points: readonly SpacePoint[]): SpacePoint => points.length === 1
-  ? points[0]
-  : { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
-const distanceOf = (points: readonly SpacePoint[]): number | null => points.length < 2
-  ? null : Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
+const centerOf = (points: readonly SpacePoint[]): SpacePoint =>
+  points.length === 1 ? points[0] : { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
+const distanceOf = (points: readonly SpacePoint[]): number | null =>
+  points.length < 2 ? null : Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
 
 /** 只管理视图局部触屏导航；模型、历史与宿主滚动位置都不进入这里。 */
 export class TouchGestureController {
@@ -56,18 +55,23 @@ export class TouchGestureController {
   private longPress: LongPressState | null = null;
   private suppressedClick: SuppressedClick | null = null;
 
-  constructor(options: TouchGestureOptions) { this.options = options; }
+  constructor(options: TouchGestureOptions) {
+    this.options = options;
+  }
 
-  get isActive(): boolean { return this.navigation !== null || this.longPress?.fired === true; }
+  get isActive(): boolean {
+    return this.navigation !== null || this.longPress?.fired === true;
+  }
 
   down(event: PointerEvent): boolean {
     if (this.suppressedClick && Date.now() > this.suppressedClick.until) this.suppressedClick = null;
-    const capabilities = (event as PointerEvent & {
-      readonly sourceCapabilities?: { readonly firesTouchEvents?: boolean };
-    }).sourceCapabilities;
+    const capabilities = (
+      event as PointerEvent & {
+        readonly sourceCapabilities?: { readonly firesTouchEvents?: boolean };
+      }
+    ).sourceCapabilities;
     // 兼容鼠标事件属于同一次长按；其它 pointerdown 已明确开始了下一次物理操作。
-    if (this.suppressedClick && (isTouch(event)
-      || event.pointerType !== 'mouse' || capabilities?.firesTouchEvents !== true)) {
+    if (this.suppressedClick && (isTouch(event) || event.pointerType !== 'mouse' || capabilities?.firesTouchEvents !== true)) {
       this.suppressedClick = null;
     }
     if (!isTouch(event)) return false;
@@ -96,9 +100,13 @@ export class TouchGestureController {
     if (!isTouch(event) || !this.pointers.has(pointerId(event))) return false;
     this.pointers.set(pointerId(event), point(event));
     const pending = this.longPress;
-    if (pending && pending.pointerId === pointerId(event) && !pending.fired
-      && Math.hypot(event.clientX - pending.start.x, event.clientY - pending.start.y)
-        > LONG_PRESS_MOVE_TOLERANCE) this.clearLongPress();
+    if (
+      pending
+      && pending.pointerId === pointerId(event)
+      && !pending.fired
+      && Math.hypot(event.clientX - pending.start.x, event.clientY - pending.start.y) > LONG_PRESS_MOVE_TOLERANCE
+    )
+      this.clearLongPress();
     if (!this.navigation) return false;
     event.preventDefault();
     this.scheduleFrame();
@@ -135,8 +143,7 @@ export class TouchGestureController {
       this.pointers.delete(pointerId(event));
       return false;
     }
-    if (event.type === 'lostpointercapture'
-      && this.options.root.hasPointerCapture?.(pointerId(event))) return true;
+    if (event.type === 'lostpointercapture' && this.options.root.hasPointerCapture?.(pointerId(event))) return true;
     this.cancel();
     return true;
   }
@@ -157,7 +164,11 @@ export class TouchGestureController {
     if (this.pointers.size !== 1 || !this.pointers.has(pointerId(event))) return;
     this.clearLongPress();
     const state: LongPressState = {
-      pointerId: pointerId(event), start: point(event), targetId, timer: null, fired: false,
+      pointerId: pointerId(event),
+      start: point(event),
+      targetId,
+      timer: null,
+      fired: false,
     };
     const view = this.options.root.ownerDocument.defaultView;
     this.longPress = state;
@@ -172,8 +183,7 @@ export class TouchGestureController {
       this.suppressedClick = null;
       return;
     }
-    if (Math.hypot(event.clientX - suppressed.point.x, event.clientY - suppressed.point.y)
-      > LONG_PRESS_MOVE_TOLERANCE) return;
+    if (Math.hypot(event.clientX - suppressed.point.x, event.clientY - suppressed.point.y) > LONG_PRESS_MOVE_TOLERANCE) return;
     this.suppressedClick = null;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -184,7 +194,9 @@ export class TouchGestureController {
     return { left: rect.left, top: rect.top, zoom: this.options.zoom() };
   }
 
-  private points(): SpacePoint[] { return [...this.pointers.values()].slice(0, 2); }
+  private points(): SpacePoint[] {
+    return [...this.pointers.values()].slice(0, 2);
+  }
 
   private base(viewport: SlideViewport): NavigationBase {
     const points = this.points();
@@ -202,8 +214,10 @@ export class TouchGestureController {
     const center = centerOf(points);
     const distance = distanceOf(points);
     const base = navigation.base;
-    const zoom = distance !== null && base.distance !== null && base.distance > 0
-      ? base.viewport.zoom * distance / base.distance : base.viewport.zoom;
+    const zoom =
+      distance !== null && base.distance !== null && base.distance > 0
+        ? (base.viewport.zoom * distance) / base.distance
+        : base.viewport.zoom;
     const anchor = {
       x: (base.center.x - base.viewport.left) / base.viewport.zoom,
       y: (base.center.y - base.viewport.top) / base.viewport.zoom,
@@ -248,19 +262,22 @@ export class TouchGestureController {
   private emit(phase: TouchNavigationChange['phase']): void {
     if (!this.navigation) return;
     this.options.navigate({
-      phase, viewport: { ...this.navigation.viewport }, pointerCount: Math.min(2, this.pointers.size),
+      phase,
+      viewport: { ...this.navigation.viewport },
+      pointerCount: Math.min(2, this.pointers.size),
     });
   }
 
   private capture(id: number): void {
-    try { this.options.root.setPointerCapture?.(id); } catch {
+    try {
+      this.options.root.setPointerCapture?.(id);
+    } catch {
       /* 合成事件没有活动指针；真实触控仍必须走 capture。 */
     }
   }
 
   private fireLongPress(state: LongPressState): void {
-    if (this.longPress !== state || this.navigation || this.pointers.size !== 1
-      || !this.pointers.has(state.pointerId)) return;
+    if (this.longPress !== state || this.navigation || this.pointers.size !== 1 || !this.pointers.has(state.pointerId)) return;
     state.timer = null;
     state.fired = true;
     this.options.cancelObjectGestures();
@@ -268,7 +285,8 @@ export class TouchGestureController {
     this.suppressedClick = { until: Date.now() + 1000, point: { ...state.start } };
     const viewport = this.currentViewport();
     this.options.context({
-      source: 'touch', screen: { ...state.start },
+      source: 'touch',
+      screen: { ...state.start },
       slide: {
         x: (state.start.x - viewport.left) / viewport.zoom,
         y: (state.start.y - viewport.top) / viewport.zoom,
@@ -298,7 +316,9 @@ export class TouchGestureController {
     for (const id of this.pointers.keys()) {
       try {
         if (this.options.root.hasPointerCapture?.(id)) this.options.root.releasePointerCapture(id);
-      } catch { /* pointerup / cancel 可能已由浏览器释放。 */ }
+      } catch {
+        /* pointerup / cancel 可能已由浏览器释放。 */
+      }
     }
   }
 }

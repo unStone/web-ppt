@@ -11,11 +11,10 @@ export interface ExtensionAddress {
   readonly merge?: 'equal';
 }
 
-const validKey = (key: unknown): key is string => typeof key === 'string' && !!key && key.length <= 1024
-  && !['__proto__', 'prototype', 'constructor'].includes(key);
+const validKey = (key: unknown): key is string =>
+  typeof key === 'string' && !!key && key.length <= 1024 && !['__proto__', 'prototype', 'constructor'].includes(key);
 const namespacePattern = /^[a-z][a-z0-9-]{0,63}$/;
-const table = (doc: EditDoc) => doc.extensions?.[EXTENSION_ADDRESSES] as
-  Record<string, Record<string, string>> | undefined;
+const table = (doc: EditDoc) => doc.extensions?.[EXTENSION_ADDRESSES] as Record<string, Record<string, string>> | undefined;
 
 export const isExtensionAddressPatch = (patch: Patch): patch is DocumentExtensionPatch =>
   patch.path[0] === 'document' && patch.path[1] === 'extensions' && patch.path[2] === EXTENSION_ADDRESSES;
@@ -23,16 +22,26 @@ export const isExtensionAddressPatch = (patch: Patch): patch is DocumentExtensio
 export function readExtensionAddress(value: unknown): ExtensionAddress {
   if (typeof value !== 'string') throw new Error('扩展地址必须是序列化的纯数据');
   const address = JSON.parse(value) as ExtensionAddress;
-  if (!address || typeof address !== 'object' || Array.isArray(address)
-    || Object.keys(address).some(key => !['target', 'identities', 'remap', 'merge'].includes(key))
-    || !Array.isArray(address.target) || address.target.length < 4 || address.target.length > 12
-    || address.target[0] !== 'document' || address.target[1] !== 'extensions'
-    || address.target[2] === EXTENSION_ADDRESSES || address.target[2] === 'edit-migrations'
+  if (
+    !address
+    || typeof address !== 'object'
+    || Array.isArray(address)
+    || Object.keys(address).some((key) => !['target', 'identities', 'remap', 'merge'].includes(key))
+    || !Array.isArray(address.target)
+    || address.target.length < 4
+    || address.target.length > 12
+    || address.target[0] !== 'document'
+    || address.target[1] !== 'extensions'
+    || address.target[2] === EXTENSION_ADDRESSES
+    || address.target[2] === 'edit-migrations'
     || !namespacePattern.test(address.target[2])
-    || address.target.some(key => !validKey(key))
-    || !address.identities || typeof address.identities !== 'object' || Array.isArray(address.identities)
+    || address.target.some((key) => !validKey(key))
+    || !address.identities
+    || typeof address.identities !== 'object'
+    || Array.isArray(address.identities)
     || Object.entries(address.identities).some(([key, id]) => !validKey(key) || !validKey(id))
-    || address.merge !== undefined && address.merge !== 'equal') {
+    || (address.merge !== undefined && address.merge !== 'equal')
+  ) {
     throw new Error('扩展地址映射无效');
   }
   assertIdentityRemap(address.remap);
@@ -44,8 +53,12 @@ export function extensionAddressPatches(doc: EditDoc, origin: string): DocumentE
     if (!namespaces || typeof namespaces !== 'object' || Array.isArray(namespaces)) {
       throw new Error('扩展地址来源必须是命名空间容器');
     }
-    return Object.entries(namespaces).map(([namespace, value]) => ({ op: 'set' as const, origin,
-      path: ['document', 'extensions', EXTENSION_ADDRESSES, id, namespace] as const, value }));
+    return Object.entries(namespaces).map(([namespace, value]) => ({
+      op: 'set' as const,
+      origin,
+      path: ['document', 'extensions', EXTENSION_ADDRESSES, id, namespace] as const,
+      value,
+    }));
   });
 }
 
@@ -66,11 +79,14 @@ export function canonicalExtensionPatch(doc: EditDoc, patch: Patch): Patch {
 }
 
 function canShare(left: ExtensionAddress, right: ExtensionAddress): boolean {
-  return (left.merge === 'equal' || right.merge === 'equal')
-    && left.target.length === right.target.length && left.target.every((key, index) => key === right.target[index])
+  return (
+    (left.merge === 'equal' || right.merge === 'equal')
+    && left.target.length === right.target.length
+    && left.target.every((key, index) => key === right.target[index])
     && (left.remap?.prefix ?? '') === (right.remap?.prefix ?? '')
     && Object.keys(left.identities).length === Object.keys(right.identities).length
-    && Object.entries(left.identities).every(([key, id]) => right.identities[key] === id);
+    && Object.entries(left.identities).every(([key, id]) => right.identities[key] === id)
+  );
 }
 
 function targetValue(doc: EditDoc, address: ExtensionAddress): unknown {
@@ -100,7 +116,10 @@ export function validateExtensionAddress(doc: EditDoc, patch: DocumentExtensionP
 }
 
 export function validateExtensionAddresses(doc: EditDoc): void {
-  interface Node { terminal?: ExtensionAddress; children: Map<string, Node> }
+  interface Node {
+    terminal?: ExtensionAddress;
+    children: Map<string, Node>;
+  }
   const root: Node = { children: new Map() };
   for (const patch of extensionAddressPatches(doc, 'validate')) {
     validateExtensionAddress(doc, patch);
@@ -109,10 +128,10 @@ export function validateExtensionAddresses(doc: EditDoc): void {
     for (const key of address.target) {
       if (node.terminal) throw new Error('扩展迁移目标不能重叠');
       let child = node.children.get(key);
-      if (!child) node.children.set(key, child = { children: new Map() });
+      if (!child) node.children.set(key, (child = { children: new Map() }));
       node = child;
     }
-    if (node.terminal && !canShare(node.terminal, address) || node.children.size) throw new Error('扩展迁移目标不能重叠');
+    if ((node.terminal && !canShare(node.terminal, address)) || node.children.size) throw new Error('扩展迁移目标不能重叠');
     node.terminal = address;
   }
 }
@@ -120,18 +139,19 @@ export function validateExtensionAddresses(doc: EditDoc): void {
 export function moveExtensionAddress(doc: EditDoc, patch: DocumentExtensionPatch): void {
   if (patch.op !== 'set') return;
   if (table(doc)?.[patch.path[3]]?.[patch.path[4]] !== undefined) return;
-  const record = doc.elements[patch.path[3]], namespace = patch.path[4];
+  const record = doc.elements[patch.path[3]],
+    namespace = patch.path[4];
   const value = record?.ovr.extensions?.[namespace];
   if (value === undefined) return;
   const address = readExtensionAddress(patch.value);
-  let target = doc.extensions ??= Object.create(null) as Record<string, unknown>;
+  let target = (doc.extensions ??= Object.create(null) as Record<string, unknown>);
   for (const key of address.target.slice(2, -1)) {
     target[key] ??= Object.create(null);
     target = target[key] as Record<string, unknown>;
   }
   const key = address.target[address.target.length - 1];
-  target[key] = address.merge === 'equal' || address.remap
-    ? mergeExtensionValue(target[key], value, address.remap) : structuredClone(value);
+  target[key] =
+    address.merge === 'equal' || address.remap ? mergeExtensionValue(target[key], value, address.remap) : structuredClone(value);
   delete record.ovr.extensions![namespace];
   if (!Object.keys(record.ovr.extensions!).length) delete record.ovr.extensions;
 }

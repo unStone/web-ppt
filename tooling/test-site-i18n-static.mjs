@@ -31,17 +31,23 @@ for (const page of ['index', 'samples', 'editor']) {
       const values = (id) => [...document.querySelector(id).options].map((node) => node.value);
       assert.deepEqual(values('#shapePreset'), [...PRESET_DEFINITION_NAMES], `${file} 静态形状目录必须与公开 API 完整一致`);
       const shapes = [...document.querySelector('#shapePreset').options];
-      assert.ok(shapes.every((option) => option.hasAttribute('value') && option.textContent.trim() !== option.value),
-        `${file} 形状使用可读名称，显式 value 保持格式标识符`);
-      const names = language === 'en'
-        ? { roundRect: 'Rounded rectangle', flowChartDecision: 'Flowchart: decision', star5: '5-point star' }
-        : { roundRect: '圆角矩形', flowChartDecision: '流程图：判定', star5: '五角星' };
+      assert.ok(
+        shapes.every((option) => option.hasAttribute('value') && option.textContent.trim() !== option.value),
+        `${file} 形状使用可读名称，显式 value 保持格式标识符`,
+      );
+      const names =
+        language === 'en'
+          ? { roundRect: 'Rounded rectangle', flowChartDecision: 'Flowchart: decision', star5: '5-point star' }
+          : { roundRect: '圆角矩形', flowChartDecision: '流程图：判定', star5: '五角星' };
       for (const [value, name] of Object.entries(names)) {
         assert.equal(shapes.find((option) => option.value === value)?.textContent, name, `${file} ${value} 的显示名称`);
       }
       assert.deepEqual(values('#transitionType'), [...SLIDE_TRANSITION_TYPES], `${file} 静态切换目录必须与公开 API 完整一致`);
-      assert.deepEqual(values('#transitionDirection').sort(), ['', ...new Set(SLIDE_TRANSITION_TYPES.flatMap(transitionDirections))].sort(),
-        `${file} 静态方向目录必须与公开 API 完整一致`);
+      assert.deepEqual(
+        values('#transitionDirection').sort(),
+        ['', ...new Set(SLIDE_TRANSITION_TYPES.flatMap(transitionDirections))].sort(),
+        `${file} 静态方向目录必须与公开 API 完整一致`,
+      );
       assert.deepEqual(values('#animationEffect'), [...ANIMATION_EFFECTS], `${file} 静态动画效果目录必须与公开 API 完整一致`);
     }
     assert.equal(document.documentElement.lang, language, `${file} 的无脚本语言`);
@@ -67,12 +73,17 @@ for (const page of ['index', 'samples', 'editor']) {
       if (language === 'en') assert.doesNotMatch(item.description ?? '', /\p{Script=Han}/u, `${file} JSON-LD 描述`);
     }
     assert.ok(document.querySelector('#siteLanguage'), `${file} 无脚本语言入口`);
-    assert.equal(document.querySelector(`[data-site-locale="${language}"]`)?.getAttribute('aria-current'), 'true',
-      `${file} 无脚本页面必须标明当前语言`);
-    assert.equal(document.querySelector(`[data-site-locale="${language === 'en' ? 'zh-CN' : 'en'}"]`)?.getAttribute('aria-current'), 'false',
-      `${file} 无脚本页面必须标明非当前语言`);
-    assert.ok(!document.documentElement.hasAttribute('data-site-language-ready'),
-      `${file} 不能把静态语言状态伪装成增强脚本已就绪`);
+    assert.equal(
+      document.querySelector(`[data-site-locale="${language}"]`)?.getAttribute('aria-current'),
+      'true',
+      `${file} 无脚本页面必须标明当前语言`,
+    );
+    assert.equal(
+      document.querySelector(`[data-site-locale="${language === 'en' ? 'zh-CN' : 'en'}"]`)?.getAttribute('aria-current'),
+      'false',
+      `${file} 无脚本页面必须标明非当前语言`,
+    );
+    assert.ok(!document.documentElement.hasAttribute('data-site-language-ready'), `${file} 不能把静态语言状态伪装成增强脚本已就绪`);
     if (language !== 'en') continue;
     assert.match(document.title, /Web-PPT/);
     for (const anchor of document.querySelectorAll('a[href]')) {
@@ -88,7 +99,7 @@ for (const page of ['index', 'samples', 'editor']) {
       assert.doesNotMatch(control.textContent, /\p{Script=Han}/u, `${file} 样本卡产品操作必须翻译`);
     }
     const walker = document.createTreeWalker(document.body, 4);
-    for (let node; (node = walker.nextNode());) {
+    for (let node; (node = walker.nextNode()); ) {
       if (node.parentElement.closest('script,style,[data-site-language],.sample-card')) continue;
       assert.doesNotMatch(node.data, /\p{Script=Han}/u, `${file} 尚未翻译的静态文本`);
     }

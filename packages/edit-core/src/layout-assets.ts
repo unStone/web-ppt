@@ -1,6 +1,13 @@
 import type {
-  Fill, Slide, SlideElement, SlideLayoutTemplate, SlideMasterTemplate, TableCell,
-  TableCreationDefaults, TableRow, TextBody,
+  Fill,
+  Slide,
+  SlideElement,
+  SlideLayoutTemplate,
+  SlideMasterTemplate,
+  TableCell,
+  TableCreationDefaults,
+  TableRow,
+  TextBody,
 } from '@web-ppt/core';
 import { bytesToBase64 } from './clipboard-binary';
 import type { EditDoc } from './types';
@@ -63,11 +70,7 @@ function hydrateRows(doc: EditDoc, rows: readonly TableRow[], assets: readonly L
   for (const row of rows) for (const cell of row.cells) hydrateCell(doc, cell, assets);
 }
 
-function hydrateTableDefaults(
-  doc: EditDoc,
-  defaults: TableCreationDefaults | undefined,
-  assets: readonly LayoutAsset[],
-): void {
+function hydrateTableDefaults(doc: EditDoc, defaults: TableCreationDefaults | undefined, assets: readonly LayoutAsset[]): void {
   if (!defaults) return;
   hydrateCell(doc, defaults.firstRow, assets);
   for (const cell of defaults.bandRows) hydrateCell(doc, cell, assets);
@@ -95,11 +98,7 @@ function hydrateElement(doc: EditDoc, element: SlideElement, assets: readonly La
 }
 
 /** 只兑现 Schema 的资源槽；普通字符串即使形似内部 token 也必须逐字保留。 */
-export function hydrateLayoutSlideAssets(
-  doc: EditDoc,
-  slide: Slide,
-  assets: readonly LayoutAsset[],
-): Slide {
+export function hydrateLayoutSlideAssets(doc: EditDoc, slide: Slide, assets: readonly LayoutAsset[]): Slide {
   hydrateFill(doc, slide.background, assets);
   for (const element of slide.elements) hydrateElement(doc, element, assets);
   const defaults = slide.editInfo?.defaultShape;

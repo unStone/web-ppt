@@ -1,12 +1,8 @@
 import { querySelectionPane } from '@web-ppt/edit-core';
-import type {
-  EditorChange, ElementId, Selection, SelectionPaneItem, SlideId,
-} from '@web-ppt/edit-core';
+import type { EditorChange, ElementId, Selection, SelectionPaneItem, SlideId } from '@web-ppt/edit-core';
 import type { EditorSession } from './session';
 import { sessionState } from './session-state';
-import type {
-  SelectionPane, SelectionPaneOptions,
-} from './selection-pane-types';
+import type { SelectionPane, SelectionPaneOptions } from './selection-pane-types';
 import type { EditorMode } from './slide-editor-types';
 
 interface PaneRow {
@@ -17,8 +13,7 @@ interface PaneRow {
   readonly lock: HTMLButtonElement;
 }
 
-const itemById = (items: readonly SelectionPaneItem[]): Map<ElementId, SelectionPaneItem> =>
-  new Map(items.map((item) => [item.id, item]));
+const itemById = (items: readonly SelectionPaneItem[]): Map<ElementId, SelectionPaneItem> => new Map(items.map((item) => [item.id, item]));
 
 function selectionIds(selection: Selection): ReadonlySet<ElementId> {
   if (selection.kind === 'elements') return new Set(selection.ids);
@@ -75,9 +70,15 @@ class DomSelectionPane implements SelectionPane {
     }
   }
 
-  get slideId(): SlideId { return this.currentSlide; }
-  get mode(): EditorMode { return this.currentMode; }
-  get destroyed(): boolean { return this.isDestroyed; }
+  get slideId(): SlideId {
+    return this.currentSlide;
+  }
+  get mode(): EditorMode {
+    return this.currentMode;
+  }
+  get destroyed(): boolean {
+    return this.isDestroyed;
+  }
 
   setSlide(slideId: SlideId): void {
     if (!this.session.editor.doc.slides[slideId]) throw new Error(`找不到幻灯片：${slideId}`);
@@ -129,8 +130,7 @@ class DomSelectionPane implements SelectionPane {
 
   private rebuild(): void {
     const active = this.element?.ownerDocument.activeElement as HTMLElement | null;
-    const restoreFocus = active?.closest<HTMLElement>('[data-pane-element]')?.dataset.paneElement
-      ?? this.focusId;
+    const restoreFocus = active?.closest<HTMLElement>('[data-pane-element]')?.dataset.paneElement ?? this.focusId;
     this.cancelRename();
     this.items = querySelectionPane(this.session.editor.doc, this.currentSlide);
     this.itemsById = itemById(this.items);
@@ -150,8 +150,7 @@ class DomSelectionPane implements SelectionPane {
       this.rows.set(item.id, row);
       this.tree.append(row.element);
     }
-    this.focusId = restoreFocus && this.rows.has(restoreFocus)
-      ? restoreFocus : this.selectedFocusId() ?? this.items[0]?.id ?? null;
+    this.focusId = restoreFocus && this.rows.has(restoreFocus) ? restoreFocus : (this.selectedFocusId() ?? this.items[0]?.id ?? null);
     this.syncRows();
     if (restoreFocus && this.rows.has(restoreFocus)) this.rows.get(restoreFocus)!.element.focus();
   }
@@ -221,8 +220,7 @@ class DomSelectionPane implements SelectionPane {
 
   private update(change: EditorChange): void {
     if (!this.session.editor.doc.slides[this.currentSlide]) {
-      const fallback = change.removedSlideFallbacks.get(this.currentSlide)
-        ?? this.session.editor.doc.slideOrder[0];
+      const fallback = change.removedSlideFallbacks.get(this.currentSlide) ?? this.session.editor.doc.slideOrder[0];
       if (!fallback) return;
       this.currentSlide = fallback;
       this.focusId = null;
@@ -230,8 +228,7 @@ class DomSelectionPane implements SelectionPane {
       return;
     }
     if (this.structureChanged(change)) this.rebuild();
-    else if ([...change.paneElements].some((id) =>
-      this.rows.has(id) || this.belongsToCurrentSlide(id))) {
+    else if ([...change.paneElements].some((id) => this.rows.has(id) || this.belongsToCurrentSlide(id))) {
       this.items = querySelectionPane(this.session.editor.doc, this.currentSlide);
       this.itemsById = itemById(this.items);
       this.syncRows();
@@ -329,7 +326,10 @@ class DomSelectionPane implements SelectionPane {
       let parentId = item.parentId;
       let hidden = false;
       while (parentId) {
-        if (this.collapsed.has(parentId)) { hidden = true; break; }
+        if (this.collapsed.has(parentId)) {
+          hidden = true;
+          break;
+        }
         parentId = this.itemsById.get(parentId)?.parentId ?? null;
       }
       const row = this.rows.get(item.id)?.element;
@@ -416,10 +416,17 @@ class DomSelectionPane implements SelectionPane {
     input.value = item.name;
     input.setAttribute('aria-label', `重命名 ${item.name}`);
     input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') { event.preventDefault(); this.commitRename(); }
-      else if (event.key === 'Escape') { event.preventDefault(); this.cancelRename(true); }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.commitRename();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        this.cancelRename(true);
+      }
     });
-    input.addEventListener('blur', () => { if (this.renameInput === input) this.commitRename(); });
+    input.addEventListener('blur', () => {
+      if (this.renameInput === input) this.commitRename();
+    });
     this.renameInput = input;
     this.renameId = id;
     row.name.replaceWith(input);
@@ -458,7 +465,11 @@ class DomSelectionPane implements SelectionPane {
   }
 
   private run(action: () => void): void {
-    try { action(); } catch (error) { this.report(error); }
+    try {
+      action();
+    } catch (error) {
+      this.report(error);
+    }
   }
 
   private report(error: unknown): void {
@@ -471,10 +482,6 @@ class DomSelectionPane implements SelectionPane {
   }
 }
 
-export function createSelectionPane(
-  container: HTMLElement,
-  session: EditorSession,
-  options: SelectionPaneOptions = {},
-): SelectionPane {
+export function createSelectionPane(container: HTMLElement, session: EditorSession, options: SelectionPaneOptions = {}): SelectionPane {
   return new DomSelectionPane(container, session, options);
 }

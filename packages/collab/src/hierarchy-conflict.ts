@@ -1,14 +1,12 @@
-import type {
-  EditDoc, ElementHierarchyPatch, ElementRecord, ElementTreePatch, Patch, RemovedElementRecord,
-} from '@web-ppt/edit-core';
+import type { EditDoc, ElementHierarchyPatch, ElementRecord, ElementTreePatch, Patch, RemovedElementRecord } from '@web-ppt/edit-core';
 
 const XFRM_FIELDS = ['x', 'y', 'w', 'h', 'rot', 'flipH', 'flipV'] as const;
-type HierarchyField = 'order' | typeof XFRM_FIELDS[number];
+type HierarchyField = 'order' | (typeof XFRM_FIELDS)[number];
 
 export const hierarchyRecords = (patch: Patch): Readonly<Record<string, ElementRecord | null>> | null =>
-  patch.op === 'set' && patch.path.length === 3 && patch.path[0] === 'elements'
-    && patch.path[2] === 'hierarchy'
-    ? (patch as ElementHierarchyPatch).value.records : null;
+  patch.op === 'set' && patch.path.length === 3 && patch.path[0] === 'elements' && patch.path[2] === 'hierarchy'
+    ? (patch as ElementHierarchyPatch).value.records
+    : null;
 
 /** 删除成员不应被并发组合/解组复活；其 tombstone 同步迁到层级意图的目标父链。 */
 export function hierarchyWithoutRemovedMembers(
@@ -19,8 +17,7 @@ export function hierarchyWithoutRemovedMembers(
   const root = patch.path[1];
   if (removedIds.has(patch.value.parent)) return null;
   if (removedIds.has(root) && patch.value.records[root] !== null) return null;
-  const omitted = Object.keys(patch.value.records).filter((id) =>
-    id !== root && removedIds.has(id) && patch.value.records[id] !== null);
+  const omitted = Object.keys(patch.value.records).filter((id) => id !== root && removedIds.has(id) && patch.value.records[id] !== null);
   if (!omitted.length) return patch;
   const result = structuredClone(patch) as ElementHierarchyPatch;
   const state = result.value as unknown as {
@@ -33,10 +30,14 @@ export function hierarchyWithoutRemovedMembers(
   for (const id of omitted) {
     const target = state.records[id]!;
     const previous = doc.removedElements[id];
-    state.removed[id] = previous ? structuredClone(previous) : {
-      id, parent: target.parent, meta: structuredClone(target.meta),
-      ...(target.meta.origin ? { sourceSpids: [target.meta.origin.spid] } : {}),
-    };
+    state.removed[id] = previous
+      ? structuredClone(previous)
+      : {
+          id,
+          parent: target.parent,
+          meta: structuredClone(target.meta),
+          ...(target.meta.origin ? { sourceSpids: [target.meta.origin.spid] } : {}),
+        };
     delete state.records[id];
     delete state.children[id];
   }
@@ -51,10 +52,7 @@ export function hierarchyWithoutRemovedMembers(
 }
 
 /** 重叠结构意图只裁掉已被更新 stamp 接管的成员；不相交成员仍可交换合并。 */
-export function hierarchyWithoutNewerMembers(
-  patch: ElementHierarchyPatch,
-  newerIds: ReadonlySet<string>,
-): ElementHierarchyPatch | null {
+export function hierarchyWithoutNewerMembers(patch: ElementHierarchyPatch, newerIds: ReadonlySet<string>): ElementHierarchyPatch | null {
   if (!newerIds.size) return patch;
   const root = patch.path[1];
   const rootRecord = patch.value.records[root];
@@ -88,10 +86,9 @@ function recordOrder(record: ElementRecord): string {
   return record.order ?? record.z;
 }
 
-function sortedChildren(
-  ids: Iterable<string>, records: Readonly<Record<string, ElementRecord | null>>, doc: EditDoc,
-): string[] {
-  return [...new Set(ids)].filter((id) => records[id] !== null && !!(records[id] ?? doc.elements[id]))
+function sortedChildren(ids: Iterable<string>, records: Readonly<Record<string, ElementRecord | null>>, doc: EditDoc): string[] {
+  return [...new Set(ids)]
+    .filter((id) => records[id] !== null && !!(records[id] ?? doc.elements[id]))
     .sort((left, right) => {
       const leftRecord = records[left] ?? doc.elements[left];
       const rightRecord = records[right] ?? doc.elements[right];
@@ -117,20 +114,17 @@ function mergeMovedRecord(
   }
   if (target.meta.sourceParent === undefined) delete merged.meta.sourceParent;
   else merged.meta.sourceParent = target.meta.sourceParent;
-  if (ungroup) for (const field of XFRM_FIELDS) {
-    if (!applyField(target.id, field)) continue;
-    if (Object.prototype.hasOwnProperty.call(target.ovr, field)) {
-      (merged.ovr as Record<string, unknown>)[field] = target.ovr[field];
-    } else delete (merged.ovr as Record<string, unknown>)[field];
-  }
+  if (ungroup)
+    for (const field of XFRM_FIELDS) {
+      if (!applyField(target.id, field)) continue;
+      if (Object.prototype.hasOwnProperty.call(target.ovr, field)) {
+        (merged.ovr as Record<string, unknown>)[field] = target.ovr[field];
+      } else delete (merged.ovr as Record<string, unknown>)[field];
+    }
   return merged;
 }
 
-function currentTreeSnapshot(
-  doc: EditDoc,
-  root: string,
-  include: ReadonlySet<string>,
-): ElementTreePatch['value'] {
+function currentTreeSnapshot(doc: EditDoc, root: string, include: ReadonlySet<string>): ElementTreePatch['value'] {
   const first = doc.elements[root];
   if (!first) throw new Error(`协同层级闭包找不到元素：${root}`);
   const records: Record<string, ElementRecord> = Object.create(null);
@@ -183,19 +177,21 @@ export function rebaseElementHierarchy(
   const root = patch.path[1];
   const rootTarget = state.records[root];
   const ungroup = rootTarget === null;
-  const members = Object.entries(state.records).flatMap(([id, record]) =>
-    id !== root && record !== null ? [id] : []);
+  const members = Object.entries(state.records).flatMap(([id, record]) => (id !== root && record !== null ? [id] : []));
   const memberSet = new Set(members);
   const removedByUngroup = new Set<string>();
 
   if (ungroup) {
-    const protectedIds = currentTreeIds(doc, members.filter((id) => !!doc.elements[id]));
+    const protectedIds = currentTreeIds(
+      doc,
+      members.filter((id) => !!doc.elements[id]),
+    );
     const currentRoot = doc.elements[root];
-    if (currentRoot) for (const id of currentTreeIds(doc, [root])) {
-      if (id !== root && !protectedIds.has(id)) removedByUngroup.add(id);
-    }
-    const deletionRoots = [...removedByUngroup].filter((id) =>
-      !removedByUngroup.has(doc.elements[id]?.parent ?? ''));
+    if (currentRoot)
+      for (const id of currentTreeIds(doc, [root])) {
+        if (id !== root && !protectedIds.has(id)) removedByUngroup.add(id);
+      }
+    const deletionRoots = [...removedByUngroup].filter((id) => !removedByUngroup.has(doc.elements[id]?.parent ?? ''));
     for (const id of removedByUngroup) {
       state.records[id] = null;
       state.affected.push(id);
@@ -237,8 +233,7 @@ export function rebaseElementHierarchy(
   const deletedGroups = new Set<string>();
   for (const id of superseded) {
     const group = doc.elements[id]!;
-    const remaining = (group.children ?? []).filter((child) =>
-      !memberSet.has(child) && !removedByUngroup.has(child));
+    const remaining = (group.children ?? []).filter((child) => !memberSet.has(child) && !removedByUngroup.has(child));
     state.affected.push(id);
     if (remaining.length) {
       state.records[id] = { ...structuredClone(group), children: remaining };
@@ -266,16 +261,14 @@ export function rebaseElementHierarchy(
         delete state.children[outer.id];
         deletedGroups.add(outer.id);
         if (outer.parent !== state.parent) {
-          state.children[outer.parent] = parentChildren(doc, outer.parent)
-            .filter((child) => child !== outer.id);
+          state.children[outer.parent] = parentChildren(doc, outer.parent).filter((child) => child !== outer.id);
         }
       }
     }
   }
 
   const currentParent = parentChildren(doc, state.parent);
-  const candidates = currentParent.filter((id) =>
-    !memberSet.has(id) && id !== root && !deletedGroups.has(id));
+  const candidates = currentParent.filter((id) => !memberSet.has(id) && id !== root && !deletedGroups.has(id));
   if (ungroup) candidates.push(...members);
   else candidates.push(root);
   state.children[state.parent] = sortedChildren(candidates, state.records, doc);
@@ -298,12 +291,12 @@ function sourceSpids(snapshot: ElementTreePatch['value'], root: ElementRecord): 
   return [...new Set(result)].sort((left, right) => left - right);
 }
 
-function deletionTombstone(
-  snapshot: ElementTreePatch['value'], record: ElementRecord,
-): RemovedElementRecord {
+function deletionTombstone(snapshot: ElementTreePatch['value'], record: ElementRecord): RemovedElementRecord {
   const spids = sourceSpids(snapshot, record);
   return {
-    id: record.id, parent: record.parent, meta: structuredClone(record.meta),
+    id: record.id,
+    parent: record.parent,
+    meta: structuredClone(record.meta),
     ...(spids.length ? { sourceSpids: spids } : {}),
   };
 }
@@ -322,15 +315,13 @@ function slideParent(doc: EditDoc, id: string): string {
 }
 
 /** 层级并发已拆散原树时，转换成可删除多个现存分支的自包含层级 patch。 */
-export function rebaseElementRemoval(
-  doc: EditDoc,
-  patch: ElementTreePatch,
-): ElementTreePatch | ElementHierarchyPatch | null {
+export function rebaseElementRemoval(doc: EditDoc, patch: ElementTreePatch): ElementTreePatch | ElementHierarchyPatch | null {
   if (patch.op !== 'remove') return patch;
   const root = doc.elements[patch.path[1]];
-  const intact = !!root && root.parent === patch.value.parent
-    && Object.entries(patch.value.records).every(([id, record]) =>
-      doc.elements[id]?.parent === record.parent);
+  const intact =
+    !!root
+    && root.parent === patch.value.parent
+    && Object.entries(patch.value.records).every(([id, record]) => doc.elements[id]?.parent === record.parent);
   if (intact) return patch;
   const deletion = new Set(Object.keys(patch.value.records).filter((id) => !!doc.elements[id]));
   if (root) {
@@ -372,7 +363,9 @@ export function rebaseElementRemoval(
   }
   const parent = slideParent(doc, survivors[0]);
   return {
-    op: 'set', path: ['elements', patch.path[1], 'hierarchy'], origin: patch.origin,
+    op: 'set',
+    path: ['elements', patch.path[1], 'hierarchy'],
+    origin: patch.origin,
     value: { parent, affected: survivors, records, children, removed },
   };
 }

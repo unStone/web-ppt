@@ -17,7 +17,7 @@
 2. `package.json` 挂 script，并**加入 `test:functional`**——它是本地 `npm test`、PR CI 与发布流水线共用的唯一入口，单独挂 script 不进清单就会漏跑。
 3. 发布产物也要覆盖的能力，script 里支持 `--dist`（改从 `packages/*/dist` 加载），并把它加进 `npm run verify` 的 `--dist` 序列；否则只验了源码没验交付物。
 
-Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 `postverify` 校验 Schema、按需闭包与发布入口；CI 和发布流水线的 npm 调用均包含这些生命周期脚本。
+Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 `postverify` 校验 Schema、按需闭包与发布入口；本地和发布流水线通过 npm 执行，CI 自动展开同一份清单及其生命周期后分组执行。
 
 模板二进制边界调用 npm 使用的 `@npmcli/map-workspaces`、`@npmcli/arborist` 与 `npm-packlist` 正式 API，覆盖全部非 private workspace，保留祖先忽略规则及捆绑依赖；仓库中的评测文稿不属于 SDK 交付物。三库在根开发依赖中锁定，审计不进入生命周期脚本；`preverify` 用真实 npm 清单对照及正反例验证边界，不允许发布包夹带 PPTX / POTX 等二进制模板。
 
@@ -30,6 +30,34 @@ Agent describe 使用 `pretest:functional` 接入同一个功能门禁，并由 
 同一生命周期也执行布局检查及无 dist 的编辑基准回归。语料对照使用真实 Canvas 字宽和 SVG 前景/底图取色，Node 注入这些真实观测复核纯计算，另用真实 HarfBuzz Provider 覆盖七项正反例；未准备字宽不得作为最终报告交付。
 
 布局检查的发布浏览器复验显式使用空 paths 配置，并审计构建输入图不含 packages/*/src，避免自动读取工作区 tsconfig 后混用源码与发布运行时。
+
+### CI 分组与构建复用
+
+`tooling/ci/plan.mjs` 从 npm scripts 推导执行计划；新增命令默认进入源码 editing / 产物 base 组，出现不支持的 shell 语法立即失败。变更分组时必须同步检查产物依赖，避免在新机器上依赖另一组未传输的文件。
+
+| 组 | 顺序与产物依赖 |
+|---|---|
+| saving | 独立执行保存契约，尽早提供 PPTX，供 integration、browser、site 和模型外部打开验证并行消费 |
+| editing | 核心、图表数据、媒体和模型测试直接并行；提供批注源码报告及集成所需的生成文件，保留图元的 LibreOffice 环境 |
+| integration | 消费 saving 与 editing 产物执行 0.7 集成、外部打开及 0.8 完整清单；只上传已经齐备的最终 Office 工件 |
+| browser-unit | 不依赖保存产物的页面、会话和浏览器工具契约，直接并行执行 |
+| browser | 下载 saving 产物后执行官网真实浏览器契约及下载产物的外部打开；需要 PDF 独立读取依赖和 LibreOffice |
+| agent / expanded / render / charts | 各组内部保留唯一入口顺序；源码和发布产物分别复验 |
+| equivalence-0…3 | 按排序后的固件索引分片，每份恰好覆盖一次，仍在独立进程计算指纹 |
+| migration-0 / migration-1 | 迁移形状矩阵与其余用例分别执行；从唯一 cases 对象核对完整顶层用例集合，保留逐用例进程及冷恢复子进程 |
+| dist/base | 全部源码结果合并后才运行，核对文档计数、完成度、默认入口和跨产物契约 |
+| external/office | 从 `test:ci:office` 执行完整模型清单和 OLE 真实打开；计数随源码结果合并，缺失即失败 |
+| external/ooxml | 从 `test:ci:ooxml` 执行 XSD + Open XML SDK 双通道合法性门禁；下载 saving、integration 与 agent 分组的保存产物及 dist，计数随源码结果合并 |
+| node-minimum | 在 `engines` 声明的最低 Node 上复验 MCP、Node 渲染与 ZIP 安全的发布产物 |
+| check | 始终生成结论；代码提交要求全部 job 成功且执行计划、计数、固件全集完整，文档提交允许重任务跳过 |
+
+每组写入 `out/ci-results/<phase>-<group>/`；合并校验提交 SHA、run ID、执行计划和实测计数，缺失或冲突立即失败。源码和 external 合并完成后才运行一致性校验，确保 OLE、OOXML 数字与官网总数也被实际核对；只有有真实数据依赖的 job 使用 `needs`。性能采样不在 PR CI 中执行（见 §7）。
+
+`npm run build` 用 Turbo 的本地任务缓存复用完整串行构建，缓存包含九包 dist 与三份默认入口证明；源码、构建配置、依赖锁和实际 Node / 平台 / 架构参与缓存键。`node tooling/test-build-cache.mjs` 验证连续命中、环境失效及删除或篡改产物后的逐字节恢复，`npm run build -- --force` 可强制重建。
+
+CI 的 npm / pip 下载缓存分别由 setup-node / setup-python 管理，不把 node_modules、浏览器 profile 或构建缓存放进 Actions 缓存。Pages 直接部署可信 push CI 已验证的站点产物，相关信任规则见 [releasing.md](releasing.md)。
+
+纯文档路径跳过重任务；发布包内的 `packages/*/skills/**` 属于 Agent 工具输入，其 Markdown 改动仍触发完整验证。
 
 ## 3. 登记断言计数
 
@@ -89,7 +117,7 @@ flowchart LR
 | 结构校验 | `xmllint` + ECMA-376 5th edition Transitional XSD（下载经 SHA256 钉版，见 `prepare-ooxml-schemas.mjs`） | 每个部件按根命名空间映射到 XSD，sequence 顺序、必填子元素、枚举与取值范围 |
 | 语义校验 | .NET `OpenXmlValidator`（`tooling/ooxml-validate/`，Microsoft365 档案） | 属性共存约束、关系目标存在性、跨部件不变量 |
 
-输入集是 `out/edit-save`、`out/v07-integration`、`out/v08-integration` 的 office-artifacts 清单加 `out/agent-tools`、`out/agent-mcp`、`out/template-fill` 的生成产物——所以必须**先跑功能测试**再跑本门禁（`pretest:ooxml` 只负责 build 与 .NET 还原）。人为注入的结构错误（改坏根元素）与语义错误（关系目标缺失）各一例必须被拦截（负例测试）。CI 在构建后单独执行；依赖 `xmllint`（Ubuntu: `libxml2-utils`）与 .NET SDK 8。
+输入集是 `out/edit-save`、`out/v07-integration`、`out/v08-integration` 的 office-artifacts 清单加 `out/agent-tools`、`out/agent-mcp`、`out/template-fill` 的生成产物——所以必须**先跑功能测试**再跑本门禁（`pretest:ooxml` 只负责 build 与 .NET 还原）。人为注入的结构错误（改坏根元素）与语义错误（关系目标缺失）各一例必须被拦截（负例测试）。CI 中作为 `external/ooxml` 分组在构建与产出这些产物的分组之后执行；依赖 `xmllint`（Ubuntu: `libxml2-utils`）与 .NET SDK 8。
 
 两道通道校验**同一份等价归一化副本**（SDK 通道把归一化后的部件重新打包，包结构与关系不变），归一化只剥非 OOXML 词汇：MCE `AlternateContent` 取 Fallback 展开并按根 `mc:Ignorable` 丢弃可忽略前缀；`urn:web-ppt:*` 的测试标记（固件用来证明未知内容被保留的探针，其存活性由功能断言负责），标记剥空后的 `ext` 空壳整只移除，但 `<ext uri="urn:web-ppt:*">` 是产品写入的真实扩展（如图表数据身份清单），内容原样保留；`a:t` 上的 `xml:space="preserve"`。SDK 的 `[load-error]`（包无法加载）与 `[Sch_*]` / `[Sem_*]` 一样计为失败。例外逐条登记在 `tooling/lib/ooxml-validation.mjs`（XSD 与生态实践的已知分歧，如 `buSzPct` 千分比整数；`a:p` 内的裸 `m:oMath` 两个校验器都不认，双通道放行；无 ECMA XSD 的 chartex / InkML 部件），**不允许按部件或文件整类忽略**，新增例外必须写明规则形态与原因。
 

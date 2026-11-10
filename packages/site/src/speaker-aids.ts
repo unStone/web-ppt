@@ -37,15 +37,15 @@ export function bindSpeakerAids(options: {
   panel.hidden = true;
   panel.setAttribute('aria-label', '演讲者备注');
   panel.innerHTML =
-    '<header class="speaker-aids-head">' +
-    '<strong class="speaker-aids-title"></strong>' +
-    '<button type="button" class="speaker-aids-close"></button>' +
-    '</header>' +
-    '<div class="speaker-aids-label speaker-next-caption"></div>' +
-    '<div class="speaker-next" hidden></div>' +
-    '<p class="speaker-next-empty" hidden></p>' +
-    '<div class="speaker-aids-label speaker-notes-caption"></div>' +
-    '<div class="speaker-notes"></div>';
+    '<header class="speaker-aids-head">'
+    + '<strong class="speaker-aids-title"></strong>'
+    + '<button type="button" class="speaker-aids-close"></button>'
+    + '</header>'
+    + '<div class="speaker-aids-label speaker-next-caption"></div>'
+    + '<div class="speaker-next" hidden></div>'
+    + '<p class="speaker-next-empty" hidden></p>'
+    + '<div class="speaker-aids-label speaker-notes-caption"></div>'
+    + '<div class="speaker-notes"></div>';
   host.append(panel);
 
   const title = panel.querySelector<HTMLElement>('.speaker-aids-title')!;
@@ -160,7 +160,9 @@ export function bindSpeakerAids(options: {
     if (
       presenting()
       && (event.key === 's' || event.key === 'S')
-      && !event.ctrlKey && !event.metaKey && !event.altKey
+      && !event.ctrlKey
+      && !event.metaKey
+      && !event.altKey
       && !event.isComposing
     ) {
       if (!viewer()) return;

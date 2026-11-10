@@ -25,26 +25,56 @@ const picture = `<p:pic><p:nvPicPr><p:cNvPr id="6" name="fallback-chart"/><p:cNv
 const alternate = `<mc:AlternateContent xmlns:mc="${MC}" xmlns:modern="${CX2}"><mc:Choice Requires="modern">${frame}</mc:Choice><mc:Fallback>${picture}</mc:Fallback></mc:AlternateContent>`;
 const values = [10, 6, 2];
 const workbook = makeZip([
-  ['[Content_Types].xml', `${XML}<Types xmlns="${NS.ct}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`],
-  ['_rels/.rels', `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${NS.r}/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
-  ['xl/workbook.xml', `${XML}<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS.r}"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>`],
-  ['xl/_rels/workbook.xml.rels', `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${NS.r}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`],
-  ['xl/worksheets/sheet1.xml', `${XML}<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${values.map((value, index) => `<row r="${index + 1}"><c r="A${index + 1}"><v>${value}</v></c></row>`).join('')}</sheetData></worksheet>`],
+  [
+    '[Content_Types].xml',
+    `${XML}<Types xmlns="${NS.ct}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`,
+  ],
+  [
+    '_rels/.rels',
+    `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${NS.r}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+  ],
+  [
+    'xl/workbook.xml',
+    `${XML}<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS.r}"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+  ],
+  [
+    'xl/_rels/workbook.xml.rels',
+    `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${NS.r}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+  ],
+  [
+    'xl/worksheets/sheet1.xml',
+    `${XML}<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${values.map((value, index) => `<row r="${index + 1}"><c r="A${index + 1}"><v>${value}</v></c></row>`).join('')}</sheetData></worksheet>`,
+  ],
 ]);
 const chart = `${XML}<cx:chartSpace xmlns:cx="${CX}" xmlns:r="${NS.r}"><cx:chartData><cx:externalData r:id="rId1"/>
 <cx:data id="0"><cx:numDim type="val"><cx:f>Sheet1!$A$1:$A$3</cx:f><cx:lvl ptCount="3">${values.map((value, index) => `<cx:pt idx="${index}">${value}</cx:pt>`).join('')}</cx:lvl></cx:numDim></cx:data></cx:chartData>
 <cx:chart><cx:plotArea><cx:plotAreaRegion><cx:series layoutId="funnel"><cx:dataId val="0"/></cx:series></cx:plotAreaRegion></cx:plotArea></cx:chart></cx:chartSpace>`;
 const image = makePng(120, 72, (x, y) => {
   const band = Math.floor(y / 24);
-  return Math.abs(x - 60) <= [54, 36, 18][band] ? [[32, 112, 192], [40, 160, 120], [232, 160, 40]][band] : [255, 255, 255];
+  return Math.abs(x - 60) <= [54, 36, 18][band]
+    ? [
+        [32, 112, 192],
+        [40, 160, 120],
+        [232, 160, 40],
+      ][band]
+    : [255, 255, 255];
 });
 const bytes = deck({
-  name: 'ChartEx Fallback', width: 640, height: 360, slides: [slideXml(alternate)],
-  slideRelationships: [`<Relationship Id="rId2" Type="http://schemas.microsoft.com/office/2014/relationships/chartEx" Target="../charts/chartEx1.xml"/><Relationship Id="rId3" Type="${NS.r}/image" Target="../media/chart-preview.png"/>`],
-  extraTypes: '<Override PartName="/ppt/charts/chartEx1.xml" ContentType="application/vnd.ms-office.chartex+xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="xlsx" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>',
+  name: 'ChartEx Fallback',
+  width: 640,
+  height: 360,
+  slides: [slideXml(alternate)],
+  slideRelationships: [
+    `<Relationship Id="rId2" Type="http://schemas.microsoft.com/office/2014/relationships/chartEx" Target="../charts/chartEx1.xml"/><Relationship Id="rId3" Type="${NS.r}/image" Target="../media/chart-preview.png"/>`,
+  ],
+  extraTypes:
+    '<Override PartName="/ppt/charts/chartEx1.xml" ContentType="application/vnd.ms-office.chartex+xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="xlsx" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>',
   extraEntries: [
     ['ppt/charts/chartEx1.xml', chart],
-    ['ppt/charts/_rels/chartEx1.xml.rels', `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${NS.r}/package" Target="../embeddings/chart-data.xlsx"/></Relationships>`],
+    [
+      'ppt/charts/_rels/chartEx1.xml.rels',
+      `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${NS.r}/package" Target="../embeddings/chart-data.xlsx"/></Relationships>`,
+    ],
     ['ppt/embeddings/chart-data.xlsx', workbook],
     ['ppt/media/chart-preview.png', image],
   ],

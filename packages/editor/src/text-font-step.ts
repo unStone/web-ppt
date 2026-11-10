@@ -1,24 +1,25 @@
 import {
-  applyRunProps, flattenTextBody, queryRunProps, textBodyFromOverride,
-  textPositionAtIndex, textPositionToIndex,
+  applyRunProps,
+  flattenTextBody,
+  queryRunProps,
+  textBodyFromOverride,
+  textPositionAtIndex,
+  textPositionToIndex,
 } from '@web-ppt/edit-core';
 import type { Editor, RunPropertyOverrides, TextPosition } from '@web-ppt/edit-core';
 import type { TextEditorContext } from './text-editor-context';
 import { textTargetFields } from './text-editor-target';
 
-const FONT_SIZE_STEPS_PT = [
-  8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 66,
-  72, 80, 88, 96,
-] as const;
+const FONT_SIZE_STEPS_PT = [8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 80, 88, 96] as const;
 
 function steppedFontSize(size: number, direction: -1 | 1): number {
-  const points = size * 72 / 96;
+  const points = (size * 72) / 96;
   const epsilon = 1e-6;
-  const next = direction > 0
-    ? FONT_SIZE_STEPS_PT.find((value) => value > points + epsilon) ?? Math.min(3600, points + 8)
-    : [...FONT_SIZE_STEPS_PT].reverse().find((value) => value < points - epsilon)
-      ?? Math.max(1, points - 1);
-  return next * 96 / 72;
+  const next =
+    direction > 0
+      ? (FONT_SIZE_STEPS_PT.find((value) => value > points + epsilon) ?? Math.min(3600, points + 8))
+      : ([...FONT_SIZE_STEPS_PT].reverse().find((value) => value < points - epsilon) ?? Math.max(1, points - 1));
+  return (next * 96) / 72;
 }
 
 function paragraphBaseIndex(context: TextEditorContext, paragraph: number): number {
@@ -30,11 +31,7 @@ function paragraphBaseIndex(context: TextEditorContext, paragraph: number): numb
 }
 
 /** 混合字号必须逐 run 跨档，不能把整段拉平为选区首个字号。 */
-export function stepMixedFontSizes(
-  editor: Editor,
-  context: TextEditorContext,
-  direction: -1 | 1,
-): boolean {
+export function stepMixedFontSizes(editor: Editor, context: TextEditorContext, direction: -1 | 1): boolean {
   const fromIndex = textPositionToIndex(context.text, context.positions.from);
   const toIndex = textPositionToIndex(context.text, context.positions.to);
   if (fromIndex === toIndex) return false;
@@ -50,7 +47,8 @@ export function stepMixedFontSizes(
       const markTo = Math.min(end, mark.to);
       if (markTo <= markFrom) continue;
       segments.push({
-        from: base + markFrom, to: base + markTo,
+        from: base + markFrom,
+        to: base + markTo,
         size: steppedFontSize(mark.props.size, direction),
       });
     }
@@ -74,18 +72,27 @@ export function stepMixedFontSizes(
     from: textPositionAtIndex(predictedBody, fromIndex),
     to: textPositionAtIndex(predictedBody, toIndex),
   };
-  editor.transaction((transaction) => {
-    for (const command of commands) {
-      transaction.exec({
-        type: 'SetRunProps', id: context.id, ...textTargetFields(context.cell),
-        range: command.range, props: { size: command.size },
+  editor.transaction(
+    (transaction) => {
+      for (const command of commands) {
+        transaction.exec({
+          type: 'SetRunProps',
+          id: context.id,
+          ...textTargetFields(context.cell),
+          range: command.range,
+          props: { size: command.size },
+        });
+      }
+      transaction.select({
+        kind: 'text',
+        id: context.id,
+        ...textTargetFields(context.cell),
+        anchor: finalRange.from,
+        focus: finalRange.to,
       });
-    }
-    transaction.select({
-      kind: 'text', id: context.id, ...textTargetFields(context.cell),
-      anchor: finalRange.from, focus: finalRange.to,
-    });
-  }, direction > 0 ? '增大字号' : '减小字号');
+    },
+    direction > 0 ? '增大字号' : '减小字号',
+  );
   return true;
 }
 
@@ -99,8 +106,7 @@ export function stepSelectedFontSize(
   if (!context) return false;
   const state = queryRunProps(editor.doc, context.id, context.positions, context.cell ?? undefined).size;
   if (!state.mixed) {
-    return typeof state.value === 'number'
-      && setUniform({ size: steppedFontSize(state.value, direction) });
+    return typeof state.value === 'number' && setUniform({ size: steppedFontSize(state.value, direction) });
   }
   const handled = stepMixedFontSizes(editor, context, direction);
   if (handled) {

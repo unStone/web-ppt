@@ -15,7 +15,7 @@ interface DocAsset {
 const docAssets = new WeakMap<EditDoc, Map<string, DocAsset>>();
 function sessionAssets(doc: EditDoc): Map<string, DocAsset> {
   let assets = docAssets.get(doc);
-  if (!assets) docAssets.set(doc, assets = new Map());
+  if (!assets) docAssets.set(doc, (assets = new Map()));
   return assets;
 }
 interface InsertionAssetIndex {
@@ -46,10 +46,7 @@ function walkStrings(value: unknown, visit: (value: string) => string, mutate: b
 }
 
 /** 保存会替换 doc.package；解析期 URL 与字节的对应关系必须在建模时保留下来。 */
-export function registerSessionAssets(
-  doc: EditDoc,
-  editAssets: readonly PresentationEditAsset[] = [],
-): void {
+export function registerSessionAssets(doc: EditDoc, editAssets: readonly PresentationEditAsset[] = []): void {
   const pkg = doc.package;
   const assets = sessionAssets(doc);
   for (const asset of editAssets) assets.set(asset.url, { ...asset });
@@ -69,8 +66,7 @@ export function sessionAsset(doc: EditDoc, url: string): DocAsset | undefined {
 
 /** 可选编辑包必须从创建文档的主包取资源，独立构建的模块不共享私有 WeakMap。 */
 export function sourcePartBytes(doc: EditDoc, part: string): Uint8Array | undefined {
-  return doc.saveState.baselines[part] ?? doc.package?.parts[part]
-    ?? sessionAsset(doc, `web-ppt-source:${part}`)?.bytes;
+  return doc.saveState.baselines[part] ?? doc.package?.parts[part] ?? sessionAsset(doc, `web-ppt-source:${part}`)?.bytes;
 }
 
 export function releaseSessionAssets(doc: EditDoc): void {
@@ -100,58 +96,60 @@ export function tokenizeElementAssets(
   let inserted = insertionAssetIndexes.get(insertionResources);
   if (!inserted) {
     inserted = {
-      hashByDataUrl: new Map(insertionResources.map((resource) => [
-        `data:${resource.mime};base64,${resource.bytes}`, resource.hash,
-      ])),
+      hashByDataUrl: new Map(insertionResources.map((resource) => [`data:${resource.mime};base64,${resource.bytes}`, resource.hash])),
       hashes: new Set(insertionResources.map((resource) => resource.hash)),
     };
     insertionAssetIndexes.set(insertionResources, inserted);
   }
-  return walkStrings(clone, (value) => {
-    if (value.startsWith(RESOURCE_TOKEN)) {
-      const hash = value.slice(RESOURCE_TOKEN.length);
-      if (!inserted!.hashes.has(hash)) throw new Error(`元素投影缺少插入资源：${hash}`);
+  return walkStrings(
+    clone,
+    (value) => {
+      if (value.startsWith(RESOURCE_TOKEN)) {
+        const hash = value.slice(RESOURCE_TOKEN.length);
+        if (!inserted!.hashes.has(hash)) throw new Error(`元素投影缺少插入资源：${hash}`);
+        used.add(hash);
+        return value;
+      }
+      const insertedHash = inserted!.hashByDataUrl.get(value);
+      if (insertedHash) {
+        used.add(insertedHash);
+        return `${RESOURCE_TOKEN}${insertedHash}`;
+      }
+      if (!value.startsWith('blob:') && !value.startsWith('asset:')) return value;
+      const asset = docAssets.get(doc)?.get(value);
+      if (!asset) throw new Error('元素包含无法跨编辑器传递的会话资源');
+      const hash = (asset.hash ??= sha256(asset.bytes));
       used.add(hash);
-      return value;
-    }
-    const insertedHash = inserted!.hashByDataUrl.get(value);
-    if (insertedHash) {
-      used.add(insertedHash);
-      return `${RESOURCE_TOKEN}${insertedHash}`;
-    }
-    if (!value.startsWith('blob:') && !value.startsWith('asset:')) return value;
-    const asset = docAssets.get(doc)?.get(value);
-    if (!asset) throw new Error('元素包含无法跨编辑器传递的会话资源');
-    const hash = asset.hash ??= sha256(asset.bytes);
-    used.add(hash);
-    return `${RESOURCE_TOKEN}${hash}`;
-  }, true) as SlideElement;
+      return `${RESOURCE_TOKEN}${hash}`;
+    },
+    true,
+  ) as SlideElement;
 }
 
-export function createElementAssetHydrator(
-  resources: readonly ClipboardResource[],
-): (source: SlideElement) => SlideElement {
+export function createElementAssetHydrator(resources: readonly ClipboardResource[]): (source: SlideElement) => SlideElement {
   const byHash = new Map(resources.map((resource) => [resource.hash, resource]));
   const urls = new Map<string, string>();
-  return (source) => walkStrings(structuredClone(source), (value) => {
-    if (!value.startsWith(RESOURCE_TOKEN)) return value;
-    const hash = value.slice(RESOURCE_TOKEN.length);
-    const resource = byHash.get(hash);
-    if (!resource) throw new Error(`元素投影缺少剪贴板资源：${hash}`);
-    let url = urls.get(hash);
-    if (!url) {
-      url = `data:${resource.mime};base64,${resource.bytes}`;
-      urls.set(hash, url);
-    }
-    return url;
-  }, true) as SlideElement;
+  return (source) =>
+    walkStrings(
+      structuredClone(source),
+      (value) => {
+        if (!value.startsWith(RESOURCE_TOKEN)) return value;
+        const hash = value.slice(RESOURCE_TOKEN.length);
+        const resource = byHash.get(hash);
+        if (!resource) throw new Error(`元素投影缺少剪贴板资源：${hash}`);
+        let url = urls.get(hash);
+        if (!url) {
+          url = `data:${resource.mime};base64,${resource.bytes}`;
+          urls.set(hash, url);
+        }
+        return url;
+      },
+      true,
+    ) as SlideElement;
 }
 
 /** EditDoc 保留小型资源 token；只有有效投影需要付出 data URI 的字符串成本。 */
-export function hydrateElementInsertionAssets(
-  source: SlideElement,
-  resources: readonly ClipboardResource[],
-): SlideElement {
+export function hydrateElementInsertionAssets(source: SlideElement, resources: readonly ClipboardResource[]): SlideElement {
   let hydrate = insertionHydrators.get(resources);
   if (!hydrate) {
     hydrate = createElementAssetHydrator(resources);
@@ -160,10 +158,7 @@ export function hydrateElementInsertionAssets(
   return hydrate(source);
 }
 
-export function hydrateInsertionResourceSource(
-  source: string,
-  resource: ElementInsertionResource,
-): string {
+export function hydrateInsertionResourceSource(source: string, resource: ElementInsertionResource): string {
   if (source !== insertionResourceToken(resource.hash)) {
     throw new Error(`图片资源 token 与资源哈希不一致：${resource.hash}`);
   }

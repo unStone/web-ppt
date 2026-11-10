@@ -1,6 +1,10 @@
 import {
-  elementEditFrame, elementParentToRenderedParentMatrix, outermostSelectedElementIds, screenToSlidePoint,
-  slideToElementParentPoint, transformSpaceVector,
+  elementEditFrame,
+  elementParentToRenderedParentMatrix,
+  outermostSelectedElementIds,
+  screenToSlidePoint,
+  slideToElementParentPoint,
+  transformSpaceVector,
 } from '@web-ppt/edit-core';
 import type { AffineMatrix, Editor, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { findElementPartition } from './dom-identity';
@@ -44,16 +48,17 @@ interface MoveGestureOptions {
   margins: () => SnapMargins | undefined;
 }
 
-const cleanNumber = (value: number): number => Math.abs(value) < 1e-9 ? 0 : value;
-const translate = (point: SpacePoint): string =>
-  `translate(${cleanNumber(point.x)} ${cleanNumber(point.y)})`;
+const cleanNumber = (value: number): number => (Math.abs(value) < 1e-9 ? 0 : value);
+const translate = (point: SpacePoint): string => `translate(${cleanNumber(point.x)} ${cleanNumber(point.y)})`;
 
 function boundsOf(points: readonly SpacePoint[]): SnapBounds {
   const xs = points.map((point) => point.x);
   const ys = points.map((point) => point.y);
   return {
-    left: Math.min(...xs), top: Math.min(...ys),
-    right: Math.max(...xs), bottom: Math.max(...ys),
+    left: Math.min(...xs),
+    top: Math.min(...ys),
+    right: Math.max(...xs),
+    bottom: Math.max(...ys),
   };
 }
 
@@ -66,32 +71,41 @@ export class MoveGestureController {
     this.lifecycle = new PointerGestureLifecycle(options.root);
   }
 
-  get isActive(): boolean { return this.lifecycle.isActive; }
+  get isActive(): boolean {
+    return this.lifecycle.isActive;
+  }
 
   begin(event: PointerEvent, ids: readonly ElementId[]): void {
     this.cancel();
     const startScreen = { x: event.clientX, y: event.clientY };
     const startSlide = this.toSlide(startScreen);
     const roots = outermostSelectedElementIds(this.options.editor.doc, ids);
-    const targets = roots
-      .map((id): MoveTarget | null => {
-        const partition = findElementPartition(this.options.staticLayer, id);
-        if (!partition) return null;
-        const source = this.options.editor.effectiveElement(id);
-        return {
-          id, x: source.x, y: source.y,
-          startParent: slideToElementParentPoint(this.options.editor.doc, id, startSlide),
-          toRendered: elementParentToRenderedParentMatrix(this.options.editor.doc, id),
-          partition, wrapper: null,
-        };
-      });
+    const targets = roots.map((id): MoveTarget | null => {
+      const partition = findElementPartition(this.options.staticLayer, id);
+      if (!partition) return null;
+      const source = this.options.editor.effectiveElement(id);
+      return {
+        id,
+        x: source.x,
+        y: source.y,
+        startParent: slideToElementParentPoint(this.options.editor.doc, id, startSlide),
+        toRendered: elementParentToRenderedParentMatrix(this.options.editor.doc, id),
+        partition,
+        wrapper: null,
+      };
+    });
     if (!targets.length || targets.some((target) => target === null)) return;
     const session: MoveSession = {
-      startSlide, targets: targets as MoveTarget[], overlay: null, guideLayer: null,
-      bounds: this.selectionBounds(roots), siblings: this.siblingTargets(roots),
+      startSlide,
+      targets: targets as MoveTarget[],
+      overlay: null,
+      guideLayer: null,
+      bounds: this.selectionBounds(roots),
+      siblings: this.siblingTargets(roots),
     };
     this.lifecycle.begin(event, {
-      cursor: 'grabbing', dataset: { name: 'editDragging', value: '' },
+      cursor: 'grabbing',
+      dataset: { name: 'editDragging', value: '' },
       start: () => this.startPreview(session),
       frame: (snapshot) => this.applyFrame(session, snapshot),
       finish: (snapshot) => this.commit(session, snapshot),
@@ -99,13 +113,21 @@ export class MoveGestureController {
     });
   }
 
-  move(event: PointerEvent): void { this.lifecycle.move(event); }
-  finish(event: PointerEvent): void { this.lifecycle.finish(event); }
+  move(event: PointerEvent): void {
+    this.lifecycle.move(event);
+  }
+  finish(event: PointerEvent): void {
+    this.lifecycle.finish(event);
+  }
   modifier(event: KeyboardEvent): boolean {
     return event.key === 'Control' && this.lifecycle.modifier(event);
   }
-  cancel(): void { this.lifecycle.cancel(); }
-  cancelPointer(event: PointerEvent): void { this.lifecycle.cancelPointer(event); }
+  cancel(): void {
+    this.lifecycle.cancel();
+  }
+  cancelPointer(event: PointerEvent): void {
+    this.lifecycle.cancelPointer(event);
+  }
 
   private toSlide(point: SpacePoint): SpacePoint {
     const rect = this.options.stage.getBoundingClientRect();
@@ -116,10 +138,13 @@ export class MoveGestureController {
     const currentSlide = { x: session.startSlide.x + delta.x, y: session.startSlide.y + delta.y };
     return session.targets.map((target) => {
       const currentParent = slideToElementParentPoint(this.options.editor.doc, target.id, currentSlide);
-      return { target, point: {
-        x: target.x + currentParent.x - target.startParent.x,
-        y: target.y + currentParent.y - target.startParent.y,
-      } };
+      return {
+        target,
+        point: {
+          x: target.x + currentParent.x - target.startParent.x,
+          y: target.y + currentParent.y - target.startParent.y,
+        },
+      };
     });
   }
 
@@ -157,10 +182,15 @@ export class MoveGestureController {
   private applyFrame(session: MoveSession, snapshot: PointerGestureSnapshot): void {
     const proposal = this.proposal(session, snapshot);
     for (const { target, point } of this.positions(session, proposal.delta)) {
-      target.wrapper?.setAttribute('transform', translate(transformSpaceVector(target.toRendered, {
-        x: point.x - target.x,
-        y: point.y - target.y,
-      })));
+      target.wrapper?.setAttribute(
+        'transform',
+        translate(
+          transformSpaceVector(target.toRendered, {
+            x: point.x - target.x,
+            y: point.y - target.y,
+          }),
+        ),
+      );
     }
     session.overlay?.setAttribute('transform', translate(proposal.delta));
     if (session.guideLayer) renderSnapGuides(session.guideLayer, proposal.guides, this.options.zoom());
@@ -168,13 +198,13 @@ export class MoveGestureController {
 
   private commit(session: MoveSession, snapshot: PointerGestureSnapshot): (() => void) | null {
     const positions = this.positions(session, this.proposal(session, snapshot).delta);
-    if (!positions.some(({ target, point }) => Math.abs(point.x - target.x) >= 1e-9
-      || Math.abs(point.y - target.y) >= 1e-9)) return null;
-    return () => this.options.editor.transaction((transaction) => {
-      for (const { target, point } of positions) {
-        transaction.exec({ type: 'SetXfrm', id: target.id, x: point.x, y: point.y });
-      }
-    }, '移动元素');
+    if (!positions.some(({ target, point }) => Math.abs(point.x - target.x) >= 1e-9 || Math.abs(point.y - target.y) >= 1e-9)) return null;
+    return () =>
+      this.options.editor.transaction((transaction) => {
+        for (const { target, point } of positions) {
+          transaction.exec({ type: 'SetXfrm', id: target.id, x: point.x, y: point.y });
+        }
+      }, '移动元素');
   }
 
   private clearPreview(session: MoveSession): void {
@@ -186,9 +216,7 @@ export class MoveGestureController {
   }
 
   private selectionBounds(ids: readonly ElementId[]): SnapBounds {
-    return boundsOf(ids.flatMap((id) => transformFrameCorners(
-      this.options.editor.doc, id, elementEditFrame(this.options.editor.doc, id),
-    )));
+    return boundsOf(ids.flatMap((id) => transformFrameCorners(this.options.editor.doc, id, elementEditFrame(this.options.editor.doc, id))));
   }
 
   private siblingTargets(ids: readonly ElementId[]): SnapTarget[] {
@@ -197,7 +225,8 @@ export class MoveGestureController {
     if (!parent || ids.some((id) => doc.elements[id]?.parent !== parent)) return [];
     const siblings = doc.slides[parent]?.children ?? doc.elements[parent]?.children ?? [];
     const excluded = new Set(ids);
-    return siblings.filter((id) => !excluded.has(id) && !doc.elements[id].meta.hiddenByUser)
+    return siblings
+      .filter((id) => !excluded.has(id) && !doc.elements[id].meta.hiddenByUser)
       .map((id) => ({ id, bounds: this.selectionBounds([id]) }));
   }
 }

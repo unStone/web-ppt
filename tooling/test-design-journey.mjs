@@ -1,16 +1,10 @@
-import {
-  copyFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync,
-} from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
-import {
-  runV07IntegrationContract, runV07PermissionContract,
-} from './lib/v07-integration-contract.mjs';
+import { runV07IntegrationContract, runV07PermissionContract } from './lib/v07-integration-contract.mjs';
 import { recordCount } from './lib/measured.mjs';
-import {
-  V07_OFFICE_ARTIFACTS, V07_OFFICE_MANIFEST,
-} from './lib/v07-office-artifacts.mjs';
+import { V07_OFFICE_ARTIFACTS, V07_OFFICE_MANIFEST } from './lib/v07-office-artifacts.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out/v07-integration');
@@ -28,14 +22,20 @@ const aliases = [
 ];
 const [templates, core, edit] = await Promise.all([
   bundleBrowser({
-    root, aliases, entry: join(root, 'packages/edit-core/src/templates/index.ts'),
+    root,
+    aliases,
+    entry: join(root, 'packages/edit-core/src/templates/index.ts'),
     output: join(out, 'templates.mjs'),
   }),
   bundleBrowser({
-    root, entry: join(root, 'packages/core/src/index.ts'), output: join(out, 'core.mjs'),
+    root,
+    entry: join(root, 'packages/core/src/index.ts'),
+    output: join(out, 'core.mjs'),
   }),
   bundleBrowser({
-    root, aliases, entry: join(root, 'packages/edit-core/src/index.ts'),
+    root,
+    aliases,
+    entry: join(root, 'packages/edit-core/src/index.ts'),
     output: join(out, 'edit.mjs'),
   }),
 ]);
@@ -50,7 +50,10 @@ const check = (label, condition, detail = '') => {
 
 await runV07PermissionContract({ templates, core, edit, check });
 const artifacts = await runV07IntegrationContract({
-  templates, core, edit, check,
+  templates,
+  core,
+  edit,
+  check,
   load: (name) => new Uint8Array(readFileSync(join(root, 'fixtures', name))),
   saveArtifact: (name, bytes) => {
     const path = join(out, name);
@@ -73,17 +76,27 @@ const generated = new Map(artifacts.map((artifact) => [artifact.file, artifact.s
 const copied = new Set(copiedArtifacts.map(([, file]) => file));
 for (const artifact of V07_OFFICE_ARTIFACTS) {
   if (copied.has(artifact.file)) continue;
-  check(`Office 清单产物已由本轮生成：${artifact.file}`,
-    generated.get(artifact.file) === artifact.slides && existsSync(join(out, artifact.file)));
+  check(
+    `Office 清单产物已由本轮生成：${artifact.file}`,
+    generated.get(artifact.file) === artifact.slides && existsSync(join(out, artifact.file)),
+  );
 }
 if (failures.length) {
   console.error(`\n\x1b[31m✗ ${failures.length} 项设计旅程验收失败\x1b[0m`);
   for (const failure of failures) console.error(`  · ${failure}`);
   process.exit(1);
 }
-writeFileSync(manifestPath, `${JSON.stringify({
-  version: 1, artifacts: V07_OFFICE_ARTIFACTS,
-}, null, 2)}\n`);
+writeFileSync(
+  manifestPath,
+  `${JSON.stringify(
+    {
+      version: 1,
+      artifacts: V07_OFFICE_ARTIFACTS,
+    },
+    null,
+    2,
+  )}\n`,
+);
 recordCount('designJourney', passed);
 console.log(`\n\x1b[32m✓ 设计旅程（模板 → 主题 → 母版 → 版式 → 页面 → 保存重开）${passed} 项断言通过\x1b[0m`);
 console.log(`  Office 产物 ${V07_OFFICE_ARTIFACTS.length} 份`);

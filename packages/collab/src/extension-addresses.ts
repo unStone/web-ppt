@@ -11,7 +11,9 @@ export function canonicalRegisters(doc: EditDoc, registers: Map<string, Register
     let mapped = key;
     try {
       if (key.startsWith('["elements",')) mapped = JSON.stringify(canonicalExtensionPath(doc, JSON.parse(key) as Patch['path']));
-    } catch { /* checkpoint 的其他协议键是透明字符串，不能把它们当作本版本的字段地址。 */ }
+    } catch {
+      /* checkpoint 的其他协议键是透明字符串，不能把它们当作本版本的字段地址。 */
+    }
     if (newer(register.stamp, result.get(mapped))) result.set(mapped, register);
   }
   return result;

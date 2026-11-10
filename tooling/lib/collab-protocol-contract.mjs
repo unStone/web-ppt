@@ -1,11 +1,19 @@
-const createdElement = (result) => result.forward.find((patch) =>
-  patch.op === 'insert' && patch.path[0] === 'elements')?.path[1];
-const plainCell = (cell) => cell?.text?.paragraphs
-  .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n') ?? '';
+const createdElement = (result) => result.forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements')?.path[1];
+const plainCell = (cell) => cell?.text?.paragraphs.map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n') ?? '';
 
 export async function runCollabProtocolContract({
-  bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub,
-  semanticDoc, seededShuffle, stringDiff,
+  bindPair,
+  check,
+  collab,
+  core,
+  createPair,
+  edit,
+  editableShapes,
+  load,
+  OfflineHub,
+  semanticDoc,
+  seededShuffle,
+  stringDiff,
 }) {
   console.log('\n\x1b[36m▸ 原子消息、页序意图与协议边界\x1b[0m');
   {
@@ -13,45 +21,52 @@ export async function runCollabProtocolContract({
     const hub = new OfflineHub();
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
-    const target = Object.values(pair.left.elements)
-      .find((record) => record.src.name === '项目符号编辑');
-    const png = Uint8Array.from(Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-      'base64',
-    ));
+    const target = Object.values(pair.left.elements).find((record) => record.src.name === '项目符号编辑');
+    const png = Uint8Array.from(
+      Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
+    );
     pair.leftEditor.exec({
-      type: 'SetParaProps', id: target.id,
+      type: 'SetParaProps',
+      id: target.id,
       range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 } },
       props: { bullet: { kind: 'blip', image: { bytes: png, mime: 'image/png' } } },
     });
     pair.rightEditor.exec({
-      type: 'SetParaProps', id: target.id,
+      type: 'SetParaProps',
+      id: target.id,
       range: { from: { p: 1, r: 0, off: 0 }, to: { p: 1, r: 0, off: 0 } },
       props: { bullet: { kind: 'autoNum', type: 'romanLcPeriod', startAt: 7 } },
     });
     hub.flush((items) => seededShuffle(items, 0xb011e7));
     let projected = pair.leftEditor.effectiveElement(target.id).text.paragraphs;
-    check('并发编号覆盖图片项目符号时按字段 LWW 收敛且不残留孤儿资源',
-      semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0
+    check(
+      '并发编号覆盖图片项目符号时按字段 LWW 收敛且不残留孤儿资源',
+      semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0
         && Object.keys(pair.left.imageResources).length === 0
         && Object.keys(pair.right.imageResources).length === 0
         && projected[0].bulletImage === null
         && projected[1].bullet === 'vii.',
-      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     pair.leftEditor.exec({
-      type: 'SetParaProps', id: target.id,
+      type: 'SetParaProps',
+      id: target.id,
       range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 } },
       props: { bullet: { kind: 'blip', image: { bytes: png, mime: 'image/png' } } },
     });
     hub.flush();
     projected = pair.rightEditor.effectiveElement(target.id).text.paragraphs;
-    check('图片项目符号资源、关系与文字覆盖作为同一消息传播',
-      semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0
+    check(
+      '图片项目符号资源、关系与文字覆盖作为同一消息传播',
+      semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0
         && Object.keys(pair.left.imageResources).length === 1
         && Object.keys(pair.right.imageResources).length === 1
         && projected[0].bulletImage?.startsWith('data:image/png;base64,')
         && projected[1].bullet === 'vii.',
-      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
   {
@@ -59,12 +74,12 @@ export async function runCollabProtocolContract({
     const hub = new OfflineHub();
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
-    const table = Object.values(pair.left.elements)
-      .find((record) => record.src.kind === 'table');
+    const table = Object.values(pair.left.elements).find((record) => record.src.kind === 'table');
     const grid = edit.queryTableGrid(pair.left, table.id);
     pair.leftEditor.exec(
       {
-        type: 'SetCellProps', id: table.id,
+        type: 'SetCellProps',
+        id: table.id,
         cell: { row: grid.rows[0].id, column: grid.columns[1].id },
         props: { fill: { type: 'solid', color: '#AA3377' } },
       },
@@ -72,22 +87,28 @@ export async function runCollabProtocolContract({
     );
     pair.rightEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[1].id });
     hub.flush((items) => items.reverse());
-    check('并发单元格格式、列宽与删列由 tombstone 隐藏并收敛',
+    check(
+      '并发单元格格式、列宽与删列由 tombstone 隐藏并收敛',
       edit.queryTableGrid(pair.left, table.id).columns.length === 1
         && edit.queryTableGrid(pair.right, table.id).columns.length === 1
-        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+        && semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0,
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     pair.rightEditor.undo();
     hub.flush();
     const leftRestored = pair.leftEditor.effectiveElement(table.id);
     const rightRestored = pair.rightEditor.effectiveElement(table.id);
-    check('协同撤销删列恢复休眠维度及其并发尺寸格式',
+    check(
+      '协同撤销删列恢复休眠维度及其并发尺寸格式',
       edit.queryTableGrid(pair.left, table.id).columns[1].width === 77
         && edit.queryTableGrid(pair.right, table.id).columns[1].width === 77
         && leftRestored.rows[0].cells[1].fill?.type === 'solid'
         && rightRestored.rows[0].cells[1].fill?.type === 'solid'
-        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+        && semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0,
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -96,19 +117,25 @@ export async function runCollabProtocolContract({
     const hub = new OfflineHub();
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
-    const table = Object.values(pair.left.elements)
-      .find((record) => record.src.kind === 'table');
+    const table = Object.values(pair.left.elements).find((record) => record.src.kind === 'table');
     const grid = edit.queryTableGrid(pair.left, table.id);
     pair.leftEditor.exec(
       {
-        type: 'EditText', id: table.id, cell: { r: 0, c: 0 },
-        ops: [{
-          type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
-          text: 'KEEP',
-        }],
+        type: 'EditText',
+        id: table.id,
+        cell: { r: 0, c: 0 },
+        ops: [
+          {
+            type: 'replace',
+            from: { p: 0, r: 0, off: 0 },
+            to: { p: 0, r: 0, off: 0 },
+            text: 'KEEP',
+          },
+        ],
       },
       {
-        type: 'SetCellProps', id: table.id,
+        type: 'SetCellProps',
+        id: table.id,
         cell: { row: grid.rows[0].id, column: grid.columns[0].id },
         props: { fill: { type: 'solid', color: '#225588' } },
       },
@@ -119,68 +146,80 @@ export async function runCollabProtocolContract({
     hub.flush((items) => items.reverse());
     const leftColumns = edit.queryTableGrid(pair.left, table.id).columns;
     const rightColumns = edit.queryTableGrid(pair.right, table.id).columns;
-    check('并发删除不同末列按消息全序撤销最早 tombstone 并保留一列',
-      leftColumns.length === 1 && rightColumns.length === 1
+    check(
+      '并发删除不同末列按消息全序撤销最早 tombstone 并保留一列',
+      leftColumns.length === 1
+        && rightColumns.length === 1
         && leftColumns[0].id === grid.columns[0].id
         && rightColumns[0].id === grid.columns[0].id
         && plainCell(pair.leftEditor.effectiveElement(table.id).rows[0].cells[0]).startsWith('KEEP')
         && plainCell(pair.rightEditor.effectiveElement(table.id).rows[0].cells[0]).startsWith('KEEP')
         && pair.leftEditor.effectiveElement(table.id).rows[0].cells[0].fill?.type === 'solid'
         && pair.rightEditor.effectiveElement(table.id).rows[0].cells[0].fill?.type === 'solid'
-        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+        && semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0,
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
   {
-    const pair = await createPair(
-      'sample-editor-table-structure.pptx', 'collab-table-merge-delete-',
-    );
+    const pair = await createPair('sample-editor-table-structure.pptx', 'collab-table-merge-delete-');
     const hub = new OfflineHub();
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
-    const table = Object.values(pair.left.elements)
-      .find((record) => record.src.kind === 'table');
+    const table = Object.values(pair.left.elements).find((record) => record.src.kind === 'table');
     const grid = edit.queryTableGrid(pair.left, table.id);
     pair.leftEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[1].id });
     pair.rightEditor.exec({
-      type: 'MergeCells', id: table.id,
+      type: 'MergeCells',
+      id: table.id,
       from: { row: grid.rows[1].id, column: grid.columns[2].id },
       to: { row: grid.rows[1].id, column: grid.columns[3].id },
     });
     hub.flush((items) => items.reverse());
-    const hasNewMerge = (doc) => edit.queryTableGrid(doc, table.id).merges.some((merge) =>
-      merge.from.row === grid.rows[1].id && merge.from.column === grid.columns[2].id
-        && merge.to.row === grid.rows[1].id && merge.to.column === grid.columns[3].id);
-    check('删列 tombstone 与无关并发合并独立收敛且不丢合并区域',
-      hasNewMerge(pair.left) && hasNewMerge(pair.right)
-        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    const hasNewMerge = (doc) =>
+      edit
+        .queryTableGrid(doc, table.id)
+        .merges.some(
+          (merge) =>
+            merge.from.row === grid.rows[1].id
+            && merge.from.column === grid.columns[2].id
+            && merge.to.row === grid.rows[1].id
+            && merge.to.column === grid.columns[3].id,
+        );
+    check(
+      '删列 tombstone 与无关并发合并独立收敛且不丢合并区域',
+      hasNewMerge(pair.left) && hasNewMerge(pair.right) && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     pair.rightEditor.undo();
     hub.flush();
-    check('并发合并撤销只移除自身区域并保留删列投影',
+    check(
+      '并发合并撤销只移除自身区域并保留删列投影',
       edit.queryTableGrid(pair.left, table.id).columns.length === 3
         && edit.queryTableGrid(pair.right, table.id).columns.length === 3
-        && !hasNewMerge(pair.left) && !hasNewMerge(pair.right)
-        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+        && !hasNewMerge(pair.left)
+        && !hasNewMerge(pair.right)
+        && semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0,
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
   {
-    const pair = await createPair(
-      'sample-editor-table-structure.pptx', 'collab-table-dormant-merge-',
-    );
+    const pair = await createPair('sample-editor-table-structure.pptx', 'collab-table-dormant-merge-');
     const hub = new OfflineHub();
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
-    const table = Object.values(pair.left.elements)
-      .find((record) => record.src.kind === 'table');
+    const table = Object.values(pair.left.elements).find((record) => record.src.kind === 'table');
     const grid = edit.queryTableGrid(pair.left, table.id);
     pair.leftEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[1].id });
     hub.flush();
     pair.rightEditor.exec({
-      type: 'MergeCells', id: table.id,
+      type: 'MergeCells',
+      id: table.id,
       from: { row: grid.rows[1].id, column: grid.columns[2].id },
       to: { row: grid.rows[1].id, column: grid.columns[3].id },
     });
@@ -188,141 +227,169 @@ export async function runCollabProtocolContract({
     pair.leftEditor.undo();
     hub.flush();
     const restoredMerges = (doc) => edit.queryTableGrid(doc, table.id).merges;
-    const hasHorizontalSource = (doc) => restoredMerges(doc).some((merge) =>
-      merge.from.row === grid.rows[0].id && merge.from.column === grid.columns[0].id
-        && merge.to.column === grid.columns[1].id);
-    const hasUnrelatedMerge = (doc) => restoredMerges(doc).some((merge) =>
-      merge.from.row === grid.rows[1].id && merge.from.column === grid.columns[2].id
-        && merge.to.column === grid.columns[3].id);
-    check('删列同步后新增无关合并，撤销删列恢复休眠来源合并且保留新合并',
-      hasHorizontalSource(pair.left) && hasHorizontalSource(pair.right)
-        && hasUnrelatedMerge(pair.left) && hasUnrelatedMerge(pair.right)
-        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    const hasHorizontalSource = (doc) =>
+      restoredMerges(doc).some(
+        (merge) => merge.from.row === grid.rows[0].id && merge.from.column === grid.columns[0].id && merge.to.column === grid.columns[1].id,
+      );
+    const hasUnrelatedMerge = (doc) =>
+      restoredMerges(doc).some(
+        (merge) => merge.from.row === grid.rows[1].id && merge.from.column === grid.columns[2].id && merge.to.column === grid.columns[3].id,
+      );
+    check(
+      '删列同步后新增无关合并，撤销删列恢复休眠来源合并且保留新合并',
+      hasHorizontalSource(pair.left)
+        && hasHorizontalSource(pair.right)
+        && hasUnrelatedMerge(pair.left)
+        && hasUnrelatedMerge(pair.right)
+        && semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0,
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     pair.rightEditor.undo();
     hub.flush();
-    check('休眠期新增合并的撤销只移除自身并保留两处来源合并',
-      restoredMerges(pair.left).length === 2 && restoredMerges(pair.right).length === 2
-        && hasHorizontalSource(pair.left) && hasHorizontalSource(pair.right)
-        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    check(
+      '休眠期新增合并的撤销只移除自身并保留两处来源合并',
+      restoredMerges(pair.left).length === 2
+        && restoredMerges(pair.right).length === 2
+        && hasHorizontalSource(pair.left)
+        && hasHorizontalSource(pair.right)
+        && semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0,
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
   {
-    const pair = await createPair(
-      'sample-editor-table-structure.pptx', 'collab-table-covered-cell-',
-    );
+    const pair = await createPair('sample-editor-table-structure.pptx', 'collab-table-covered-cell-');
     const hub = new OfflineHub();
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
-    const table = Object.values(pair.left.elements)
-      .find((record) => record.src.kind === 'table');
+    const table = Object.values(pair.left.elements).find((record) => record.src.kind === 'table');
     const grid = edit.queryTableGrid(pair.left, table.id);
     pair.rightEditor.exec({
-      type: 'SetCellProps', id: table.id,
+      type: 'SetCellProps',
+      id: table.id,
       cell: { row: grid.rows[1].id, column: grid.columns[2].id },
       props: { fill: { type: 'solid', color: '#884422' } },
     });
     pair.leftEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[2].id });
     pair.leftEditor.exec({
-      type: 'MergeCells', id: table.id,
+      type: 'MergeCells',
+      id: table.id,
       from: { row: grid.rows[1].id, column: grid.columns[1].id },
       to: { row: grid.rows[1].id, column: grid.columns[3].id },
     });
-    const messageRank = (item) => item.message.patches.some((patch) =>
-      patch.path[3] === 'tableRemovedColumns') ? 0
-      : item.message.patches.some((patch) => patch.path[3] === 'tableMerges') ? 1 : 2;
+    const messageRank = (item) =>
+      item.message.patches.some((patch) => patch.path[3] === 'tableRemovedColumns')
+        ? 0
+        : item.message.patches.some((patch) => patch.path[3] === 'tableMerges')
+          ? 1
+          : 2;
     hub.flush((items) => items.sort((left, right) => messageRank(left) - messageRank(right)));
-    check('跨隐藏列合并让发送方未知的并发占位格格式休眠并收敛',
+    check(
+      '跨隐藏列合并让发送方未知的并发占位格格式休眠并收敛',
       semanticDoc(pair.left) === semanticDoc(pair.right)
         && pair.leftEditor.effectiveElement(table.id).rows[1].cells[2].merged
         && pair.rightEditor.effectiveElement(table.id).rows[1].cells[2].merged
         && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     pair.leftEditor.undo();
     hub.flush();
     pair.leftEditor.undo();
     hub.flush();
-    check('撤销并发合并与删列恢复休眠的并发格式',
+    check(
+      '撤销并发合并与删列恢复休眠的并发格式',
       edit.queryTableGrid(pair.left, table.id).columns.length === 4
         && edit.queryTableGrid(pair.right, table.id).columns.length === 4
         && pair.leftEditor.effectiveElement(table.id).rows[1].cells[2].fill?.type === 'solid'
         && pair.rightEditor.effectiveElement(table.id).rows[1].cells[2].fill?.type === 'solid'
-        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+        && semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0,
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
   {
-    const pair = await createPair(
-      'sample-editor-table-structure.pptx', 'collab-table-backing-role-',
-    );
+    const pair = await createPair('sample-editor-table-structure.pptx', 'collab-table-backing-role-');
     const hub = new OfflineHub();
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
-    const table = Object.values(pair.left.elements)
-      .find((record) => record.src.kind === 'table');
+    const table = Object.values(pair.left.elements).find((record) => record.src.kind === 'table');
     const grid = edit.queryTableGrid(pair.left, table.id);
     pair.leftEditor.exec({ type: 'RemoveColumn', id: table.id, column: grid.columns[0].id });
     hub.flush();
     let rejected = false;
     try {
       pair.rightEditor.exec({
-        type: 'SetCellProps', id: table.id,
+        type: 'SetCellProps',
+        id: table.id,
         cell: { row: grid.rows[0].id, column: grid.columns[1].id },
         props: { fill: { type: 'solid', color: '#552211' } },
       });
-    } catch { rejected = true; }
-    check('删合并锚点同步后，两端统一拒绝编辑被提升的 backing 占位格',
+    } catch {
+      rejected = true;
+    }
+    check(
+      '删合并锚点同步后，两端统一拒绝编辑被提升的 backing 占位格',
       rejected && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
   {
-    const pair = await createPair(
-      'sample-editor-table-structure.pptx', 'collab-table-merge-cleanup-atomic-',
-    );
+    const pair = await createPair('sample-editor-table-structure.pptx', 'collab-table-merge-cleanup-atomic-');
     const hub = new OfflineHub();
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
-    const table = Object.values(pair.left.elements)
-      .find((record) => record.src.kind === 'table');
+    const table = Object.values(pair.left.elements).find((record) => record.src.kind === 'table');
     let grid = edit.queryTableGrid(pair.left, table.id);
     pair.leftEditor.exec({ type: 'SplitCell', id: table.id, cell: grid.merges[0].from });
     grid = edit.queryTableGrid(pair.left, table.id);
     pair.leftEditor.exec({ type: 'SplitCell', id: table.id, cell: grid.merges[0].from });
     hub.flush();
     pair.leftEditor.exec({
-      type: 'EditText', id: table.id, cell: { r: 2, c: 1 },
-      ops: [{
-        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
-        text: 'KEEP_LEFT',
-      }],
+      type: 'EditText',
+      id: table.id,
+      cell: { r: 2, c: 1 },
+      ops: [
+        {
+          type: 'replace',
+          from: { p: 0, r: 0, off: 0 },
+          to: { p: 0, r: 0, off: 0 },
+          text: 'KEEP_LEFT',
+        },
+      ],
     });
     hub.flush();
     grid = edit.queryTableGrid(pair.left, table.id);
     pair.leftEditor.exec({
-      type: 'MergeCells', id: table.id,
+      type: 'MergeCells',
+      id: table.id,
       from: { row: grid.rows[2].id, column: grid.columns[0].id },
       to: { row: grid.rows[2].id, column: grid.columns[1].id },
     });
     pair.rightEditor.exec({
-      type: 'MergeCells', id: table.id,
+      type: 'MergeCells',
+      id: table.id,
       from: { row: grid.rows[2].id, column: grid.columns[2].id },
       to: { row: grid.rows[2].id, column: grid.columns[3].id },
     });
     hub.flush();
     const finalMerges = edit.queryTableGrid(pair.left, table.id).merges;
-    check('并发合并仅裁决拓扑，落败区域普通格文字不丢',
-      finalMerges.length === 1 && finalMerges[0].from.column === grid.columns[2].id
-        && plainCell(pair.leftEditor.effectiveElement(table.id).rows[2].cells[1])
-          .startsWith('KEEP_LEFT')
-        && plainCell(pair.rightEditor.effectiveElement(table.id).rows[2].cells[1])
-          .startsWith('KEEP_LEFT')
-        && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
-    errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    check(
+      '并发合并仅裁决拓扑，落败区域普通格文字不丢',
+      finalMerges.length === 1
+        && finalMerges[0].from.column === grid.columns[2].id
+        && plainCell(pair.leftEditor.effectiveElement(table.id).rows[2].cells[1]).startsWith('KEEP_LEFT')
+        && plainCell(pair.rightEditor.effectiveElement(table.id).rows[2].cells[1]).startsWith('KEEP_LEFT')
+        && semanticDoc(pair.left) === semanticDoc(pair.right)
+        && errors.length === 0,
+      errors.map(String).join(' / ') || stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -331,17 +398,16 @@ export async function runCollabProtocolContract({
     const hub = new OfflineHub();
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
-    const [first, second, moved] = [pair.left.slideOrder[0], pair.left.slideOrder[1],
-      pair.left.slideOrder.at(-1)];
-    pair.leftEditor.exec(
-      { type: 'MoveSlide', id: moved, at: { after: null } },
-      { type: 'MoveSlide', id: moved, at: { after: second } },
-    );
+    const [first, second, moved] = [pair.left.slideOrder[0], pair.left.slideOrder[1], pair.left.slideOrder.at(-1)];
+    pair.leftEditor.exec({ type: 'MoveSlide', id: moved, at: { after: null } }, { type: 'MoveSlide', id: moved, at: { after: second } });
     hub.flush();
-    check('同一消息内连续移动同页按末次 intent 收敛', pair.left.slideOrder.indexOf(moved)
-      === pair.left.slideOrder.indexOf(second) + 1
-      && JSON.stringify(pair.left.slideOrder) === JSON.stringify(pair.right.slideOrder)
-      && pair.left.slideOrder[0] === first && errors.length === 0);
+    check(
+      '同一消息内连续移动同页按末次 intent 收敛',
+      pair.left.slideOrder.indexOf(moved) === pair.left.slideOrder.indexOf(second) + 1
+        && JSON.stringify(pair.left.slideOrder) === JSON.stringify(pair.right.slideOrder)
+        && pair.left.slideOrder[0] === first
+        && errors.length === 0,
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -359,23 +425,40 @@ export async function runCollabProtocolContract({
       { type: 'MoveSlide', id: rightMoved, at: { after: null } },
     );
     hub.flush();
-    check('同 stamp 的多页 intent 用消息 ordinal 全序而不依赖 Map 插入史',
-      pair.left.slideOrder[0] === rightMoved && pair.left.slideOrder[1] === leftMoved
-      && JSON.stringify(pair.left.slideOrder) === JSON.stringify(pair.right.slideOrder));
+    check(
+      '同 stamp 的多页 intent 用消息 ordinal 全序而不依赖 Map 插入史',
+      pair.left.slideOrder[0] === rightMoved
+        && pair.left.slideOrder[1] === leftMoved
+        && JSON.stringify(pair.left.slideOrder) === JSON.stringify(pair.right.slideOrder),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
   {
     const pair = await createPair('sample-editor-add-slide.pptx', 'collab-slide-id-bound-');
-    const provider = { send() {}, subscribe() { return () => {}; } };
+    const provider = {
+      send() {},
+      subscribe() {
+        return () => {};
+      },
+    };
     const binding = collab.bindCollaboration(pair.leftEditor, {
-      documentId: 'slide-id-bound', replicaId: 'highest-slot', replicaSlot: 4095, provider,
+      documentId: 'slide-id-bound',
+      replicaId: 'highest-slot',
+      replicaSlot: 4095,
+      provider,
     });
-    const slideId = [...pair.leftEditor.exec({
-      type: 'AddSlide', layoutId: pair.left.layoutOrder[0], at: { after: pair.left.slideOrder[0] },
-    }).createdSlides][0];
-    check('最高 slot 的 presentation slide id 仍满足 ST_SlideId 上界',
-      pair.left.slides[slideId].creation.presentationSlideId <= 0x7fff_ffff);
+    const slideId = [
+      ...pair.leftEditor.exec({
+        type: 'AddSlide',
+        layoutId: pair.left.layoutOrder[0],
+        at: { after: pair.left.slideOrder[0] },
+      }).createdSlides,
+    ][0];
+    check(
+      '最高 slot 的 presentation slide id 仍满足 ST_SlideId 上界',
+      pair.left.slides[slideId].creation.presentationSlideId <= 0x7fff_ffff,
+    );
     binding.dispose();
   }
 
@@ -400,14 +483,19 @@ export async function runCollabProtocolContract({
     const restoredEditor = new edit.Editor(restoredDoc, { recoveryFrames: frames });
     const restoredHub = new OfflineHub();
     const restored = collab.bindCollaboration(restoredEditor, {
-      documentId: 'deck', replicaId: 'a', replicaSlot: 1,
-      provider: restoredHub.endpoint('a'), checkpoint,
+      documentId: 'deck',
+      replicaId: 'a',
+      replicaSlot: 1,
+      provider: restoredHub.endpoint('a'),
+      checkpoint,
     });
     restoredHub.replay(replay);
-    check('远端 recovery 回调内 checkpoint 已原子包含 register 与 seen',
+    check(
+      '远端 recovery 回调内 checkpoint 已原子包含 register 与 seen',
       checkpoint.registers.length > 0
-      && checkpoint.seen.some((entry) => entry.replicaId === 'b' && entry.contiguous >= 1)
-      && restoredDoc.elements[target.id].ovr.x === target.src.x + 31);
+        && checkpoint.seen.some((entry) => entry.replicaId === 'b' && entry.contiguous >= 1)
+        && restoredDoc.elements[target.id].ovr.x === target.src.x + 31,
+    );
     restored.dispose();
     bindings.forEach((binding) => binding.dispose());
   }
@@ -432,9 +520,11 @@ export async function runCollabProtocolContract({
     }).reverse();
     hub.replay(replay);
     const seen = bindings[0].checkpoint().seen.find((entry) => entry.replicaId === 'b');
-    check('乱序 seen 集在缺口闭合后压成副本连续高水位',
+    check(
+      '乱序 seen 集在缺口闭合后压成副本连续高水位',
       seen?.contiguous === 200 && seen.sparse.length === 0 && errors.length === 0,
-    errors.map(String).join(' / '));
+      errors.map(String).join(' / '),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -450,8 +540,15 @@ export async function runCollabProtocolContract({
       checkpoint = binding.checkpoint();
     });
     const binding = collab.bindCollaboration(editor, {
-      documentId: 'atomic-checkpoint', replicaId: 'a', replicaSlot: 1,
-      provider: { send() {}, subscribe() { return () => {}; } },
+      documentId: 'atomic-checkpoint',
+      replicaId: 'a',
+      replicaSlot: 1,
+      provider: {
+        send() {},
+        subscribe() {
+          return () => {};
+        },
+      },
     });
     const target = editableShapes(doc)[0];
     editor.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + 19 });
@@ -463,13 +560,26 @@ export async function runCollabProtocolContract({
     let restoreError;
     try {
       restoredBinding = collab.bindCollaboration(restoredEditor, {
-        documentId: 'atomic-checkpoint', replicaId: 'a', replicaSlot: 1, checkpoint,
-        provider: { send() {}, subscribe() { return () => {}; } },
+        documentId: 'atomic-checkpoint',
+        replicaId: 'a',
+        replicaSlot: 1,
+        checkpoint,
+        provider: {
+          send() {},
+          subscribe() {
+            return () => {};
+          },
+        },
       });
-    } catch (error) { restoreError = error; }
-    check('recovery 回调内取得的 checkpoint 与同帧原子匹配', !restoreError
-      && checkpoint.clock === frames.at(-1).identity.allocation.clock
-      && checkpoint.sequence === frames.at(-1).identity.allocation.sequence);
+    } catch (error) {
+      restoreError = error;
+    }
+    check(
+      'recovery 回调内取得的 checkpoint 与同帧原子匹配',
+      !restoreError
+        && checkpoint.clock === frames.at(-1).identity.allocation.clock
+        && checkpoint.sequence === frames.at(-1).identity.allocation.sequence,
+    );
     restoredBinding?.dispose();
     binding.dispose();
   }
@@ -481,14 +591,18 @@ export async function runCollabProtocolContract({
     const bindings = bindPair(pair, hub, errors);
     const before = JSON.stringify(pair.right.slideOrder);
     pair.leftEditor.exec({
-      type: 'MoveSlide', id: pair.left.slideOrder.at(-1), at: { after: null },
+      type: 'MoveSlide',
+      id: pair.left.slideOrder.at(-1),
+      at: { after: null },
     });
     const poisoned = structuredClone(hub.queue[0]);
     poisoned.message.patches[0].value.after = 42;
     hub.queue.length = 0;
     hub.replay([poisoned]);
-    check('非法 MoveSlide 锚点由 Editor 整批验真并通过 onError 隔离',
-      JSON.stringify(pair.right.slideOrder) === before && errors.length === 1);
+    check(
+      '非法 MoveSlide 锚点由 Editor 整批验真并通过 onError 隔离',
+      JSON.stringify(pair.right.slideOrder) === before && errors.length === 1,
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -498,9 +612,14 @@ export async function runCollabProtocolContract({
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
     const slideId = pair.left.slideOrder[0];
-    const inserted = createdElement(pair.leftEditor.exec({
-      type: 'AddShape', slideId, preset: 'rect', rect: { x: 10, y: 10, w: 80, h: 60 },
-    }));
+    const inserted = createdElement(
+      pair.leftEditor.exec({
+        type: 'AddShape',
+        slideId,
+        preset: 'rect',
+        rect: { x: 10, y: 10, w: 80, h: 60 },
+      }),
+    );
     pair.leftEditor.exec({ type: 'SetXfrm', id: inserted, x: 246 });
     const [insertion, field] = structuredClone(hub.queue);
     const combined = structuredClone(insertion);
@@ -510,9 +629,11 @@ export async function runCollabProtocolContract({
     const stopRecovery = pair.rightEditor.subscribeRecovery((frame) => frames.push(frame));
     hub.replay([combined]);
     stopRecovery();
-    check('同消息 AddShape 与新目标 SetXfrm 折叠为单帧 recovery',
+    check(
+      '同消息 AddShape 与新目标 SetXfrm 折叠为单帧 recovery',
       pair.right.elements[inserted]?.ovr.x === 246 && frames.length === 1 && errors.length === 0,
-    errors.map(String).join(' / '));
+      errors.map(String).join(' / '),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -522,9 +643,14 @@ export async function runCollabProtocolContract({
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
     const slideId = pair.left.slideOrder[0];
-    const inserted = createdElement(pair.leftEditor.exec({
-      type: 'AddShape', slideId, preset: 'rect', rect: { x: 10, y: 10, w: 80, h: 60 },
-    }));
+    const inserted = createdElement(
+      pair.leftEditor.exec({
+        type: 'AddShape',
+        slideId,
+        preset: 'rect',
+        rect: { x: 10, y: 10, w: 80, h: 60 },
+      }),
+    );
     pair.leftEditor.exec({ type: 'SetName', id: inserted, name: '临时名称' });
     pair.leftEditor.exec({ type: 'SetName', id: inserted, name: null });
     const messages = structuredClone(hub.queue);
@@ -535,10 +661,11 @@ export async function runCollabProtocolContract({
     const stopRecovery = pair.rightEditor.subscribeRecovery((frame) => frames.push(frame));
     hub.replay([combined]);
     stopRecovery();
-    check('同消息新建目标的 set→del 末次意图仍只落一帧 recovery',
-      pair.right.elements[inserted] && pair.right.elements[inserted].ovr.name === undefined
-      && frames.length === 1 && errors.length === 0,
-    errors.map(String).join(' / '));
+    check(
+      '同消息新建目标的 set→del 末次意图仍只落一帧 recovery',
+      pair.right.elements[inserted] && pair.right.elements[inserted].ovr.name === undefined && frames.length === 1 && errors.length === 0,
+      errors.map(String).join(' / '),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -563,9 +690,11 @@ export async function runCollabProtocolContract({
     const stopRecovery = pair.rightEditor.subscribeRecovery((frame) => frames.push(frame));
     hub.replay([combined]);
     stopRecovery();
-    check('同消息 Group 与新组 SetXfrm 折叠为单帧 recovery',
+    check(
+      '同消息 Group 与新组 SetXfrm 折叠为单帧 recovery',
       pair.right.elements[groupId]?.ovr.x === 357 && frames.length === 1 && errors.length === 0,
-    errors.map(String).join(' / '));
+      errors.map(String).join(' / '),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -575,22 +704,24 @@ export async function runCollabProtocolContract({
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
     const slideId = pair.left.slideOrder[0];
-    const inserted = createdElement(pair.leftEditor.exec({
-      type: 'AddShape', slideId, preset: 'rect', rect: { x: 10, y: 10, w: 80, h: 60 },
-    }));
-    const existing = editableShapes(pair.left).find((record) => record.id !== inserted);
-    pair.leftEditor.exec(
-      { type: 'SetXfrm', id: existing.id, x: 222 },
-      { type: 'SetXfrm', id: inserted, y: 333 },
+    const inserted = createdElement(
+      pair.leftEditor.exec({
+        type: 'AddShape',
+        slideId,
+        preset: 'rect',
+        rect: { x: 10, y: 10, w: 80, h: 60 },
+      }),
     );
-    const messages = structuredClone(hub.queue).sort((left, right) =>
-      right.message.sequence - left.message.sequence);
+    const existing = editableShapes(pair.left).find((record) => record.id !== inserted);
+    pair.leftEditor.exec({ type: 'SetXfrm', id: existing.id, x: 222 }, { type: 'SetXfrm', id: inserted, y: 333 });
+    const messages = structuredClone(hub.queue).sort((left, right) => right.message.sequence - left.message.sequence);
     messages[0].message.patches.find((patch) => patch.path.at(-1) === 'y').value = '坏值';
     hub.queue.length = 0;
     hub.replay(messages);
-    check('延迟消息按原批次验真，任一字段非法时不会部分落模',
-      pair.right.elements[existing.id]?.ovr.x !== 222 && pair.right.elements[inserted]
-      && errors.length === 1);
+    check(
+      '延迟消息按原批次验真，任一字段非法时不会部分落模',
+      pair.right.elements[existing.id]?.ovr.x !== 222 && pair.right.elements[inserted] && errors.length === 1,
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -600,9 +731,14 @@ export async function runCollabProtocolContract({
     const errors = [];
     const bindings = bindPair(pair, hub, errors);
     const slideId = pair.left.slideOrder[0];
-    const inserted = createdElement(pair.leftEditor.exec({
-      type: 'AddShape', slideId, preset: 'rect', rect: { x: 10, y: 10, w: 80, h: 60 },
-    }));
+    const inserted = createdElement(
+      pair.leftEditor.exec({
+        type: 'AddShape',
+        slideId,
+        preset: 'rect',
+        rect: { x: 10, y: 10, w: 80, h: 60 },
+      }),
+    );
     pair.leftEditor.exec({ type: 'SetXfrm', id: inserted, x: 222 });
     pair.leftEditor.exec({ type: 'SetXfrm', id: inserted, w: 90 });
     const messages = structuredClone(hub.queue);
@@ -611,11 +747,14 @@ export async function runCollabProtocolContract({
     hub.replay([messages[1], messages[2], messages[0]]);
     const checkpoint = bindings[1].checkpoint();
     hub.replay(messages);
-    check('多个 deferred 同时就绪时只隔离坏消息，合法字段仍落模且重放幂等',
+    check(
+      '多个 deferred 同时就绪时只隔离坏消息，合法字段仍落模且重放幂等',
       pair.right.elements[inserted]?.ovr.x === 222
-      && pair.right.elements[inserted]?.ovr.w !== -1
-      && checkpoint.deferred.length === 0 && errors.length === 1,
-    errors.map(String).join(' / '));
+        && pair.right.elements[inserted]?.ovr.w !== -1
+        && checkpoint.deferred.length === 0
+        && errors.length === 1,
+      errors.map(String).join(' / '),
+    );
     bindings.forEach((binding) => binding.dispose());
   }
 
@@ -624,19 +763,35 @@ export async function runCollabProtocolContract({
     let captured;
     let outgoing;
     const leftBinding = collab.bindCollaboration(pair.leftEditor, {
-      documentId: 'dispose', replicaId: 'a', replicaSlot: 1,
-      provider: { send() {}, subscribe(listener) { captured = listener; return () => {}; } },
+      documentId: 'dispose',
+      replicaId: 'a',
+      replicaSlot: 1,
+      provider: {
+        send() {},
+        subscribe(listener) {
+          captured = listener;
+          return () => {};
+        },
+      },
     });
     const rightBinding = collab.bindCollaboration(pair.rightEditor, {
-      documentId: 'dispose', replicaId: 'b', replicaSlot: 2,
-      provider: { send(message) { outgoing = structuredClone(message); }, subscribe() { return () => {}; } },
+      documentId: 'dispose',
+      replicaId: 'b',
+      replicaSlot: 2,
+      provider: {
+        send(message) {
+          outgoing = structuredClone(message);
+        },
+        subscribe() {
+          return () => {};
+        },
+      },
     });
     const target = editableShapes(pair.right)[0];
     pair.rightEditor.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + 27 });
     leftBinding.dispose();
     captured(outgoing);
-    check('dispose 后已捕获的 provider 回调也不能再修改文档',
-      pair.left.elements[target.id].ovr.x !== target.src.x + 27);
+    check('dispose 后已捕获的 provider 回调也不能再修改文档', pair.left.elements[target.id].ovr.x !== target.src.x + 27);
     rightBinding.dispose();
   }
 }

@@ -21,7 +21,10 @@ const edit = await import(`${pathToFileURL(editPath).href}?worker=${process.pid}
 const bytes = new Uint8Array(readFileSync(file));
 const savedProjection = mode === 'saved' && ['layout', 'master'].includes(scenario.type);
 const pres = await core.parse(bytes, {
-  edit: mode === 'projected' || savedProjection, keepPackage: true, lazy: false, assets: 'defer',
+  edit: mode === 'projected' || savedProjection,
+  keepPackage: true,
+  lazy: false,
+  assets: 'defer',
 });
 const slideIndex = scenario.resultSlideIndex ?? scenario.slideIndex ?? 0;
 let slide = pres.slides[slideIndex];
@@ -35,89 +38,102 @@ if (mode === 'projected' || savedProjection) {
   } else if (scenario.type === 'clipboard') {
     const sourceBytes = new Uint8Array(readFileSync(join(dirname(file), scenario.sourceFile)));
     const sourcePres = await core.parse(sourceBytes, {
-      edit: true, keepPackage: true, lazy: false, assets: 'defer',
+      edit: true,
+      keepPackage: true,
+      lazy: false,
+      assets: 'defer',
     });
     const sourceDoc = edit.createDoc(sourcePres, { idPrefix: 'm1-fingerprint-source-' });
-    const sourceTarget = Object.values(sourceDoc.elements)
-      .find((record) => record.src.name === scenario.targetName);
+    const sourceTarget = Object.values(sourceDoc.elements).find((record) => record.src.name === scenario.targetName);
     if (!sourceTarget) throw new Error('M1 指纹固件缺少剪贴板来源目标');
     editor.exec({
-      type: 'PasteElements', payload: edit.copyElements(sourceDoc, [sourceTarget.id]),
+      type: 'PasteElements',
+      payload: edit.copyElements(sourceDoc, [sourceTarget.id]),
       at: { parentId: doc.slideOrder[0], x: scenario.x, y: scenario.y },
     });
     edit.disposeDoc(sourceDoc);
   } else if (scenario.type === 'text') {
     for (const change of scenario.edits) {
-      const textTarget = Object.values(doc.elements)
-        .find((record) => record.src.name === change.targetName);
+      const textTarget = Object.values(doc.elements).find((record) => record.src.name === change.targetName);
       if (!textTarget) throw new Error(`M1 指纹固件缺少文字目标：${change.targetName}`);
       editor.exec({
-        type: 'EditText', id: textTarget.id,
-        ...(change.cell ? { cell: change.cell } : {}), ops: change.ops,
+        type: 'EditText',
+        id: textTarget.id,
+        ...(change.cell ? { cell: change.cell } : {}),
+        ops: change.ops,
       });
     }
     for (const change of scenario.formats ?? []) {
-      const textTarget = Object.values(doc.elements)
-        .find((record) => record.src.name === change.targetName);
+      const textTarget = Object.values(doc.elements).find((record) => record.src.name === change.targetName);
       if (!textTarget) throw new Error(`M1 指纹固件缺少格式目标：${change.targetName}`);
       editor.exec({
-        type: 'SetRunProps', id: textTarget.id,
-        ...(change.cell ? { cell: change.cell } : {}), range: change.range, props: change.props,
+        type: 'SetRunProps',
+        id: textTarget.id,
+        ...(change.cell ? { cell: change.cell } : {}),
+        range: change.range,
+        props: change.props,
       });
     }
     for (const change of scenario.formatPainters ?? []) {
-      const source = Object.values(doc.elements)
-        .find((record) => record.src.name === change.fromName);
-      const destination = Object.values(doc.elements)
-        .find((record) => record.src.name === change.toName);
+      const source = Object.values(doc.elements).find((record) => record.src.name === change.fromName);
+      const destination = Object.values(doc.elements).find((record) => record.src.name === change.toName);
       if (!source || !destination) throw new Error('M1 指纹固件缺少格式刷来源或目标');
       editor.exec({
-        type: 'ApplyFormat', from: source.id, to: destination.id, mask: change.mask,
+        type: 'ApplyFormat',
+        from: source.id,
+        to: destination.id,
+        mask: change.mask,
         ...(change.fromRange ? { fromRange: change.fromRange } : {}),
         ...(change.toRange ? { toRange: change.toRange } : {}),
       });
     }
     for (const change of scenario.clears ?? []) {
-      const textTarget = Object.values(doc.elements)
-        .find((record) => record.src.name === change.targetName);
+      const textTarget = Object.values(doc.elements).find((record) => record.src.name === change.targetName);
       if (!textTarget) throw new Error(`M1 指纹固件缺少清除格式目标：${change.targetName}`);
       editor.exec({
-        type: 'ClearFormat', id: textTarget.id,
-        ...(change.cell ? { cell: change.cell } : {}), range: change.range,
+        type: 'ClearFormat',
+        id: textTarget.id,
+        ...(change.cell ? { cell: change.cell } : {}),
+        range: change.range,
       });
     }
     for (const change of scenario.paragraphFormats ?? []) {
-      const textTarget = Object.values(doc.elements)
-        .find((record) => record.src.name === change.targetName);
+      const textTarget = Object.values(doc.elements).find((record) => record.src.name === change.targetName);
       if (!textTarget) throw new Error(`M1 指纹固件缺少段落格式目标：${change.targetName}`);
       editor.exec({
-        type: 'SetParaProps', id: textTarget.id,
-        ...(change.cell ? { cell: change.cell } : {}), range: change.range, props: change.props,
+        type: 'SetParaProps',
+        id: textTarget.id,
+        ...(change.cell ? { cell: change.cell } : {}),
+        range: change.range,
+        props: change.props,
       });
     }
   } else if (scenario.type === 'bodyProps') {
     for (const change of scenario.changes) {
-      const bodyTarget = Object.values(doc.elements)
-        .find((record) => record.src.name === change.targetName);
+      const bodyTarget = Object.values(doc.elements).find((record) => record.src.name === change.targetName);
       if (!bodyTarget) throw new Error(`M1 指纹固件缺少文字框目标：${change.targetName}`);
       editor.exec({ type: 'SetBodyProps', id: bodyTarget.id, props: change.props });
     }
   } else if (scenario.type === 'insertRow') {
-    const rowTarget = target?.src.kind === 'table' ? target
-      : Object.values(doc.elements).find((record) => record.src.kind === 'table');
+    const rowTarget = target?.src.kind === 'table' ? target : Object.values(doc.elements).find((record) => record.src.kind === 'table');
     if (!rowTarget) throw new Error('M1 指纹固件缺少追加行表格');
     editor.exec({ type: 'InsertRow', id: rowTarget.id });
     const row = editor.effectiveElement(rowTarget.id).rows.length - 1;
     editor.exec({
-      type: 'EditText', id: rowTarget.id, cell: { r: row, c: scenario.cell ?? 0 },
-      ops: [{
-        type: 'replace', from: { p: 0, r: 0, off: 0 },
-        to: { p: 0, r: 0, off: 0 }, text: scenario.text,
-      }],
+      type: 'EditText',
+      id: rowTarget.id,
+      cell: { r: row, c: scenario.cell ?? 0 },
+      ops: [
+        {
+          type: 'replace',
+          from: { p: 0, r: 0, off: 0 },
+          to: { p: 0, r: 0, off: 0 },
+          text: scenario.text,
+        },
+      ],
     });
   } else if (scenario.type === 'tableStructure') {
-    const table = target?.src.kind === 'table' ? target
-      : Object.values(doc.elements).find((record) => record.src.kind === 'table');
+    const table = target?.src.kind === 'table' ? target : Object.values(doc.elements).find((record) => record.src.kind === 'table');
     if (!table) throw new Error('M1 指纹固件缺少结构编辑表格');
     const grid = edit.queryTableGrid(doc, table.id);
     editor.exec({ type: 'InsertRow', id: table.id, at: { before: grid.rows[0].id } });
@@ -129,23 +145,32 @@ if (mode === 'projected' || savedProjection) {
     );
     const from = { row: inserted.rows[0].id, column: inserted.columns[0].id };
     editor.exec({
-      type: 'MergeCells', id: table.id, from,
+      type: 'MergeCells',
+      id: table.id,
+      from,
       to: { row: inserted.rows[1].id, column: inserted.columns[1].id },
     });
     editor.exec({
-      type: 'SetCellProps', id: table.id, cell: from,
+      type: 'SetCellProps',
+      id: table.id,
+      cell: from,
       props: { fill: { type: 'solid', color: '#A1B2C3' }, margins: [3, 4, 5, 6], vAlign: 'middle' },
     });
     editor.exec({
-      type: 'EditText', id: table.id, cell: { r: 0, c: 0 },
-      ops: [{
-        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
-        text: '结构写回',
-      }],
+      type: 'EditText',
+      id: table.id,
+      cell: { r: 0, c: 0 },
+      ops: [
+        {
+          type: 'replace',
+          from: { p: 0, r: 0, off: 0 },
+          to: { p: 0, r: 0, off: 0 },
+          text: '结构写回',
+        },
+      ],
     });
   } else if (scenario.type === 'tableStructureDelete') {
-    const table = target?.src.kind === 'table' ? target
-      : Object.values(doc.elements).find((record) => record.src.kind === 'table');
+    const table = target?.src.kind === 'table' ? target : Object.values(doc.elements).find((record) => record.src.kind === 'table');
     if (!table) throw new Error('M1 指纹固件缺少结构删除表格');
     const grid = edit.queryTableGrid(doc, table.id);
     editor.exec(
@@ -153,116 +178,161 @@ if (mode === 'projected' || savedProjection) {
       { type: 'RemoveColumn', id: table.id, column: grid.columns[1].id },
     );
   } else if (scenario.type === 'tableDormantPlaceholder') {
-    const table = target?.src.kind === 'table' ? target
-      : Object.values(doc.elements).find((record) => record.src.kind === 'table');
+    const table = target?.src.kind === 'table' ? target : Object.values(doc.elements).find((record) => record.src.kind === 'table');
     if (!table) throw new Error('M1 指纹固件缺少休眠占位格表格');
     const initial = edit.queryTableGrid(doc, table.id);
     editor.exec({
-      type: 'SetColumnWidth', id: table.id, column: initial.columns.at(-1).id, width: 271,
+      type: 'SetColumnWidth',
+      id: table.id,
+      column: initial.columns.at(-1).id,
+      width: 271,
     });
-    const merge = initial.merges
-      .find((region) => region.from.row === '#r0' && region.from.column === '#c0');
+    const merge = initial.merges.find((region) => region.from.row === '#r0' && region.from.column === '#c0');
     editor.exec({ type: 'SplitCell', id: table.id, cell: merge.from });
     const grid = edit.queryTableGrid(doc, table.id);
     const dormant = { row: grid.rows[0].id, column: grid.columns[1].id };
     editor.exec({
-      type: 'EditText', id: table.id, cell: { r: 0, c: 1 },
-      ops: [{
-        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
-        text: 'CUSTOM_SLEEP',
-      }],
+      type: 'EditText',
+      id: table.id,
+      cell: { r: 0, c: 1 },
+      ops: [
+        {
+          type: 'replace',
+          from: { p: 0, r: 0, off: 0 },
+          to: { p: 0, r: 0, off: 0 },
+          text: 'CUSTOM_SLEEP',
+        },
+      ],
     });
     editor.exec({
-      type: 'SetCellProps', id: table.id, cell: dormant,
+      type: 'SetCellProps',
+      id: table.id,
+      cell: dormant,
       props: { fill: { type: 'solid', color: '#DDAA33' } },
     });
     editor.exec({
-      type: 'MergeCells', id: table.id,
-      from: { row: grid.rows[0].id, column: grid.columns[0].id }, to: dormant,
+      type: 'MergeCells',
+      id: table.id,
+      from: { row: grid.rows[0].id, column: grid.columns[0].id },
+      to: dormant,
     });
   } else if (scenario.type === 'addShape') {
     editor.exec({
-      type: 'AddShape', slideId: doc.slideOrder[slideIndex], preset: scenario.preset, rect: scenario.rect,
+      type: 'AddShape',
+      slideId: doc.slideOrder[slideIndex],
+      preset: scenario.preset,
+      rect: scenario.rect,
     });
     const id = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
     if (!id) throw new Error('M1 指纹未得到新增形状选区');
     editor.exec({
-      type: 'EditText', id,
-      ops: [{
-        type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: scenario.text,
-      }],
+      type: 'EditText',
+      id,
+      ops: [
+        {
+          type: 'replace',
+          from: { p: 0, r: 0, off: 0 },
+          to: { p: 0, r: 0, off: 0 },
+          text: scenario.text,
+        },
+      ],
     });
   } else if (scenario.type === 'presetShape') {
     if (!target) throw new Error(`M1 指纹固件缺少预设形状：${scenario.targetName}`);
     for (const [name, value] of Object.entries(scenario.adjustments)) {
       editor.exec({ type: 'SetAdj', id: target.id, name, value });
     }
-    const converted = Object.values(doc.elements)
-      .find((record) => record.src.name === scenario.convertTargetName);
+    const converted = Object.values(doc.elements).find((record) => record.src.name === scenario.convertTargetName);
     if (!converted) throw new Error(`M1 指纹固件缺少形状：${scenario.convertTargetName}`);
     editor.exec({ type: 'SetPreset', id: converted.id, preset: scenario.convertPreset });
   } else if (scenario.type === 'addImage') {
     for (const image of scenario.images) {
-      const imageBytes = image.part
-        ? pres.package.parts[image.part]
-        : Uint8Array.from(Buffer.from(image.base64, 'base64'));
+      const imageBytes = image.part ? pres.package.parts[image.part] : Uint8Array.from(Buffer.from(image.base64, 'base64'));
       editor.exec({
-        type: 'AddImage', slideId: doc.slideOrder[slideIndex],
-        bytes: imageBytes, mime: image.mime, rect: image.rect,
+        type: 'AddImage',
+        slideId: doc.slideOrder[slideIndex],
+        bytes: imageBytes,
+        mime: image.mime,
+        rect: image.rect,
       });
     }
   } else if (scenario.type === 'addTable') {
-    const placeholder = Object.values(doc.elements).find((record) =>
-      record.src.name === scenario.placeholderName);
+    const placeholder = Object.values(doc.elements).find((record) => record.src.name === scenario.placeholderName);
     editor.exec({
-      type: 'AddTable', slideId: doc.slideOrder[slideIndex], rows: scenario.rows,
-      cols: scenario.cols, rect: scenario.rect, placeholderId: placeholder.id,
+      type: 'AddTable',
+      slideId: doc.slideOrder[slideIndex],
+      rows: scenario.rows,
+      cols: scenario.cols,
+      rect: scenario.rect,
+      placeholderId: placeholder.id,
     });
     const id = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
-    for (const change of scenario.edits) editor.exec({
-      type: 'EditText', id, cell: change.cell,
-      ops: [{
-        type: 'replace', from: { p: 0, r: 0, off: 0 },
-        to: { p: 0, r: 0, off: 0 }, text: change.text,
-      }],
-    });
+    for (const change of scenario.edits)
+      editor.exec({
+        type: 'EditText',
+        id,
+        cell: change.cell,
+        ops: [
+          {
+            type: 'replace',
+            from: { p: 0, r: 0, off: 0 },
+            to: { p: 0, r: 0, off: 0 },
+            text: change.text,
+          },
+        ],
+      });
     editor.exec({ type: 'InsertRow', id });
     editor.exec({
-      type: 'EditText', id, cell: { r: scenario.rows, c: scenario.cols - 1 },
-      ops: [{
-        type: 'replace', from: { p: 0, r: 0, off: 0 },
-        to: { p: 0, r: 0, off: 0 }, text: scenario.appendedText,
-      }],
+      type: 'EditText',
+      id,
+      cell: { r: scenario.rows, c: scenario.cols - 1 },
+      ops: [
+        {
+          type: 'replace',
+          from: { p: 0, r: 0, off: 0 },
+          to: { p: 0, r: 0, off: 0 },
+          text: scenario.appendedText,
+        },
+      ],
     });
     if (scenario.transform) editor.exec({ type: 'SetXfrm', id, ...scenario.transform });
   } else if (scenario.type === 'addSlide') {
     const layout = (name) => doc.layoutOrder.find((id) => doc.layouts[id].name === name);
     const first = doc.slideOrder[0];
     const titleResult = editor.exec({
-      type: 'AddSlide', layoutId: layout(scenario.titleLayoutName), at: { after: first },
+      type: 'AddSlide',
+      layoutId: layout(scenario.titleLayoutName),
+      at: { after: first },
     });
     const titleSlide = [...titleResult.createdSlides][0];
-    const title = doc.slides[titleSlide].children.map((id) => doc.elements[id])
-      .find((record) => record.meta.ph?.type === 'title');
+    const title = doc.slides[titleSlide].children.map((id) => doc.elements[id]).find((record) => record.meta.ph?.type === 'title');
     editor.exec({
-      type: 'EditText', id: title.id,
-      ops: [{
-        type: 'replace', from: { p: 0, r: 0, off: 0 },
-        to: { p: 0, r: 0, off: 0 }, text: scenario.text,
-      }],
+      type: 'EditText',
+      id: title.id,
+      ops: [
+        {
+          type: 'replace',
+          from: { p: 0, r: 0, off: 0 },
+          to: { p: 0, r: 0, off: 0 },
+          text: scenario.text,
+        },
+      ],
     });
     editor.exec({
-      type: 'AddSlide', layoutId: layout(scenario.blankLayoutName), at: { after: titleSlide },
+      type: 'AddSlide',
+      layoutId: layout(scenario.blankLayoutName),
+      at: { after: titleSlide },
     });
   } else if (scenario.type === 'moveSlide') {
     const slideByPart = (part) => doc.slideOrder.find((id) => doc.slides[id].origin?.part === part);
-    for (const move of scenario.moves) editor.exec({
-      type: 'MoveSlide', id: slideByPart(move.part),
-      at: { after: move.afterPart === null ? null : slideByPart(move.afterPart) },
-    });
+    for (const move of scenario.moves)
+      editor.exec({
+        type: 'MoveSlide',
+        id: slideByPart(move.part),
+        at: { after: move.afterPart === null ? null : slideByPart(move.afterPart) },
+      });
   } else if (scenario.type === 'changeLayout') {
-    const layoutId = doc.layoutOrder.find((id) =>
-      doc.layouts[id].name === scenario.targetLayoutName);
+    const layoutId = doc.layoutOrder.find((id) => doc.layouts[id].name === scenario.targetLayoutName);
     if (!layoutId) throw new Error(`M1 指纹固件缺少版式：${scenario.targetLayoutName}`);
     editor.exec({ type: 'SetLayout', id: doc.slideOrder[slideIndex], layoutId });
   } else if (scenario.type === 'removeSlide') {
@@ -274,8 +344,7 @@ if (mode === 'projected' || savedProjection) {
     if (!id) throw new Error(`M1 指纹固件缺少待复制页面：${scenario.part}`);
     editor.exec({ type: 'DuplicateSlide', id });
   } else if (scenario.type === 'shapeFormat') {
-    const named = (name) => Object.values(doc.elements)
-      .find((record) => record.src.name === name);
+    const named = (name) => Object.values(doc.elements).find((record) => record.src.name === name);
     for (const change of scenario.fills) {
       const record = named(change.targetName);
       if (!record) throw new Error(`M1 指纹固件缺少填充目标：${change.targetName}`);
@@ -287,22 +356,24 @@ if (mode === 'projected' || savedProjection) {
       editor.exec({ type: 'SetStroke', id: record.id, stroke: change.stroke });
     }
     editor.exec({
-      type: 'AddShape', slideId: doc.slideOrder[slideIndex],
-      preset: scenario.added.preset, rect: scenario.added.rect,
+      type: 'AddShape',
+      slideId: doc.slideOrder[slideIndex],
+      preset: scenario.added.preset,
+      rect: scenario.added.rect,
     });
     const id = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
     if (!id) throw new Error('M1 指纹未得到格式化新增形状');
-    editor.exec(
-      { type: 'SetFill', id, fill: scenario.added.fill },
-      { type: 'SetStroke', id, stroke: scenario.added.stroke },
-    );
+    editor.exec({ type: 'SetFill', id, fill: scenario.added.fill }, { type: 'SetStroke', id, stroke: scenario.added.stroke });
     if (scenario.copied) {
       const copied = named(scenario.copied.targetName);
       if (!copied) throw new Error(`M1 指纹固件缺少复制格式目标：${scenario.copied.targetName}`);
       editor.exec({
-        type: 'PasteElements', payload: edit.copyElements(doc, [copied.id]),
+        type: 'PasteElements',
+        payload: edit.copyElements(doc, [copied.id]),
         at: {
-          parentId: doc.slideOrder[slideIndex], x: scenario.copied.x, y: scenario.copied.y,
+          parentId: doc.slideOrder[slideIndex],
+          x: scenario.copied.x,
+          y: scenario.copied.y,
         },
       });
     }
@@ -310,48 +381,57 @@ if (mode === 'projected' || savedProjection) {
     const [inherited, solid, hidden, pattern] = doc.slideOrder;
     editor.exec({ type: 'SetBackground', id: inherited, fill: scenario.backgrounds[0] });
     editor.exec({ type: 'SetBackground', id: solid, fill: scenario.backgrounds[1] });
-    editor.exec(
-      { type: 'SetBackground', id: hidden, fill: { type: 'none' } },
-      { type: 'SetHidden', id: hidden, v: false },
-    );
+    editor.exec({ type: 'SetBackground', id: hidden, fill: { type: 'none' } }, { type: 'SetHidden', id: hidden, v: false });
     editor.exec({ type: 'SetHidden', id: pattern, v: true });
     editor.exec({ type: 'DuplicateSlide', id: hidden });
-    const added = [...editor.exec({
-      type: 'AddSlide', layoutId: doc.layoutOrder[0], at: { after: doc.slideOrder.at(-1) },
-    }).createdSlides][0];
-    editor.exec(
-      { type: 'SetBackground', id: added, fill: scenario.backgrounds[2] },
-      { type: 'SetHidden', id: added, v: true },
-    );
+    const added = [
+      ...editor.exec({
+        type: 'AddSlide',
+        layoutId: doc.layoutOrder[0],
+        at: { after: doc.slideOrder.at(-1) },
+      }).createdSlides,
+    ][0];
+    editor.exec({ type: 'SetBackground', id: added, fill: scenario.backgrounds[2] }, { type: 'SetHidden', id: added, v: true });
   } else if (scenario.type === 'slideImageBackground') {
     const [stretch, tile, inherited] = doc.slideOrder;
     editor.exec({ type: 'SetBackgroundCrop', id: stretch, crop: scenario.crops[0] });
     editor.exec({
-      type: 'SetBackgroundImage', id: tile,
-      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')), mime: scenario.mime,
-      crop: scenario.crops[1], alpha: scenario.alpha, tile: scenario.tile,
+      type: 'SetBackgroundImage',
+      id: tile,
+      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')),
+      mime: scenario.mime,
+      crop: scenario.crops[1],
+      alpha: scenario.alpha,
+      tile: scenario.tile,
     });
     editor.exec({ type: 'SetBackgroundCrop', id: inherited, crop: scenario.crops[2] });
     editor.exec({ type: 'DuplicateSlide', id: inherited });
-    const added = [...editor.exec({
-      type: 'AddSlide', layoutId: doc.layoutOrder[0], at: { after: doc.slideOrder.at(-1) },
-    }).createdSlides][0];
+    const added = [
+      ...editor.exec({
+        type: 'AddSlide',
+        layoutId: doc.layoutOrder[0],
+        at: { after: doc.slideOrder.at(-1) },
+      }).createdSlides,
+    ][0];
     editor.exec({
-      type: 'SetBackgroundImage', id: added,
-      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')), mime: scenario.mime,
+      type: 'SetBackgroundImage',
+      id: added,
+      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')),
+      mime: scenario.mime,
       crop: scenario.addedCrop,
     });
   } else if (scenario.type === 'shapeEffects') {
-    const named = (name) => Object.values(doc.elements)
-      .find((record) => record.src.name === name);
+    const named = (name) => Object.values(doc.elements).find((record) => record.src.name === name);
     for (const change of scenario.changes) {
       const record = named(change.targetName);
       if (!record) throw new Error(`M1 指纹固件缺少效果目标：${change.targetName}`);
       editor.exec({ type: 'SetEffects', id: record.id, effects: change.effects });
     }
     editor.exec({
-      type: 'AddShape', slideId: doc.slideOrder[slideIndex],
-      preset: scenario.added.preset, rect: scenario.added.rect,
+      type: 'AddShape',
+      slideId: doc.slideOrder[slideIndex],
+      preset: scenario.added.preset,
+      rect: scenario.added.rect,
     });
     const id = editor.selection.kind === 'elements' ? editor.selection.ids[0] : null;
     if (!id) throw new Error('M1 指纹未得到新增效果形状');
@@ -359,23 +439,29 @@ if (mode === 'projected' || savedProjection) {
     const copied = named(scenario.copied.targetName);
     if (!copied) throw new Error(`M1 指纹固件缺少复制效果目标：${scenario.copied.targetName}`);
     editor.exec({
-      type: 'PasteElements', payload: edit.copyElements(doc, [copied.id]),
+      type: 'PasteElements',
+      payload: edit.copyElements(doc, [copied.id]),
       at: { parentId: doc.slideOrder[slideIndex], x: scenario.copied.x, y: scenario.copied.y },
     });
   } else if (scenario.type === 'imageContent') {
     if (!target) throw new Error(`M1 指纹固件缺少图片目标：${scenario.targetName}`);
     editor.exec({ type: 'SetCrop', id: target.id, crop: scenario.crop });
     editor.exec({
-      type: 'ReplaceImage', id: target.id,
-      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')), mime: scenario.mime,
+      type: 'ReplaceImage',
+      id: target.id,
+      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')),
+      mime: scenario.mime,
     });
     editor.exec({
-      type: 'AddImage', slideId: doc.slideOrder[slideIndex],
-      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')), mime: scenario.mime,
+      type: 'AddImage',
+      slideId: doc.slideOrder[slideIndex],
+      bytes: Uint8Array.from(Buffer.from(scenario.base64, 'base64')),
+      mime: scenario.mime,
       rect: scenario.add,
     });
     editor.exec({
-      type: 'PasteElements', payload: edit.copyElements(doc, [target.id]),
+      type: 'PasteElements',
+      payload: edit.copyElements(doc, [target.id]),
       at: { parentId: doc.slideOrder[slideIndex], ...scenario.copy },
     });
   } else if (scenario.type === 'tableStyle') {
@@ -385,51 +471,61 @@ if (mode === 'projected' || savedProjection) {
     const theme = edit.listThemes(doc).find((item) => item.name === scenario.themeName);
     if (!theme) throw new Error(`M1 指纹固件缺少主题：${scenario.themeName}`);
     editor.exec({
-      type: 'SetTheme', id: theme.id,
-      clrScheme: scenario.clrScheme, fontScheme: scenario.fontScheme,
+      type: 'SetTheme',
+      id: theme.id,
+      clrScheme: scenario.clrScheme,
+      fontScheme: scenario.fontScheme,
     });
   } else if (scenario.type === 'layout') {
     const layout = edit.listLayouts(doc).find((item) => item.name === scenario.layoutName);
     if (!layout) throw new Error(`M1 指纹固件缺少版式：${scenario.layoutName}`);
-    const host = doc.layouts[layout.id].children.map((id) => doc.elements[id])
-      .find((record) => record.meta.editable === 'full'
-        && record.meta.ph?.type === scenario.placeholderType);
+    const host = doc.layouts[layout.id].children
+      .map((id) => doc.elements[id])
+      .find((record) => record.meta.editable === 'full' && record.meta.ph?.type === scenario.placeholderType);
     if (!host) throw new Error(`M1 指纹固件缺少版式占位符：${scenario.placeholderType}`);
-    editor.execDesign(layout.target,
+    editor.execDesign(
+      layout.target,
       { type: 'SetXfrm', id: host.id, x: scenario.x },
-      { type: 'SetBackground', target: layout.target, fill: scenario.background });
+      { type: 'SetBackground', target: layout.target, fill: scenario.background },
+    );
     editor.execDesign(layout.target, {
-      type: 'AddShape', target: layout.target,
-      preset: scenario.added.preset, rect: scenario.added.rect,
+      type: 'AddShape',
+      target: layout.target,
+      preset: scenario.added.preset,
+      rect: scenario.added.rect,
     });
     const addedId = editor.selection.ids[0];
-    editor.execDesign(layout.target,
+    editor.execDesign(
+      layout.target,
       { type: 'SetName', id: addedId, name: scenario.added.name },
-      { type: 'SetFill', id: addedId, fill: scenario.added.fill });
+      { type: 'SetFill', id: addedId, fill: scenario.added.fill },
+    );
   } else if (scenario.type === 'master') {
     const master = edit.listMasters(doc).find((item) => item.id === scenario.masterId);
     if (!master) throw new Error(`M1 指纹固件缺少母版：${scenario.masterId}`);
-    const marker = doc.masters[master.id].children.map((id) => doc.elements[id])
-      .find((record) => record.src.name === scenario.markerName);
+    const marker = doc.masters[master.id].children.map((id) => doc.elements[id]).find((record) => record.src.name === scenario.markerName);
     if (!marker) throw new Error(`M1 指纹固件缺少母版元素：${scenario.markerName}`);
-    editor.execDesign(master.target,
+    editor.execDesign(
+      master.target,
       { type: 'SetXfrm', id: marker.id, x: scenario.x },
       { type: 'SetBackground', target: master.target, fill: scenario.background },
       {
-        type: 'SetMasterTextStyle', target: master.target,
-        category: scenario.text.category, level: scenario.text.level,
-        paragraph: scenario.text.paragraph, run: scenario.text.run,
-      });
+        type: 'SetMasterTextStyle',
+        target: master.target,
+        category: scenario.text.category,
+        level: scenario.text.level,
+        paragraph: scenario.text.paragraph,
+        run: scenario.text.run,
+      },
+    );
   } else if (!target) throw new Error('M1 指纹固件缺少编辑目标');
   else if (scenario.type === 'remove') editor.exec({ type: 'RemoveElement', id: target.id });
   else if (scenario.type === 'order') editor.exec({ type: 'SetZ', id: target.id, to: scenario.to });
   else if (scenario.type === 'align') {
-    const ids = scenario.targetNames.map((name) => Object.values(doc.elements)
-      .find((record) => record.src.name === name)?.id);
+    const ids = scenario.targetNames.map((name) => Object.values(doc.elements).find((record) => record.src.name === name)?.id);
     if (ids.some((id) => !id)) throw new Error('M1 指纹固件缺少对齐目标');
     editor.exec({ type: 'AlignElements', ids, edge: scenario.edge });
-  }
-  else editor.exec({ type: 'SetXfrm', id: target.id, x: scenario.x });
+  } else editor.exec({ type: 'SetXfrm', id: target.id, x: scenario.x });
   slide = editor.toSlide(doc.slideOrder[slideIndex]);
 }
 

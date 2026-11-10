@@ -189,10 +189,19 @@ export const TX = { TITLE: 0, BODY: 1, NOTES: 2, OTHER: 4, CENTER_BODY: 5, CENTE
 
 /** OEPlaceholderAtom.placeholderId → TextTypeEnum */
 export const PH_TEXT_TYPE: Record<number, number> = {
-  1: TX.TITLE, 2: TX.BODY, 3: TX.CENTER_TITLE, 4: TX.CENTER_BODY,
-  6: TX.NOTES, 12: TX.NOTES,
-  13: TX.TITLE, 14: TX.BODY, 15: TX.CENTER_TITLE, 16: TX.CENTER_BODY,
-  17: TX.TITLE, 18: TX.BODY, 19: TX.BODY,
+  1: TX.TITLE,
+  2: TX.BODY,
+  3: TX.CENTER_TITLE,
+  4: TX.CENTER_BODY,
+  6: TX.NOTES,
+  12: TX.NOTES,
+  13: TX.TITLE,
+  14: TX.BODY,
+  15: TX.CENTER_TITLE,
+  16: TX.CENTER_BODY,
+  17: TX.TITLE,
+  18: TX.BODY,
+  19: TX.BODY,
 };
 
 /**
@@ -335,7 +344,8 @@ export function buildTextBody(styled: StyledText, env: TextEnv, anchorProp: numb
   });
 
   if (!paragraphs.length) return null;
-  const anchor: TextBody['anchor'] = anchorProp === 1 || anchorProp === 5 ? 'middle' : anchorProp === 2 || anchorProp === 6 ? 'bottom' : 'top';
+  const anchor: TextBody['anchor'] =
+    anchorProp === 1 || anchorProp === 5 ? 'middle' : anchorProp === 2 || anchorProp === 6 ? 'bottom' : 'top';
   return { anchor, insets: [3.6, 7.2, 3.6, 7.2], wrap: true, fontScale: 1, paragraphs };
 }
 
@@ -365,8 +375,18 @@ function makeRun(text: string, own: TextRunProps, dft: TextRunProps, env: TextEn
  * 直接原样输出会渲染成豆腐块，必须映射成常见符号。
  */
 const SYMBOL_BULLET: Record<number, string> = {
-  0x6c: '●', 0x6e: '■', 0x6d: '❑', 0x71: '❑', 0x75: '◆', 0x76: '❖',
-  0xa7: '▪', 0xa8: '◻', 0xb7: '•', 0xd8: '➢', 0xfc: '✓', 0xfe: '☑',
+  0x6c: '●',
+  0x6e: '■',
+  0x6d: '❑',
+  0x71: '❑',
+  0x75: '◆',
+  0x76: '❖',
+  0xa7: '▪',
+  0xa8: '◻',
+  0xb7: '•',
+  0xd8: '➢',
+  0xfc: '✓',
+  0xfe: '☑',
 };
 
 function bulletChar(ch: string | undefined): string {

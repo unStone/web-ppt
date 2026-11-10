@@ -1,14 +1,21 @@
 import {
-  effectiveElement, elementFrameToParentMatrix, elementFrameToSlidePoint,
-  transformSpacePoint, unboundLayoutPlaceholders,
+  effectiveElement,
+  elementFrameToParentMatrix,
+  elementFrameToSlidePoint,
+  transformSpacePoint,
+  unboundLayoutPlaceholders,
 } from '@web-ppt/edit-core';
 import type { SlideElement } from '@web-ppt/core';
 import type { EditDoc, ElementId, SlideId, SpacePoint } from '@web-ppt/edit-core';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const LABELS: Readonly<Record<string, string>> = {
-  title: '添加标题', ctrTitle: '添加标题', subTitle: '添加副标题',
-  body: '添加正文', obj: '添加内容', pic: '添加图片',
+  title: '添加标题',
+  ctrTitle: '添加标题',
+  subTitle: '添加副标题',
+  body: '添加正文',
+  obj: '添加内容',
+  pic: '添加图片',
 };
 const TEXT_PLACEHOLDERS = new Set(Object.keys(LABELS));
 
@@ -47,8 +54,7 @@ function placeholders(doc: EditDoc, slideId: SlideId): PlaceholderEntry[] {
   const visit = (id: ElementId): void => {
     const record = doc.elements[id];
     if (!record) return;
-    if (record.meta.ph && TEXT_PLACEHOLDERS.has(record.meta.ph.type)
-      && record.meta.editable === 'full' && !record.meta.hiddenByUser) {
+    if (record.meta.ph && TEXT_PLACEHOLDERS.has(record.meta.ph.type) && record.meta.editable === 'full' && !record.meta.hiddenByUser) {
       const element = effectiveElement(doc, id);
       if (element.kind === 'shape' && element.text === null && element.w > 0 && element.h > 0) {
         entries.push({ id, type: record.meta.ph.type, points: corners(doc, id) });
@@ -59,8 +65,7 @@ function placeholders(doc: EditDoc, slideId: SlideId): PlaceholderEntry[] {
   for (const id of doc.slides[slideId]?.children ?? []) visit(id);
   for (const element of unboundLayoutPlaceholders(doc, slideId)) {
     const placeholder = element.editInfo?.placeholder;
-    if (!placeholder || !TEXT_PLACEHOLDERS.has(placeholder.type)
-      || element.w <= 0 || element.h <= 0) continue;
+    if (!placeholder || !TEXT_PLACEHOLDERS.has(placeholder.type) || element.w <= 0 || element.h <= 0) continue;
     entries.push({
       type: placeholder.type,
       ...(placeholder.idx === undefined ? {} : { layoutIdx: placeholder.idx }),
@@ -71,21 +76,19 @@ function placeholders(doc: EditDoc, slideId: SlideId): PlaceholderEntry[] {
 }
 
 /** 空占位符本身没有可命中的静态 SVG；辅助框只存在于 edit interaction 层。 */
-export function renderPlaceholderOverlay(
-  layer: SVGSVGElement,
-  doc: EditDoc,
-  slideId: SlideId,
-  zoom: number,
-  enabled: boolean,
-): void {
+export function renderPlaceholderOverlay(layer: SVGSVGElement, doc: EditDoc, slideId: SlideId, zoom: number, enabled: boolean): void {
   const previous = layer.querySelector<SVGGElement>('[data-edit-placeholder-layer]');
   if (!enabled) {
     previous?.remove();
     return;
   }
   const entries = placeholders(doc, slideId);
-  const signature = `${zoom}\0${entries.map(({ id, layoutIdx, type, points }) =>
-    `${id ?? `layout:${type}:${layoutIdx ?? ''}`}:${points.map(({ x, y }) => `${x},${y}`).join(';')}`).join('\0')}`;
+  const signature = `${zoom}\0${entries
+    .map(
+      ({ id, layoutIdx, type, points }) =>
+        `${id ?? `layout:${type}:${layoutIdx ?? ''}`}:${points.map(({ x, y }) => `${x},${y}`).join(';')}`,
+    )
+    .join('\0')}`;
   if (previous?.dataset.editPlaceholderSignature === signature) return;
   previous?.remove();
   const document = layer.ownerDocument;

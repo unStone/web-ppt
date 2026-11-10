@@ -19,19 +19,34 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const directory = join(root, 'out/core');
 mkdirSync(directory, { recursive: true });
 const entry = join(directory, 'bench-entry.mjs');
-const modules = { core: 'core/src/index.ts', ...(EDIT_MODE() ? {
-  edit: 'edit-core/src/index.ts', xml: 'edit-core/src/xml/index.ts',
-  opc: 'edit-core/src/opc/index.ts', save: 'edit-core/src/save/index.ts',
-} : {}) };
-writeFileSync(entry, Object.entries(modules).map(([name, file]) =>
-  `export * as ${name} from ${JSON.stringify(join(root, 'packages', file))};`).join('\n'));
+const modules = {
+  core: 'core/src/index.ts',
+  ...(EDIT_MODE()
+    ? {
+        edit: 'edit-core/src/index.ts',
+        xml: 'edit-core/src/xml/index.ts',
+        opc: 'edit-core/src/opc/index.ts',
+        save: 'edit-core/src/save/index.ts',
+      }
+    : {}),
+};
+writeFileSync(
+  entry,
+  Object.entries(modules)
+    .map(([name, file]) => `export * as ${name} from ${JSON.stringify(join(root, 'packages', file))};`)
+    .join('\n'),
+);
 // 基准与功能门禁使用同一源码解析图；拆成多个 bundle 会重复 WeakMap 并偷偷依赖旧 dist。
 const runtime = await bundleBrowser({ root, entry, output: join(directory, 'bench-runtime.mjs') });
 const { core: lib, edit: editLib, xml: editXmlLib, opc: editOpcLib, save: editSaveLib } = runtime;
 
-function EDIT_MODE() { return process.argv.includes('--edit'); }
+function EDIT_MODE() {
+  return process.argv.includes('--edit');
+}
 const JSON_MODE = process.argv.includes('--json');
-const report = (message) => { if (!JSON_MODE) console.log(message); };
+const report = (message) => {
+  if (!JSON_MODE) console.log(message);
+};
 
 // 把 showcase 的页复制若干遍拼成大文件
 const src = unzipSync(new Uint8Array(readFileSync(join(root, 'fixtures/showcase.pptx'))));
@@ -43,17 +58,20 @@ const entries = [];
 const slideXmls = [];
 for (let i = 1; i <= 7; i++) slideXmls.push(dec.decode(src[`ppt/slides/slide${i}.xml`]));
 let n = 0;
-const sldIds = [], presRels = [];
+const sldIds = [],
+  presRels = [];
 for (let r = 0; r < REPEAT; r++) {
   for (let i = 0; i < 7; i++) {
     n++;
     entries.push([`ppt/slides/slide${n}.xml`, slideXmls[i]]);
-    entries.push([`ppt/slides/_rels/slide${n}.xml.rels`, dec.decode(src[`ppt/slides/_rels/slide${i+1}.xml.rels`]) ]);
-    sldIds.push(`<p:sldId id="${255+n}" r:id="rId${n+1}"/>`);
-    presRels.push(`<Relationship Id="rId${n+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${n}.xml"/>`);
+    entries.push([`ppt/slides/_rels/slide${n}.xml.rels`, dec.decode(src[`ppt/slides/_rels/slide${i + 1}.xml.rels`])]);
+    sldIds.push(`<p:sldId id="${255 + n}" r:id="rId${n + 1}"/>`);
+    presRels.push(
+      `<Relationship Id="rId${n + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${n}.xml"/>`,
+    );
   }
 }
-for (const [k,v] of Object.entries(src)) {
+for (const [k, v] of Object.entries(src)) {
   if (/^ppt\/slides\//.test(k)) continue;
   if (k === 'ppt/presentation.xml' || k === 'ppt/_rels/presentation.xml.rels' || k === '[Content_Types].xml') continue;
   entries.push([k, v]);
@@ -67,12 +85,19 @@ rels = rels.replace('</Relationships>', presRels.join('') + '</Relationships>');
 entries.push(['ppt/_rels/presentation.xml.rels', rels]);
 let ct = dec.decode(src['[Content_Types].xml']);
 ct = ct.replace(/<Override PartName="\/ppt\/slides\/[^>]*>/g, '');
-ct = ct.replace('</Types>', Array.from({length:n},(_,i)=>`<Override PartName="/ppt/slides/slide${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('') + '</Types>');
+ct = ct.replace(
+  '</Types>',
+  Array.from(
+    { length: n },
+    (_, i) =>
+      `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`,
+  ).join('') + '</Types>',
+);
 entries.push(['[Content_Types].xml', ct]);
 
 const big = makeZip(entries);
 writeFileSync(join(root, 'out/core/big.pptx'), big);
-report(`大文件：${n} 页，${(big.length/1024/1024).toFixed(1)} MB（${EDIT ? '编辑解析' : '只读解析'}）`);
+report(`大文件：${n} 页，${(big.length / 1024 / 1024).toFixed(1)} MB（${EDIT ? '编辑解析' : '只读解析'}）`);
 
 const t0 = Date.now();
 const p = await lib.parse(big, EDIT ? { edit: true, keepPackage: true } : undefined);
@@ -80,12 +105,14 @@ const parseMs = Date.now() - t0;
 let els = 0;
 let elementEditInfo = 0;
 const editableGeoms = [];
-const walk = (l) => { for (const e of l) {
-  els++;
-  if (e.editInfo) elementEditInfo++;
-  if (e.editInfo?.geom) editableGeoms.push([e.editInfo.geom, e.w, e.h]);
-  if (e.kind==='group') walk(e.children);
-} };
+const walk = (l) => {
+  for (const e of l) {
+    els++;
+    if (e.editInfo) elementEditInfo++;
+    if (e.editInfo?.geom) editableGeoms.push([e.editInfo.geom, e.w, e.h]);
+    if (e.kind === 'group') walk(e.children);
+  }
+};
 for (const s of p.slides) walk(s.elements);
 const metrics = {
   mode: EDIT ? 'edit' : 'readonly',
@@ -117,17 +144,25 @@ if (EDIT && editLib) {
 
   const recoverySource = editLib.createDoc(p, { idPrefix: 'bench-recovery-' });
   const recoveryBase = editLib.createDoc(p, { idPrefix: 'bench-recovery-' });
-  const recoveryTarget = Object.values(recoverySource.elements).find((record) =>
-    record.meta.editable !== 'none' && Number.isFinite(record.src.x));
+  const recoveryTarget = Object.values(recoverySource.elements).find(
+    (record) => record.meta.editable !== 'none' && Number.isFinite(record.src.x),
+  );
   if (!recoveryTarget || !recoveryBase.package) throw new Error('恢复性能基准缺少可编辑元素或原包');
   const recoveryFrames = [];
   const recoveryEditor = new editLib.Editor(recoverySource);
   const unsubscribeRecovery = recoveryEditor.subscribeRecovery((frame) => recoveryFrames.push(frame));
   const recoveryOps = 1000;
   for (let index = 0; index < recoveryOps; index++) {
-    recoveryEditor.transaction((tx) => tx.exec({
-      type: 'SetXfrm', id: recoveryTarget.id, x: recoveryTarget.src.x + 1 + (index & 1),
-    }), '恢复性能采样', { recordHistory: false });
+    recoveryEditor.transaction(
+      (tx) =>
+        tx.exec({
+          type: 'SetXfrm',
+          id: recoveryTarget.id,
+          x: recoveryTarget.src.x + 1 + (index & 1),
+        }),
+      '恢复性能采样',
+      { recordHistory: false },
+    );
   }
   unsubscribeRecovery();
   const recoverySerializeStart = performance.now();
@@ -136,8 +171,7 @@ if (EDIT && editLib) {
   const recoverySerializeMs = performance.now() - recoverySerializeStart;
   const recoveryPaddingPart = 'ppt/media/recovery-benchmark.bin';
   recoveryBase.package.parts[recoveryPaddingPart] = new Uint8Array(50 * 1024 * 1024);
-  const recoveryInputBytes = Object.values(recoveryBase.package.parts)
-    .reduce((sum, bytes) => sum + bytes.length, 0);
+  const recoveryInputBytes = Object.values(recoveryBase.package.parts).reduce((sum, bytes) => sum + bytes.length, 0);
   const recoveryStart = performance.now();
   const restoredEditor = new editLib.Editor(recoveryBase, { recoveryFrames: recoveryPersisted });
   const recoveryMs = performance.now() - recoveryStart;
@@ -147,14 +181,14 @@ if (EDIT && editLib) {
   metrics.editDoc.recoveryInputBytes = recoveryInputBytes;
   metrics.editDoc.recoverySerializeMs = recoverySerializeMs;
   metrics.editDoc.recoveryMs = recoveryMs;
-  metrics.editDoc.recoveryChecksum = editLib.effectiveElement(recoveryBase, recoveryTarget.id).x
-    + restoredEditor.history.undoCount;
-  report(`  50MB 原包 / ${recoveryFrames.length} 帧恢复: JSON ${(recoveryJson.length / 1024).toFixed(1)}KB / `
-    + `序列化 ${recoverySerializeMs.toFixed(1)}ms / 回放 ${recoveryMs.toFixed(1)}ms`);
+  metrics.editDoc.recoveryChecksum = editLib.effectiveElement(recoveryBase, recoveryTarget.id).x + restoredEditor.history.undoCount;
+  report(
+    `  50MB 原包 / ${recoveryFrames.length} 帧恢复: JSON ${(recoveryJson.length / 1024).toFixed(1)}KB / `
+      + `序列化 ${recoverySerializeMs.toFixed(1)}ms / 回放 ${recoveryMs.toFixed(1)}ms`,
+  );
 
   // 保存只会解析脏 part；这里故意把 210 页的全部 XML 都过一遍，给 500ms 保存预算留足余量。
-  const xmlEntries = Object.entries(editDoc.package?.parts ?? {})
-    .filter(([path]) => /\.(?:xml|rels|vml)$/i.test(path));
+  const xmlEntries = Object.entries(editDoc.package?.parts ?? {}).filter(([path]) => /\.(?:xml|rels|vml)$/i.test(path));
   let xmlRoundTripExact = 0;
   let xmlRoundTripBytes = 0;
   const xmlStart = performance.now();
@@ -170,8 +204,10 @@ if (EDIT && editLib) {
   metrics.editDoc.xmlRoundTripExact = xmlRoundTripExact;
   metrics.editDoc.xmlRoundTripBytes = xmlRoundTripBytes;
   metrics.editDoc.xmlRoundTripMs = xmlRoundTripMs;
-  report(`  全部 XML 保留回环: ${xmlEntries.length} part / ${(xmlRoundTripBytes / 1024 / 1024).toFixed(1)}MB / ` +
-    `${xmlRoundTripMs.toFixed(1)}ms（逐字相同 ${xmlRoundTripExact}）`);
+  report(
+    `  全部 XML 保留回环: ${xmlEntries.length} part / ${(xmlRoundTripBytes / 1024 / 1024).toFixed(1)}MB / `
+      + `${xmlRoundTripMs.toFixed(1)}ms（逐字相同 ${xmlRoundTripExact}）`,
+  );
 
   if (editOpcLib && editSaveLib && editDoc.package) {
     const padding = new Uint8Array(50 * 1024 * 1024);
@@ -192,9 +228,9 @@ if (EDIT && editLib) {
     const saveStart = performance.now();
     for (const record of targetRecords) {
       if (!record) throw new Error('性能固件前三页缺少可写回元素');
-      saveEditor.transaction((tx) => tx.exec(
-        { type: 'SetXfrm', id: record.id, x: record.src.x + 1 },
-      ), '保存性能采样', { recordHistory: false });
+      saveEditor.transaction((tx) => tx.exec({ type: 'SetXfrm', id: record.id, x: record.src.x + 1 }), '保存性能采样', {
+        recordHistory: false,
+      });
     }
     const saved = editSaveLib.saveEditDoc(editDoc);
     const saveMs = performance.now() - saveStart;
@@ -204,11 +240,12 @@ if (EDIT && editLib) {
     metrics.editDoc.opcSaveTargets = targets;
     metrics.editDoc.opcSavePreservedEntries = saved.preservedEntries;
     metrics.editDoc.opcSaveMs = saveMs;
-    report(`  50MB OPC 三页序列化并保存: ${(expanded.bytes.length / 1024 / 1024).toFixed(1)}MB / ` +
-      `${saveMs.toFixed(1)}ms（直通 ${saved.preservedEntries}）`);
+    report(
+      `  50MB OPC 三页序列化并保存: ${(expanded.bytes.length / 1024 / 1024).toFixed(1)}MB / `
+        + `${saveMs.toFixed(1)}ms（直通 ${saved.preservedEntries}）`,
+    );
   }
-  const target = Object.values(editDoc.elements).find((record) => record.meta.geom
-    && record.meta.editable !== 'none');
+  const target = Object.values(editDoc.elements).find((record) => record.meta.geom && record.meta.editable !== 'none');
   if (target) {
     const slideId = editLib.slideOfElement(editDoc, target.id);
     const elementPrefix = `bench-element-${target.id}-`;
@@ -218,9 +255,9 @@ if (EDIT && editLib) {
     let incrementalChecksum = 0;
     const it0 = performance.now();
     for (let i = 0; i < incrementalOps; i++) {
-      commandEditor.transaction((tx) => tx.exec(
-        { type: 'SetXfrm', id: target.id, x: originalX + (i & 1) },
-      ), '性能采样', { recordHistory: false });
+      commandEditor.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: originalX + (i & 1) }), '性能采样', {
+        recordHistory: false,
+      });
       const element = editLib.effectiveElement(editDoc, target.id);
       const part = lib.renderElementToSvg(element, { idPrefix: elementPrefix });
       incrementalChecksum += part.markup.length + part.defs.length;
@@ -230,7 +267,9 @@ if (EDIT && editLib) {
     metrics.editDoc.elementCommitRenderMs = incrementalMs;
     metrics.editDoc.elementCommitRenderMsPerOp = incrementalMs / incrementalOps;
     metrics.editDoc.elementChecksum = incrementalChecksum;
-    report(`  脏元素提交并渲染: ${incrementalOps} 次 / ${incrementalMs.toFixed(1)}ms  (${(incrementalMs / incrementalOps).toFixed(3)}ms/次)`);
+    report(
+      `  脏元素提交并渲染: ${incrementalOps} 次 / ${incrementalMs.toFixed(1)}ms  (${(incrementalMs / incrementalOps).toFixed(3)}ms/次)`,
+    );
 
     // DOM 适配层会把每个元素的 defs 与 markup 作为同一分区替换；jsdom 比浏览器慢，
     // 仍把这段纳入 16ms 硬门槛，避免字符串很快但真正上屏很慢的假优化。
@@ -238,9 +277,9 @@ if (EDIT && editLib) {
     const host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     const domStart = performance.now();
     for (let i = 0; i < domOps; i++) {
-      commandEditor.transaction((tx) => tx.exec(
-        { type: 'SetXfrm', id: target.id, x: originalX + (i & 1) },
-      ), '性能采样', { recordHistory: false });
+      commandEditor.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: originalX + (i & 1) }), '性能采样', {
+        recordHistory: false,
+      });
       const element = editLib.effectiveElement(editDoc, target.id);
       const part = lib.renderElementToSvg(element, { idPrefix: elementPrefix });
       host.innerHTML = `<defs>${part.defs}</defs>${part.markup}`;
@@ -255,9 +294,9 @@ if (EDIT && editLib) {
     const commitOps = 2000;
     const et0 = performance.now();
     for (let i = 0; i < commitOps; i++) {
-      commandEditor.transaction((tx) => tx.exec(
-        { type: 'SetXfrm', id: target.id, x: originalX + (i & 1) },
-      ), '性能采样', { recordHistory: false });
+      commandEditor.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: originalX + (i & 1) }), '性能采样', {
+        recordHistory: false,
+      });
       const slide = editLib.toSlide(editDoc, slideId);
       lib.renderSlideToSvg(p, slide, { idPrefix: 'bench-commit-' });
     }
@@ -280,8 +319,7 @@ if (EDIT && editLib) {
     for (let i = 0; i < historyOps; i++) {
       const change = historyEditor.undo();
       for (const dirtySlide of change.dirtySlides) {
-        historyChecksum += lib.renderSlideToSvg(p, editLib.toSlide(editDoc, dirtySlide),
-          { idPrefix: 'bench-undo-' }).length;
+        historyChecksum += lib.renderSlideToSvg(p, editLib.toSlide(editDoc, dirtySlide), { idPrefix: 'bench-undo-' }).length;
       }
     }
     const undoMs = performance.now() - undoStart;
@@ -289,8 +327,7 @@ if (EDIT && editLib) {
     for (let i = 0; i < historyOps; i++) {
       const change = historyEditor.redo();
       for (const dirtySlide of change.dirtySlides) {
-        historyChecksum += lib.renderSlideToSvg(p, editLib.toSlide(editDoc, dirtySlide),
-          { idPrefix: 'bench-redo-' }).length;
+        historyChecksum += lib.renderSlideToSvg(p, editLib.toSlide(editDoc, dirtySlide), { idPrefix: 'bench-redo-' }).length;
       }
     }
     const redoMs = performance.now() - redoStart;
@@ -299,25 +336,27 @@ if (EDIT && editLib) {
     metrics.editDoc.redoRenderMsPerOp = redoMs / historyOps;
     metrics.editDoc.historyBytes = historyEditor.history.byteSize;
     metrics.editDoc.historyChecksum = historyChecksum;
-    report(`  200 组撤销/重做并重渲脏页: undo ${(undoMs / historyOps).toFixed(3)}ms/次 · ` +
-      `redo ${(redoMs / historyOps).toFixed(3)}ms/次 · 历史 ${(historyEditor.history.byteSize / 1024).toFixed(1)}KB`);
+    report(
+      `  200 组撤销/重做并重渲脏页: undo ${(undoMs / historyOps).toFixed(3)}ms/次 · `
+        + `redo ${(redoMs / historyOps).toFixed(3)}ms/次 · 历史 ${(historyEditor.history.byteSize / 1024).toFixed(1)}KB`,
+    );
 
     const rebaseOps = 1000;
     const rebaseStart = performance.now();
     for (let i = 0; i < rebaseOps; i++) {
-      historyEditor.transaction((tx) => tx.exec(
-        { type: 'SetXfrm', id: target.id, y: target.src.y + 1 + (i & 1) },
-      ), '远端性能采样', { origin: 'peer', recordHistory: false });
+      historyEditor.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, y: target.src.y + 1 + (i & 1) }), '远端性能采样', {
+        origin: 'peer',
+        recordHistory: false,
+      });
     }
     const rebaseMs = performance.now() - rebaseStart;
     metrics.editDoc.historyRebaseOps = rebaseOps;
     metrics.editDoc.historyRebaseMsPerOp = rebaseMs / rebaseOps;
-    report(`  200 组历史上的非冲突远端 rebase: ${rebaseOps} 次 / ` +
-      `${(rebaseMs / rebaseOps).toFixed(3)}ms/次`);
+    report(`  200 组历史上的非冲突远端 rebase: ${rebaseOps} 次 / ` + `${(rebaseMs / rebaseOps).toFixed(3)}ms/次`);
   }
 
-  const textTarget = Object.values(editDoc.elements).find((record) =>
-    record.src.kind === 'shape' && record.src.text && !record.src.text.autoFitCompute)
+  const textTarget =
+    Object.values(editDoc.elements).find((record) => record.src.kind === 'shape' && record.src.text && !record.src.text.autoFitCompute)
     ?? Object.values(editDoc.elements).find((record) => record.src.kind === 'shape' && record.src.text);
   if (textTarget) {
     const element = editLib.effectiveElement(editDoc, textTarget.id);
@@ -393,7 +432,8 @@ if (editableGeoms.length) {
   // 拉长到稳定可测的量级，避免 Date.now 的 1ms 分辨率掩盖单次重算成本。
   const rounds = Math.ceil(50000 / editableGeoms.length);
   const gt0 = performance.now();
-  let geomOps = 0, checksum = 0;
+  let geomOps = 0,
+    checksum = 0;
   for (let round = 0; round < rounds; round++) {
     for (const [geom, w, h] of editableGeoms) {
       checksum += lib.resolveGeomPath(geom, w * 1.1, h * 0.9).d.length;
@@ -401,8 +441,8 @@ if (editableGeoms.length) {
     }
   }
   const geomMs = performance.now() - gt0;
-  metrics.geometry = { operations: geomOps, totalMs: geomMs, microsecondsPerOp: geomMs / geomOps * 1000, checksum };
-  report(`  几何重算: ${geomOps} 次 / ${geomMs.toFixed(1)}ms  (${(geomMs / geomOps * 1000).toFixed(2)}µs/次，校验 ${checksum})`);
+  metrics.geometry = { operations: geomOps, totalMs: geomMs, microsecondsPerOp: (geomMs / geomOps) * 1000, checksum };
+  report(`  几何重算: ${geomOps} 次 / ${geomMs.toFixed(1)}ms  (${((geomMs / geomOps) * 1000).toFixed(2)}µs/次，校验 ${checksum})`);
 }
 
 // 区分「峰值垃圾」与「真正驻留」：前者无害，后者才是大文件的隐患。
@@ -415,8 +455,10 @@ if (typeof global.gc === 'function') {
   const retained = process.memoryUsage().heapUsed;
   metrics.memory.retainedBytes = retained;
   metrics.memory.historyBytes = retainedHistoryEditor?.history.byteSize ?? 0;
-  report(`  堆内存: 峰值 ${(peak / 1024 / 1024).toFixed(0)} MB · 回收后驻留 ${(retained / 1024 / 1024).toFixed(0)} MB` +
-    `  (${(retained / 1024 / 1024 / p.slides.length).toFixed(2)} MB/页)`);
+  report(
+    `  堆内存: 峰值 ${(peak / 1024 / 1024).toFixed(0)} MB · 回收后驻留 ${(retained / 1024 / 1024).toFixed(0)} MB`
+      + `  (${(retained / 1024 / 1024 / p.slides.length).toFixed(2)} MB/页)`,
+  );
 } else {
   report(`  堆内存: 峰值 ${(peak / 1024 / 1024).toFixed(0)} MB（加 --expose-gc 可测驻留量）`);
 }
