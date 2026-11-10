@@ -1,8 +1,6 @@
 import type { Editor, EditorChange, ElementId, SlideId } from '@web-ppt/edit-core';
 import { shouldRenderWholeSlide, touchedElementPartitions } from './dom-identity';
-import {
-  insertElementPartition, patchElement, removeElementPartition, reorderElementPartitions,
-} from './dom-patch';
+import { insertElementPartition, patchElement, removeElementPartition, reorderElementPartitions } from './dom-patch';
 
 interface SlideDomUpdateOptions {
   staticLayer: HTMLElement;
@@ -25,12 +23,12 @@ export function patchSlideDom(options: SlideDomUpdateOptions): boolean {
     renderElements.delete(options.deferElement);
   }
   const partitions = touchedElementPartitions(editor.doc, slideId, renderElements);
-  const partitionById = new Map([...staticLayer.querySelectorAll<SVGElement>('[data-edit-root]')]
-    .map((node) => [node.dataset.editRoot!, node] as const));
+  const partitionById = new Map(
+    [...staticLayer.querySelectorAll<SVGElement>('[data-edit-root]')].map((node) => [node.dataset.editRoot!, node] as const),
+  );
   const partition = (id: ElementId): SVGElement | null => partitionById.get(id) ?? null;
   const elementCount = editor.doc.slides[slideId].children.length;
-  const removed = [...renderElements].filter((id) => !editor.doc.elements[id]
-    && !!partition(id));
+  const removed = [...renderElements].filter((id) => !editor.doc.elements[id] && !!partition(id));
   const removedPartitions = removed.flatMap((id) => partition(id) ?? []);
   const fallbackParents = new Map<ElementId, Node>();
   const reusableChildren = new Map<ElementId, readonly SVGElement[]>();
@@ -42,9 +40,12 @@ export function patchSlideDom(options: SlideDomUpdateOptions): boolean {
   }
   const changedCount = partitions.ids.length + removed.length;
   const hierarchyChange = removed.some((id) => change.reorderedElements.has(id));
-  if (!hierarchyChange && changedCount && shouldRenderWholeSlide(
-    changedCount, partitions.topLevelCount + removed.length, elementCount + removed.length,
-  )) return false;
+  if (
+    !hierarchyChange
+    && changedCount
+    && shouldRenderWholeSlide(changedCount, partitions.topLevelCount + removed.length, elementCount + removed.length)
+  )
+    return false;
   // 先把孩子移出待删除的组合壳，避免 remove() 连同仍需更新的分区一起断开。
   // 只有新建恒等组合的孩子能直接复用；来源 grpSp 的孩子必须随后按新坐标重绘。
   for (const removedId of removed) {
@@ -69,11 +70,9 @@ export function patchSlideDom(options: SlideDomUpdateOptions): boolean {
   for (const id of partitions.ids) {
     if (partition(id)) continue;
     const record = editor.doc.elements[id];
-    const existingChildren = (record?.children ?? [])
-      .map((child) => partition(child)).filter((node): node is SVGElement => !!node);
+    const existingChildren = (record?.children ?? []).map((child) => partition(child)).filter((node): node is SVGElement => !!node);
     if (existingChildren[0]?.parentNode) fallbackParents.set(id, existingChildren[0].parentNode);
-    if (record?.meta.insertion?.containsDescendants === false
-      && existingChildren.length === record.children?.length) {
+    if (record?.meta.insertion?.containsDescendants === false && existingChildren.length === record.children?.length) {
       reusableChildren.set(id, existingChildren);
       continue;
     }
@@ -86,11 +85,8 @@ export function patchSlideDom(options: SlideDomUpdateOptions): boolean {
     if (structurallyReused.has(id)) continue;
     const updated = partition(id)
       ? patchElement(staticLayer, editor, id, idPrefix, textMode)
-      : insertElementPartition(
-        staticLayer, editor, id, idPrefix, textMode, fallbackParents.get(id), reusableChildren.get(id),
-      );
+      : insertElementPartition(staticLayer, editor, id, idPrefix, textMode, fallbackParents.get(id), reusableChildren.get(id));
     if (!updated) return false;
   }
-  return !change.reorderedElements.size
-    || reorderElementPartitions(staticLayer, editor, change.reorderedElements);
+  return !change.reorderedElements.size || reorderElementPartitions(staticLayer, editor, change.reorderedElements);
 }

@@ -4,7 +4,10 @@ import { installGalleryFontCompletionGate } from './lib/site-font-completion-gat
 
 const outcomes = Array.from({ length: 3 }, () => {
   let resolve, reject;
-  const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  const promise = new Promise((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
   return { promise, resolve, reject };
 });
 let calls = 0;
@@ -40,9 +43,16 @@ const gate = await installGalleryFontCompletionGate({
 await gate.assertActive();
 const value = [{ family: 'actual native result' }];
 const failure = new Error('actual native failure');
-let completed = false, rejected = false;
-const successful = fonts.load('16px actual-family', 'actual-text').then((result) => { completed = true; return result; });
-const failed = fonts.load('16px actual-family', 'actual-text').catch((error) => { rejected = true; return error; });
+let completed = false,
+  rejected = false;
+const successful = fonts.load('16px actual-family', 'actual-text').then((result) => {
+  completed = true;
+  return result;
+});
+const failed = fonts.load('16px actual-family', 'actual-text').catch((error) => {
+  rejected = true;
+  return error;
+});
 const unfinished = fonts.load('16px actual-family', 'actual-text');
 outcomes[0].resolve(value);
 outcomes[1].reject(failure);

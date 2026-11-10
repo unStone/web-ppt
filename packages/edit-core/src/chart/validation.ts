@@ -1,18 +1,25 @@
 import { assertFractionalIndex } from '@web-ppt/edit-core';
 import { categoryHierarchyBinding } from './category-binding';
 import type { FractionalIndex } from '../types';
-import type {
-  ChartCategory, ChartPlotKind, ChartPoint, ChartSeries, ChartSeriesId,
-} from './types';
+import type { ChartCategory, ChartPlotKind, ChartPoint, ChartSeries, ChartSeriesId } from './types';
 import { MAX_CATEGORY_LEVELS, MAX_CHART_NAME, MAX_CHART_IDENTITY, MAX_CHART_POINTS, MAX_CHART_SERIES, MAX_CHART_CELLS } from './limits';
 export { MAX_CHART_NAME, MAX_CHART_IDENTITY, MAX_CHART_POINTS, MAX_CHART_SERIES, MAX_CHART_CELLS } from './limits';
 export const CHART_PLOT_KINDS = new Set<ChartPlotKind>([
-  'bar', 'line', 'pie', 'doughnut', 'area', 'scatter', 'radar',
-  'bubble', 'stock', 'ofPie', 'surface', 'other',
+  'bar',
+  'line',
+  'pie',
+  'doughnut',
+  'area',
+  'scatter',
+  'radar',
+  'bubble',
+  'stock',
+  'ofPie',
+  'surface',
+  'other',
 ]);
 
-const own = (object: object, key: PropertyKey): boolean =>
-  Object.prototype.hasOwnProperty.call(object, key);
+const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 const INVALID_XML_10 = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/u;
 
 function isXml10Text(value: string): boolean {
@@ -31,34 +38,37 @@ export function assertChartNumber(value: unknown, label: string): asserts value 
   }
 }
 
-export function assertChartDictionary(
-  value: unknown, label: string,
-): asserts value is Record<string, unknown> {
+export function assertChartDictionary(value: unknown, label: string): asserts value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${label}无效`);
   if (Object.keys(value).some((key) => ['__proto__', 'prototype', 'constructor'].includes(key))) {
     throw new Error(`${label}含危险字段`);
   }
 }
 
-export function assertChartRecord(
-  value: unknown, keys: readonly string[], label: string,
-): asserts value is Record<string, unknown> {
+export function assertChartRecord(value: unknown, keys: readonly string[], label: string): asserts value is Record<string, unknown> {
   assertChartDictionary(value, label);
   if (Object.keys(value).some((key) => !keys.includes(key))) throw new Error(`${label}含未知字段`);
 }
 
-export function assertChartIdentity(
-  value: unknown, expected: string, label: string,
-): asserts value is string {
-  if (value !== expected || value.length > MAX_CHART_IDENTITY || !isXml10Text(value) || /\x7f/.test(value)
-    || ['__proto__', 'prototype', 'constructor'].includes(value)) {
+export function assertChartIdentity(value: unknown, expected: string, label: string): asserts value is string {
+  if (
+    value !== expected
+    || value.length > MAX_CHART_IDENTITY
+    || !isXml10Text(value)
+    || /\x7f/.test(value)
+    || ['__proto__', 'prototype', 'constructor'].includes(value)
+  ) {
     throw new Error(`${label}身份无效`);
   }
 }
 
 export function assertChartOrder(value: unknown, label: string): asserts value is FractionalIndex {
   if (typeof value !== 'string' || value.length > 1_024) throw new Error(`${label}顺序无效`);
-  try { assertFractionalIndex(value); } catch { throw new Error(`${label}顺序无效`); }
+  try {
+    assertFractionalIndex(value);
+  } catch {
+    throw new Error(`${label}顺序无效`);
+  }
 }
 
 function assertBinding(value: unknown, label: string, literalOnly: boolean): void {
@@ -74,9 +84,7 @@ function assertBinding(value: unknown, label: string, literalOnly: boolean): voi
   }
 }
 
-export function assertChartPointRecord(
-  value: unknown, expectedId: string, label: string,
-): asserts value is ChartPoint {
+export function assertChartPointRecord(value: unknown, expectedId: string, label: string): asserts value is ChartPoint {
   assertChartRecord(value, ['id', 'order', 'value', 'x', 'size', 'removed'], label);
   assertChartIdentity(value.id, expectedId, label);
   assertChartOrder(value.order, label);
@@ -86,9 +94,7 @@ export function assertChartPointRecord(
   if (value.removed !== undefined && value.removed !== true) throw new Error(`${label}删除标记无效`);
 }
 
-export function assertChartCategoryRecord(
-  value: unknown, expectedId: string, label: string,
-): asserts value is ChartCategory {
+export function assertChartCategoryRecord(value: unknown, expectedId: string, label: string): asserts value is ChartCategory {
   assertChartRecord(value, ['id', 'order', 'label', 'levels', 'levelParent', 'levelClears', 'removed'], label);
   assertChartIdentity(value.id, expectedId, label);
   assertChartOrder(value.order, label);
@@ -103,8 +109,8 @@ export function assertChartCategoryRecord(
 }
 
 export function assertCategoryLevels(value: unknown, depth?: number): asserts value is readonly (string | null)[] {
-  if (!Array.isArray(value) || !value.length || value.length > MAX_CATEGORY_LEVELS
-    || depth !== undefined && value.length !== depth) throw new Error('类别层级数量无效');
+  if (!Array.isArray(value) || !value.length || value.length > MAX_CATEGORY_LEVELS || (depth !== undefined && value.length !== depth))
+    throw new Error('类别层级数量无效');
   for (const item of value) if (item !== null) assertChartName(item, '类别层级');
 }
 
@@ -119,15 +125,20 @@ function assertCategoryClears(value: unknown, depth = MAX_CATEGORY_LEVELS): void
 }
 
 export function assertChartSeriesRecord(
-  value: unknown, expectedId: string, label: string, literalOnly = false,
+  value: unknown,
+  expectedId: string,
+  label: string,
+  literalOnly = false,
 ): asserts value is Omit<ChartSeries, 'points'> & { points: Record<string, ChartPoint> } {
-  assertChartRecord(value, [
-    'id', 'order', 'sourceIndex', 'plotKind', 'name', 'points', 'bindings', 'removed',
-  ], label);
+  assertChartRecord(value, ['id', 'order', 'sourceIndex', 'plotKind', 'name', 'points', 'bindings', 'removed'], label);
   assertChartIdentity(value.id, expectedId, label);
   assertChartOrder(value.order, label);
-  if (!Number.isInteger(value.sourceIndex) || Number(value.sourceIndex) < 0
-    || Number(value.sourceIndex) > 0x7fff_ffff || !CHART_PLOT_KINDS.has(value.plotKind as ChartPlotKind)) {
+  if (
+    !Number.isInteger(value.sourceIndex)
+    || Number(value.sourceIndex) < 0
+    || Number(value.sourceIndex) > 0x7fff_ffff
+    || !CHART_PLOT_KINDS.has(value.plotKind as ChartPlotKind)
+  ) {
     throw new Error(`${label}图种或索引无效`);
   }
   assertChartName(value.name, label);
@@ -137,8 +148,7 @@ export function assertChartSeriesRecord(
   const xy = value.plotKind === 'scatter' || value.plotKind === 'bubble';
   points.forEach(([id, point]) => {
     assertChartPointRecord(point, id, `${label}数据点`);
-    if ((!xy && (own(point, 'x') || own(point, 'size')))
-      || (value.plotKind === 'scatter' && own(point, 'size'))) {
+    if ((!xy && (own(point, 'x') || own(point, 'size'))) || (value.plotKind === 'scatter' && own(point, 'size'))) {
       throw new Error(`${label}数据点与图种不匹配`);
     }
   });
@@ -183,31 +193,31 @@ function restoreField(target: MutableRecord, source: object, key: string): void 
   else delete target[key];
 }
 
-function quarantineInvalid(
-  target: MutableRecord, source: object, key: string, validate: (value: unknown) => void,
-): boolean {
-  try { validate(target[key]); return false; } catch {
+function quarantineInvalid(target: MutableRecord, source: object, key: string, validate: (value: unknown) => void): boolean {
+  try {
+    validate(target[key]);
+    return false;
+  } catch {
     restoreField(target, source, key);
     return true;
   }
 }
 
-function sanitizeSourceCategory(
-  category: ChartCategory, source: ChartCategory, id: string,
-): boolean {
+function sanitizeSourceCategory(category: ChartCategory, source: ChartCategory, id: string): boolean {
   const target = category as unknown as MutableRecord;
   let deferred = removeUnknown(target, ['id', 'order', 'label', 'levels', 'levelClears', 'removed']);
-  if (target.levelClears !== undefined) deferred = quarantineInvalid(target, source, 'levelClears', value =>
-    assertCategoryClears(value, source.levels?.length ?? 0)) || deferred;
-  if (source.levels) deferred = quarantineInvalid(target, source, 'levels', value =>
-    assertCategoryLevels(value, source.levels!.length)) || deferred;
-  else if (target.levels !== undefined) { delete target.levels; deferred = true; }
-  deferred = quarantineInvalid(target, source, 'id', (value) =>
-    assertChartIdentity(value, id, `图表类别 ${id}`)) || deferred;
-  deferred = quarantineInvalid(target, source, 'order', (value) =>
-    assertChartOrder(value, `图表类别 ${id}`)) || deferred;
-  deferred = quarantineInvalid(target, source, 'label', (value) =>
-    assertChartName(value, `图表类别 ${id}`)) || deferred;
+  if (target.levelClears !== undefined)
+    deferred =
+      quarantineInvalid(target, source, 'levelClears', (value) => assertCategoryClears(value, source.levels?.length ?? 0)) || deferred;
+  if (source.levels)
+    deferred = quarantineInvalid(target, source, 'levels', (value) => assertCategoryLevels(value, source.levels!.length)) || deferred;
+  else if (target.levels !== undefined) {
+    delete target.levels;
+    deferred = true;
+  }
+  deferred = quarantineInvalid(target, source, 'id', (value) => assertChartIdentity(value, id, `图表类别 ${id}`)) || deferred;
+  deferred = quarantineInvalid(target, source, 'order', (value) => assertChartOrder(value, `图表类别 ${id}`)) || deferred;
+  deferred = quarantineInvalid(target, source, 'label', (value) => assertChartName(value, `图表类别 ${id}`)) || deferred;
   if (target.removed !== undefined && target.removed !== true) {
     restoreField(target, source, 'removed');
     deferred = true;
@@ -218,28 +228,26 @@ function sanitizeSourceCategory(
 function assertPointForPlot(point: unknown, id: string, plotKind: ChartPlotKind): void {
   assertChartPointRecord(point, id, `图表数据点 ${id}`);
   const xy = plotKind === 'scatter' || plotKind === 'bubble';
-  if ((!xy && (own(point, 'x') || own(point, 'size')))
-    || (plotKind === 'scatter' && own(point, 'size'))) {
+  if ((!xy && (own(point, 'x') || own(point, 'size'))) || (plotKind === 'scatter' && own(point, 'size'))) {
     throw new Error(`图表数据点 ${id} 与图种不匹配`);
   }
 }
 
-function sanitizeSourcePoint(
-  point: ChartPoint, source: ChartPoint, id: string, plotKind: ChartPlotKind,
-): boolean {
+function sanitizeSourcePoint(point: ChartPoint, source: ChartPoint, id: string, plotKind: ChartPlotKind): boolean {
   const target = point as unknown as MutableRecord;
-  const allowed = ['id', 'order', 'value', 'removed',
+  const allowed = [
+    'id',
+    'order',
+    'value',
+    'removed',
     ...(plotKind === 'scatter' || plotKind === 'bubble' ? ['x'] : []),
-    ...(plotKind === 'bubble' ? ['size'] : [])];
+    ...(plotKind === 'bubble' ? ['size'] : []),
+  ];
   let deferred = removeUnknown(target, allowed);
-  deferred = quarantineInvalid(target, source, 'id', (value) =>
-    assertChartIdentity(value, id, `图表数据点 ${id}`)) || deferred;
-  deferred = quarantineInvalid(target, source, 'order', (value) =>
-    assertChartOrder(value, `图表数据点 ${id}`)) || deferred;
-  for (const key of ['value', ...(allowed.includes('x') ? ['x'] : []),
-    ...(allowed.includes('size') ? ['size'] : [])]) {
-    deferred = quarantineInvalid(target, source, key, (value) =>
-      assertChartNumber(value, `图表数据点 ${id} ${key}`)) || deferred;
+  deferred = quarantineInvalid(target, source, 'id', (value) => assertChartIdentity(value, id, `图表数据点 ${id}`)) || deferred;
+  deferred = quarantineInvalid(target, source, 'order', (value) => assertChartOrder(value, `图表数据点 ${id}`)) || deferred;
+  for (const key of ['value', ...(allowed.includes('x') ? ['x'] : []), ...(allowed.includes('size') ? ['size'] : [])]) {
+    deferred = quarantineInvalid(target, source, key, (value) => assertChartNumber(value, `图表数据点 ${id} ${key}`)) || deferred;
   }
   if (target.removed !== undefined && target.removed !== true) {
     restoreField(target, source, 'removed');
@@ -251,14 +259,19 @@ function sanitizeSourcePoint(
 function sanitizeSourceSeries(item: StoredSeries, source: StoredSeries, id: string): boolean {
   const target = item as unknown as MutableRecord;
   let deferred = removeUnknown(target, [
-    'id', 'order', 'sourceIndex', 'plotKind', 'name', 'points', 'bindings', 'removed', 'sourceTemplate',
+    'id',
+    'order',
+    'sourceIndex',
+    'plotKind',
+    'name',
+    'points',
+    'bindings',
+    'removed',
+    'sourceTemplate',
   ]);
-  deferred = quarantineInvalid(target, source, 'id', (value) =>
-    assertChartIdentity(value, id, `图表系列 ${id}`)) || deferred;
-  deferred = quarantineInvalid(target, source, 'order', (value) =>
-    assertChartOrder(value, `图表系列 ${id}`)) || deferred;
-  deferred = quarantineInvalid(target, source, 'name', (value) =>
-    assertChartName(value, `图表系列 ${id}`)) || deferred;
+  deferred = quarantineInvalid(target, source, 'id', (value) => assertChartIdentity(value, id, `图表系列 ${id}`)) || deferred;
+  deferred = quarantineInvalid(target, source, 'order', (value) => assertChartOrder(value, `图表系列 ${id}`)) || deferred;
+  deferred = quarantineInvalid(target, source, 'name', (value) => assertChartName(value, `图表系列 ${id}`)) || deferred;
   for (const key of ['sourceIndex', 'plotKind', 'bindings', 'sourceTemplate']) {
     if (JSON.stringify(target[key]) === JSON.stringify((source as unknown as MutableRecord)[key])) continue;
     restoreField(target, source, key);
@@ -283,12 +296,16 @@ function sanitizeSourceSeries(item: StoredSeries, source: StoredSeries, id: stri
       }
       continue;
     }
-    try { assertPointForPlot(point, pointId, item.plotKind); } catch {
+    try {
+      assertPointForPlot(point, pointId, item.plotKind);
+    } catch {
       delete item.points[pointId];
       deferred = true;
     }
   }
-  const addedPoints = Object.keys(item.points).filter((pointId) => !source.points[pointId]).sort();
+  const addedPoints = Object.keys(item.points)
+    .filter((pointId) => !source.points[pointId])
+    .sort();
   const allowedAdded = Math.max(0, MAX_CHART_POINTS - Object.keys(source.points).length);
   for (const pointId of addedPoints.slice(allowedAdded)) {
     delete item.points[pointId];
@@ -298,21 +315,20 @@ function sanitizeSourceSeries(item: StoredSeries, source: StoredSeries, id: stri
 }
 
 function sanitizeAddedSeries(
-  item: StoredSeries, id: string, categories: Readonly<Record<string, ChartCategory>>,
+  item: StoredSeries,
+  id: string,
+  categories: Readonly<Record<string, ChartCategory>>,
 ): {
-  readonly valid: boolean; readonly deferred: boolean;
+  readonly valid: boolean;
+  readonly deferred: boolean;
 } {
   const target = item as unknown as MutableRecord;
-  let deferred = removeUnknown(target, [
-    'id', 'order', 'sourceIndex', 'plotKind', 'name', 'points', 'bindings', 'removed',
-  ]);
-  if (!CHART_PLOT_KINDS.has(item.plotKind) || !item.points
-    || typeof item.points !== 'object' || Array.isArray(item.points)) {
+  let deferred = removeUnknown(target, ['id', 'order', 'sourceIndex', 'plotKind', 'name', 'points', 'bindings', 'removed']);
+  if (!CHART_PLOT_KINDS.has(item.plotKind) || !item.points || typeof item.points !== 'object' || Array.isArray(item.points)) {
     return { valid: false, deferred: true };
   }
   const xy = item.plotKind === 'scatter' || item.plotKind === 'bubble';
-  const allowed = ['id', 'order', 'value', 'removed', ...(xy ? ['x'] : []),
-    ...(item.plotKind === 'bubble' ? ['size'] : [])];
+  const allowed = ['id', 'order', 'value', 'removed', ...(xy ? ['x'] : []), ...(item.plotKind === 'bubble' ? ['size'] : [])];
   for (const [pointId, point] of Object.entries(item.points)) {
     if (!point || typeof point !== 'object' || Array.isArray(point)) {
       delete item.points[pointId];
@@ -327,21 +343,25 @@ function sanitizeAddedSeries(
       if (!own(targetPoint, 'value')) targetPoint.value = null;
     }
     deferred = removeUnknown(point as unknown as MutableRecord, allowed) || deferred;
-    try { assertPointForPlot(point, pointId, item.plotKind); } catch {
+    try {
+      assertPointForPlot(point, pointId, item.plotKind);
+    } catch {
       delete item.points[pointId];
       deferred = true;
     }
   }
-  try { assertChartSeriesRecord(item, id, `图表系列 ${id}`, true); } catch {
+  try {
+    assertChartSeriesRecord(item, id, `图表系列 ${id}`, true);
+  } catch {
     return { valid: false, deferred: true };
   }
   return { valid: true, deferred };
 }
 
-function trimAddedRecords<T>(
-  target: Record<string, T>, source: Readonly<Record<string, unknown>>, limit: number,
-): boolean {
-  const added = Object.keys(target).filter((id) => !own(source, id)).sort();
+function trimAddedRecords<T>(target: Record<string, T>, source: Readonly<Record<string, unknown>>, limit: number): boolean {
+  const added = Object.keys(target)
+    .filter((id) => !own(source, id))
+    .sort();
   const allowed = Math.max(0, limit - Object.keys(source).length);
   for (const id of added.slice(allowed)) delete target[id];
   return added.length > allowed;
@@ -349,9 +369,13 @@ function trimAddedRecords<T>(
 
 export function validateMaterializedRecords(
   categories: Record<string, ChartCategory>,
-  series: Record<ChartSeriesId, Omit<ChartSeries, 'points'> & {
-    points: Record<string, ChartPoint>; sourceTemplate?: true;
-  }>,
+  series: Record<
+    ChartSeriesId,
+    Omit<ChartSeries, 'points'> & {
+      points: Record<string, ChartPoint>;
+      sourceTemplate?: true;
+    }
+  >,
   sourceCategories: Readonly<Record<string, ChartCategory>>,
   sourceSeries: Readonly<Record<string, StoredSeries>>,
 ): boolean {
@@ -398,8 +422,10 @@ export function validateMaterializedRecords(
       deferred = true;
       continue;
     }
-    const added = item && typeof item === 'object' && !Array.isArray(item)
-      ? sanitizeAddedSeries(item, id, categories) : { valid: false, deferred: true };
+    const added =
+      item && typeof item === 'object' && !Array.isArray(item)
+        ? sanitizeAddedSeries(item, id, categories)
+        : { valid: false, deferred: true };
     deferred = added.deferred || deferred;
     if (!added.valid) {
       // 先到达的后代字段显式保持 deferred；创建批次补齐全部叶字段后才进入语义数据集。
@@ -408,12 +434,25 @@ export function validateMaterializedRecords(
   }
   let cells = Object.values(series).reduce((sum, item) => sum + Object.keys(item.points).length, 0);
   if (cells > MAX_CHART_CELLS) {
-    const added = Object.entries(series).flatMap(([seriesId, item]) =>
-      Object.keys(item.points).filter((pointId) => !sourceSeries[seriesId]?.points[pointId])
-        .map((pointId) => ({ seriesId, pointId })))
-      .sort((left, right) => left.seriesId === right.seriesId
-        ? left.pointId < right.pointId ? 1 : left.pointId > right.pointId ? -1 : 0
-        : left.seriesId < right.seriesId ? 1 : left.seriesId > right.seriesId ? -1 : 0);
+    const added = Object.entries(series)
+      .flatMap(([seriesId, item]) =>
+        Object.keys(item.points)
+          .filter((pointId) => !sourceSeries[seriesId]?.points[pointId])
+          .map((pointId) => ({ seriesId, pointId })),
+      )
+      .sort((left, right) =>
+        left.seriesId === right.seriesId
+          ? left.pointId < right.pointId
+            ? 1
+            : left.pointId > right.pointId
+              ? -1
+              : 0
+          : left.seriesId < right.seriesId
+            ? 1
+            : left.seriesId > right.seriesId
+              ? -1
+              : 0,
+      );
     for (const item of added) {
       if (cells <= MAX_CHART_CELLS) break;
       delete series[item.seriesId as ChartSeriesId].points[item.pointId];

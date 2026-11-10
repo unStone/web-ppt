@@ -21,20 +21,34 @@ export interface SiteRecovery {
 const PREFERENCE = 'web-ppt:site:recovery-enabled';
 
 function needsMedia(journal: RecoveryStoreJournal | null): boolean {
-  return journal?.frames.some((frame) => frame.patches.some((patch) => {
-    if (patch.op === 'insert' || patch.op === 'remove') {
-      return 'records' in patch.value && Object.values(patch.value.records).some((record) =>
-        record.src.kind === 'image' && !!record.src.media);
-    }
-    const value = 'value' in patch ? patch.value : null;
-    return patch.path[0] === 'imageResources' && !!value && typeof value === 'object'
-      && 'mime' in value && typeof value.mime === 'string' && /^(audio|video)\//.test(value.mime);
-  })) ?? false;
+  return (
+    journal?.frames.some((frame) =>
+      frame.patches.some((patch) => {
+        if (patch.op === 'insert' || patch.op === 'remove') {
+          return (
+            'records' in patch.value
+            && Object.values(patch.value.records).some((record) => record.src.kind === 'image' && !!record.src.media)
+          );
+        }
+        const value = 'value' in patch ? patch.value : null;
+        return (
+          patch.path[0] === 'imageResources'
+          && !!value
+          && typeof value === 'object'
+          && 'mime' in value
+          && typeof value.mime === 'string'
+          && /^(audio|video)\//.test(value.mime)
+        );
+      }),
+    ) ?? false
+  );
 }
 
 export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
   const store = createIndexedDbRecoveryStore({
-    databaseName: 'web-ppt-site-editor', namespace: 'site-editor', maxJournals: 8,
+    databaseName: 'web-ppt-site-editor',
+    namespace: 'site-editor',
+    maxJournals: 8,
   });
   const events = new AbortController();
   let disposed = false;
@@ -61,13 +75,15 @@ export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
   };
   restore.addEventListener('click', () => choose('restore'), { signal: events.signal });
   discard.addEventListener('click', () => choose('discard'), { signal: events.signal });
-  toggle.addEventListener('change', () => {
-    enabled = toggle.checked;
-    localStorage.setItem(PREFERENCE, String(enabled));
-    notice(message(enabled
-      ? '本机恢复将在下次打开文稿时启用'
-      : '本机恢复将在下次打开文稿时停用；已有记录不会被远程上传'));
-  }, { signal: events.signal });
+  toggle.addEventListener(
+    'change',
+    () => {
+      enabled = toggle.checked;
+      localStorage.setItem(PREFERENCE, String(enabled));
+      notice(message(enabled ? '本机恢复将在下次打开文稿时启用' : '本机恢复将在下次打开文稿时停用；已有记录不会被远程上传'));
+    },
+    { signal: events.signal },
+  );
 
   const decision = (candidate: RecoveryCandidate): Promise<RecoveryDecision> => {
     if (disposed) return Promise.resolve('cancel');
@@ -76,9 +92,13 @@ export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
     prompt.hidden = false;
     restoreLanguageControl = moveLanguageControl(prompt.querySelector('span')!);
     setText(summary, '记录于 {updated} 更新，共 {count} 步；最近操作：{label}。', {
-      updated: new Date(candidate.updatedAt), count: candidate.frameCount, label: candidate.latestLabel,
+      updated: new Date(candidate.updatedAt),
+      count: candidate.frameCount,
+      label: candidate.latestLabel,
     });
-    return new Promise((resolve) => { decide = resolve; });
+    return new Promise((resolve) => {
+      decide = resolve;
+    });
   };
 
   return {
@@ -86,31 +106,39 @@ export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
       if (disposed) throw new Error('恢复服务已释放');
       if (!enabled) return {};
       let mediaRequired = false;
-      return { recovery: {
-        signal,
-        store: {
-          async load(source) {
-            const journal = await store.load(source);
-            mediaRequired = needsMedia(journal);
-            return journal;
+      return {
+        recovery: {
+          signal,
+          store: {
+            async load(source) {
+              const journal = await store.load(source);
+              mediaRequired = needsMedia(journal);
+              return journal;
+            },
+            reset: (request) => store.reset(request),
+            append: (request) => store.append(request),
+            remove: (source) => store.remove(source),
           },
-          reset: (request) => store.reset(request),
-          append: (request) => store.append(request),
-          remove: (source) => store.remove(source),
+          decide: async (candidate) => {
+            const choice = await decision(candidate);
+            if (choice === 'restore' && mediaRequired && !signal.aborted) {
+              // 恢复校验发生在 Editor 构造中，不能等打开成功后再注册媒体资源类型。
+              const { registerMediaEditing } = await import('@web-ppt/editor/media');
+              if (!signal.aborted) registerMediaEditing();
+            }
+            return signal.aborted ? 'cancel' : choice;
+          },
+          onError: (error) => {
+            if (!disposed)
+              notice(
+                message('本机恢复记录失败：{detail}', {
+                  detail: error instanceof Error ? error.message : String(error),
+                }),
+                'error',
+              );
+          },
         },
-        decide: async (candidate) => {
-          const choice = await decision(candidate);
-          if (choice === 'restore' && mediaRequired && !signal.aborted) {
-            // 恢复校验发生在 Editor 构造中，不能等打开成功后再注册媒体资源类型。
-            const { registerMediaEditing } = await import('@web-ppt/editor/media');
-            if (!signal.aborted) registerMediaEditing();
-          }
-          return signal.aborted ? 'cancel' : choice;
-        },
-        onError: (error) => { if (!disposed) notice(message('本机恢复记录失败：{detail}', {
-          detail: error instanceof Error ? error.message : String(error),
-        }), 'error'); },
-      } };
+      };
     },
     cancelPending() {
       if (decide) choose('cancel');
@@ -149,7 +177,7 @@ export function createSiteRecovery(notice: SiteNotice): SiteRecovery {
       flushGeneration++;
       syncedSession = null;
       choose('cancel');
-      return closing = store.close();
+      return (closing = store.close());
     },
   };
 }

@@ -11,12 +11,13 @@ const TYPE_NS = 'http://schemas.openxmlformats.org/package/2006/content-types';
 
 /** 核心解析器先验证输入规模与格式；这里只转换普通模板的精确类型，不推断宏类型。 */
 export function prepareTemplatePackage(bytes: Uint8Array): Uint8Array {
-  const selected = safeUnzipSync(bytes, { filter: entry => entry.name === TYPES });
+  const selected = safeUnzipSync(bytes, { filter: (entry) => entry.name === TYPES });
   const source = selected[TYPES];
   if (!source) throw new TemplateFillError('invalid-template', '模板包缺少 Content Types');
   const tree = parseXmlTree(source);
-  const main = xmlElementChildren(tree.root, { localName: 'Override', namespaceUri: TYPE_NS })
-    .find(node => findXmlAttribute(node, { localName: 'PartName', namespaceUri: null })?.value === '/ppt/presentation.xml');
+  const main = xmlElementChildren(tree.root, { localName: 'Override', namespaceUri: TYPE_NS }).find(
+    (node) => findXmlAttribute(node, { localName: 'PartName', namespaceUri: null })?.value === '/ppt/presentation.xml',
+  );
   const type = main && findXmlAttribute(main, { localName: 'ContentType', namespaceUri: null })?.value;
   if (type === PRESENTATION) return bytes;
   if (!main || type !== TEMPLATE) {

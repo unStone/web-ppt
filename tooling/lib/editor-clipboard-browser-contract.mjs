@@ -25,15 +25,21 @@ export async function runEditorClipboardBrowserContract({ openEditor, load }) {
     const copyData = new DataTransfer();
     let reportedError = null;
     const previousReporter = globalThis.reportError;
-    globalThis.reportError = (error) => { reportedError = error; };
+    globalThis.reportError = (error) => {
+      reportedError = error;
+    };
     const copyAccepted = view.element.dispatchEvent(clipboardEvent('copy', copyData));
     globalThis.reportError = previousReporter;
     if (reportedError) throw reportedError;
     const custom = copyData.getData(MIME);
     if (!custom) throw new Error(`ClipboardEvent copy 未写入载荷：accepted=${copyAccepted}, types=${[...copyData.types]}`);
     const payload = JSON.parse(custom);
-    if (copyAccepted || copyData.getData('text/plain') !== copyData.getData(MIME)
-      || payload.format !== 'web-ppt-elements' || payload.roots.length !== 2) {
+    if (
+      copyAccepted
+      || copyData.getData('text/plain') !== copyData.getData(MIME)
+      || payload.format !== 'web-ppt-elements'
+      || payload.roots.length !== 2
+    ) {
       throw new Error('ClipboardEvent copy 未双写版本化载荷');
     }
 
@@ -44,9 +50,13 @@ export async function runEditorClipboardBrowserContract({ openEditor, load }) {
     const pasteTime = performance.now() - pasteStarted;
     const pastedSelection = session.editor.selection;
     const pasted = pastedSelection.kind === 'elements' ? [...pastedSelection.ids] : [];
-    if (pasteAccepted || pasted.length !== 2 || session.editor.history.undoCount !== historyBefore + 1
+    if (
+      pasteAccepted
+      || pasted.length !== 2
+      || session.editor.history.undoCount !== historyBefore + 1
       || pasted.some((id) => !mount.querySelector(`[data-edit-id="${id}"]`))
-      || [...originalNodes].some(([id, node]) => mount.querySelector(`[data-edit-id="${id}"]`) !== node)) {
+      || [...originalNodes].some(([id, node]) => mount.querySelector(`[data-edit-id="${id}"]`) !== node)
+    ) {
       throw new Error('ClipboardEvent paste 未形成单历史或破坏未触碰 DOM 身份');
     }
     session.editor.undo();
@@ -55,42 +65,64 @@ export async function runEditorClipboardBrowserContract({ openEditor, load }) {
     const cutData = new DataTransfer();
     const cutHistory = session.editor.history.undoCount;
     const cutAccepted = view.element.dispatchEvent(clipboardEvent('cut', cutData));
-    if (cutAccepted || !cutData.getData(MIME)
+    if (
+      cutAccepted
+      || !cutData.getData(MIME)
       || selected.some((id) => session.editor.doc.elements[id])
-      || session.editor.history.undoCount !== cutHistory + 1) {
+      || session.editor.history.undoCount !== cutHistory + 1
+    ) {
       throw new Error('ClipboardEvent cut 未在成功写载荷后原子删除');
     }
     session.editor.undo();
 
     session.editor.select({ kind: 'elements', ids: selected, enteredGroup: null });
     const duplicateHistory = session.editor.history.undoCount;
-    const duplicateAccepted = view.element.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'd', code: 'KeyD', ctrlKey: true, bubbles: true, cancelable: true,
-    }));
+    const duplicateAccepted = view.element.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'd',
+        code: 'KeyD',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
     const duplicated = session.editor.selection.kind === 'elements' ? session.editor.selection.ids : [];
-    if (duplicateAccepted || duplicated.length !== 2
-      || session.editor.history.undoCount !== duplicateHistory + 1) {
+    if (duplicateAccepted || duplicated.length !== 2 || session.editor.history.undoCount !== duplicateHistory + 1) {
       throw new Error('Ctrl/Cmd+D 未形成不触碰系统剪贴板的单历史再制');
     }
-    const duplicateAgainAccepted = view.element.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'd', code: 'KeyD', ctrlKey: true, bubbles: true, cancelable: true,
-    }));
+    const duplicateAgainAccepted = view.element.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'd',
+        code: 'KeyD',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
     const duplicatedAgain = session.editor.selection.kind === 'elements' ? session.editor.selection.ids : [];
-    if (duplicateAgainAccepted || duplicatedAgain.length !== 2
+    if (
+      duplicateAgainAccepted
+      || duplicatedAgain.length !== 2
       || duplicatedAgain.some((id) => duplicated.includes(id))
-      || session.editor.history.undoCount !== duplicateHistory + 2) {
+      || session.editor.history.undoCount !== duplicateHistory + 2
+    ) {
       throw new Error('新粘贴元素无法连续 Ctrl/Cmd+D 再制');
     }
     session.editor.undo();
     session.editor.undo();
 
-    const textId = roots.find((id) => session.editor.doc.elements[id].src.kind === 'shape'
-      && session.editor.doc.elements[id].src.text
-      && session.editor.doc.elements[id].meta.editable === 'full');
+    const textId = roots.find(
+      (id) =>
+        session.editor.doc.elements[id].src.kind === 'shape'
+        && session.editor.doc.elements[id].src.text
+        && session.editor.doc.elements[id].meta.editable === 'full',
+    );
     const countBeforeTextPaste = Object.keys(session.editor.doc.elements).length;
     session.editor.select({
-      kind: 'text', id: textId,
-      anchor: { p: 0, r: 0, off: 0 }, focus: { p: 0, r: 0, off: 0 },
+      kind: 'text',
+      id: textId,
+      anchor: { p: 0, r: 0, off: 0 },
+      focus: { p: 0, r: 0, off: 0 },
     });
     const textPasteYielded = view.element.dispatchEvent(clipboardEvent('paste', copyData));
     if (!textPasteYielded || Object.keys(session.editor.doc.elements).length !== countBeforeTextPaste) {
@@ -115,20 +147,39 @@ export async function runEditorClipboardBrowserContract({ openEditor, load }) {
     const svgInStage = !!svgTarget.closest('[data-ppt-stage]');
     const svgData = new DataTransfer();
     let svgError = null;
-    globalThis.reportError = (error) => { svgError = String(error); };
+    globalThis.reportError = (error) => {
+      svgError = String(error);
+    };
     const svgOwned = svgTarget.dispatchEvent(clipboardEvent('copy', svgData));
     globalThis.reportError = previousReporter;
     view.setMode('view');
     const viewData = new DataTransfer();
     const viewYielded = view.element.dispatchEvent(clipboardEvent('copy', viewData));
-    if (!yielded || yieldedData.types.length || !shadowYielded || shadowData.types.length
-      || svgOwned || !svgData.getData(MIME) || !viewYielded || viewData.types.length) {
-      throw new Error(`表单/closed Shadow、SVG 画布或 view 模式的剪贴板所有权错误：${JSON.stringify({
-        yielded, yieldedTypes: [...yieldedData.types], shadowYielded,
-        shadowTypes: [...shadowData.types], svgOwned, svgTypes: [...svgData.types],
-        svgInStage, svgError, selection: session.editor.selection.kind,
-        viewYielded, viewTypes: [...viewData.types],
-      })}`);
+    if (
+      !yielded
+      || yieldedData.types.length
+      || !shadowYielded
+      || shadowData.types.length
+      || svgOwned
+      || !svgData.getData(MIME)
+      || !viewYielded
+      || viewData.types.length
+    ) {
+      throw new Error(
+        `表单/closed Shadow、SVG 画布或 view 模式的剪贴板所有权错误：${JSON.stringify({
+          yielded,
+          yieldedTypes: [...yieldedData.types],
+          shadowYielded,
+          shadowTypes: [...shadowData.types],
+          svgOwned,
+          svgTypes: [...svgData.types],
+          svgInStage,
+          svgError,
+          selection: session.editor.selection.kind,
+          viewYielded,
+          viewTypes: [...viewData.types],
+        })}`,
+      );
     }
 
     const performanceMount = document.createElement('div');
@@ -140,15 +191,20 @@ export async function runEditorClipboardBrowserContract({ openEditor, load }) {
     let pasteP95;
     try {
       const performanceView = performanceSession.mount(performanceMount, {
-        mode: 'edit', textMode: 'svg', snapping: false,
+        mode: 'edit',
+        textMode: 'svg',
+        snapping: false,
       });
-      const performanceRoots = performanceSession.editor.doc.slides[performanceView.slideId].children
-        .filter((id) => performanceSession.editor.doc.elements[id].meta.editable === 'full');
+      const performanceRoots = performanceSession.editor.doc.slides[performanceView.slideId].children.filter(
+        (id) => performanceSession.editor.doc.elements[id].meta.editable === 'full',
+      );
       const sourceElementCount = Object.keys(performanceSession.editor.doc.elements).length;
       if (performanceRoots.length !== 60) throw new Error(`性能固件可复制元素数错误：${performanceRoots.length}`);
       const payloadSizes = [10, 20, 40].map((count) => {
         performanceSession.editor.select({
-          kind: 'elements', ids: performanceRoots.slice(0, count), enteredGroup: null,
+          kind: 'elements',
+          ids: performanceRoots.slice(0, count),
+          enteredGroup: null,
         });
         const data = new DataTransfer();
         performanceView.element.dispatchEvent(clipboardEvent('copy', data));

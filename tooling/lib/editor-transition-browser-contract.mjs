@@ -1,6 +1,4 @@
-import {
-  SLIDE_TRANSITION_TYPES, transitionDirections,
-} from '/out/editor/editor.mjs';
+import { SLIDE_TRANSITION_TYPES, transitionDirections } from '/out/editor/editor.mjs';
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const percentile95 = (samples) => {
@@ -18,7 +16,8 @@ const mountPoint = () => {
 const playableInput = (type) => {
   const directions = transitionDirections(type);
   return {
-    type, durationMs: 80,
+    type,
+    durationMs: 80,
     ...(directions[0] ? { dir: directions[0] } : {}),
     ...(type === 'morph' ? { morphBy: 'byWord' } : {}),
   };
@@ -26,29 +25,37 @@ const playableInput = (type) => {
 
 const previewNode = (mount) => mount.querySelector('[data-ppt-transition-preview]');
 
-const ownedAnimations = (layer, mount, host) => [
-  ...layer.getAnimations({ subtree: true }),
-  ...(previewNode(mount)?.getAnimations({ subtree: true }) ?? []),
-].filter((animation) => animation !== host);
+const ownedAnimations = (layer, mount, host) =>
+  [...layer.getAnimations({ subtree: true }), ...(previewNode(mount)?.getAnimations({ subtree: true }) ?? [])].filter(
+    (animation) => animation !== host,
+  );
 
 const visuallyChanges = (animation) => {
   const frames = animation.effect?.getKeyframes() ?? [];
   const first = frames[0] ?? {};
   const last = frames.at(-1) ?? {};
-  return ['opacity', 'transform', 'clipPath', 'filter']
-    .some((property) => JSON.stringify(first[property]) !== JSON.stringify(last[property]));
+  return ['opacity', 'transform', 'clipPath', 'filter'].some(
+    (property) => JSON.stringify(first[property]) !== JSON.stringify(last[property]),
+  );
 };
 
-const animationSignature = (animations) => animations.map((animation) =>
-  JSON.stringify((animation.effect?.getKeyframes() ?? []).map((frame) => ({
-    opacity: frame.opacity, transform: frame.transform, clipPath: frame.clipPath,
-    filter: frame.filter, transformOrigin: frame.transformOrigin,
-  })))).join('|');
+const animationSignature = (animations) =>
+  animations
+    .map((animation) =>
+      JSON.stringify(
+        (animation.effect?.getKeyframes() ?? []).map((frame) => ({
+          opacity: frame.opacity,
+          transform: frame.transform,
+          clipPath: frame.clipPath,
+          filter: frame.filter,
+          transformOrigin: frame.transformOrigin,
+        })),
+      ),
+    )
+    .join('|');
 
 /** 真实 Chrome 同时证明 Web Animations、权限、多视图、adapter 与性能边界。 */
-export async function runEditorTransitionBrowserContract({
-  openEditor, createWebPptAdapter, load,
-}) {
+export async function runEditorTransitionBrowserContract({ openEditor, createWebPptAdapter, load }) {
   const viewMount = mountPoint();
   const editMount = mountPoint();
   const adapterMount = mountPoint();
@@ -57,16 +64,28 @@ export async function runEditorTransitionBrowserContract({
   });
   const fade = session.editor.doc.slideOrder[1];
   const view = session.mount(viewMount, {
-    slideId: fade, mode: 'view', textMode: 'svg', snapping: false,
+    slideId: fade,
+    mode: 'view',
+    textMode: 'svg',
+    snapping: false,
   });
   const edit = session.mount(editMount, {
-    slideId: fade, mode: 'edit', textMode: 'svg', snapping: false,
+    slideId: fade,
+    mode: 'edit',
+    textMode: 'svg',
+    snapping: false,
   });
   const viewLayer = viewMount.querySelector('[data-ppt-layer="static"]');
   const editLayer = editMount.querySelector('[data-ppt-layer="static"]');
-  if (!viewLayer || !editLayer || viewLayer.getAnimations().length !== 0
-    || editLayer.getAnimations().length !== 0 || view.queryTransition().value?.type !== 'wedge'
-    || view.queryTransition().value?.durationMs !== 800 || previewNode(viewMount)) {
+  if (
+    !viewLayer
+    || !editLayer
+    || viewLayer.getAnimations().length !== 0
+    || editLayer.getAnimations().length !== 0
+    || view.queryTransition().value?.type !== 'wedge'
+    || view.queryTransition().value?.durationMs !== 800
+    || previewNode(viewMount)
+  ) {
     throw new Error('Chrome 切换初始查询错误或挂载时发生了意外自动播放');
   }
   if (view.setTransition({ type: 'cut' }) !== false || session.editor.isDirty()) {
@@ -76,7 +95,8 @@ export async function runEditorTransitionBrowserContract({
   const historyBefore = session.editor.history.undoCount;
   const selectionBefore = JSON.stringify(session.editor.selection);
   const hostAnimation = viewLayer.animate([{ opacity: 1 }, { opacity: 1 }], {
-    duration: 10000, fill: 'both',
+    duration: 10000,
+    fill: 'both',
   });
   const hostFinished = hostAnimation.finished.catch(() => undefined);
   const sourcePreview = view.previewTransition();
@@ -87,10 +107,15 @@ export async function runEditorTransitionBrowserContract({
   });
   const sourceTiming = sourceAnimation?.effect?.getTiming();
   const sourceFrames = sourceAnimation?.effect?.getKeyframes() ?? [];
-  if (!previewNode(viewMount) || previewNode(viewMount).children.length !== 0
+  if (
+    !previewNode(viewMount)
+    || previewNode(viewMount).children.length !== 0
     || sourceAnimations.length !== 2
-    || !sourceAnimation || sourceTiming?.duration !== 800
-    || sourceFrames[0]?.opacity !== '0' || sourceFrames.at(-1)?.opacity !== '1') {
+    || !sourceAnimation
+    || sourceTiming?.duration !== 800
+    || sourceFrames[0]?.opacity !== '0'
+    || sourceFrames.at(-1)?.opacity !== '1'
+  ) {
     throw new Error('Chrome 没有用来源时长与真实 Web Animations 关键帧预览 fade');
   }
 
@@ -104,10 +129,14 @@ export async function runEditorTransitionBrowserContract({
     previewSamples.push(performance.now() - started);
     previews.push(preview);
     const active = ownedAnimations(viewLayer, viewMount, hostAnimation);
-    if (!previewNode(viewMount) || previous.some((animation) => animation.playState !== 'idle')
-      || hostAnimation.playState !== 'running' || active.length === 0
+    if (
+      !previewNode(viewMount)
+      || previous.some((animation) => animation.playState !== 'idle')
+      || hostAnimation.playState !== 'running'
+      || active.length === 0
       || active.some((animation) => animation.effect?.getTiming().duration !== 80)
-      || !active.some(visuallyChanges)) {
+      || !active.some(visuallyChanges)
+    ) {
       throw new Error(`Chrome 连续预览没有取消旧动画或 ${type} 没有进入播放层`);
     }
     previous = active;
@@ -129,17 +158,21 @@ export async function runEditorTransitionBrowserContract({
   const previewResults = await Promise.all(previews);
   const previewP95 = percentile95(previewSamples);
   const remaining = viewLayer.getAnimations({ subtree: true });
-  if (previewResults.some((played) => !played)
-    || remaining.length !== 1 || remaining[0] !== hostAnimation
+  if (
+    previewResults.some((played) => !played)
+    || remaining.length !== 1
+    || remaining[0] !== hostAnimation
     || previewNode(viewMount)
     || session.editor.history.undoCount !== historyBefore
-    || JSON.stringify(session.editor.selection) !== selectionBefore || session.editor.isDirty()) {
+    || JSON.stringify(session.editor.selection) !== selectionBefore
+    || session.editor.isDirty()
+  ) {
     throw new Error('Chrome 40 种切换预览或零副作用边界失败');
   }
   recordPerformanceBudget('Chrome 40 种切换启动 p95', previewP95, 16);
   hostAnimation.cancel();
   await hostFinished;
-  if (await view.previewTransition({ type: 'none' }) !== false) {
+  if ((await view.previewTransition({ type: 'none' })) !== false) {
     throw new Error('Chrome none 切换不应产生播放任务');
   }
 
@@ -150,52 +183,74 @@ export async function runEditorTransitionBrowserContract({
   const editSelection = JSON.stringify(session.editor.selection);
   const editPreview = edit.previewTransition({ type: 'doors', dir: 'vert', durationMs: 80 });
   const editOutgoing = previewNode(editMount);
-  if (!interactionLayer || !textLayer || !editOutgoing
-    || interactionLayer.style.visibility !== 'hidden' || textLayer.style.visibility !== 'hidden'
-    || editLayer.getAnimations().length !== 1 || editOutgoing.getAnimations().length !== 1) {
+  if (
+    !interactionLayer
+    || !textLayer
+    || !editOutgoing
+    || interactionLayer.style.visibility !== 'hidden'
+    || textLayer.style.visibility !== 'hidden'
+    || editLayer.getAnimations().length !== 1
+    || editOutgoing.getAnimations().length !== 1
+  ) {
     throw new Error('Chrome edit 模式预览没有播放双层动画或临时隐藏编辑控件');
   }
-  if (!await editPreview || interactionLayer.style.visibility !== ''
-    || textLayer.style.visibility !== '' || JSON.stringify(session.editor.selection) !== editSelection
-    || previewNode(editMount)) {
+  if (
+    !(await editPreview)
+    || interactionLayer.style.visibility !== ''
+    || textLayer.style.visibility !== ''
+    || JSON.stringify(session.editor.selection) !== editSelection
+    || previewNode(editMount)
+  ) {
     throw new Error('Chrome edit 模式预览结束后没有无损恢复编辑控件与选区');
   }
 
   const viewSvg = viewLayer.querySelector('svg');
   const editSvg = editLayer.querySelector('svg');
-  if (!edit.setTransition({
-    type: 'morph', durationMs: 900, morphBy: 'byChar', advanceAfterMs: 3000,
-  }) || view.queryTransition().value?.type !== 'morph'
+  if (
+    !edit.setTransition({
+      type: 'morph',
+      durationMs: 900,
+      morphBy: 'byChar',
+      advanceAfterMs: 3000,
+    })
+    || view.queryTransition().value?.type !== 'morph'
     || view.queryTransition().value?.morphBy !== 'byChar'
-    || viewLayer.querySelector('svg') !== viewSvg || editLayer.querySelector('svg') !== editSvg) {
+    || viewLayer.querySelector('svg') !== viewSvg
+    || editLayer.querySelector('svg') !== editSvg
+  ) {
     throw new Error('Chrome 编辑/多视图查询未同步，或元数据修改触发了静态 SVG 重绘');
   }
-  if (!edit.setTransition(null) || edit.queryTransition().value?.type !== 'wedge'
-    || edit.queryTransition().direct) {
+  if (!edit.setTransition(null) || edit.queryTransition().value?.type !== 'wedge' || edit.queryTransition().direct) {
     throw new Error('Chrome 恢复来源切换失败');
   }
 
   const adapter = createWebPptAdapter();
   adapter.attach(adapterMount);
   await adapter.applyBinding({
-    session, sessionOwnership: 'external', slideId: fade, mode: 'view', textMode: 'svg',
+    session,
+    sessionOwnership: 'external',
+    slideId: fade,
+    mode: 'view',
+    textMode: 'svg',
   });
-  if (adapter.queryTransition()?.value?.type !== 'wedge'
-    || adapter.setTransition({ type: 'cut' }) !== false) {
+  if (adapter.queryTransition()?.value?.type !== 'wedge' || adapter.setTransition({ type: 'cut' }) !== false) {
     throw new Error('Chrome adapter 查询或查看权限边界失败');
   }
   const adapterPreview = adapter.previewTransition({ type: 'push', dir: 'r', durationMs: 80 });
   const adapterLayer = adapterMount.querySelector('[data-ppt-layer="static"]');
   const adapterOutgoing = previewNode(adapterMount);
-  if (!adapterLayer || !adapterOutgoing
+  if (
+    !adapterLayer
+    || !adapterOutgoing
     || adapterLayer.getAnimations({ subtree: true }).length !== 1
     || adapterOutgoing.getAnimations({ subtree: true }).length !== 1
-    || !await adapterPreview || previewNode(adapterMount)) {
+    || !(await adapterPreview)
+    || previewNode(adapterMount)
+  ) {
     throw new Error('Chrome adapter 没有委托共享预览控制器');
   }
   adapter.setView({ mode: 'edit' });
-  if (!adapter.setTransition({ type: 'cut', durationMs: 350 })
-    || view.queryTransition().value?.type !== 'cut') {
+  if (!adapter.setTransition({ type: 'cut', durationMs: 350 }) || view.queryTransition().value?.type !== 'cut') {
     throw new Error('Chrome adapter 编辑动作没有同步到共享 session');
   }
   adapter.dispose();
@@ -205,7 +260,9 @@ export async function runEditorTransitionBrowserContract({
     idPrefix: 'browser-transition-complex-',
   });
   const complexView = complexSession.mount(complexMount, {
-    mode: 'view', textMode: 'svg', snapping: false,
+    mode: 'view',
+    textMode: 'svg',
+    snapping: false,
   });
   const complexLayer = complexMount.querySelector('[data-ppt-layer="static"]');
   if (!complexLayer || complexLayer.querySelectorAll('[data-edit-id]').length < 60) {
@@ -223,16 +280,17 @@ export async function runEditorTransitionBrowserContract({
   const complexPreviews = [];
   for (let index = 0; index < 40; index++) {
     const started = performance.now();
-    complexPreviews.push(complexView.previewTransition({
-      type: index % 2 ? 'pull' : 'ripple',
-      dir: index % 2 ? 'rd' : 'center', durationMs: 80,
-    }));
+    complexPreviews.push(
+      complexView.previewTransition({
+        type: index % 2 ? 'pull' : 'ripple',
+        dir: index % 2 ? 'rd' : 'center',
+        durationMs: 80,
+      }),
+    );
     complexSamples.push(performance.now() - started);
   }
   const complexPreviewP95 = percentile95(complexSamples);
-  if ((await Promise.all(complexPreviews)).some((played) => !played)
-    || previewNode(complexMount)
-    || complexSession.editor.isDirty()) {
+  if ((await Promise.all(complexPreviews)).some((played) => !played) || previewNode(complexMount) || complexSession.editor.isDirty()) {
     throw new Error('Chrome 60 元素复杂页切换预览失败');
   }
   recordPerformanceBudget('Chrome 60 元素复杂页切换启动 p95', complexPreviewP95, 16);
@@ -248,9 +306,12 @@ export async function runEditorTransitionBrowserContract({
     const started = performance.now();
     session.editor.transaction((transaction) => {
       const type = index % 2 ? 'flash' : 'cut';
-      for (const id of ids) transaction.exec({
-        type: 'SetTransition', id, t: { type, durationMs: 500 + index },
-      });
+      for (const id of ids)
+        transaction.exec({
+          type: 'SetTransition',
+          id,
+          t: { type, durationMs: 500 + index },
+        });
     }, '批量页面切换');
     batchSamples.push(performance.now() - started);
   }

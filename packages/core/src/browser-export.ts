@@ -16,8 +16,8 @@ function xmlUrl(value: string): string {
 }
 
 function cssUrl(value: string): string {
-  return value.replace(/\\([0-9a-f]{1,6})(?:\r\n|[ \t\r\n\f])?|\\([^\r\n])/gi,(_,hex: string | undefined,char: string) => {
-    const code = hex === undefined ? 0 : Number.parseInt(hex,16);
+  return value.replace(/\\([0-9a-f]{1,6})(?:\r\n|[ \t\r\n\f])?|\\([^\r\n])/gi, (_, hex: string | undefined, char: string) => {
+    const code = hex === undefined ? 0 : Number.parseInt(hex, 16);
     return hex === undefined ? char : String.fromCodePoint(code > 0 && code <= 0x10ffff ? code : 0xfffd);
   });
 }
@@ -34,16 +34,18 @@ async function blobDataUri(blob: Blob): Promise<string> {
 
 /** 把 SVG 中的会话与外链资源替换成 data URI，使其可被 <img> 独立加载。 */
 async function inlineImages(svg: string, strict = false): Promise<string> {
-  const encoded = new Map<string,string>();
+  const encoded = new Map<string, string>();
   for (const match of svg.matchAll(/<image\b[^>]*\bhref="((?:blob:|https?:\/\/)[^"]+)"/g)) {
-    encoded.set(match[1],xmlUrl(match[1]));
+    encoded.set(match[1], xmlUrl(match[1]));
   }
-  for (const match of svg.matchAll(/@font-face\{[^}]*\bsrc:url\((?:'((?:blob:|https?:\/\/)[^']+)'|"((?:blob:|https?:\/\/)[^"]+)"|((?:blob:|https?:\/\/)[^)\s]+))\)/g)) {
+  for (const match of svg.matchAll(
+    /@font-face\{[^}]*\bsrc:url\((?:'((?:blob:|https?:\/\/)[^']+)'|"((?:blob:|https?:\/\/)[^"]+)"|((?:blob:|https?:\/\/)[^)\s]+))\)/g,
+  )) {
     const value = match[1] ?? match[2] ?? match[3];
-    encoded.set(value,cssUrl(value));
+    encoded.set(value, cssUrl(value));
   }
   if (!encoded.size) return svg;
-  const loads = [...encoded].map(async ([value,url]) => {
+  const loads = [...encoded].map(async ([value, url]) => {
     try {
       const resource = await fetch(url);
       if (!resource.ok) throw new Error(`HTTP ${resource.status}`);
@@ -108,11 +110,14 @@ async function rasterize(
 ): Promise<Blob> {
   browserApi();
   const size = validateRasterSize(pres, options.scale);
-  const svg = await inlineImages(renderSlideToSvg(pres, slide, {
-    textMode,
-    hiddenElements: options.hiddenElements,
-    showComments: options.showComments,
-  }), options.strictResources);
+  const svg = await inlineImages(
+    renderSlideToSvg(pres, slide, {
+      textMode,
+      hiddenElements: options.hiddenElements,
+      showComments: options.showComments,
+    }),
+    options.strictResources,
+  );
   const image = await loadSvgImage(svg);
   const canvas = document.createElement('canvas');
   canvas.width = size.width;
@@ -166,10 +171,7 @@ export interface PrintableOptions extends CommentExportOptions {
 }
 
 /** 整份演示导出为可通过浏览器“打印为 PDF”的 HTML。 */
-export async function presentationToPrintableHtml(
-  pres: Presentation,
-  options: PrintableOptions = {},
-): Promise<string> {
+export async function presentationToPrintableHtml(pres: Presentation, options: PrintableOptions = {}): Promise<string> {
   const jobs: Promise<string>[] = [];
   for (const slide of pres.slides) {
     const groups = options.animationSteps ? groupSteps(slide.animations) : [];

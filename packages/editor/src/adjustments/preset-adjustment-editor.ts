@@ -1,10 +1,11 @@
 import type { GeomSpec } from '@web-ppt/core';
-import {
-  dragPresetAdjustmentHandle, resolvePresetAdjustmentHandles,
-} from '@web-ppt/core/geometry/handles';
+import { dragPresetAdjustmentHandle, resolvePresetAdjustmentHandles } from '@web-ppt/core/geometry/handles';
 import type { PresetAdjustmentHandle } from '@web-ppt/core/geometry/handles';
 import {
-  elementFrameToSlidePoint, queryElementPresetGeometry, screenToSlidePoint, slideOfElement,
+  elementFrameToSlidePoint,
+  queryElementPresetGeometry,
+  screenToSlidePoint,
+  slideOfElement,
   slideToElementFramePoint,
 } from '@web-ppt/edit-core';
 import type { ElementId } from '@web-ppt/edit-core';
@@ -16,10 +17,7 @@ import type { PresetAdjustmentEditor, PresetAdjustmentEditorOptions } from './ty
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-function svg<K extends keyof SVGElementTagNameMap>(
-  document: Document,
-  name: K,
-): SVGElementTagNameMap[K] {
+function svg<K extends keyof SVGElementTagNameMap>(document: Document, name: K): SVGElementTagNameMap[K] {
   return document.createElementNS(SVG_NS, name);
 }
 
@@ -59,7 +57,9 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
     this.observer.observe(staticLayer, { childList: true });
   }
 
-  get elementId(): ElementId | null { return this.activeId; }
+  get elementId(): ElementId | null {
+    return this.activeId;
+  }
   get geometry(): GeomSpec | null {
     if (!this.activeId || !this.session.editor.doc.elements[this.activeId]) return null;
     return queryElementPresetGeometry(this.session.editor.doc, [this.activeId]).value;
@@ -71,16 +71,21 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
     const element = this.session.editor.effectiveElement(id);
     return resolvePresetAdjustmentHandles(geometry, element.w, element.h);
   }
-  get destroyed(): boolean { return this.isDestroyed; }
+  get destroyed(): boolean {
+    return this.isDestroyed;
+  }
 
   start(id?: ElementId): boolean {
     this.assertAlive();
     const selection = this.session.editor.selection;
-    const target = id ?? (selection.kind === 'elements' && selection.ids.length === 1
-      ? selection.ids[0] : null);
-    if (!target || this.view.mode !== 'edit'
+    const target = id ?? (selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null);
+    if (
+      !target
+      || this.view.mode !== 'edit'
       || slideOfElement(this.session.editor.doc, target) !== this.view.slideId
-      || !queryElementPresetGeometry(this.session.editor.doc, [target]).value) return false;
+      || !queryElementPresetGeometry(this.session.editor.doc, [target]).value
+    )
+      return false;
     this.activeId = target;
     this.preview = null;
     this.render();
@@ -97,8 +102,7 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
   setPreset(preset: string): boolean {
     this.assertAlive();
     const selection = this.session.editor.selection;
-    const target = this.activeId ?? (selection.kind === 'elements' && selection.ids.length === 1
-      ? selection.ids[0] : null);
+    const target = this.activeId ?? (selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null);
     if (!target || this.view.mode !== 'edit') return false;
     try {
       this.session.editor.exec({ type: 'SetPreset', id: target, preset });
@@ -112,7 +116,10 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
     }
   }
 
-  refresh(): void { this.assertAlive(); this.render(); }
+  refresh(): void {
+    this.assertAlive();
+    this.render();
+  }
 
   destroy(): void {
     if (this.isDestroyed) return;
@@ -143,9 +150,15 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
   private render(): void {
     this.group()?.remove();
     const id = this.activeId;
-    if (!id || this.isDestroyed || this.view.destroyed || this.view.mode !== 'edit'
+    if (
+      !id
+      || this.isDestroyed
+      || this.view.destroyed
+      || this.view.mode !== 'edit'
       || !this.session.editor.doc.elements[id]
-      || slideOfElement(this.session.editor.doc, id) !== this.view.slideId) return;
+      || slideOfElement(this.session.editor.doc, id) !== this.view.slideId
+    )
+      return;
     const group = svg(this.layer.ownerDocument, 'g');
     group.dataset.pptPresetAdjustments = '';
     group.dataset.pptPresetElement = id;
@@ -171,7 +184,9 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
     const id = this.activeId!;
     const rect = this.stage.getBoundingClientRect();
     const slide = screenToSlidePoint(snapshot.screen, {
-      left: rect.left, top: rect.top, zoom: this.view.zoom,
+      left: rect.left,
+      top: rect.top,
+      zoom: this.view.zoom,
     });
     const frame = slideToElementFramePoint(this.session.editor.doc, id, slide);
     const element = this.session.editor.effectiveElement(id);
@@ -186,13 +201,14 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
       this.render();
     };
     return {
-      cursor: 'crosshair', dataset: { name: 'pptPresetDragging', value: String(index) },
-      start: () => {}, frame: update,
+      cursor: 'crosshair',
+      dataset: { name: 'pptPresetDragging', value: String(index) },
+      start: () => {},
+      frame: update,
       finish: (snapshot) => {
         update(snapshot);
         const id = this.activeId!;
-        const changes = Object.entries(latest.adj)
-          .filter(([name, value]) => source.adj[name] !== value);
+        const changes = Object.entries(latest.adj).filter(([name, value]) => source.adj[name] !== value);
         if (!changes.length) return null;
         return () => {
           this.preview = null;
@@ -203,7 +219,10 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
           }, '拖动预设调节柄');
         };
       },
-      clear: () => { this.preview = null; this.render(); },
+      clear: () => {
+        this.preview = null;
+        this.render();
+      },
     };
   }
 
@@ -213,25 +232,36 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
   }
 
   private pointerDown = (event: PointerEvent): void => {
-    const target = event.target instanceof Element
-      ? event.target.closest<SVGCircleElement>('[data-ppt-preset-handle]') : null;
+    const target = event.target instanceof Element ? event.target.closest<SVGCircleElement>('[data-ppt-preset-handle]') : null;
     if (!target || event.button !== 0 || event.isPrimary === false) return;
     try {
       const geometry = this.geometry;
       if (!geometry) return;
       this.lifecycle.begin(event, this.gesture(Number(target.dataset.pptPresetHandle), geometry));
       this.stop(event);
-    } catch (error) { this.report(error); }
+    } catch (error) {
+      this.report(error);
+    }
   };
 
   private pointerMove = (event: PointerEvent): void => {
     if (!this.lifecycle.isActive) return;
-    try { this.lifecycle.move(event); this.stop(event); } catch (error) { this.report(error); }
+    try {
+      this.lifecycle.move(event);
+      this.stop(event);
+    } catch (error) {
+      this.report(error);
+    }
   };
 
   private pointerUp = (event: PointerEvent): void => {
     if (!this.lifecycle.isActive) return;
-    try { this.lifecycle.finish(event); this.stop(event); } catch (error) { this.report(error); }
+    try {
+      this.lifecycle.finish(event);
+      this.stop(event);
+    } catch (error) {
+      this.report(error);
+    }
   };
 
   private pointerCancel = (event: PointerEvent): void => {
@@ -249,7 +279,10 @@ class DomPresetAdjustmentEditor implements PresetAdjustmentEditor {
   private report(error: unknown): void {
     this.lifecycle.cancel();
     this.options.onError?.(error);
-    if (!this.options.onError) queueMicrotask(() => { throw error; });
+    if (!this.options.onError)
+      queueMicrotask(() => {
+        throw error;
+      });
   }
 }
 

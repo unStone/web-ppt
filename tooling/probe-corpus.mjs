@@ -20,7 +20,9 @@ if (!existsSync(dir)) {
   process.exit(1);
 }
 
-const files = readdirSync(dir).filter((f) => /\.pptx?$/i.test(f)).sort();
+const files = readdirSync(dir)
+  .filter((f) => /\.pptx?$/i.test(f))
+  .sort();
 const ok = [];
 const failed = [];
 const dirty = [];

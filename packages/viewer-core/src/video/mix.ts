@@ -38,7 +38,8 @@ function sampleAt(clip: AudioClip, frame: number, channel: number): number | nul
   let index = frame;
   if (clip.loop) index %= frames;
   else if (frame < 0 || frame >= frames) return null;
-  const base = Math.floor(index), frac = index - base;
+  const base = Math.floor(index),
+    frac = index - base;
   const next = Math.min(base + 1, frames - 1);
   const a = clip.samples[base * clip.channels + channel];
   const b = clip.samples[next * clip.channels + channel];
@@ -46,25 +47,26 @@ function sampleAt(clip: AudioClip, frame: number, channel: number): number | nul
 }
 
 export function mixAudioClips(clips: readonly AudioClip[], totalMs: number, options: MixOptions = {}): Float32Array {
-  const rate = options.sampleRate ?? 48000, outChannels = options.channels ?? 2;
+  const rate = options.sampleRate ?? 48000,
+    outChannels = options.channels ?? 2;
   if (!Number.isFinite(totalMs) || totalMs < 0) throw new Error('混音总时长必须是非负毫秒');
   if (!Number.isInteger(rate) || rate <= 0) throw new Error('输出采样率必须是正整数');
-  if (clips.some(c => !Number.isInteger(c.sampleRate) || c.sampleRate <= 0)) throw new Error('片段采样率必须是正整数');
-  if (clips.some(c => c.channels !== 1 && c.channels !== 2)) throw new Error('片段声道数只支持单声道或立体声');
-  if (clips.some(c => !Number.isFinite(c.startMs) || c.startMs < 0)) throw new Error('片段起始时间必须是非负毫秒');
-  if (clips.some(c => c.samples.length % c.channels !== 0)) throw new Error('片段样本长度必须是声道数的整数倍');
-  const volume = clips.map(c => c.volume ?? 1);
-  if (volume.some(v => !Number.isFinite(v) || v < 0 || v > 1)) throw new Error('片段音量必须在 [0,1]');
+  if (clips.some((c) => !Number.isInteger(c.sampleRate) || c.sampleRate <= 0)) throw new Error('片段采样率必须是正整数');
+  if (clips.some((c) => c.channels !== 1 && c.channels !== 2)) throw new Error('片段声道数只支持单声道或立体声');
+  if (clips.some((c) => !Number.isFinite(c.startMs) || c.startMs < 0)) throw new Error('片段起始时间必须是非负毫秒');
+  if (clips.some((c) => c.samples.length % c.channels !== 0)) throw new Error('片段样本长度必须是声道数的整数倍');
+  const volume = clips.map((c) => c.volume ?? 1);
+  if (volume.some((v) => !Number.isFinite(v) || v < 0 || v > 1)) throw new Error('片段音量必须在 [0,1]');
   const outFrames = Math.ceil((totalMs / 1000) * rate);
   const out = new Float32Array(outFrames * outChannels);
-  for (const [index,clip] of clips.entries()) {
+  for (const [index, clip] of clips.entries()) {
     if (clip.endMs !== undefined && clip.endMs < clip.startMs) throw new Error('片段截止时间早于起始时间');
     const end = clip.endMs ?? Number.POSITIVE_INFINITY;
     const firstFrame = Math.floor((clip.startMs / 1000) * rate);
     for (let frame = Math.max(firstFrame, 0); frame < outFrames; frame++) {
-      if (frame / rate * 1000 >= end) break;
+      if ((frame / rate) * 1000 >= end) break;
       // 输出帧对应片段内的源帧位置（时间换算含重采样）
-      const source = (frame - (clip.startMs / 1000) * rate) * clip.sampleRate / rate;
+      const source = ((frame - (clip.startMs / 1000) * rate) * clip.sampleRate) / rate;
       for (let channel = 0; channel < outChannels; channel++) {
         const value = sampleAt(clip, source, clip.channels === 1 ? 0 : channel);
         if (value === null) continue;

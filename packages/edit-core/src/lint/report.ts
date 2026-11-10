@@ -1,6 +1,14 @@
 import type { DescriptionElement } from '../describe/types';
-export const LAYOUT_CHECKS = ['text-overflow', 'element-overlap', 'off-canvas', 'low-contrast', 'missing-font', 'placeholder-prompt-left', 'image-distorted'] as const;
-export type LayoutCheck = typeof LAYOUT_CHECKS[number];
+export const LAYOUT_CHECKS = [
+  'text-overflow',
+  'element-overlap',
+  'off-canvas',
+  'low-contrast',
+  'missing-font',
+  'placeholder-prompt-left',
+  'image-distorted',
+] as const;
+export type LayoutCheck = (typeof LAYOUT_CHECKS)[number];
 export interface LayoutIssue {
   readonly reason: LayoutCheck;
   readonly slideNumber: number;

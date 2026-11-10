@@ -4,8 +4,13 @@ import { assertStroke } from './shape-stroke';
 import { assertVectorFill } from './shape-fill';
 import { tableCellKeyResolver, tableCellStableRefFromKey } from './table-cell';
 import {
-  isReservedTableColumnId, isReservedTableRowId, orderedTableColumns, orderedTableRows,
-  sourceTableColumnId, sourceTableRowId, tableCellMergeRole,
+  isReservedTableColumnId,
+  isReservedTableRowId,
+  orderedTableColumns,
+  orderedTableRows,
+  sourceTableColumnId,
+  sourceTableRowId,
+  tableCellMergeRole,
 } from './table-grid';
 import type { EditDoc, ElementRecord } from './types';
 import { assertTableMergeRegions } from './commands/table-grid-patch';
@@ -27,9 +32,10 @@ export function assertTableRows(record: ElementRecord): void {
     assertDataObject(insertion, ['order', 'template'], `表格 ${record.id} 的追加行 ${id}`);
     if (typeof insertion.order !== 'string') throw new Error(`表格 ${record.id} 的追加行顺序无效`);
     assertFractionalIndex(insertion.order);
-    if (insertion.template !== undefined
-      && (!Number.isSafeInteger(insertion.template) || insertion.template < 0
-        || insertion.template >= record.src.rows.length)) {
+    if (
+      insertion.template !== undefined
+      && (!Number.isSafeInteger(insertion.template) || insertion.template < 0 || insertion.template >= record.src.rows.length)
+    ) {
       throw new Error(`表格 ${record.id} 的追加行模板无效`);
     }
     if (record.src.rows.some((_, source) => insertion.order === initialFractionalIndex(source))) {
@@ -42,8 +48,14 @@ export function assertTableRows(record: ElementRecord): void {
 
 export function assertTableGridOverrides(record: ElementRecord): void {
   if (record.src.kind !== 'table') {
-    const fields = ['tableColumns', 'tableRemovedRows', 'tableRemovedColumns', 'tableRowHeights',
-      'tableColumnWidths', 'tableMerges'] as const;
+    const fields = [
+      'tableColumns',
+      'tableRemovedRows',
+      'tableRemovedColumns',
+      'tableRowHeights',
+      'tableColumnWidths',
+      'tableMerges',
+    ] as const;
     if (fields.some((field) => own(record.ovr, field))) {
       throw new Error(`非表格元素 ${record.id} 不能包含网格覆盖`);
     }
@@ -59,9 +71,10 @@ export function assertTableGridOverrides(record: ElementRecord): void {
       if (isReservedTableColumnId(id)) throw new Error(`表格 ${record.id} 的新增列占用了来源身份：${id}`);
       assertDataObject(insertion, ['order', 'template'], `表格 ${record.id} 的新增列 ${id}`);
       assertFractionalIndex(insertion.order);
-      if (insertion.template !== undefined
-        && (!Number.isSafeInteger(insertion.template) || insertion.template < 0
-          || insertion.template >= record.src.colWidths.length)) {
+      if (
+        insertion.template !== undefined
+        && (!Number.isSafeInteger(insertion.template) || insertion.template < 0 || insertion.template >= record.src.colWidths.length)
+      ) {
         throw new Error(`表格 ${record.id} 的新增列模板无效`);
       }
       if (record.src.colWidths.some((_, source) => insertion.order === initialFractionalIndex(source))) {
@@ -71,16 +84,14 @@ export function assertTableGridOverrides(record: ElementRecord): void {
       orders.add(insertion.order);
     }
   }
-  const rowIds = new Set([
-    ...record.src.rows.map((_, index) => sourceTableRowId(index)),
-    ...Object.keys(record.ovr.tableRows ?? {}),
-  ]);
+  const rowIds = new Set([...record.src.rows.map((_, index) => sourceTableRowId(index)), ...Object.keys(record.ovr.tableRows ?? {})]);
   const columnIds = new Set([
     ...record.src.colWidths.map((_, index) => sourceTableColumnId(index)),
     ...Object.keys(record.ovr.tableColumns ?? {}),
   ]);
   for (const [field, ids, kind] of [
-    ['tableRemovedRows', rowIds, '行'], ['tableRemovedColumns', columnIds, '列'],
+    ['tableRemovedRows', rowIds, '行'],
+    ['tableRemovedColumns', columnIds, '列'],
   ] as const) {
     const values = record.ovr[field];
     if (!values) continue;
@@ -91,7 +102,8 @@ export function assertTableGridOverrides(record: ElementRecord): void {
     }
   }
   for (const [field, ids, kind] of [
-    ['tableRowHeights', rowIds, '行高'], ['tableColumnWidths', columnIds, '列宽'],
+    ['tableRowHeights', rowIds, '行高'],
+    ['tableColumnWidths', columnIds, '列宽'],
   ] as const) {
     const values = record.ovr[field];
     if (!values) continue;
@@ -107,15 +119,20 @@ export function assertTableGridOverrides(record: ElementRecord): void {
     throw new Error(`表格 ${record.id} 至少保留一行一列`);
   }
   if (record.ovr.tableMerges !== undefined) {
-    assertTableMergeRegions({
-      ...record,
-      ovr: { ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined },
-    }, record.ovr.tableMerges, `表格 ${record.id} 的合并区域`);
+    assertTableMergeRegions(
+      {
+        ...record,
+        ovr: { ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined },
+      },
+      record.ovr.tableMerges,
+      `表格 ${record.id} 的合并区域`,
+    );
   }
 }
 
 export function assertTableCellOverrides(
-  doc: EditDoc, record: ElementRecord,
+  doc: EditDoc,
+  record: ElementRecord,
   assertTextOverride: (value: unknown, label: string) => void,
 ): void {
   const cells = record.ovr.tableCells;
@@ -135,8 +152,7 @@ export function assertTableCellOverrides(
     if (cell && tableCellMergeRole(record, stable) !== 'placeholder') {
       textTargetContext(doc, { id: record.id, cell });
     }
-    assertDataObject(value, ['text', 'fill', 'borders', 'margins', 'vAlign', 'vert'],
-      `表格 ${record.id} 的单元格覆盖 ${key}`);
+    assertDataObject(value, ['text', 'fill', 'borders', 'margins', 'vAlign', 'vert'], `表格 ${record.id} 的单元格覆盖 ${key}`);
     if (!Reflect.ownKeys(value).length) throw new Error(`表格 ${record.id} 的单元格覆盖 ${key} 不能为空`);
     if (value.text !== undefined) {
       assertTextOverride(value.text, `表格 ${record.id} 的单元格文字覆盖 ${key}`);
@@ -153,9 +169,7 @@ export function assertTableCellOverrides(
         }
       }
     }
-    if (value.margins !== undefined
-      && (value.margins.length !== 4
-        || value.margins.some((part) => !Number.isFinite(part) || part < 0))) {
+    if (value.margins !== undefined && (value.margins.length !== 4 || value.margins.some((part) => !Number.isFinite(part) || part < 0))) {
       throw new Error(`表格 ${record.id} 的单元格边距 ${key} 无效`);
     }
     if (value.vAlign !== undefined && !['top', 'middle', 'bottom'].includes(value.vAlign)) {

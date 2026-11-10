@@ -15,8 +15,7 @@ export function mergeCellLayers(els: SlideElement[]): SlideElement[] {
   const out: ShapeElement[] = [];
   for (const s of shapes) {
     const hit = out.find(
-      (o) => Math.abs(o.x - s.x) <= TOL && Math.abs(o.y - s.y) <= TOL &&
-        Math.abs(o.w - s.w) <= TOL * 2 && Math.abs(o.h - s.h) <= TOL * 2,
+      (o) => Math.abs(o.x - s.x) <= TOL && Math.abs(o.y - s.y) <= TOL && Math.abs(o.w - s.w) <= TOL * 2 && Math.abs(o.h - s.h) <= TOL * 2,
     );
     if (!hit) {
       out.push({ ...s });
@@ -59,8 +58,16 @@ export function looksLikeGrid(cells: SlideElement[]): boolean {
     }
     return true;
   };
-  const okCols = edgeFits(cols, shapes.map((s) => s.x), shapes.map((s) => s.x + s.w));
-  const okRows = edgeFits(rows, shapes.map((s) => s.y), shapes.map((s) => s.y + s.h));
+  const okCols = edgeFits(
+    cols,
+    shapes.map((s) => s.x),
+    shapes.map((s) => s.x + s.w),
+  );
+  const okRows = edgeFits(
+    rows,
+    shapes.map((s) => s.y),
+    shapes.map((s) => s.y + s.h),
+  );
   return okCols && okRows;
 }
 
@@ -141,8 +148,13 @@ export function buildTable(cells: SlideElement[], rowHeights: number[]): TableEl
 
   return {
     kind: 'table',
-    x: x0, y: y0, w: right - x0, h: bottom - y0,
-    rot: 0, flipH: false, flipV: false,
+    x: x0,
+    y: y0,
+    w: right - x0,
+    h: bottom - y0,
+    rot: 0,
+    flipH: false,
+    flipV: false,
     colWidths,
     rows,
     name: '表格',

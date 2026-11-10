@@ -2,10 +2,19 @@ import { TEXT_RUN_DIRECT_BITS } from '@web-ppt/core';
 
 /** 字符格式的唯一字段注册表；校验、投影、重基与保存均从这里派生。 */
 export const STYLE_PROPERTY_FIELDS = [
-  'font', 'size', 'color', 'b', 'i', 'underline', 'strikeType',
-  'highlight', 'spacing', 'caps', 'baseline',
+  'font',
+  'size',
+  'color',
+  'b',
+  'i',
+  'underline',
+  'strikeType',
+  'highlight',
+  'spacing',
+  'caps',
+  'baseline',
 ] as const;
-export type StylePropertyField = typeof STYLE_PROPERTY_FIELDS[number];
+export type StylePropertyField = (typeof STYLE_PROPERTY_FIELDS)[number];
 export type DirectRunField = Exclude<StylePropertyField, 'font'> | 'u' | 'strike';
 
 const STYLE_DIRECT_BITS = {
@@ -21,9 +30,10 @@ const STYLE_DIRECT_BITS = {
   baseline: TEXT_RUN_DIRECT_BITS.baseline,
 } as const satisfies Record<Exclude<StylePropertyField, 'font'>, number>;
 
-export const RUN_STYLE_DIRECT_FIELDS = Object.entries(STYLE_DIRECT_BITS) as readonly (
-  readonly [Exclude<StylePropertyField, 'font'>, number]
-)[];
+export const RUN_STYLE_DIRECT_FIELDS = Object.entries(STYLE_DIRECT_BITS) as readonly (readonly [
+  Exclude<StylePropertyField, 'font'>,
+  number,
+])[];
 export const RUN_DIRECT_FIELDS = [
   ...RUN_STYLE_DIRECT_FIELDS,
   ['u', TEXT_RUN_DIRECT_BITS.u],
@@ -32,8 +42,8 @@ export const RUN_DIRECT_FIELDS = [
 export const RUN_REBASE_FIELDS = RUN_DIRECT_FIELDS.map(([field]) => field);
 export const RUN_PROPERTY_FIELDS = [...STYLE_PROPERTY_FIELDS, 'u', 'strike', 'link'] as const;
 
-export const FONT_DIRECT_BITS = TEXT_RUN_DIRECT_BITS.fonts | TEXT_RUN_DIRECT_BITS.fontLatin
-  | TEXT_RUN_DIRECT_BITS.fontEastAsian | TEXT_RUN_DIRECT_BITS.fontComplexScript;
+export const FONT_DIRECT_BITS =
+  TEXT_RUN_DIRECT_BITS.fonts | TEXT_RUN_DIRECT_BITS.fontLatin | TEXT_RUN_DIRECT_BITS.fontEastAsian | TEXT_RUN_DIRECT_BITS.fontComplexScript;
 export const FONT_OVERRIDE_BIT = TEXT_RUN_DIRECT_BITS.fonts;
 
 export function directRunBit(field: DirectRunField): number {

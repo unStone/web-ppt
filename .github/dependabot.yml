@@ -18,7 +18,9 @@ updates:
       include: scope
 
   - package-ecosystem: github-actions
-    directory: /
+    # "/" 只扫描 .github/workflows 与根 action.yml；复合 action 里的 action 引用
+    # 必须显式列出所在目录，否则升级后版本会与 workflow 长期分叉。
+    directories: ['/', '/.github/actions/setup']
     schedule:
       interval: weekly
     groups:

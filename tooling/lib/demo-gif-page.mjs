@@ -43,10 +43,12 @@ window.__demo = {
   height: pres.height,
   /** 跳页按钮在当前页的位置，供挑分镜与点击定位；坐标是视口像素 */
   links() {
-    return [...stage.querySelectorAll('[data-slide]')].map((el) => {
-      const r = el.getBoundingClientRect();
-      return { slide: el.getAttribute('data-slide'), x: r.x, y: r.y, w: r.width, h: r.height };
-    }).filter((l) => l.w > 0 && l.h > 0);
+    return [...stage.querySelectorAll('[data-slide]')]
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        return { slide: el.getAttribute('data-slide'), x: r.x, y: r.y, w: r.width, h: r.height };
+      })
+      .filter((l) => l.w > 0 && l.h > 0);
   },
   /** 屏幕录制里没有鼠标指针，点击位置靠这圈涟漪交代给观众 */
   pulse(x, y) {

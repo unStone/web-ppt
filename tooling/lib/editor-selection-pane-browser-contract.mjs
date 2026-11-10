@@ -7,22 +7,29 @@ const mountPoint = () => {
   return element;
 };
 
-const key = (target, value) => target.dispatchEvent(new KeyboardEvent('keydown', {
-  key: value, bubbles: true, cancelable: true,
-}));
+const key = (target, value) =>
+  target.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key: value,
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
 
-const click = (target) => target.dispatchEvent(new MouseEvent('click', {
-  bubbles: true, cancelable: true,
-}));
+const click = (target) =>
+  target.dispatchEvent(
+    new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
 
-const byName = (session, name) => Object.values(session.editor.doc.elements)
-  .find((record) => record.src.name === name || record.ovr.name === name);
+const byName = (session, name) =>
+  Object.values(session.editor.doc.elements).find((record) => record.src.name === name || record.ovr.name === name);
 
 const rowFor = (paneMount, id) => paneMount.querySelector(`[data-pane-element="${id}"]`);
 
-export async function runEditorSelectionPaneBrowserContract({
-  openEditor, createWebPptAdapter, load,
-}) {
+export async function runEditorSelectionPaneBrowserContract({ openEditor, createWebPptAdapter, load }) {
   const canvasMount = mountPoint();
   const paneMount = mountPoint();
   const session = await openEditor(await load('sample-editor-selection-pane.pptx'), {
@@ -36,11 +43,14 @@ export async function runEditorSelectionPaneBrowserContract({
   const inner = byName(session, 'pane-inner-group');
   const child = byName(session, 'pane-child');
   const duplicate = byName(session, 'pane-duplicate');
-  if (!tree || tree.getAttribute('aria-label') !== '幻灯片对象'
+  if (
+    !tree
+    || tree.getAttribute('aria-label') !== '幻灯片对象'
     || initialRows[0]?.getAttribute('aria-label')?.startsWith('pane-unknown-frame') !== true
     || rowFor(paneMount, outer.id)?.getAttribute('aria-level') !== '1'
     || rowFor(paneMount, inner.id)?.getAttribute('aria-level') !== '2'
-    || rowFor(paneMount, child.id)?.getAttribute('aria-level') !== '3') {
+    || rowFor(paneMount, child.id)?.getAttribute('aria-level') !== '3'
+  ) {
     throw new Error('选择窗格 tree 语义、层级或自顶向下顺序错误');
   }
 
@@ -48,16 +58,20 @@ export async function runEditorSelectionPaneBrowserContract({
   const duplicateSvg = canvasMount.querySelector(`[data-edit-root="${duplicate.id}"]`);
   const rootSvg = canvasMount.querySelector('[data-ppt-layer="static"] svg');
   session.editor.exec({ type: 'SetXfrm', id: duplicate.id, x: duplicate.src.x + 3 });
-  if (rowFor(paneMount, duplicate.id) !== duplicateRow
+  if (
+    rowFor(paneMount, duplicate.id) !== duplicateRow
     || canvasMount.querySelector(`[data-edit-root="${duplicate.id}"]`) === duplicateSvg
-    || canvasMount.querySelector('[data-ppt-layer="static"] svg') !== rootSvg) {
+    || canvasMount.querySelector('[data-ppt-layer="static"] svg') !== rootSvg
+  ) {
     throw new Error('几何修改错误重建了选择窗格或整页 SVG');
   }
 
   click(duplicateRow.querySelector('[data-pane-name]'));
-  if (session.editor.selection.kind !== 'elements'
+  if (
+    session.editor.selection.kind !== 'elements'
     || session.editor.selection.ids[0] !== duplicate.id
-    || duplicateRow.getAttribute('aria-selected') !== 'true') {
+    || duplicateRow.getAttribute('aria-selected') !== 'true'
+  ) {
     throw new Error('选择窗格点击没有同步画布选区');
   }
   duplicateRow.focus();
@@ -66,9 +80,11 @@ export async function runEditorSelectionPaneBrowserContract({
   if (!rename) throw new Error('F2 没有进入重命名');
   rename.value = '键盘重命名对象';
   key(rename, 'Enter');
-  if (session.editor.doc.elements[duplicate.id].ovr.name !== '键盘重命名对象'
+  if (
+    session.editor.doc.elements[duplicate.id].ovr.name !== '键盘重命名对象'
     || rowFor(paneMount, duplicate.id) !== duplicateRow
-    || duplicateRow.querySelector('[data-pane-name]')?.textContent !== '键盘重命名对象') {
+    || duplicateRow.querySelector('[data-pane-name]')?.textContent !== '键盘重命名对象'
+  ) {
     throw new Error('重命名没有增量同步稳定行 DOM');
   }
 
@@ -83,9 +99,13 @@ export async function runEditorSelectionPaneBrowserContract({
     throw new Error('ArrowRight 没有展开组合');
   }
   key(outerRow, 'ArrowLeft');
-  if (pane.focusElement(child.id) || !pane.revealElement(child.id)
-    || rowFor(paneMount, child.id).hidden || document.activeElement !== rowFor(paneMount, child.id)
-    || pane.revealElement('missing-element')) {
+  if (
+    pane.focusElement(child.id)
+    || !pane.revealElement(child.id)
+    || rowFor(paneMount, child.id).hidden
+    || document.activeElement !== rowFor(paneMount, child.id)
+    || pane.revealElement('missing-element')
+  ) {
     throw new Error('选择窗格没有展开折叠祖先并定位目标对象');
   }
   key(outerRow, 'End');
@@ -97,9 +117,12 @@ export async function runEditorSelectionPaneBrowserContract({
   key(outerRow, ' ');
   const outerPartition = canvasMount.querySelector(`[data-edit-root="${outer.id}"]`);
   const childPartition = canvasMount.querySelector(`[data-edit-root="${child.id}"]`);
-  if (outerPartition.style.visibility !== 'hidden' || childPartition.style.visibility !== ''
+  if (
+    outerPartition.style.visibility !== 'hidden'
+    || childPartition.style.visibility !== ''
     || !rowFor(paneMount, child.id).hasAttribute('data-hidden')
-    || !rowFor(paneMount, child.id).querySelector('[data-pane-action="visibility"]').disabled) {
+    || !rowFor(paneMount, child.id).querySelector('[data-pane-action="visibility"]').disabled
+  ) {
     throw new Error('组隐藏没有通过继承生效，或子元素错误写入 visible');
   }
   const hiddenChildRow = rowFor(paneMount, child.id);
@@ -114,9 +137,16 @@ export async function runEditorSelectionPaneBrowserContract({
   click(rowFor(paneMount, child.id).querySelector('[data-pane-name]'));
   click(outerRow.querySelector('[data-pane-action="lock"]'));
   let rejected = false;
-  try { session.editor.exec({ type: 'SetFill', id: child.id, fill: null }); } catch { rejected = true; }
-  if (session.editor.selection.kind !== 'none' || !rejected
-    || !rowFor(paneMount, child.id).querySelector('[data-pane-action="lock"]').disabled) {
+  try {
+    session.editor.exec({ type: 'SetFill', id: child.id, fill: null });
+  } catch {
+    rejected = true;
+  }
+  if (
+    session.editor.selection.kind !== 'none'
+    || !rejected
+    || !rowFor(paneMount, child.id).querySelector('[data-pane-action="lock"]').disabled
+  ) {
     throw new Error('锁定组合没有清理子选区、禁用继承控制或阻止内容命令');
   }
   const lockedChildRow = rowFor(paneMount, child.id);
@@ -130,14 +160,18 @@ export async function runEditorSelectionPaneBrowserContract({
   duplicateRow.focus();
   key(duplicateRow, ' ');
   click(duplicateRow.querySelector('[data-pane-name]'));
-  if (!!session.editor.doc.elements[duplicate.id].meta.hiddenByUser !== beforeViewHidden
-    || !duplicateRow.querySelector('[data-pane-action="visibility"]').disabled) {
+  if (
+    !!session.editor.doc.elements[duplicate.id].meta.hiddenByUser !== beforeViewHidden
+    || !duplicateRow.querySelector('[data-pane-action="visibility"]').disabled
+  ) {
     throw new Error('查看模式的选择窗格越权修改模型');
   }
   pane.setMode('edit');
   pane.setSlide(session.editor.doc.slideOrder[1]);
-  if (paneMount.querySelectorAll('[role="treeitem"]').length !== 1
-    || paneMount.querySelector('[data-pane-name]')?.textContent !== 'pane-second-slide') {
+  if (
+    paneMount.querySelectorAll('[role="treeitem"]').length !== 1
+    || paneMount.querySelector('[data-pane-name]')?.textContent !== 'pane-second-slide'
+  ) {
     throw new Error('选择窗格切页没有替换当前页目录');
   }
   pane.setSlide(view.slideId);
@@ -150,8 +184,12 @@ export async function runEditorSelectionPaneBrowserContract({
   await adapter.setDocument({ session, ownership: 'external' });
   adapter.setView({ slideId: session.editor.doc.slideOrder[1], mode: 'view' });
   const adapterPane = adapter.snapshot.selectionPane;
-  if (!adapterPane || adapterPane.slideId !== session.editor.doc.slideOrder[1]
-    || adapterPane.mode !== 'view' || adapterPaneMount.querySelectorAll('[role="treeitem"]').length !== 1) {
+  if (
+    !adapterPane
+    || adapterPane.slideId !== session.editor.doc.slideOrder[1]
+    || adapterPane.mode !== 'view'
+    || adapterPaneMount.querySelectorAll('[role="treeitem"]').length !== 1
+  ) {
     throw new Error('共享 adapter 没有统一选择窗格的文档、页与模式生命周期');
   }
   adapter.attachSelectionPane(null);
@@ -174,19 +212,15 @@ export async function runEditorSelectionPaneBrowserContract({
     idPrefix: 'browser-selection-layout-',
   });
   const layoutPane = layoutSession.mountSelectionPane(layoutMount, { mode: 'edit' });
-  const sourcePaneIds = [...layoutMount.querySelectorAll('[data-pane-element]')]
-    .map((row) => row.dataset.paneElement);
-  const targetLayout = layoutSession.editor.doc.layoutOrder.find((id) =>
-    layoutSession.editor.doc.layouts[id].name === '重点内容');
+  const sourcePaneIds = [...layoutMount.querySelectorAll('[data-pane-element]')].map((row) => row.dataset.paneElement);
+  const targetLayout = layoutSession.editor.doc.layoutOrder.find((id) => layoutSession.editor.doc.layouts[id].name === '重点内容');
   layoutSession.editor.exec({ type: 'SetLayout', id: layoutPane.slideId, layoutId: targetLayout });
-  const projectedIds = [...layoutMount.querySelectorAll('[data-pane-element]')]
-    .map((row) => row.dataset.paneElement);
+  const projectedIds = [...layoutMount.querySelectorAll('[data-pane-element]')].map((row) => row.dataset.paneElement);
   if (projectedIds.some((id) => layoutSession.editor.doc.elements[id]?.meta.inherited)) {
     throw new Error('换版式后选择窗格暴露了无页面身份的继承对象');
   }
   layoutSession.editor.undo();
-  const restoredPaneIds = [...layoutMount.querySelectorAll('[data-pane-element]')]
-    .map((row) => row.dataset.paneElement);
+  const restoredPaneIds = [...layoutMount.querySelectorAll('[data-pane-element]')].map((row) => row.dataset.paneElement);
   if (restoredPaneIds.join(',') !== sourcePaneIds.join(',')) {
     throw new Error('撤销换版式没有恢复页面直属交互树');
   }
@@ -215,7 +249,9 @@ export async function runEditorSelectionPaneBrowserContract({
   }
   recordPerformanceBudget('60 元素选择窗格锁定往返 p95', p95, 16);
   performanceSession.editor.exec({
-    type: 'SetXfrm', id: ids[0], x: performanceSession.editor.doc.elements[ids[0]].src.x + 1,
+    type: 'SetXfrm',
+    id: ids[0],
+    x: performanceSession.editor.doc.elements[ids[0]].src.x + 1,
   });
   if (rowFor(performanceMount, ids[0]) !== stableRow) {
     throw new Error('无关几何修改重建了 60 元素选择窗格 DOM');

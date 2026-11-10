@@ -4,8 +4,13 @@ import type { EditDoc } from '../types';
 import type { CommandPatches, DocumentSizePatch, Patch, SetSlideSizeCommand } from './types';
 
 export function isDocumentSizePatch(patch: Patch): patch is DocumentSizePatch {
-  return patch.op === 'set' && patch.path.length === 3 && patch.path[0] === 'document'
-    && patch.path[1] === 'size' && (patch.path[2] === 'w' || patch.path[2] === 'h');
+  return (
+    patch.op === 'set'
+    && patch.path.length === 3
+    && patch.path[0] === 'document'
+    && patch.path[1] === 'size'
+    && (patch.path[2] === 'w' || patch.path[2] === 'h')
+  );
 }
 
 export function validateDocumentSizePatch(patch: DocumentSizePatch, index: number): void {
@@ -18,11 +23,7 @@ export function applyDocumentSizePatch(doc: EditDoc, patch: DocumentSizePatch): 
 }
 
 /** 画布与内容变化属于同一历史事务；按需策略只负责产出内容补丁。 */
-export function setSlideSizePatches(
-  doc: EditDoc,
-  command: SetSlideSizeCommand,
-  origin: string,
-): CommandPatches {
+export function setSlideSizePatches(doc: EditDoc, command: SetSlideSizeCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改页面尺寸');
   const desired = {
     w: command.w === null ? doc.meta.sourceWidth : command.w,

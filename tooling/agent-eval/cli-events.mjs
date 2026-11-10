@@ -1,8 +1,18 @@
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 
-const allowedTools = new Set(['ppt_open', 'ppt_describe', 'ppt_element', 'ppt_lint',
-  'ppt_render', 'ppt_edit', 'ppt_undo', 'ppt_redo', 'ppt_save', 'ppt_close']);
+const allowedTools = new Set([
+  'ppt_open',
+  'ppt_describe',
+  'ppt_element',
+  'ppt_lint',
+  'ppt_render',
+  'ppt_edit',
+  'ppt_undo',
+  'ppt_redo',
+  'ppt_save',
+  'ppt_close',
+]);
 const passiveItems = new Set(['reasoning', 'agent_message']);
 
 export async function readJsonl(path) {
@@ -25,7 +35,9 @@ export async function readJsonl(path) {
 function cliFailure(message) {
   const reason = /\b401\b|unauthorized|authentication|not logged in|log in/i.test(message)
     ? 'agent-authentication-failed'
-    : /quota|rate.limit|\b429\b/i.test(message) ? 'agent-service-limit' : 'agent-service-failed';
+    : /quota|rate.limit|\b429\b/i.test(message)
+      ? 'agent-service-limit'
+      : 'agent-service-failed';
   return { category: 'infrastructure', reason, message };
 }
 
@@ -37,7 +49,8 @@ function mcpClientFailure(item) {
   const reason = /requires approval|approval policy|approval.*(?:denied|rejected)/i.test(message)
     ? 'mcp-approval-required'
     : /server|connection|transport|unavailable|not available|not connected|timed out|timeout/i.test(message)
-      ? 'mcp-service-unavailable' : 'mcp-client-failed';
+      ? 'mcp-service-unavailable'
+      : 'mcp-client-failed';
   return { category: 'infrastructure', reason, message, tool: item.tool };
 }
 
@@ -48,7 +61,7 @@ export function inspectCliEvents(events, server = 'ppt_eval') {
   const actualModels = new Set();
   const calls = new Map();
   const seenFailures = new Set();
-  const failure = value => {
+  const failure = (value) => {
     const key = JSON.stringify(value);
     if (!seenFailures.has(key)) failures.push(value);
     seenFailures.add(key);

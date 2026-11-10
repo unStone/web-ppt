@@ -10,14 +10,24 @@ class CanvasAccessibility {
   private readonly nodes = new Map<ElementId, HTMLDivElement>();
   private serial = 0;
 
-  constructor(private readonly root: HTMLElement, private readonly staticLayer: HTMLElement,
-    private readonly editor: Editor, private readonly prefix: string) {
+  constructor(
+    private readonly root: HTMLElement,
+    private readonly staticLayer: HTMLElement,
+    private readonly editor: Editor,
+    private readonly prefix: string,
+  ) {
     this.list = root.ownerDocument.createElement('div');
     this.list.dataset.pptAccessibility = '';
     this.list.role = 'listbox';
     this.list.setAttribute('aria-multiselectable', 'true');
-    Object.assign(this.list.style, { position: 'absolute', width: '1px', height: '1px',
-      overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' });
+    Object.assign(this.list.style, {
+      position: 'absolute',
+      width: '1px',
+      height: '1px',
+      overflow: 'hidden',
+      clipPath: 'inset(50%)',
+      whiteSpace: 'nowrap',
+    });
     root.append(this.list);
   }
 
@@ -31,26 +41,34 @@ class CanvasAccessibility {
     const children = new Map<ElementId | null, SelectionPaneItem[]>();
     for (const item of querySelectionPane(this.editor.doc, slideId)) {
       const siblings = children.get(item.parentId) ?? [];
-      siblings.unshift(item); children.set(item.parentId, siblings);
+      siblings.unshift(item);
+      children.set(item.parentId, siblings);
     }
     const ordered: SelectionPaneItem[] = [];
     const visit = (parent: ElementId | null) => {
       for (const item of children.get(parent) ?? []) {
         if (item.hidden || item.editable === 'none') continue;
-        ordered.push(item); visit(item.id);
+        ordered.push(item);
+        visit(item.id);
       }
     };
     visit(null);
     const ids = new Set(ordered.map((item) => item.id));
-    for (const [id, node] of this.nodes) if (!ids.has(id)) { node.remove(); this.nodes.delete(id); }
+    for (const [id, node] of this.nodes)
+      if (!ids.has(id)) {
+        node.remove();
+        this.nodes.delete(id);
+      }
     const selection = this.editor.selection;
     const selected = new Set(selection.kind === 'elements' ? selection.ids : []);
     let previous: HTMLDivElement | null = null;
     for (const item of ordered) {
       let node = this.nodes.get(item.id);
       if (!node) {
-        node = this.root.ownerDocument.createElement('div'); node.role = 'option';
-        node.id = `${this.prefix}at-${++this.serial}`; node.dataset.pptAccessibleId = item.id;
+        node = this.root.ownerDocument.createElement('div');
+        node.role = 'option';
+        node.id = `${this.prefix}at-${++this.serial}`;
+        node.dataset.pptAccessibleId = item.id;
         this.nodes.set(item.id, node);
       }
       if (node.previousElementSibling !== previous || node.parentElement !== this.list) {
@@ -74,26 +92,36 @@ class CanvasAccessibility {
     }
   }
 
-  destroy(): void { this.list.remove(); }
+  destroy(): void {
+    this.list.remove();
+  }
 }
 
 /** 产品可在挂载后启用；不使用辅助对象目录的宿主不承担其模型遍历与 DOM 成本。 */
 export function createCanvasAccessibility(session: EditorSession, view: SlideEditor): { dispose(): void } {
   const layer = view.element.querySelector<HTMLElement>('[data-ppt-layer=static]')!;
-  const rootRole = view.element.getAttribute('role'), hidden = layer.getAttribute('aria-hidden');
-  const controller = new CanvasAccessibility(view.element, layer, session.editor,
-    `webppt-${++viewSerial}-`);
-  const sync = () => { if (!view.destroyed) controller.sync(view.slideId, view.mode === 'edit'); };
+  const rootRole = view.element.getAttribute('role'),
+    hidden = layer.getAttribute('aria-hidden');
+  const controller = new CanvasAccessibility(view.element, layer, session.editor, `webppt-${++viewSerial}-`);
+  const sync = () => {
+    if (!view.destroyed) controller.sync(view.slideId, view.mode === 'edit');
+  };
   const unsubscribe = session.editor.subscribe(sync);
   const observer = new view.element.ownerDocument.defaultView!.MutationObserver(sync);
   observer.observe(layer, { childList: true });
   observer.observe(view.element, { attributes: true, attributeFilter: ['data-mode', 'aria-label'] });
   sync();
-  return { dispose() {
-    unsubscribe(); observer.disconnect(); controller.destroy();
-    view.element.removeAttribute('aria-activedescendant');
-    if (rootRole === null) view.element.removeAttribute('role'); else view.element.setAttribute('role', rootRole);
-    if (hidden === null) layer.removeAttribute('aria-hidden'); else layer.setAttribute('aria-hidden', hidden);
-  } };
+  return {
+    dispose() {
+      unsubscribe();
+      observer.disconnect();
+      controller.destroy();
+      view.element.removeAttribute('aria-activedescendant');
+      if (rootRole === null) view.element.removeAttribute('role');
+      else view.element.setAttribute('role', rootRole);
+      if (hidden === null) layer.removeAttribute('aria-hidden');
+      else layer.setAttribute('aria-hidden', hidden);
+    },
+  };
 }
 let viewSerial = 0;

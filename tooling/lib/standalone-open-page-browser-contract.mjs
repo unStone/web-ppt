@@ -72,7 +72,7 @@ export async function runStandaloneOpenPageContract({ evaluate, request, waitFor
     );
     await press('Escape', 27);
     await waitFor("document.querySelector('#presenter').hidden", 'Esc 离开放映');
-    if (await evaluate("document.querySelector('#pageIndicator')?.textContent") !== '3 / 7') {
+    if ((await evaluate("document.querySelector('#pageIndicator')?.textContent")) !== '3 / 7') {
       throw new Error('离开放映后离开了深链页');
     }
   } finally {
@@ -95,7 +95,8 @@ export async function runStandaloneOpenPageContract({ evaluate, request, waitFor
 
   await request('Page.navigate', { url: await standalone('file=/demo/showcase.pptx&p=3') });
   await waitFor("document.querySelector('#pageIndicator')?.textContent === '3 / 7'", '换文件前停在第 3 页');
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const bytes = await fetch('/demo/sample-chart.pptx').then((r) => r.arrayBuffer());
     const file = new File([bytes], 'local-after-page.pptx');
     const input = document.querySelector('#fileInput');
@@ -103,12 +104,14 @@ export async function runStandaloneOpenPageContract({ evaluate, request, waitFor
     transfer.items.add(file);
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+    true,
+  );
   await waitFor(
     "document.querySelector('#fileInfo')?.textContent.includes('local-after-page.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'",
     '本地打开覆盖地址稿',
   );
-  if (!await evaluate("document.querySelector('#pageIndicator')?.textContent.startsWith('1 /') === true")) {
+  if (!(await evaluate("document.querySelector('#pageIndicator')?.textContent.startsWith('1 /') === true"))) {
     throw new Error('换本地文件仍停在上一份的页码');
   }
   if (String(await search()).includes('p=')) throw new Error('换本地文件没有清掉 p');
@@ -138,7 +141,7 @@ export async function runStandaloneOpenPageContract({ evaluate, request, waitFor
     "document.querySelector('#fileInfo')?.textContent.includes('sample-encrypted-agile.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'",
     '加密深链密码正确后打开',
   );
-  if (await evaluate("document.querySelector('#pageIndicator')?.textContent") !== '2 / 3') {
+  if ((await evaluate("document.querySelector('#pageIndicator')?.textContent")) !== '2 / 3') {
     throw new Error('加密深链密码正确后没有停在第 2 页');
   }
 

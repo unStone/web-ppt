@@ -14,7 +14,8 @@ import { fileURLToPath } from 'node:url';
 import { deck, makeZip, NS, px, slideXml, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const W = 1280, H = 720;
+const W = 1280,
+  H = 720;
 
 const DGM = 'http://schemas.openxmlformats.org/drawingml/2006/diagram';
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
@@ -33,7 +34,9 @@ function dataModel(tree) {
       // parTrans / sibTrans 是真实文件里一定有的噪声点，解析必须把它们滤掉
       pts.push(`<dgm:pt modelId="${id}p" type="parTrans" cxnId="c${id}"><dgm:prSet/><dgm:spPr/></dgm:pt>`);
       pts.push(`<dgm:pt modelId="${id}s" type="sibTrans" cxnId="c${id}"><dgm:prSet/><dgm:spPr/></dgm:pt>`);
-      cxns.push(`<dgm:cxn modelId="c${id}" srcId="${parentId}" destId="${id}" srcOrd="${i}" destOrd="0" parTransId="${id}p" sibTransId="${id}s"/>`);
+      cxns.push(
+        `<dgm:cxn modelId="c${id}" srcId="${parentId}" destId="${id}" srcOrd="${i}" destOrd="0" parTransId="${id}p" sibTransId="${id}s"/>`,
+      );
       walk(kids, id);
     });
   };
@@ -71,11 +74,15 @@ const quickStyleXml = `${XML}<dgm:styleDef xmlns:dgm="${DGM}" xmlns:a="${NS.a}" 
 /** 缓存 drawing part：PowerPoint 会把算好的形状写在这里 */
 const drawingXml = `${XML}<dsp:drawing xmlns:dsp="http://schemas.microsoft.com/office/drawing/2008/diagram" xmlns:a="${NS.a}">
 <dsp:spTree><dsp:nvGrpSpPr><dsp:cNvPr id="0" name=""/><dsp:cNvGrpSpPr/></dsp:nvGrpSpPr><dsp:grpSpPr/>
-${['缓存A', '缓存B', '缓存C'].map((label, i) => `<dsp:sp><dsp:nvSpPr><dsp:cNvPr id="${i + 1}" name="cached${i}"/><dsp:cNvSpPr/></dsp:nvSpPr>
+${['缓存A', '缓存B', '缓存C']
+  .map(
+    (label, i) => `<dsp:sp><dsp:nvSpPr><dsp:cNvPr id="${i + 1}" name="cached${i}"/><dsp:cNvSpPr/></dsp:nvSpPr>
 <dsp:spPr><a:xfrm><a:off x="${px(20 + i * 210)}" y="${px(40)}"/><a:ext cx="${px(190)}" cy="${px(120)}"/></a:xfrm>
 <a:prstGeom prst="hexagon"><a:avLst/></a:prstGeom><a:solidFill><a:schemeClr val="accent${i + 1}"/></a:solidFill></dsp:spPr>
 <dsp:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1400" b="1">
-<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>${label}</a:t></a:r></a:p></dsp:txBody></dsp:sp>`).join('')}
+<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:rPr><a:t>${label}</a:t></a:r></a:p></dsp:txBody></dsp:sp>`,
+  )
+  .join('')}
 </dsp:spTree></dsp:drawing>`;
 
 // ---------- 每页一种情形 ----------
@@ -126,16 +133,25 @@ const CASES = [
   },
 ];
 
-const slides = CASES.map((c, i) => slideXml(
-  sp({ x: 40, y: 24, w: 900, h: 34, prst: 'rect', fill: '<a:noFill/>',
-    text: `<a:p><a:r><a:rPr sz="1600" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${c.title}</a:t></a:r></a:p>` }) +
-  `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${500 + i}" name="SmartArt${i}"/>
+const slides = CASES.map((c, i) =>
+  slideXml(
+    sp({
+      x: 40,
+      y: 24,
+      w: 900,
+      h: 34,
+      prst: 'rect',
+      fill: '<a:noFill/>',
+      text: `<a:p><a:r><a:rPr sz="1600" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${c.title}</a:t></a:r></a:p>`,
+    })
+      + `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${500 + i}" name="SmartArt${i}"/>
 <p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>
 <p:xfrm><a:off x="${px(120)}" y="${px(100)}"/><a:ext cx="${px(1040)}" cy="${px(520)}"/></p:xfrm>
 <a:graphic><a:graphicData uri="${DGM}">
 <dgm:relIds xmlns:dgm="${DGM}" xmlns:r="${NS.r}" r:dm="rId2" r:lo="rId3" r:qs="rId4" r:cs="rId5"${c.withDrawing ? ' r:dgm="rId6"' : ''}/>
 </a:graphicData></a:graphic></p:graphicFrame>`,
-));
+  ),
+);
 
 // deck() 只铺公共骨架，diagram 各 part 与每页的 rels 在这里补
 const zip = deck({ name: 'SmartArt', width: W, height: H, slides });
@@ -162,11 +178,12 @@ CASES.forEach((c, i) => {
     `<Relationship Id="rId5" Type="${REL}/diagramColors" Target="../diagrams/colors${n}.xml"/>`,
   ];
   if (c.withDrawing) {
-    rels.push(`<Relationship Id="rId6" Type="http://schemas.microsoft.com/office/2007/relationships/diagramDrawing" Target="../diagrams/drawing${n}.xml"/>`);
+    rels.push(
+      `<Relationship Id="rId6" Type="http://schemas.microsoft.com/office/2007/relationships/diagramDrawing" Target="../diagrams/drawing${n}.xml"/>`,
+    );
   }
   const idx = entries.findIndex(([k]) => k === `ppt/slides/_rels/slide${n}.xml.rels`);
-  entries[idx] = [`ppt/slides/_rels/slide${n}.xml.rels`,
-    `${XML}<Relationships xmlns="${NS.rel}">${rels.join('')}</Relationships>`];
+  entries[idx] = [`ppt/slides/_rels/slide${n}.xml.rels`, `${XML}<Relationships xmlns="${NS.rel}">${rels.join('')}</Relationships>`];
 });
 
 // Content_Types 补上 diagram 各 part
@@ -174,11 +191,15 @@ const ctIdx = entries.findIndex(([k]) => k === '[Content_Types].xml');
 let ct = dec.decode(entries[ctIdx][1]);
 const overrides = CASES.map((c, i) => {
   const n = i + 1;
-  return `<Override PartName="/ppt/diagrams/data${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml"/>` +
-    `<Override PartName="/ppt/diagrams/layout${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.diagramLayout+xml"/>` +
-    `<Override PartName="/ppt/diagrams/quickStyle${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml"/>` +
-    `<Override PartName="/ppt/diagrams/colors${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.diagramColors+xml"/>` +
-    (c.withDrawing ? `<Override PartName="/ppt/diagrams/drawing${n}.xml" ContentType="application/vnd.ms-office.drawingml.diagramDrawing+xml"/>` : '');
+  return (
+    `<Override PartName="/ppt/diagrams/data${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml"/>`
+    + `<Override PartName="/ppt/diagrams/layout${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.diagramLayout+xml"/>`
+    + `<Override PartName="/ppt/diagrams/quickStyle${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml"/>`
+    + `<Override PartName="/ppt/diagrams/colors${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.diagramColors+xml"/>`
+    + (c.withDrawing
+      ? `<Override PartName="/ppt/diagrams/drawing${n}.xml" ContentType="application/vnd.ms-office.drawingml.diagramDrawing+xml"/>`
+      : '')
+  );
 }).join('');
 ct = ct.replace('</Types>', `${overrides}</Types>`);
 entries[ctIdx] = ['[Content_Types].xml', ct];

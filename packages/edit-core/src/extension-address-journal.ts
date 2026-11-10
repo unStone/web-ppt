@@ -10,7 +10,9 @@ const metadata = (patch: Patch): boolean => isExtensionAddressPatch(patch) || is
 export class ExtensionAddressJournal {
   private readonly declared = new Map<string, unknown>();
 
-  reset(): void { this.declared.clear(); }
+  reset(): void {
+    this.declared.clear();
+  }
 
   prepare(doc: EditDoc, patches: readonly Patch[], origin: string): readonly Patch[] {
     const explicit = new Map<string, unknown>();
@@ -18,7 +20,7 @@ export class ExtensionAddressJournal {
       if (!metadata(patch)) break;
       if (patch.op === 'set') explicit.set(JSON.stringify(patch.path), patch.value);
     }
-    const addresses = [...extensionMigrationReceipts(doc, origin), ...extensionAddressPatches(doc, origin)].filter(patch => {
+    const addresses = [...extensionMigrationReceipts(doc, origin), ...extensionAddressPatches(doc, origin)].filter((patch) => {
       const key = JSON.stringify(patch.path);
       const value = patch.op === 'set' ? patch.value : undefined;
       return this.declared.get(key) !== value && explicit.get(key) !== value;

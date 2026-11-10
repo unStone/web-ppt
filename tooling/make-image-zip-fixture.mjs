@@ -23,21 +23,39 @@ const timing = `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" nodeTyp
 <p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="hidden"/></p:to></p:set>
 </p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
 const animated = slideXml(
-  identifiedShape(exitId, 'E53935', 'export-exit', 0, 0, width, height)
-    + identifiedShape(keeperId, '43A047', 'export-keeper', 0, 0, 2, 2),
+  identifiedShape(exitId, 'E53935', 'export-exit', 0, 0, width, height) + identifiedShape(keeperId, '43A047', 'export-keeper', 0, 0, 2, 2),
   '<p:bg><p:bgPr><a:solidFill><a:srgbClr val="43A047"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>',
 ).replace('</p:sld>', `${timing}</p:sld>`);
-const hidden = slideXml(sp({
-  x: 10, y: 10, w: 300, h: 160, fill: solid('ED7D31'), name: 'export-hidden',
-  text: label('隐藏页仍保留原始页码', 1800, 'FFFFFF'),
-}), '', 'show="0"');
-const visible = slideXml(sp({
-  x: 10, y: 10, w: 300, h: 160, fill: solid('2E75B6'), name: 'export-visible',
-  text: label('slide-003.png', 1800, 'FFFFFF'),
-}));
+const hidden = slideXml(
+  sp({
+    x: 10,
+    y: 10,
+    w: 300,
+    h: 160,
+    fill: solid('ED7D31'),
+    name: 'export-hidden',
+    text: label('隐藏页仍保留原始页码', 1800, 'FFFFFF'),
+  }),
+  '',
+  'show="0"',
+);
+const visible = slideXml(
+  sp({
+    x: 10,
+    y: 10,
+    w: 300,
+    h: 160,
+    fill: solid('2E75B6'),
+    name: 'export-visible',
+    text: label('slide-003.png', 1800, 'FFFFFF'),
+  }),
+);
 
 const bytes = deck({ name: 'Image Zip', width, height, slides: [animated, hidden, visible] });
 mkdirSync(join(root, 'fixtures'), { recursive: true });
 writeFileSync(join(root, 'fixtures/sample-image-zip.pptx'), bytes);
-writeFileSync(join(root, 'fixtures/image-zip-external.png'), makePng(2, 2, () => [17, 34, 51]));
+writeFileSync(
+  join(root, 'fixtures/image-zip-external.png'),
+  makePng(2, 2, () => [17, 34, 51]),
+);
 console.log(`fixtures/sample-image-zip.pptx 已生成（3 页，1 张隐藏页，${(bytes.length / 1024).toFixed(1)} KB）`);

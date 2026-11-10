@@ -7,9 +7,9 @@ import { selectEditOfficeArtifacts } from './lib/edit-office-selection.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const artifacts = selectEditOfficeArtifacts(process.argv.slice(2));
 for (const artifact of artifacts) {
-  execFileSync(process.execPath, [
-    join(root, 'tooling/test-edit-libreoffice.mjs'),
-    join(root, artifact.path),
-    String(artifact.libreOfficePages ?? artifact.slides),
-  ], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    process.execPath,
+    [join(root, 'tooling/test-edit-libreoffice.mjs'), join(root, artifact.path), String(artifact.libreOfficePages ?? artifact.slides)],
+    { cwd: root, stdio: 'inherit' },
+  );
 }

@@ -20,11 +20,31 @@ import { findAll, findRec, progBinaryBlobs, Rec, records, RT, TIME, utf16 } from
  * sample-chart.ppt 每页都写了 0 而源 .pptx 根本没有切换——按「无切换」处理。
  */
 const EFFECT_TYPE: Record<number, TransitionType> = {
-  1: 'dissolve', 2: 'blinds', 3: 'checker', 4: 'cover', 5: 'dissolve',
-  6: 'fade', 7: 'pull', 8: 'randomBar', 9: 'strips', 10: 'wipe', 11: 'zoom',
-  12: 'zoom', 13: 'split', 17: 'zoom', 18: 'blinds', 19: 'blinds',
-  20: 'push', 21: 'comb', 22: 'newsflash', 23: 'fade', 26: 'wedge',
-  27: 'wheel', 28: 'circle', 29: 'diamond', 30: 'plus',
+  1: 'dissolve',
+  2: 'blinds',
+  3: 'checker',
+  4: 'cover',
+  5: 'dissolve',
+  6: 'fade',
+  7: 'pull',
+  8: 'randomBar',
+  9: 'strips',
+  10: 'wipe',
+  11: 'zoom',
+  12: 'zoom',
+  13: 'split',
+  17: 'zoom',
+  18: 'blinds',
+  19: 'blinds',
+  20: 'push',
+  21: 'comb',
+  22: 'newsflash',
+  23: 'fade',
+  26: 'wedge',
+  27: 'wheel',
+  28: 'circle',
+  29: 'diamond',
+  30: 'plus',
 };
 
 /** 方位型效果的 effectDirection：0=左 1=上 2=右 3=下 */
@@ -39,8 +59,17 @@ function transitionDir(type: TransitionType, dir: number): string | undefined {
   if (type === 'zoom' || type === 'circle' || type === 'diamond' || type === 'plus' || type === 'wedge') {
     return INOUT_DIR[dir];
   }
-  if (type === 'push' || type === 'pull' || type === 'cover' || type === 'wipe' || type === 'strips'
-    || type === 'blinds' || type === 'comb' || type === 'wheel' || type === 'randomBar') {
+  if (
+    type === 'push'
+    || type === 'pull'
+    || type === 'cover'
+    || type === 'wipe'
+    || type === 'strips'
+    || type === 'blinds'
+    || type === 'comb'
+    || type === 'wheel'
+    || type === 'randomBar'
+  ) {
     return SIDE_DIR[dir];
   }
   return undefined;
@@ -68,12 +97,15 @@ export function parseSlideShowInfo(dv: DataView, slideRec: Rec): SlideShowInfo |
   const speed = dv.getUint8(rec.start + 12);
 
   const kind = EFFECT_TYPE[type];
-  const transition: Transition | undefined = kind === undefined ? undefined : {
-    type: kind,
-    dir: transitionDir(kind, dir),
-    durationMs: SPEED_MS[speed] ?? 750,
-    advanceAfterMs: (flags & F_AUTO_ADVANCE) !== 0 && slideTime > 0 ? slideTime : undefined,
-  };
+  const transition: Transition | undefined =
+    kind === undefined
+      ? undefined
+      : {
+          type: kind,
+          dir: transitionDir(kind, dir),
+          durationMs: SPEED_MS[speed] ?? 750,
+          advanceAfterMs: (flags & F_AUTO_ADVANCE) !== 0 && slideTime > 0 ? slideTime : undefined,
+        };
   return { hidden: (flags & F_HIDDEN) !== 0, transition };
 }
 
@@ -88,7 +120,12 @@ const NODE_WITH = 2;
 const NODE_AFTER = 3;
 
 const CLASS_KIND: Record<number, AnimStep['kind']> = {
-  1: 'entrance', 2: 'exit', 3: 'emphasis', 4: 'motion', 5: 'emphasis', 6: 'emphasis',
+  1: 'entrance',
+  2: 'exit',
+  3: 'emphasis',
+  4: 'motion',
+  5: 'emphasis',
+  6: 'emphasis',
 };
 
 /** TimeVariant：1 字节类型 + 值（0 = 布尔，1 = 整数，2 = 浮点，3 = UTF-16 串） */
@@ -210,9 +247,7 @@ function buildStep(dv: DataView, node: Rec, props: Map<number, number>): AnimSte
   findBehavior(dv, node.start, node.start + node.len, behavior);
   if (behavior.target === undefined) return null;
 
-  const { effect, dir } = resolveAnimationEffect(
-    props.get(TP.effectId) ?? 10, props.get(TP.effectDir) ?? 0, behavior.filter,
-  );
+  const { effect, dir } = resolveAnimationEffect(props.get(TP.effectId) ?? 10, props.get(TP.effectDir) ?? 0, behavior.filter);
   const nodeType = props.get(TP.nodeType) ?? NODE_CLICK;
   const dur = behavior.duration ?? nodeDuration(dv, node) ?? 500;
 

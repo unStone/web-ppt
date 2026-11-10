@@ -10,15 +10,22 @@ import { round as r } from './serialize';
 type Arg = 'x' | 'y' | 'flag' | 'rx' | 'ry' | 'angle';
 
 const ARGS: Record<string, readonly Arg[]> = {
-  m: ['x', 'y'], l: ['x', 'y'], t: ['x', 'y'],
-  h: ['x'], v: ['y'],
+  m: ['x', 'y'],
+  l: ['x', 'y'],
+  t: ['x', 'y'],
+  h: ['x'],
+  v: ['y'],
   c: ['x', 'y', 'x', 'y', 'x', 'y'],
-  s: ['x', 'y', 'x', 'y'], q: ['x', 'y', 'x', 'y'],
+  s: ['x', 'y', 'x', 'y'],
+  q: ['x', 'y', 'x', 'y'],
   a: ['rx', 'ry', 'angle', 'flag', 'flag', 'x', 'y'],
   z: [],
 };
 
-interface Segment { command: string; values: number[] }
+interface Segment {
+  command: string;
+  values: number[];
+}
 
 const isSpace = (ch: string): boolean => ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r' || ch === '\f';
 const isDigit = (ch: string): boolean => ch >= '0' && ch <= '9';
@@ -39,17 +46,29 @@ function parsePathData(d: string): Segment[] {
     const start = at;
     if (d[at] === '+' || d[at] === '-') at++;
     let digits = 0;
-    while (isDigit(d[at])) { at++; digits++; }
+    while (isDigit(d[at])) {
+      at++;
+      digits++;
+    }
     if (d[at] === '.') {
       at++;
-      while (isDigit(d[at])) { at++; digits++; }
+      while (isDigit(d[at])) {
+        at++;
+        digits++;
+      }
     }
-    if (!digits) { at = start; throw invalid('数值'); }
+    if (!digits) {
+      at = start;
+      throw invalid('数值');
+    }
     if (d[at] === 'e' || d[at] === 'E') {
       const exponent = at;
       at++;
       if (d[at] === '+' || d[at] === '-') at++;
-      if (!isDigit(d[at])) { at = exponent; throw invalid('指数'); }
+      if (!isDigit(d[at])) {
+        at = exponent;
+        throw invalid('指数');
+      }
       while (isDigit(d[at])) at++;
     }
     return Number(d.slice(start, at));
@@ -90,7 +109,7 @@ function parsePathData(d: string): Segment[] {
 function scaleArc(rx: number, ry: number, angle: number, kx: number, ky: number): [number, number, number] {
   rx = Math.abs(rx);
   ry = Math.abs(ry);
-  const radians = angle * Math.PI / 180;
+  const radians = (angle * Math.PI) / 180;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   if (kx === ky || sin === 0 || cos === 0) {
@@ -102,25 +121,23 @@ function scaleArc(rx: number, ry: number, angle: number, kx: number, ky: number)
   const c = (rx * rx * sin * sin + ry * ry * cos * cos) * ky * ky;
   const mean = (a + c) / 2;
   const spread = Math.hypot((a - c) / 2, b);
-  return [
-    Math.sqrt(mean + spread),
-    Math.sqrt(Math.max(0, mean - spread)),
-    Math.atan2(2 * b, a - c) / 2 * 180 / Math.PI,
-  ];
+  return [Math.sqrt(mean + spread), Math.sqrt(Math.max(0, mean - spread)), ((Math.atan2(2 * b, a - c) / 2) * 180) / Math.PI];
 }
 
 export function scalePathData(d: string, kx: number, ky: number): string {
   if (!(Number.isFinite(kx) && kx > 0 && Number.isFinite(ky) && ky > 0)) {
     throw new Error(`路径缩放比例必须是正有限数：kx=${kx}，ky=${ky}`);
   }
-  return parsePathData(d).map(({ command, values }) => {
-    const args = ARGS[command.toLowerCase()];
-    if (args.includes('rx')) {
-      const [rx, ry, angle] = scaleArc(values[0], values[1], values[2], kx, ky);
-      values = [rx, ry, angle, values[3], values[4], values[5] * kx, values[6] * ky];
-    } else {
-      values = values.map((value, index) => value * (args[index] === 'y' ? ky : kx));
-    }
-    return values.length ? `${command} ${values.map(r).join(' ')}` : command;
-  }).join(' ');
+  return parsePathData(d)
+    .map(({ command, values }) => {
+      const args = ARGS[command.toLowerCase()];
+      if (args.includes('rx')) {
+        const [rx, ry, angle] = scaleArc(values[0], values[1], values[2], kx, ky);
+        values = [rx, ry, angle, values[3], values[4], values[5] * kx, values[6] * ky];
+      } else {
+        values = values.map((value, index) => value * (args[index] === 'y' ? ky : kx));
+      }
+      return values.length ? `${command} ${values.map(r).join(' ')}` : command;
+    })
+    .join(' ');
 }

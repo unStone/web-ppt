@@ -2,11 +2,7 @@ import type { SlideElement, TextBody } from '@web-ppt/core';
 import { isDynamicSlideLink } from './dynamic-slide-fields';
 import type { EditDoc, SlideId } from './types';
 
-function resolvedSlideLink(
-  doc: EditDoc,
-  slideId: SlideId,
-  link: string | undefined,
-): string | undefined {
+function resolvedSlideLink(doc: EditDoc, slideId: SlideId, link: string | undefined): string | undefined {
   if (!isDynamicSlideLink(link)) return link;
   const current = doc.slideOrder.indexOf(slideId);
   let target: number | undefined;
@@ -19,7 +15,9 @@ function resolvedSlideLink(
       const part = decodeURIComponent(link.slice('slide-part:'.length));
       const index = doc.slideOrder.findIndex((id) => doc.slides[id].origin?.part === part);
       if (index >= 0) target = index + 1;
-    } catch { return link; }
+    } catch {
+      return link;
+    }
   }
   return target === undefined ? link : `slide:${target}`;
 }
@@ -41,12 +39,7 @@ function projectedText(doc: EditDoc, slideId: SlideId, text: TextBody | null): T
   return changed ? { ...text, paragraphs } : text;
 }
 
-function project(
-  doc: EditDoc,
-  slideId: SlideId,
-  element: SlideElement,
-  deep: boolean,
-): SlideElement {
+function project(doc: EditDoc, slideId: SlideId, element: SlideElement, deep: boolean): SlideElement {
   let out = element;
   const link = resolvedSlideLink(doc, slideId, out.link);
   if (link !== out.link) out = { ...out, link } as SlideElement;
@@ -74,11 +67,9 @@ function project(
 }
 
 /** 稳定模型元素的组后代会分别投影，因此这里只处理当前节点。 */
-export const projectElementSlideFields = (
-  doc: EditDoc, slideId: SlideId, element: SlideElement,
-): SlideElement => project(doc, slideId, element, false);
+export const projectElementSlideFields = (doc: EditDoc, slideId: SlideId, element: SlideElement): SlideElement =>
+  project(doc, slideId, element, false);
 
 /** 版式虚拟节点没有 ElementRecord，动态字段必须在值树内递归求值。 */
-export const projectVirtualSlideFields = (
-  doc: EditDoc, slideId: SlideId, element: SlideElement,
-): SlideElement => project(doc, slideId, element, true);
+export const projectVirtualSlideFields = (doc: EditDoc, slideId: SlideId, element: SlideElement): SlideElement =>
+  project(doc, slideId, element, true);

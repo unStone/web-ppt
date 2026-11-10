@@ -21,7 +21,8 @@ export interface NativeTextFormat {
   readonly underlineStyle: string;
   readonly underlineThickness: string;
 }
-export type EditContextWindow = Window & typeof globalThis & {
-  EditContext?: new (options: { text: string; selectionStart: number; selectionEnd: number }) => NativeEditContext;
-};
+export type EditContextWindow = Window &
+  typeof globalThis & {
+    EditContext?: new (options: { text: string; selectionStart: number; selectionEnd: number }) => NativeEditContext;
+  };
 export type EditingHost = HTMLDivElement & { editContext: NativeEditContext | null };

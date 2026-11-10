@@ -1,6 +1,4 @@
-import {
-  createXmlElement, createXmlText, insertXmlChild, parseXmlTree, setXmlAttribute,
-} from '@web-ppt/edit-core/xml';
+import { createXmlElement, createXmlText, insertXmlChild, parseXmlTree, setXmlAttribute } from '@web-ppt/edit-core/xml';
 import type { XmlDocument, XmlElement, XmlNode } from '@web-ppt/edit-core/xml';
 
 export const SEED_NS = {
@@ -13,15 +11,17 @@ export const SEED_NS = {
   spreadsheet: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
 } as const;
 
-export function seedElement(name: string, attributes: Readonly<Record<string, string | number>> = {},
-  children: readonly (XmlNode | string)[] = []): XmlElement {
+export function seedElement(
+  name: string,
+  attributes: Readonly<Record<string, string | number>> = {},
+  children: readonly (XmlNode | string)[] = [],
+): XmlElement {
   const node = createXmlElement(name, { attributes: Object.entries(attributes).map(([key, value]) => [key, String(value)]) });
   for (const child of children) insertXmlChild(node, typeof child === 'string' ? createXmlText(child) : child);
   return node;
 }
 
-export function seedDocument(name: string, namespaces: Readonly<Record<string, string>>,
-  children: readonly XmlElement[]): XmlDocument {
+export function seedDocument(name: string, namespaces: Readonly<Record<string, string>>, children: readonly XmlElement[]): XmlDocument {
   const document = parseXmlTree(`<${name}/>`);
   for (const [prefix, namespace] of Object.entries(namespaces)) {
     const attribute = prefix ? `xmlns:${prefix}` : 'xmlns';

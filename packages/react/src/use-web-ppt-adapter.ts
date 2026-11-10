@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  applyWebPptAdapterBinding, createWebPptAdapter, WEB_PPT_IDLE_SNAPSHOT,
-} from '@web-ppt/editor';
-import type {
-  WebPptAdapter, WebPptAdapterBinding, WebPptAdapterSnapshot,
-} from '@web-ppt/editor';
+import { applyWebPptAdapterBinding, createWebPptAdapter, WEB_PPT_IDLE_SNAPSHOT } from '@web-ppt/editor';
+import type { WebPptAdapter, WebPptAdapterBinding, WebPptAdapterSnapshot } from '@web-ppt/editor';
 
 export interface UseWebPptAdapterResult {
   readonly adapter: WebPptAdapter | null;
@@ -52,8 +48,14 @@ export function useWebPptAdapter(binding: WebPptAdapterBinding): UseWebPptAdapte
     });
   }, [
     adapter,
-    binding.onReady, binding.onError, binding.onProgress, binding.onChange, binding.onViewChange,
-    binding.onTouchNavigate, binding.onContextRequest, binding.onRecovery,
+    binding.onReady,
+    binding.onError,
+    binding.onProgress,
+    binding.onChange,
+    binding.onViewChange,
+    binding.onTouchNavigate,
+    binding.onContextRequest,
+    binding.onRecovery,
   ]);
 
   useEffect(() => {
@@ -68,8 +70,15 @@ export function useWebPptAdapter(binding: WebPptAdapterBinding): UseWebPptAdapte
     });
   }, [
     adapter,
-    binding.source, binding.session, binding.sessionOwnership, binding.openOptions,
-    binding.mode, binding.slideId, binding.zoom, binding.textMode, binding.snapping,
+    binding.source,
+    binding.session,
+    binding.sessionOwnership,
+    binding.openOptions,
+    binding.mode,
+    binding.slideId,
+    binding.zoom,
+    binding.textMode,
+    binding.snapping,
     binding.snapMargins,
   ]);
 

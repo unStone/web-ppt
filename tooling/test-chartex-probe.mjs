@@ -15,8 +15,8 @@ const source = manifest.files.find((file) => file.name === 'funnel-pp1.pptx');
 const input = resolve(root, process.argv[2] ?? source.downloadPath);
 const bytes = readFileSync(input);
 assert.equal(createHash('sha256').update(bytes).digest('hex'), source.sha256, '对照必须使用已登记的原始 PPTX');
-const probe = (...args) => spawnSync(process.execPath, [join(root, 'tooling/probe-chartex.mjs'), ...args],
-  { cwd: root, encoding: 'utf8', timeout: 15000 });
+const probe = (...args) =>
+  spawnSync(process.execPath, [join(root, 'tooling/probe-chartex.mjs'), ...args], { cwd: root, encoding: 'utf8', timeout: 15000 });
 const inspect = (path) => {
   const result = probe('--expect-fallback', path);
   assert.equal(result.error, undefined, result.error?.message);
@@ -51,8 +51,7 @@ try {
   const positive = inspect(paths[0]);
   assert.equal(positive.status, 0, '只有图片的对照必须被接受');
   assert.equal(positive.report.provenance, null, '改写后的对照不能冒充原始 Office 文件');
-  assert.equal(positive.report.rendering[0].expectedImageSha256,
-    '855f488a5d14106adab0adc1d4a547863f09f2e737fc347dacf493b80ed63096');
+  assert.equal(positive.report.rendering[0].expectedImageSha256, '855f488a5d14106adab0adc1d4a547863f09f2e737fc347dacf493b80ed63096');
   const negative = inspect(paths[1]);
   assert.deepEqual(negative.report.rendering[0].actualKinds, ['image', 'unsupported']);
   assert.equal(negative.status, 1, '图片和占位同时输出不能通过回退契约');

@@ -11,7 +11,9 @@ export function generatedImageResource(resource: ClipboardResource): ElementInse
 
 /** 已被文档保留的资源不能随另一个使用者撤销；新增资源与使用它的覆盖共同进退。 */
 export function imageResourcePatches(
-  doc: EditDoc, resources: readonly ElementInsertionResource[], origin: string,
+  doc: EditDoc,
+  resources: readonly ElementInsertionResource[],
+  origin: string,
 ): { forward: ImageResourcePatch[]; inverse: ImageResourcePatch[] } {
   const added = resources.filter((resource) => !doc.imageResources[resource.hash]);
   return {
@@ -32,16 +34,13 @@ export function copyImageBytes(value: unknown, label: string, maxBytes?: number)
   return new Uint8Array(view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength));
 }
 
-export function createImageResource(
-  bytesInput: unknown,
-  mime: unknown,
-  label: string,
-  maxBytes?: number,
-): ClipboardResource {
+export function createImageResource(bytesInput: unknown, mime: unknown, label: string, maxBytes?: number): ClipboardResource {
   const bytes = copyImageBytes(bytesInput, `${label}.bytes`, maxBytes);
   const format = validateImageFormat(bytes, mime, label);
   return {
-    hash: sha256(bytes), mime: mime as ClipboardResource['mime'],
-    extension: format.extension, bytes: bytesToBase64(bytes),
+    hash: sha256(bytes),
+    mime: mime as ClipboardResource['mime'],
+    extension: format.extension,
+    bytes: bytesToBase64(bytes),
   };
 }

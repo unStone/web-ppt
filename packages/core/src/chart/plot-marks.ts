@@ -6,8 +6,21 @@ import type { Fill, ShapeElement, Stroke } from '../types';
 import type { DLblSpec, PlotGroup, Series } from './model';
 import { lineH } from './frame';
 import {
-  Depth3D, Pt, Rect, accentColor, clamp, darken, formatNumber, lighten, nf, px, quadEl, shapeEl, solid,
-  strokeFrom, textEl,
+  Depth3D,
+  Pt,
+  Rect,
+  accentColor,
+  clamp,
+  darken,
+  formatNumber,
+  lighten,
+  nf,
+  px,
+  quadEl,
+  shapeEl,
+  solid,
+  strokeFrom,
+  textEl,
 } from './util';
 
 export const TAU = Math.PI * 2;
@@ -39,8 +52,7 @@ export function pointStroke(s: Series, i: number, def: string | null, defW: numb
 
 // ---------- 通用小工具 ----------
 
-export const num = (v: number | null | undefined): number | null =>
-  v === null || v === undefined || !Number.isFinite(v) ? null : v;
+export const num = (v: number | null | undefined): number | null => (v === null || v === undefined || !Number.isFinite(v) ? null : v);
 
 function bbox(pts: Pt[]): Rect {
   let minX = Infinity;
@@ -73,23 +85,16 @@ function curveTo(run: Pt[], ox: number, oy: number): string {
 }
 
 /** 多段折线/平滑曲线 → 单个 ShapeElement（坐标为图表局部绝对坐标） */
-export function pathEl(
-  runs: Pt[][],
-  fill: Fill | null,
-  stroke: Stroke | null,
-  close: boolean,
-  smooth: boolean,
-): ShapeElement | null {
-  const valid = runs
-    .map((r) => r.filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y)))
-    .filter((r) => r.length >= (close ? 3 : 2));
+export function pathEl(runs: Pt[][], fill: Fill | null, stroke: Stroke | null, close: boolean, smooth: boolean): ShapeElement | null {
+  const valid = runs.map((r) => r.filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y))).filter((r) => r.length >= (close ? 3 : 2));
   if (!valid.length) return null;
   const box = bbox(valid.flat());
   const d = valid
-    .map((run) =>
-      (smooth && run.length > 2
-        ? curveTo(run, box.x, box.y)
-        : 'M ' + run.map(([x, y]) => `${nf(x - box.x)} ${nf(y - box.y)}`).join(' L ')) + (close ? ' Z' : ''),
+    .map(
+      (run) =>
+        (smooth && run.length > 2
+          ? curveTo(run, box.x, box.y)
+          : 'M ' + run.map(([x, y]) => `${nf(x - box.x)} ${nf(y - box.y)}`).join(' L ')) + (close ? ' Z' : ''),
     )
     .join(' ');
   return shapeEl(box.x, box.y, box.w, box.h, d, fill, stroke);
@@ -97,8 +102,7 @@ export function pathEl(
 
 export function circlePath(cx: number, cy: number, r: number): string {
   return (
-    `M ${nf(cx - r)} ${nf(cy)} A ${nf(r)} ${nf(r)} 0 1 1 ${nf(cx + r)} ${nf(cy)}` +
-    ` A ${nf(r)} ${nf(r)} 0 1 1 ${nf(cx - r)} ${nf(cy)} Z`
+    `M ${nf(cx - r)} ${nf(cy)} A ${nf(r)} ${nf(r)} 0 1 1 ${nf(cx + r)} ${nf(cy)}` + ` A ${nf(r)} ${nf(r)} 0 1 1 ${nf(cx - r)} ${nf(cy)} Z`
   );
 }
 
@@ -120,9 +124,7 @@ function symbolPath(sym: string, r: number): { d: string; open: boolean } {
       return { d: `M ${nf(c)} 0 L ${nf(c)} ${nf(s)} M 0 ${nf(c)} L ${nf(s)} ${nf(c)}`, open: true };
     case 'star':
       return {
-        d:
-          `M ${nf(c)} 0 L ${nf(c)} ${nf(s)} M 0 ${nf(c)} L ${nf(s)} ${nf(c)}` +
-          ` M 0 0 L ${nf(s)} ${nf(s)} M ${nf(s)} 0 L 0 ${nf(s)}`,
+        d: `M ${nf(c)} 0 L ${nf(c)} ${nf(s)} M 0 ${nf(c)} L ${nf(s)} ${nf(c)}` + ` M 0 0 L ${nf(s)} ${nf(s)} M ${nf(s)} 0 L 0 ${nf(s)}`,
         open: true,
       };
     case 'dash':
@@ -208,10 +210,26 @@ export function box3D(r: Rect, d: Depth3D, fill: Fill, base: string, stroke: Str
   };
   // 侧面：背面偏右时看到右侧面，偏左时看到左侧面
   const sx = d.dx >= 0 ? x1 : x0;
-  push([[sx, y0], [sx + d.dx, y0 + d.dy], [sx + d.dx, y1 + d.dy], [sx, y1]], darken(base));
+  push(
+    [
+      [sx, y0],
+      [sx + d.dx, y0 + d.dy],
+      [sx + d.dx, y1 + d.dy],
+      [sx, y1],
+    ],
+    darken(base),
+  );
   // 顶面（俯视）/ 底面（仰视）
   const cy = d.dy <= 0 ? y0 : y1;
-  push([[x0, cy], [x1, cy], [x1 + d.dx, cy + d.dy], [x0 + d.dx, cy + d.dy]], lighten(base));
+  push(
+    [
+      [x0, cy],
+      [x1, cy],
+      [x1 + d.dx, cy + d.dy],
+      [x0 + d.dx, cy + d.dy],
+    ],
+    lighten(base),
+  );
   out.push(shapeEl(r.x, r.y, r.w, r.h, `M 0 0 L ${nf(r.w)} 0 L ${nf(r.w)} ${nf(r.h)} L 0 ${nf(r.h)} Z`, fill, stroke));
   return out;
 }

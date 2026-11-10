@@ -2,76 +2,101 @@ import { allocateElementId } from '../document';
 import { createElementAssetHydrator } from '../session-assets';
 import { elementOrder, elementParentChildren } from '../element-order';
 import { fractionalIndexBetween, initialFractionalIndex } from '../fractional-index';
-import {
-  composeSpaceMatrices, groupEditChildrenToSlideMatrix, groupEditFrameToModelFrame, invertSpaceMatrix,
-} from '../space';
+import { composeSpaceMatrices, groupEditChildrenToSlideMatrix, groupEditFrameToModelFrame, invertSpaceMatrix } from '../space';
 import type { AffineMatrix } from '../space';
 import type { EditDoc, ElementId, ElementRecord, SlideId } from '../types';
 import type {
-  ClipboardElementRecord, CommandPatches, ElementClipboardPayload, ElementTreePatch,
-  ElementTreeSnapshot, PasteElementsCommand,
+  ClipboardElementRecord,
+  CommandPatches,
+  ElementClipboardPayload,
+  ElementTreePatch,
+  ElementTreeSnapshot,
+  PasteElementsCommand,
 } from './types';
 import { prepareInsertionClosures } from './paste-resources';
 import { allocateElementSpid } from './spid';
 import { assertTableRowAppendEditInfo } from '../table-row-append-validation';
-import {
-  applyCopiedLinks, assertClipboardPortableLink, assertClipboardTextLinks,
-} from '../clipboard-links';
+import { applyCopiedLinks, assertClipboardPortableLink, assertClipboardTextLinks } from '../clipboard-links';
 import { assertElementUnlocked } from './element-interaction';
 import { decomposeFrameMatrix } from './frame-decomposition';
 import { canvasTargetOfElement } from '../design-target';
 
 function assertPayload(value: unknown): asserts value is ElementClipboardPayload {
   const payload = value as Partial<ElementClipboardPayload> | null;
-  if (!payload || payload.format !== 'web-ppt-elements' || payload.version !== 1
-    || !Array.isArray(payload.roots) || !payload.roots.length
+  if (
+    !payload
+    || payload.format !== 'web-ppt-elements'
+    || payload.version !== 1
+    || !Array.isArray(payload.roots)
+    || !payload.roots.length
     || new Set(payload.roots).size !== payload.roots.length
-    || !payload.records || typeof payload.records !== 'object'
-    || !payload.ooxml || typeof payload.ooxml.roots !== 'object'
-    || !payload.bounds || !Number.isFinite(payload.bounds.left) || !Number.isFinite(payload.bounds.top)
-    || !payload.source || !Number.isFinite(payload.source.width) || !Number.isFinite(payload.source.height)
-    || typeof payload.source.copyBatchId !== 'string' || !/^[0-9a-f]{32}$/.test(payload.source.copyBatchId)
-    || !Array.isArray(payload.resources)) {
+    || !payload.records
+    || typeof payload.records !== 'object'
+    || !payload.ooxml
+    || typeof payload.ooxml.roots !== 'object'
+    || !payload.bounds
+    || !Number.isFinite(payload.bounds.left)
+    || !Number.isFinite(payload.bounds.top)
+    || !payload.source
+    || !Number.isFinite(payload.source.width)
+    || !Number.isFinite(payload.source.height)
+    || typeof payload.source.copyBatchId !== 'string'
+    || !/^[0-9a-f]{32}$/.test(payload.source.copyBatchId)
+    || !Array.isArray(payload.resources)
+  ) {
     throw new Error('元素剪贴板载荷无效或版本不受支持');
   }
   const reached = new Set<string>();
   const visit = (id: string, parent: string | null): void => {
     if (reached.has(id)) throw new Error(`剪贴板元素树成环或重复：${id}`);
     const record = payload.records![id] as ClipboardElementRecord | undefined;
-    if (!record || record.id !== id || record.parent !== parent || !record.src
-      || !record.meta || record.meta.copyBatchId !== payload.source!.copyBatchId
+    if (
+      !record
+      || record.id !== id
+      || record.parent !== parent
+      || !record.src
+      || !record.meta
+      || record.meta.copyBatchId !== payload.source!.copyBatchId
       || !['full', 'frame', 'none'].includes(record.meta.editable)
       || typeof record.meta.anchored !== 'boolean'
       || (record.meta.anchored
         ? !Number.isSafeInteger(record.meta.sourceSpid) || record.meta.sourceSpid! < 0
         : record.meta.sourceSpid !== undefined)
-      || !Array.isArray(record.children)) {
+      || !Array.isArray(record.children)
+    ) {
       throw new Error(`剪贴板元素记录无效：${id}`);
     }
     if (record.src.kind === 'table') assertTableRowAppendEditInfo(record.src, `剪贴板元素 ${id}`);
     if (record.meta.link) assertClipboardPortableLink(record.meta.link, `剪贴板元素 ${id}.meta.link`);
-    if (record.meta.textLinks) assertClipboardTextLinks(
-      record.meta.textLinks, `剪贴板元素 ${id}.meta.textLinks`,
-    );
+    if (record.meta.textLinks) assertClipboardTextLinks(record.meta.textLinks, `剪贴板元素 ${id}.meta.textLinks`);
     reached.add(id);
     for (const child of record.children) visit(child, id);
   };
   for (const root of payload.roots) visit(root, null);
   if (reached.size !== Object.keys(payload.records).length) throw new Error('剪贴板载荷包含孤儿记录');
-  if (payload.roots.some((root) => {
-    const xml = payload.ooxml!.roots[root];
-    const frame = payload.records![root]?.meta.frameToSlide;
-    return !xml || typeof xml.markup !== 'string' || !xml.markup
-      || !xml.namespaces || typeof xml.namespaces !== 'object'
-      || !Array.isArray(xml.hostSpids) || !xml.hostSpids.length
-      || (xml.relationships !== undefined && !Array.isArray(xml.relationships))
-      || !frame || !Object.values(frame).every(Number.isFinite);
-  })) throw new Error('剪贴板载荷缺少 OOXML 根宿主');
+  if (
+    payload.roots.some((root) => {
+      const xml = payload.ooxml!.roots[root];
+      const frame = payload.records![root]?.meta.frameToSlide;
+      return (
+        !xml
+        || typeof xml.markup !== 'string'
+        || !xml.markup
+        || !xml.namespaces
+        || typeof xml.namespaces !== 'object'
+        || !Array.isArray(xml.hostSpids)
+        || !xml.hostSpids.length
+        || (xml.relationships !== undefined && !Array.isArray(xml.relationships))
+        || !frame
+        || !Object.values(frame).every(Number.isFinite)
+      );
+    })
+  )
+    throw new Error('剪贴板载荷缺少 OOXML 根宿主');
   for (const root of payload.roots) {
     const hostSpids = payload.ooxml.roots[root].hostSpids;
     const hostSpidSet = new Set(hostSpids);
-    if (hostSpidSet.size !== hostSpids.length
-      || hostSpids.some((spid) => !/^\d+$/.test(spid))) {
+    if (hostSpidSet.size !== hostSpids.length || hostSpids.some((spid) => !/^\d+$/.test(spid))) {
       throw new Error(`剪贴板根 ${root} 的宿主 spid 无效`);
     }
     const anchored = new Set<number>();
@@ -113,15 +138,10 @@ function translated(matrix: AffineMatrix, dx: number, dy: number): AffineMatrix 
 }
 
 function decomposePlacement(matrix: AffineMatrix, width: number, height: number) {
-  return decomposeFrameMatrix(
-    matrix, width, height, '来源与目标组合坐标系会产生 PPTX 无法表达的斜切',
-  );
+  return decomposeFrameMatrix(matrix, width, height, '来源与目标组合坐标系会产生 PPTX 无法表达的斜切');
 }
 
-function sparsePlacement(
-  source: ClipboardElementRecord,
-  placement: ReturnType<typeof decomposePlacement>,
-) {
+function sparsePlacement(source: ClipboardElementRecord, placement: ReturnType<typeof decomposePlacement>) {
   if (source.meta.editable === 'frame' && Math.abs(placement.rot - source.src.rot) > 1e-8) {
     throw new Error('框架对象无法无损粘贴到需要改变旋转角度的组合坐标系');
   }
@@ -130,22 +150,22 @@ function sparsePlacement(
     ...(Math.abs(placement.y - source.src.y) > 1e-8 ? { y: placement.y } : {}),
     ...(Math.abs(placement.w - source.src.w) > 1e-8 ? { w: placement.w } : {}),
     ...(Math.abs(placement.h - source.src.h) > 1e-8 ? { h: placement.h } : {}),
-    ...(source.meta.editable === 'full' && Math.abs(placement.rot - source.src.rot) > 1e-8
-      ? { rot: placement.rot } : {}),
+    ...(source.meta.editable === 'full' && Math.abs(placement.rot - source.src.rot) > 1e-8 ? { rot: placement.rot } : {}),
     ...(placement.reflectH ? { flipH: !source.src.flipH } : {}),
   };
 }
 
 /** 所有身份、树记录与位置先在内存中构造完毕，再作为一组结构 patch 原子落模。 */
-export function pasteElementsPatches(
-  doc: EditDoc,
-  command: PasteElementsCommand,
-  origin: string,
-): CommandPatches {
+export function pasteElementsPatches(doc: EditDoc, command: PasteElementsCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能粘贴元素');
   assertPayload(command.payload);
-  if (!command.at || typeof command.at.parentId !== 'string' || !command.at.parentId
-    || !Number.isFinite(command.at.x) || !Number.isFinite(command.at.y)) {
+  if (
+    !command.at
+    || typeof command.at.parentId !== 'string'
+    || !command.at.parentId
+    || !Number.isFinite(command.at.x)
+    || !Number.isFinite(command.at.y)
+  ) {
     throw new Error('PasteElements.at 必须包含目标父级与有限坐标');
   }
   const destination = resolvePasteDestination(doc, command.at.parentId);
@@ -159,18 +179,15 @@ export function pasteElementsPatches(
   const destinationMatrix: AffineMatrix = intoGroup
     ? groupEditChildrenToSlideMatrix(doc, destination.parent)
     : { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
-  const placements = new Map(payload.roots.map((root) => {
-    const source = payload.records[root];
-    const local = composeSpaceMatrices(
-      invertSpaceMatrix(destinationMatrix),
-      translated(source.meta.frameToSlide!, dx, dy),
-    );
-    const edit = decomposePlacement(local, source.src.w, source.src.h);
-    const placement = intoGroup
-      ? { ...groupEditFrameToModelFrame(doc, destination.parent, edit), reflectH: edit.reflectH }
-      : edit;
-    return [root, sparsePlacement(source, placement)] as const;
-  }));
+  const placements = new Map(
+    payload.roots.map((root) => {
+      const source = payload.records[root];
+      const local = composeSpaceMatrices(invertSpaceMatrix(destinationMatrix), translated(source.meta.frameToSlide!, dx, dy));
+      const edit = decomposePlacement(local, source.src.w, source.src.h);
+      const placement = intoGroup ? { ...groupEditFrameToModelFrame(doc, destination.parent, edit), reflectH: edit.reflectH } : edit;
+      return [root, sparsePlacement(source, placement)] as const;
+    }),
+  );
   const idMap = new Map<string, ElementId>();
   for (const id of Object.keys(payload.records)) idMap.set(id, allocateElementId(doc));
   const allocateSpid = () => allocateElementSpid(doc, destination.part);
@@ -194,11 +211,12 @@ export function pasteElementsPatches(
       src = links.element;
       if (spid !== undefined) src.id = spid;
       const children = copied.children.map((child, childIndex) => visit(child, id, false, childIndex));
-      const z = root
-        ? (previousOrder = fractionalIndexBetween(previousOrder, null, id))
-        : initialFractionalIndex(index);
+      const z = root ? (previousOrder = fractionalIndexBetween(previousOrder, null, id)) : initialFractionalIndex(index);
       records[id] = {
-        id, parent, z, src,
+        id,
+        parent,
+        z,
+        src,
         ovr: { ...(root ? placements.get(rootId)! : {}), ...links.overrides },
         meta: {
           editable: copied.meta.editable,
@@ -206,33 +224,40 @@ export function pasteElementsPatches(
           ...(spid === undefined ? {} : { origin: { part: destination.part, spid } }),
           created: true,
           ...(links.sourceLinkReadonly ? { sourceLinkReadonly: true } : {}),
-          ...(root ? {
-            insertion: {
-              markup: sourceRoot.markup,
-              namespaces: structuredClone(sourceRoot.namespaces),
-              spids,
-              relationships: structuredClone(closures.get(rootId)!.relationships),
-              resources: structuredClone(closures.get(rootId)!.resources),
-            },
-          } : {}),
+          ...(root
+            ? {
+                insertion: {
+                  markup: sourceRoot.markup,
+                  namespaces: structuredClone(sourceRoot.namespaces),
+                  spids,
+                  relationships: structuredClone(closures.get(rootId)!.relationships),
+                  resources: structuredClone(closures.get(rootId)!.resources),
+                },
+              }
+            : {}),
         },
         ...(src.kind === 'group' ? { children } : {}),
       };
       return id;
     };
     const root = visit(rootId, destination.parent, true, 0);
-    const unmodeledSpids = [...hostSpids].filter((spid) => spids[spid] === undefined)
-      .map((spid) => (spids[spid] = allocateSpid()));
+    const unmodeledSpids = [...hostSpids].filter((spid) => spids[spid] === undefined).map((spid) => (spids[spid] = allocateSpid()));
     if (unmodeledSpids.length) {
       records[root].meta.insertion = { ...records[root].meta.insertion!, unmodeledSpids };
     }
     snapshots.push({ root, parent: destination.parent, records });
   }
   const forward: ElementTreePatch[] = snapshots.map((value) => ({
-    op: 'insert', path: ['elements', value.root], value, origin,
+    op: 'insert',
+    path: ['elements', value.root],
+    value,
+    origin,
   }));
   const inverse: ElementTreePatch[] = [...snapshots].reverse().map((value) => ({
-    op: 'remove', path: ['elements', value.root], value, origin,
+    op: 'remove',
+    path: ['elements', value.root],
+    value,
+    origin,
   }));
   return { forward, inverse };
 }

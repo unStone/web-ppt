@@ -1525,7 +1525,7 @@ export const THEME_COLOR_SLOTS: readonly ["dk1", "lt1", "dk2", "lt2", "accent1",
 export type ThemeColorScheme = Readonly<Record<ThemeColorSlot, string>>;
 
 // @public (undocumented)
-export type ThemeColorSlot = typeof THEME_COLOR_SLOTS[number];
+export type ThemeColorSlot = (typeof THEME_COLOR_SLOTS)[number];
 
 // @public (undocumented)
 export interface ThemeFontCollection {

@@ -19,23 +19,30 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
     const allowedFields = target.meta.editable === 'frame' ? fields.slice(0, 4) : fields;
     const field = allowedFields[random() % allowedFields.length];
     const current = edit.effectiveElement(doc, target.id)[field];
-    let value = field === 'w' || field === 'h'
-      ? (random() % 50000) / 100
-      : field === 'rot'
-        ? (random() % 36000) / 100
-        : (random() % 160000) / 100 - 200;
+    let value =
+      field === 'w' || field === 'h'
+        ? (random() % 50000) / 100
+        : field === 'rot'
+          ? (random() % 36000) / 100
+          : (random() % 160000) / 100 - 200;
     if (Object.is(value, current)) value += 0.01;
     editor.exec({ type: 'SetXfrm', id: target.id, [field]: value });
   }
   const finalJson = JSON.stringify(doc);
   const entries = JSON.parse(JSON.stringify(editor.history.undoEntries));
   eq('固定种子生成 200 个独立撤销单元', editor.history.undoCount, 200);
-  check('公开历史不泄漏内部状态 token', !JSON.stringify(entries).includes('beforeState')
-    && !JSON.stringify(entries).includes('afterState'));
+  check(
+    '公开历史不泄漏内部状态 token',
+    !JSON.stringify(entries).includes('beforeState') && !JSON.stringify(entries).includes('afterState'),
+  );
 
-  while (editor.undo()) { /* 全量撤销 */ }
+  while (editor.undo()) {
+    /* 全量撤销 */
+  }
   check('随机 200 条命令全部撤销后 EditDoc 深度全等', JSON.stringify(doc) === initialJson);
-  while (editor.redo()) { /* 全量重做 */ }
+  while (editor.redo()) {
+    /* 全量重做 */
+  }
   check('随机 200 条命令全部重做后 EditDoc 深度全等', JSON.stringify(doc) === finalJson);
 
   const replay = structuredClone(initial);
@@ -57,7 +64,11 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
       { type: 'Unknown', id: target.id, x: i },
       { type: 'SetXfrm', id: target.id, x: i, callback: () => i },
     ];
-    try { editor.exec(variants[i % variants.length]); } catch { rejected++; }
+    try {
+      editor.exec(variants[i % variants.length]);
+    } catch {
+      rejected++;
+    }
   }
   check('五百条非法命令全部被拒绝且不污染文档', rejected === 500 && JSON.stringify(doc) === beforeFuzz);
 
@@ -66,10 +77,8 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
   const secondPageTarget = Object.values(boundaryDoc.elements).find((record) => record.src.name === '第二页形状');
   if (!check('边界规则找到跨页目标', !!target && !!secondPageTarget)) return;
   const boundary = new edit.Editor(boundaryDoc);
-  const commitPanelEdit = (field, value, time, mergeKey = 'panel') => boundary.transaction(
-    (tx) => tx.exec({ type: 'SetXfrm', id: target.id, [field]: value }),
-    '属性面板', { time, mergeKey },
-  );
+  const commitPanelEdit = (field, value, time, mergeKey = 'panel') =>
+    boundary.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, [field]: value }), '属性面板', { time, mergeKey });
 
   commitPanelEdit('x', target.src.x + 1, 1000);
   commitPanelEdit('x', target.src.x + 2, 1501);
@@ -80,27 +89,32 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
   eq('路径不相邻的改动不合并', boundary.history.undoCount, 2);
 
   boundary.history.clear();
-  const commitCrossPage = (offset, time) => boundary.transaction((tx) => {
-    tx.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + offset });
-    tx.exec({ type: 'SetXfrm', id: secondPageTarget.id, x: secondPageTarget.src.x + offset });
-  }, '跨页移动', { mergeKey: 'cross-page', time });
+  const commitCrossPage = (offset, time) =>
+    boundary.transaction(
+      (tx) => {
+        tx.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + offset });
+        tx.exec({ type: 'SetXfrm', id: secondPageTarget.id, x: secondPageTarget.src.x + offset });
+      },
+      '跨页移动',
+      { mergeKey: 'cross-page', time },
+    );
   commitCrossPage(10, 2200);
   commitCrossPage(11, 2300);
   eq('跨页事务即使路径相邻也不合并', boundary.history.undoCount, 2);
 
   boundary.history.clear();
-  const remote = boundary.transaction(
-    (tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + 4 }),
-    '远端移动', { origin: 'peer' },
-  );
-  check('远端 origin 应用但不进入本地历史', boundary.history.undoCount === 0
-    && remote.forward.every((patch) => patch.origin === 'peer'));
+  const remote = boundary.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + 4 }), '远端移动', {
+    origin: 'peer',
+  });
+  check('远端 origin 应用但不进入本地历史', boundary.history.undoCount === 0 && remote.forward.every((patch) => patch.origin === 'peer'));
 
   boundary.history.clear();
   commitPanelEdit('x', target.src.x + 20, 4000, 'remote-gap');
-  boundary.transaction((tx) => tx.exec(
-    { type: 'SetXfrm', id: target.id, x: target.src.x + 21 },
-  ), '远端插入', { origin: 'peer', time: 4100, mergeKey: 'remote-gap' });
+  boundary.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + 21 }), '远端插入', {
+    origin: 'peer',
+    time: 4100,
+    mergeKey: 'remote-gap',
+  });
   commitPanelEdit('x', target.src.x + 22, 4200, 'remote-gap');
   eq('远端改动会剔除旧冲突路径并截断两侧本地历史合并', boundary.history.undoCount, 1);
 
@@ -108,43 +122,38 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
   const selective = new edit.Editor(selectiveDoc, { origin: 'me' });
   const selectiveTarget = selectiveDoc.elements[target.id];
   selective.exec({ type: 'SetXfrm', id: target.id, x: 1 });
-  selective.transaction((tx) => tx.exec(
-    { type: 'SetXfrm', id: target.id, x: 2 },
-  ), '远端覆盖', { origin: 'peer' });
+  selective.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: 2 }), '远端覆盖', { origin: 'peer' });
   selective.exec({ type: 'SetXfrm', id: target.id, x: 3 });
   selective.undo();
   selective.undo();
-  check('连续撤销只移除自己的效果且不覆盖远端值', selectiveTarget.ovr.x === 2
-    && selective.history.undoCount === 0);
+  check('连续撤销只移除自己的效果且不覆盖远端值', selectiveTarget.ovr.x === 2 && selective.history.undoCount === 0);
 
   const selectiveFieldsDoc = structuredClone(boundaryDoc);
   const selectiveFields = new edit.Editor(selectiveFieldsDoc, { origin: 'me' });
   const selectiveFieldsTarget = selectiveFieldsDoc.elements[target.id];
   const originalY = edit.effectiveElement(selectiveFieldsDoc, target.id).y;
-  selectiveFields.transaction((tx) => tx.exec(
-    { type: 'SetXfrm', id: target.id, x: 31, y: originalY + 1 },
-  ), '本地双字段');
-  selectiveFields.transaction((tx) => tx.exec(
-    { type: 'SetXfrm', id: target.id, x: 32 },
-  ), '远端单字段', { origin: 'peer' });
+  selectiveFields.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: 31, y: originalY + 1 }), '本地双字段');
+  selectiveFields.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: 32 }), '远端单字段', { origin: 'peer' });
   selectiveFields.undo();
-  check('远端 rebase 只剔除冲突路径并保留其它本地字段可撤销', selectiveFieldsTarget.ovr.x === 32
-    && edit.effectiveElement(selectiveFieldsDoc, target.id).y === originalY);
+  check(
+    '远端 rebase 只剔除冲突路径并保留其它本地字段可撤销',
+    selectiveFieldsTarget.ovr.x === 32 && edit.effectiveElement(selectiveFieldsDoc, target.id).y === originalY,
+  );
 
   const savedRebaseDoc = structuredClone(boundaryDoc);
   const savedRebase = new edit.Editor(savedRebaseDoc, { origin: 'me' });
   const savedTarget = savedRebaseDoc.elements[target.id];
   const savedY = edit.effectiveElement(savedRebaseDoc, target.id).y + 12;
   savedRebase.exec({ type: 'SetXfrm', id: target.id, y: savedY });
-  savedRebase.transaction((tx) => tx.exec(
-    { type: 'SetXfrm', id: target.id, x: 52 },
-  ), '远端独立字段', { origin: 'peer' });
+  savedRebase.transaction((tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: 52 }), '远端独立字段', { origin: 'peer' });
   savedRebase.markSaved();
   savedRebase.undo();
   const dirtyAfterUndo = savedRebase.isDirty();
   savedRebase.redo();
-  check('远端 rebase 后撤销再重做能准确回到保存点', dirtyAfterUndo && !savedRebase.isDirty()
-    && savedTarget.ovr.x === 52 && edit.effectiveElement(savedRebaseDoc, target.id).y === savedY);
+  check(
+    '远端 rebase 后撤销再重做能准确回到保存点',
+    dirtyAfterUndo && !savedRebase.isDirty() && savedTarget.ovr.x === 52 && edit.effectiveElement(savedRebaseDoc, target.id).y === savedY,
+  );
 
   boundary.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + 5 });
   boundary.undo();
@@ -163,10 +172,18 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
     const baseline = structuredClone(boundaryDoc);
     const deferred = new edit.Editor(structuredClone(baseline));
     const frames = [];
-    deferred.subscribeRecovery(frame => frames.push(frame));
-    const commit = (x, time) => deferred.transaction(tx => tx.exec({
-      type: 'SetXfrm', id: target.id, x,
-    }), '连续定位', { time, mergeKey: 'deferred-save' });
+    deferred.subscribeRecovery((frame) => frames.push(frame));
+    const commit = (x, time) =>
+      deferred.transaction(
+        (tx) =>
+          tx.exec({
+            type: 'SetXfrm',
+            id: target.id,
+            x,
+          }),
+        '连续定位',
+        { time, mergeKey: 'deferred-save' },
+      );
     commit(target.src.x + 30, 4000);
     const confirm = deferred.captureSavepoint();
     check('捕获保存点不会提前确认交付', deferred.isDirty() && frames.length === 1);
@@ -180,8 +197,10 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
     const recovered = new edit.Editor(structuredClone(baseline), {
       recoveryFrames: JSON.parse(JSON.stringify(frames)),
     });
-    check('冷恢复保留延迟交付后当前版本的未保存状态', recovered.isDirty()
-      && recovered.effectiveElement(target.id).x === edit.effectiveElement(baseline, target.id).x);
+    check(
+      '冷恢复保留延迟交付后当前版本的未保存状态',
+      recovered.isDirty() && recovered.effectiveElement(target.id).x === edit.effectiveElement(baseline, target.id).x,
+    );
     deferred.redo();
     check('重做回实际交付版本恢复干净', !deferred.isDirty());
     deferred.redo();
@@ -192,7 +211,8 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
     deferred.markSaved();
     confirm();
     check('已消费的旧确认不会覆盖后来的保存点', !deferred.isDirty());
-    deferred.dispose(); recovered.dispose();
+    deferred.dispose();
+    recovered.dispose();
   }
 
   boundary.history.clear();
@@ -206,15 +226,18 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
   const selectedIds = [target.id];
   boundary.select({ kind: 'elements', ids: selectedIds, enteredGroup: null });
   selectedIds[0] = 'missing';
-  check('选区复制调用方数组避免外部突变', boundary.selection.kind === 'elements'
-    && boundary.selection.ids[0] === target.id);
+  check('选区复制调用方数组避免外部突变', boundary.selection.kind === 'elements' && boundary.selection.ids[0] === target.id);
   let textSelectionRejected = false;
   try {
     boundary.select({
-      kind: 'text', id: target.id,
-      anchor: { p: 0, r: 0, off: 999 }, focus: { p: 0, r: 0, off: 999 },
+      kind: 'text',
+      id: target.id,
+      anchor: { p: 0, r: 0, off: 999 },
+      focus: { p: 0, r: 0, off: 999 },
     });
-  } catch { textSelectionRejected = true; }
+  } catch {
+    textSelectionRejected = true;
+  }
   check('文本选区拒绝越界的 UTF-16 光标位置', textSelectionRejected);
 
   const tiny = new edit.Editor(structuredClone(boundaryDoc), { historyByteLimit: 1 });
@@ -227,36 +250,50 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
   }
   eq('默认历史深度固定为 200 组', defaultDepth.history.undoCount, 200);
   const defaultBytes = new edit.Editor(structuredClone(boundaryDoc));
-  defaultBytes.transaction((tx) => tx.exec(
-    { type: 'SetXfrm', id: target.id, x: beforeExposed + 400 },
-  ), `超大标签${'x'.repeat(8 * 1024 * 1024)}`);
+  defaultBytes.transaction(
+    (tx) => tx.exec({ type: 'SetXfrm', id: target.id, x: beforeExposed + 400 }),
+    `超大标签${'x'.repeat(8 * 1024 * 1024)}`,
+  );
   eq('默认历史字节预算固定为 8MB', defaultBytes.history.undoCount, 0);
 
   boundary.history.clear();
   let events = 0;
-  const unsubscribe = boundary.subscribe(() => { events++; });
+  const unsubscribe = boundary.subscribe(() => {
+    events++;
+  });
   const noOp = boundary.exec({ type: 'SetXfrm', id: target.id, x: edit.effectiveElement(boundaryDoc, target.id).x });
   unsubscribe();
-  check('无效值相同的命令不占历史也不广播', noOp.forward.length === 0
-    && boundary.history.undoCount === 0 && events === 0);
+  check('无效值相同的命令不占历史也不广播', noOp.forward.length === 0 && boundary.history.undoCount === 0 && events === 0);
 
   let subscriberBubbled = false;
   let laterSubscriberEvents = 0;
   let reportedSubscriberErrors = 0;
   const previousReportError = globalThis.reportError;
-  globalThis.reportError = () => { reportedSubscriberErrors++; };
-  const stopThrowing = boundary.subscribe(() => { throw new Error('listener failed'); });
-  const stopLater = boundary.subscribe(() => { laterSubscriberEvents++; });
-  try { boundary.exec({ type: 'SetXfrm', id: target.id, x: beforeExposed + 10 }); } catch {
+  globalThis.reportError = () => {
+    reportedSubscriberErrors++;
+  };
+  const stopThrowing = boundary.subscribe(() => {
+    throw new Error('listener failed');
+  });
+  const stopLater = boundary.subscribe(() => {
+    laterSubscriberEvents++;
+  });
+  try {
+    boundary.exec({ type: 'SetXfrm', id: target.id, x: beforeExposed + 10 });
+  } catch {
     subscriberBubbled = true;
   }
   stopThrowing();
   stopLater();
   if (previousReportError) globalThis.reportError = previousReportError;
   else delete globalThis.reportError;
-  check('订阅者异常不伪装成事务失败且不阻断后续订阅者', !subscriberBubbled
-    && laterSubscriberEvents === 1 && reportedSubscriberErrors === 1
-    && edit.effectiveElement(boundaryDoc, target.id).x === beforeExposed + 10);
+  check(
+    '订阅者异常不伪装成事务失败且不阻断后续订阅者',
+    !subscriberBubbled
+      && laterSubscriberEvents === 1
+      && reportedSubscriberErrors === 1
+      && edit.effectiveElement(boundaryDoc, target.id).x === beforeExposed + 10,
+  );
 
   const beforeSelectionFailure = JSON.stringify(target.ovr);
   let selectionFailure = false;
@@ -265,9 +302,10 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
       tx.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + 100 });
       tx.select({ kind: 'elements', ids: ['missing'], enteredGroup: null });
     }, '非法选择');
-  } catch { selectionFailure = true; }
-  check('事务末尾选择校验失败也会回滚全部命令', selectionFailure
-    && JSON.stringify(target.ovr) === beforeSelectionFailure);
+  } catch {
+    selectionFailure = true;
+  }
+  check('事务末尾选择校验失败也会回滚全部命令', selectionFailure && JSON.stringify(target.ovr) === beforeSelectionFailure);
 
   for (const kind of ['locked', 'none', 'readonly']) {
     const protectedDoc = structuredClone(boundaryDoc);
@@ -276,7 +314,11 @@ export async function runCommandPropertyContract({ edit, core, load, check, eq }
     if (kind === 'readonly') protectedDoc.meta.readonly = true;
     const protectedEditor = new edit.Editor(protectedDoc);
     let wasRejected = false;
-    try { protectedEditor.exec({ type: 'SetXfrm', id: target.id, x: 1 }); } catch { wasRejected = true; }
+    try {
+      protectedEditor.exec({ type: 'SetXfrm', id: target.id, x: 1 });
+    } catch {
+      wasRejected = true;
+    }
     check(`SetXfrm 拒绝 ${kind} 目标`, wasRejected);
   }
 

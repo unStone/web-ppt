@@ -1,7 +1,10 @@
 /** OOXML 与旧二进制格式最终都按这组语义等价类型绑定占位符。 */
 export const PLACEHOLDER_TYPE_EQUIVALENTS: Readonly<Record<string, readonly string[]>> = {
-  title: ['title', 'ctrTitle'], ctrTitle: ['ctrTitle', 'title'],
-  body: ['body', 'subTitle', 'obj'], subTitle: ['subTitle', 'body'], obj: ['obj', 'body'],
+  title: ['title', 'ctrTitle'],
+  ctrTitle: ['ctrTitle', 'title'],
+  body: ['body', 'subTitle', 'obj'],
+  subTitle: ['subTitle', 'body'],
+  obj: ['obj', 'body'],
 };
 
 export interface PlaceholderIdentity {

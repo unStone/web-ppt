@@ -19,9 +19,7 @@ export async function sourceBytes(source: WebPptSource): Promise<Uint8Array<Arra
   throw new TypeError('PPT 来源必须是 File、Blob、ArrayBuffer 或 Uint8Array');
 }
 
-export async function fingerprintSourceBytes(
-  bytes: Uint8Array<ArrayBuffer>,
-): Promise<WebPptSourceIdentity> {
+export async function fingerprintSourceBytes(bytes: Uint8Array<ArrayBuffer>): Promise<WebPptSourceIdentity> {
   const subtle = globalThis.crypto?.subtle;
   if (!subtle) throw new Error('当前环境不支持 Web Crypto，无法计算恢复源指纹');
   const digest = new Uint8Array(await subtle.digest('SHA-256', bytes));

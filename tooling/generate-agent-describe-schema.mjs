@@ -6,8 +6,11 @@ const root = resolve(import.meta.dirname, '..');
 const config = {
   path: join(root, 'packages/edit-core/src/describe/types.ts'),
   tsconfig: join(root, 'tooling/tsconfig.agent-describe.json'),
-  type: 'PresentationDescription', expose: 'export', jsDoc: 'extended',
-  additionalProperties: false, sortProps: true,
+  type: 'PresentationDescription',
+  expose: 'export',
+  jsDoc: 'extended',
+  additionalProperties: false,
+  sortProps: true,
 };
 const schema = createGenerator(config).createSchema(config.type);
 const content = `${JSON.stringify(schema, null, 2)}\n`;

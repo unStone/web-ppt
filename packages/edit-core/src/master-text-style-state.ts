@@ -2,8 +2,13 @@ import type { MasterTextCategory, Paragraph, SlideMasterTemplate, TextRun } from
 import { runProperties } from './run-style';
 import { sourceParagraphBullet } from './text-flatten';
 import type {
-  EditDoc, MasterParagraphPropertyOverrides, MasterParagraphStyle, MasterRunPropertyOverrides,
-  MasterTextLevelState, ParagraphBullet, RunProperties,
+  EditDoc,
+  MasterParagraphPropertyOverrides,
+  MasterParagraphStyle,
+  MasterRunPropertyOverrides,
+  MasterTextLevelState,
+  ParagraphBullet,
+  RunProperties,
 } from './types';
 
 const CATEGORIES = ['title', 'body', 'other'] as const satisfies readonly MasterTextCategory[];
@@ -21,10 +26,7 @@ function paragraphStyle(paragraph: Paragraph, level: number): MasterParagraphSty
   };
 }
 
-function applyParagraph(
-  source: MasterParagraphStyle,
-  overrides?: MasterParagraphPropertyOverrides,
-): MasterParagraphStyle {
+function applyParagraph(source: MasterParagraphStyle, overrides?: MasterParagraphPropertyOverrides): MasterParagraphStyle {
   if (!overrides) return structuredClone(source);
   const value = structuredClone(source) as MasterParagraphStyle & Record<string, unknown>;
   const mutable = value as Record<string, unknown>;
@@ -78,10 +80,12 @@ function levelState(
   return {
     level,
     source: structuredClone(source),
-    value: resolved ? structuredClone(resolvedValue) : {
-      paragraph: applyParagraph(source.paragraph, overrides?.paragraph),
-      run: applyRun(source.run, overrides?.run),
-    },
+    value: resolved
+      ? structuredClone(resolvedValue)
+      : {
+          paragraph: applyParagraph(source.paragraph, overrides?.paragraph),
+          run: applyRun(source.run, overrides?.run),
+        },
     direct: {
       paragraph: Object.keys(overrides?.paragraph ?? {}) as MasterTextLevelState['direct']['paragraph'],
       run: Object.keys(overrides?.run ?? {}) as MasterTextLevelState['direct']['run'],
@@ -94,8 +98,7 @@ export function masterTextStyleStates(
   masterId: string,
   resolved?: SlideMasterTemplate | null,
 ): Readonly<Record<MasterTextCategory, readonly MasterTextLevelState[]>> {
-  return Object.fromEntries(CATEGORIES.map((category) => [
-    category,
-    Array.from({ length: 9 }, (_, level) => levelState(doc, masterId, category, level, resolved)),
-  ])) as unknown as Readonly<Record<MasterTextCategory, readonly MasterTextLevelState[]>>;
+  return Object.fromEntries(
+    CATEGORIES.map((category) => [category, Array.from({ length: 9 }, (_, level) => levelState(doc, masterId, category, level, resolved))]),
+  ) as unknown as Readonly<Record<MasterTextCategory, readonly MasterTextLevelState[]>>;
 }

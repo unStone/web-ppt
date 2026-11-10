@@ -10,13 +10,27 @@ function alpha(input: number): string {
 
 function roman(input: number): string {
   const table: readonly (readonly [number, string])[] = [
-    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
-    [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+    [1000, 'M'],
+    [900, 'CM'],
+    [500, 'D'],
+    [400, 'CD'],
+    [100, 'C'],
+    [90, 'XC'],
+    [50, 'L'],
+    [40, 'XL'],
+    [10, 'X'],
+    [9, 'IX'],
+    [5, 'V'],
+    [4, 'IV'],
+    [1, 'I'],
   ];
   let value = '';
   let number = input;
   for (const [amount, symbol] of table) {
-    while (number >= amount) { value += symbol; number -= amount; }
+    while (number >= amount) {
+      value += symbol;
+      number -= amount;
+    }
   }
   return value;
 }

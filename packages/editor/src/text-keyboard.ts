@@ -38,8 +38,7 @@ export class TextKeyboardController {
 
   private forwardDocumentKey(event: KeyboardEvent): boolean {
     // Chrome 在组词边界会用 keyCode 229；此时切页会移除 editable，未提交 DOM 文本将永久丢失。
-    return !this.options.composing() && !event.isComposing && event.keyCode !== 229
-      && this.options.documentKeyDown(event);
+    return !this.options.composing() && !event.isComposing && event.keyCode !== 229 && this.options.documentKeyDown(event);
   }
 
   private selectAll(root: HTMLDivElement): boolean {
@@ -56,7 +55,11 @@ export class TextKeyboardController {
     const start = textPositionAtIndex(context.text, 0);
     const end = textPositionAtIndex(context.text, length);
     this.options.editor.select({
-      kind: 'text', id: context.id, ...textTargetFields(context.cell), anchor: start, focus: end,
+      kind: 'text',
+      id: context.id,
+      ...textTargetFields(context.cell),
+      anchor: start,
+      focus: end,
     });
     root.focus({ preventScroll: true });
     this.options.restoreSelection(start, end);
@@ -90,18 +93,13 @@ export class TextKeyboardController {
       handled = this.options.formatSelection(key as 'b' | 'i' | 'u');
     } else if (event.shiftKey && (event.code === 'Digit7' || event.code === 'Digit8')) {
       handled = this.options.setParaProps({
-        bullet: event.code === 'Digit7'
-          ? { kind: 'autoNum', type: 'arabicPeriod' }
-          : { kind: 'char', char: '•' },
+        bullet: event.code === 'Digit7' ? { kind: 'autoNum', type: 'arabicPeriod' } : { kind: 'char', char: '•' },
       });
-    } else if (event.shiftKey && (event.code === 'Period' || event.code === 'Comma'
-      || key === '>' || key === '<')) {
+    } else if (event.shiftKey && (event.code === 'Period' || event.code === 'Comma' || key === '>' || key === '<')) {
       const direction = event.code === 'Comma' || key === '<' ? -1 : 1;
       handled = this.options.stepFontSize(direction);
     } else if (!event.shiftKey) {
-      const align = ({ e: 'center', l: 'left', r: 'right', j: 'justify' } as const)[
-        key as 'e' | 'l' | 'r' | 'j'
-      ];
+      const align = ({ e: 'center', l: 'left', r: 'right', j: 'justify' } as const)[key as 'e' | 'l' | 'r' | 'j'];
       if (align) handled = this.options.setParaProps({ align });
     }
     if (handled) this.finish(event);

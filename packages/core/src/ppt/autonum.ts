@@ -102,12 +102,18 @@ export function collectAutoNums(dv: DataView, slideRec: Rec): (AutoNum | null)[]
  */
 export function formatAutoNum(scheme: number, num: number): string {
   const kind = SCHEME_BODY[scheme] ?? 'arabic';
-  const body = kind === 'alphaLc' ? alpha(num).toLowerCase()
-    : kind === 'alphaUc' ? alpha(num)
-      : kind === 'romanLc' ? roman(num).toLowerCase()
-        : kind === 'romanUc' ? roman(num)
-          : kind === 'circle' ? circled(num)
-            : String(num);
+  const body =
+    kind === 'alphaLc'
+      ? alpha(num).toLowerCase()
+      : kind === 'alphaUc'
+        ? alpha(num)
+        : kind === 'romanLc'
+          ? roman(num).toLowerCase()
+          : kind === 'romanUc'
+            ? roman(num)
+            : kind === 'circle'
+              ? circled(num)
+              : String(num);
   const wrap = SCHEME_WRAP[scheme] ?? '';
   if (wrap === 'both') return `(${body})`;
   if (wrap === 'right') return `${body})`;
@@ -119,25 +125,66 @@ export function formatAutoNum(scheme: number, num: number): string {
 type Body = 'alphaLc' | 'alphaUc' | 'romanLc' | 'romanUc' | 'arabic' | 'circle';
 
 const SCHEME_BODY: Record<number, Body> = {
-  0x00: 'alphaLc', 0x01: 'alphaUc', 0x02: 'arabic', 0x03: 'arabic',
-  0x04: 'romanLc', 0x05: 'romanLc', 0x06: 'romanLc', 0x07: 'romanUc',
-  0x08: 'alphaLc', 0x09: 'alphaLc', 0x0a: 'alphaUc', 0x0b: 'alphaUc',
-  0x0c: 'arabic', 0x0d: 'arabic', 0x0e: 'romanUc', 0x0f: 'romanUc',
-  0x10: 'arabic', 0x11: 'arabic',
-  0x12: 'circle', 0x13: 'circle', 0x14: 'circle',
-  0x15: 'arabic', 0x16: 'arabic', 0x17: 'arabic', 0x18: 'arabic',
-  0x19: 'arabic', 0x1a: 'arabic', 0x1b: 'arabic', 0x1c: 'arabic', 0x1d: 'arabic',
-  0x1e: 'arabic', 0x1f: 'arabic', 0x20: 'arabic',
+  0x00: 'alphaLc',
+  0x01: 'alphaUc',
+  0x02: 'arabic',
+  0x03: 'arabic',
+  0x04: 'romanLc',
+  0x05: 'romanLc',
+  0x06: 'romanLc',
+  0x07: 'romanUc',
+  0x08: 'alphaLc',
+  0x09: 'alphaLc',
+  0x0a: 'alphaUc',
+  0x0b: 'alphaUc',
+  0x0c: 'arabic',
+  0x0d: 'arabic',
+  0x0e: 'romanUc',
+  0x0f: 'romanUc',
+  0x10: 'arabic',
+  0x11: 'arabic',
+  0x12: 'circle',
+  0x13: 'circle',
+  0x14: 'circle',
+  0x15: 'arabic',
+  0x16: 'arabic',
+  0x17: 'arabic',
+  0x18: 'arabic',
+  0x19: 'arabic',
+  0x1a: 'arabic',
+  0x1b: 'arabic',
+  0x1c: 'arabic',
+  0x1d: 'arabic',
+  0x1e: 'arabic',
+  0x1f: 'arabic',
+  0x20: 'arabic',
 };
 
 const SCHEME_WRAP: Record<number, 'period' | 'right' | 'both' | 'minus'> = {
-  0x00: 'period', 0x01: 'period', 0x02: 'right', 0x03: 'period',
-  0x04: 'both', 0x05: 'right', 0x06: 'period', 0x07: 'period',
-  0x08: 'both', 0x09: 'right', 0x0a: 'both', 0x0b: 'right',
-  0x0c: 'both', 0x0e: 'both', 0x0f: 'right',
-  0x11: 'period', 0x15: 'period', 0x17: 'period', 0x19: 'period',
-  0x1b: 'period', 0x1d: 'period',
-  0x1e: 'minus', 0x1f: 'minus', 0x20: 'minus',
+  0x00: 'period',
+  0x01: 'period',
+  0x02: 'right',
+  0x03: 'period',
+  0x04: 'both',
+  0x05: 'right',
+  0x06: 'period',
+  0x07: 'period',
+  0x08: 'both',
+  0x09: 'right',
+  0x0a: 'both',
+  0x0b: 'right',
+  0x0c: 'both',
+  0x0e: 'both',
+  0x0f: 'right',
+  0x11: 'period',
+  0x15: 'period',
+  0x17: 'period',
+  0x19: 'period',
+  0x1b: 'period',
+  0x1d: 'period',
+  0x1e: 'minus',
+  0x1f: 'minus',
+  0x20: 'minus',
 };
 
 function alpha(num: number): string {
@@ -152,12 +199,27 @@ function alpha(num: number): string {
 
 function roman(num: number): string {
   const table: [number, string][] = [
-    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
-    [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+    [1000, 'M'],
+    [900, 'CM'],
+    [500, 'D'],
+    [400, 'CD'],
+    [100, 'C'],
+    [90, 'XC'],
+    [50, 'L'],
+    [40, 'XL'],
+    [10, 'X'],
+    [9, 'IX'],
+    [5, 'V'],
+    [4, 'IV'],
+    [1, 'I'],
   ];
   let s = '';
   let n = num;
-  for (const [v, sym] of table) while (n >= v) { s += sym; n -= v; }
+  for (const [v, sym] of table)
+    while (n >= v) {
+      s += sym;
+      n -= v;
+    }
   return s || 'I';
 }
 

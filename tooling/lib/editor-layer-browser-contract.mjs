@@ -27,9 +27,13 @@ export async function runEditorLayerBrowserContract({ openEditor, load }) {
     for (let index = 0; index < 40; index++) {
       session.editor.select({ kind: 'elements', ids: selected, enteredGroup: null });
       let started = performance.now();
-      consumed &&= !view.element.dispatchEvent(keyboardEvent('keydown', '}', {
-        code: 'BracketRight', ctrlKey: true, shiftKey: true,
-      }));
+      consumed &&= !view.element.dispatchEvent(
+        keyboardEvent('keydown', '}', {
+          code: 'BracketRight',
+          ctrlKey: true,
+          shiftKey: true,
+        }),
+      );
       mount.querySelector('[data-ppt-layer="static"] svg')?.getBoundingClientRect();
       layer.push(performance.now() - started);
       started = performance.now();
@@ -45,19 +49,37 @@ export async function runEditorLayerBrowserContract({ openEditor, load }) {
     const result = { layerP95: p95(layer), undoP95: p95(undo), redoP95: p95(redo) };
     const stable = ids.every((id) => mount.querySelector(`[data-edit-root="${id}"]`) === identities.get(id));
     const orderedNodes = roots.map((id) => mount.querySelector(`[data-edit-root="${id}"]`));
-    const domOrder = orderedNodes.every((node, index) => index === 0
-      || !!(orderedNodes[index - 1].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING));
+    const domOrder = orderedNodes.every(
+      (node, index) => index === 0 || !!(orderedNodes[index - 1].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING),
+    );
     const selection = session.editor.selection;
-    if (ids.length !== 60 || selected.length !== 59
-      || !consumed || !stable || !domOrder
+    if (
+      ids.length !== 60
+      || selected.length !== 59
+      || !consumed
+      || !stable
+      || !domOrder
       || session.editor.doc.slides[view.slideId].children.join(',') !== roots.join(',')
-      || selection.kind !== 'elements' || selection.ids.join(',') !== selected.join(',')
-      || session.editor.history.undoCount !== 0 || session.editor.history.redoCount !== 1
-      || session.editor.isDirty()) {
-      throw new Error('60 元素层级/撤销/重做最终状态不一致：'
-        + JSON.stringify({ ids: ids.length, selected: selected.length, consumed, stable, domOrder,
-          selection: selection.kind, undo: session.editor.history.undoCount,
-          redo: session.editor.history.redoCount, dirty: session.editor.isDirty() }));
+      || selection.kind !== 'elements'
+      || selection.ids.join(',') !== selected.join(',')
+      || session.editor.history.undoCount !== 0
+      || session.editor.history.redoCount !== 1
+      || session.editor.isDirty()
+    ) {
+      throw new Error(
+        '60 元素层级/撤销/重做最终状态不一致：'
+          + JSON.stringify({
+            ids: ids.length,
+            selected: selected.length,
+            consumed,
+            stable,
+            domOrder,
+            selection: selection.kind,
+            undo: session.editor.history.undoCount,
+            redo: session.editor.history.redoCount,
+            dirty: session.editor.isDirty(),
+          }),
+      );
     }
     recordPerformanceBudget('60 元素层级 p95', result.layerP95, 8);
     recordPerformanceBudget('60 元素层级撤销 p95', result.undoP95, 8);
@@ -130,12 +152,22 @@ export async function runTrustedLayerContract({ evaluate, dispatchKey }) {
     delete globalThis.trustedLayerContract;
     return result;
   })()`);
-  const eventsCorrect = result.events.length === 2
+  const eventsCorrect =
+    result.events.length === 2
     && result.events.every((event) => event.trusted && event.prevented && event.ctrl)
-    && result.events[0].key === ']' && !result.events[0].shift
-    && result.events[1].key === '}' && result.events[1].code === 'BracketRight' && result.events[1].shift;
-  if (!Object.values(moved).every(Boolean) || !result.front || !result.targetStable
-    || !result.oneHistory || !result.focused || !eventsCorrect) {
+    && result.events[0].key === ']'
+    && !result.events[0].shift
+    && result.events[1].key === '}'
+    && result.events[1].code === 'BracketRight'
+    && result.events[1].shift;
+  if (
+    !Object.values(moved).every(Boolean)
+    || !result.front
+    || !result.targetStable
+    || !result.oneHistory
+    || !result.focused
+    || !eventsCorrect
+  ) {
     throw new Error(`真实 Ctrl+] / Ctrl+Shift+] 失败：${JSON.stringify({ moved, result, eventsCorrect })}`);
   }
 }

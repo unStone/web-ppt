@@ -14,18 +14,14 @@ import { appendDrawingColor } from './drawing-color';
 import { patchBackgroundImageFill } from './background-image';
 
 const FILL_NAMES = new Set(['noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill']);
-const LINE_CONTROLLED = new Set([
-  ...FILL_NAMES, 'prstDash', 'custDash', 'round', 'bevel', 'miter', 'headEnd', 'tailEnd',
-]);
+const LINE_CONTROLLED = new Set([...FILL_NAMES, 'prstDash', 'custDash', 'round', 'bevel', 'miter', 'headEnd', 'tailEnd']);
 
-export function appendVectorFill(
-  properties: XmlElement,
-  fill: Exclude<Fill, { type: 'image' }>,
-): void {
-  const node = namespacedElement(properties, DRAWINGML_NS,
-    fill.type === 'none' ? 'noFill'
-      : fill.type === 'solid' ? 'solidFill'
-        : fill.type === 'gradient' ? 'gradFill' : 'pattFill');
+export function appendVectorFill(properties: XmlElement, fill: Exclude<Fill, { type: 'image' }>): void {
+  const node = namespacedElement(
+    properties,
+    DRAWINGML_NS,
+    fill.type === 'none' ? 'noFill' : fill.type === 'solid' ? 'solidFill' : fill.type === 'gradient' ? 'gradFill' : 'pattFill',
+  );
   insertXmlInOrder(properties, node);
   if (fill.type === 'none') return;
   if (fill.type === 'solid') {
@@ -113,8 +109,7 @@ function patchLine(properties: XmlElement, stroke: Stroke | null, materializeDef
   }
   if (stroke.join !== undefined || materializeDefaults) {
     const joinName = stroke.join ?? 'miter';
-    const join = namespacedElement(line, DRAWINGML_NS, joinName === 'round' ? 'round'
-      : joinName === 'bevel' ? 'bevel' : 'miter');
+    const join = namespacedElement(line, DRAWINGML_NS, joinName === 'round' ? 'round' : joinName === 'bevel' ? 'bevel' : 'miter');
     insertXmlInOrder(line, join);
   }
   const noEnd: LineEnd = { type: 'none', w: 3, h: 3 };
@@ -130,11 +125,7 @@ function shapeProperties(document: XmlDocument, record: ElementRecord): XmlEleme
 }
 
 /** 目标版式不再提供占位符时，把旧版式的有效矢量填充固定到页面宿主。 */
-export function materializeElementFill(
-  document: XmlDocument,
-  record: ElementRecord,
-  fill: Exclude<Fill, { type: 'image' }> | null,
-): void {
+export function materializeElementFill(document: XmlDocument, record: ElementRecord, fill: Exclude<Fill, { type: 'image' }> | null): void {
   const properties = shapeProperties(document, record);
   removeDrawingFillChildren(properties);
   appendVectorFill(properties, fill ?? { type: 'none' });
@@ -149,11 +140,7 @@ export function materializeElementImageFill(
   patchBackgroundImageFill(shapeProperties(document, record), fill, relationshipId, false);
 }
 
-export function materializeElementStroke(
-  document: XmlDocument,
-  record: ElementRecord,
-  stroke: Stroke | null,
-): void {
+export function materializeElementStroke(document: XmlDocument, record: ElementRecord, stroke: Stroke | null): void {
   patchLine(shapeProperties(document, record), stroke, false);
 }
 

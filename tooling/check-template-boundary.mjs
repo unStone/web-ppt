@@ -29,11 +29,7 @@ if (editCoreGzip > 82_503) {
   throw new Error(`edit-core 默认入口由模板功能增大：${editCoreGzip}B gzip > 82503B`);
 }
 
-for (const path of [
-  'packages/editor/dist/templates.js',
-  'packages/react/dist/templates.js',
-  'packages/vue/dist/templates.js',
-]) {
+for (const path of ['packages/editor/dist/templates.js', 'packages/react/dist/templates.js', 'packages/vue/dist/templates.js']) {
   if (!existsSync(join(root, path)) || read(path).includes(sentinel)) {
     throw new Error(`${path} 必须只转发模板入口，不能复制配方`);
   }

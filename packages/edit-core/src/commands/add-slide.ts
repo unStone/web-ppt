@@ -14,8 +14,7 @@ function assertCommand(doc: EditDoc, command: AddSlideCommand) {
   const layout = doc.layouts[command.layoutId];
   if (!layout) throw new Error(`找不到版式：${command.layoutId}`);
   assertDataObject(command.at, ['after'], 'AddSlide.at');
-  if (!own(command.at, 'after')
-    || (command.at.after !== null && (typeof command.at.after !== 'string' || !doc.slides[command.at.after]))) {
+  if (!own(command.at, 'after') || (command.at.after !== null && (typeof command.at.after !== 'string' || !doc.slides[command.at.after]))) {
     throw new Error(`AddSlide.at.after 指向不存在的页面：${String(command.at.after)}`);
   }
   return layout;
@@ -39,9 +38,13 @@ export function addSlidePatches(doc: EditDoc, command: AddSlideCommand, origin: 
         layoutName: layout.name,
         ...(layout.transition ? { transition: structuredClone(layout.transition) } : {}),
       },
-      ovr: {}, children: template.children, dynamicSlideNumbers: template.dynamicSlideNumbers,
+      ovr: {},
+      children: template.children,
+      dynamicSlideNumbers: template.dynamicSlideNumbers,
       dynamicSlideLinks: template.dynamicSlideLinks,
-      origin: { part: opc.part }, layoutId: layout.id, sourceLayoutId: layout.id,
+      origin: { part: opc.part },
+      layoutId: layout.id,
+      sourceLayoutId: layout.id,
       defaultShape: structuredClone(layout.defaultShape),
       ...(layout.defaultTable ? { defaultTable: structuredClone(layout.defaultTable) } : {}),
       ...(layout.tableStyles ? { tableStyles: structuredClone(layout.tableStyles) } : {}),
@@ -54,8 +57,7 @@ export function addSlidePatches(doc: EditDoc, command: AddSlideCommand, origin: 
       },
     },
     records: template.records,
-    ...(command.at.after && sectionOfSlide(doc, command.at.after)
-      ? { sectionId: sectionOfSlide(doc, command.at.after)! } : {}),
+    ...(command.at.after && sectionOfSlide(doc, command.at.after) ? { sectionId: sectionOfSlide(doc, command.at.after)! } : {}),
   };
   const path = ['slides', slideId] as const;
   const forward: SlideTreePatch = { op: 'insert', path, value, origin };

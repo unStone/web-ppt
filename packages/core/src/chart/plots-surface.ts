@@ -11,8 +11,13 @@ import { PlotEnv, num } from './plot-marks';
 
 /** 由蓝到红的等高线色带（无 bandFmts 时的默认配色） */
 const BAND_RAMP = [
-  'rgb(49,84,163)', 'rgb(84,148,200)', 'rgb(160,208,224)', 'rgb(224,238,196)',
-  'rgb(253,224,144)', 'rgb(244,146,74)', 'rgb(200,60,44)',
+  'rgb(49,84,163)',
+  'rgb(84,148,200)',
+  'rgb(160,208,224)',
+  'rgb(224,238,196)',
+  'rgb(253,224,144)',
+  'rgb(244,146,74)',
+  'rgb(200,60,44)',
 ];
 
 function rampColor(t: number): string {
@@ -64,16 +69,28 @@ export function renderSurface(g: PlotGroup, f: SurfaceFrame, env: PlotEnv): Slid
       const fill = g.bandFills.get(band) ?? solid(rampColor(f.bands > 1 ? band / (f.bands - 1) : t));
       out.push(rectEl({ x: gridX + ci * cw, y, w: cw, h: ch }, fill, cellStroke));
     }
-    out.push(textEl(f.rect.x, y + ch / 2 - labelH / 2, Math.max(labelW - env.size * 0.4, 8), labelH, s.name, {
-      size: env.size, color: env.color, align: 'right', anchor: 'middle', fonts: env.fonts,
-    }));
+    out.push(
+      textEl(f.rect.x, y + ch / 2 - labelH / 2, Math.max(labelW - env.size * 0.4, 8), labelH, s.name, {
+        size: env.size,
+        color: env.color,
+        align: 'right',
+        anchor: 'middle',
+        fonts: env.fonts,
+      }),
+    );
   });
 
   // 类目标签
   for (let ci = 0; ci < cols && ci < env.cats.length; ci++) {
-    out.push(textEl(gridX + ci * cw, gridY + gridH, cw, labelH, env.cats[ci], {
-      size: env.size, color: env.color, align: 'center', anchor: 'middle', fonts: env.fonts,
-    }));
+    out.push(
+      textEl(gridX + ci * cw, gridY + gridH, cw, labelH, env.cats[ci], {
+        size: env.size,
+        color: env.color,
+        align: 'center',
+        anchor: 'middle',
+        fonts: env.fonts,
+      }),
+    );
   }
 
   // 色带图例
@@ -86,10 +103,20 @@ export function renderSurface(g: PlotGroup, f: SurfaceFrame, env: PlotEnv): Slid
     const fill = g.bandFills.get(b) ?? solid(rampColor(f.bands > 1 ? b / (f.bands - 1) : 0.5));
     out.push(rectEl({ x: barX, y: barY + barH - (b + 1) * step, w: barW, h: step }, fill, null));
     out.push(
-      textEl(barX + barW + env.size * 0.3, barY + barH - (b + 1) * step - lineH(env.size * 0.85) / 2,
-        legendW, lineH(env.size * 0.85), formatNumber(f.min + ((b + 1) * span) / f.bands, f.fmt), {
-          size: env.size * 0.85, color: env.color, align: 'left', anchor: 'middle', fonts: env.fonts,
-        }),
+      textEl(
+        barX + barW + env.size * 0.3,
+        barY + barH - (b + 1) * step - lineH(env.size * 0.85) / 2,
+        legendW,
+        lineH(env.size * 0.85),
+        formatNumber(f.min + ((b + 1) * span) / f.bands, f.fmt),
+        {
+          size: env.size * 0.85,
+          color: env.color,
+          align: 'left',
+          anchor: 'middle',
+          fonts: env.fonts,
+        },
+      ),
     );
   }
   return out;

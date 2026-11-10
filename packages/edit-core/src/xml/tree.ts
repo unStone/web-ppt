@@ -2,20 +2,24 @@ import { attributeStates, elementStates, nodeState, nodeStates } from './state';
 import type { XmlAttributeState, XmlElementState } from './state';
 import { serializeElementOpen } from './mutate';
 import { isXmlQName, namespaceForQName, splitQName, XML_NS } from './qname';
-import type {
-  XmlAttribute, XmlDocument, XmlElement, XmlNode, XmlProcessingInstruction, XmlQuote,
-} from './types';
+import type { XmlAttribute, XmlDocument, XmlElement, XmlNode, XmlProcessingInstruction, XmlQuote } from './types';
 
 type XmlByteEncoding = 'utf-8' | 'utf-16le' | 'utf-16be';
-interface XmlByteState { encoding: XmlByteEncoding; bom: boolean; source: Uint8Array }
+interface XmlByteState {
+  encoding: XmlByteEncoding;
+  bom: boolean;
+  source: Uint8Array;
+}
 const byteStates = new WeakMap<XmlDocument, XmlByteState>();
 const ENTITIES: Record<string, string> = {
-  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
 };
-const isXmlWhitespace = (char: string | undefined): boolean =>
-  char === ' ' || char === '\t' || char === '\r' || char === '\n';
-const isNameDelimiter = (char: string | undefined): boolean =>
-  isXmlWhitespace(char) || char === '=' || char === '/' || char === '>';
+const isXmlWhitespace = (char: string | undefined): boolean => char === ' ' || char === '\t' || char === '\r' || char === '\n';
+const isNameDelimiter = (char: string | undefined): boolean => isXmlWhitespace(char) || char === '=' || char === '/' || char === '>';
 
 function isSelfClosingTag(openTag: string): boolean {
   let index = openTag.length - 2;
@@ -29,9 +33,7 @@ function decodeXml(value: string): string {
     if (reference[0] !== '#') return ENTITIES[reference] ?? source;
     const hex = reference[1].toLowerCase() === 'x';
     const code = Number.parseInt(reference.slice(hex ? 2 : 1), hex ? 16 : 10);
-    return Number.isFinite(code) && code >= 0 && code <= 0x10ffff
-      ? String.fromCodePoint(code)
-      : source;
+    return Number.isFinite(code) && code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : source;
   });
 }
 
@@ -87,8 +89,9 @@ function encodeBytes(text: string, encoding: XmlByteEncoding, bom: boolean): Uin
 }
 
 function declaredByteEncoding(document: XmlDocument): Omit<XmlByteState, 'source'> {
-  const declaration = document.children.find((node): node is XmlProcessingInstruction =>
-    node.type === 'processing-instruction' && node.target.toLowerCase() === 'xml');
+  const declaration = document.children.find(
+    (node): node is XmlProcessingInstruction => node.type === 'processing-instruction' && node.target.toLowerCase() === 'xml',
+  );
   const match = declaration?.value.match(/\bencoding\s*=\s*(['"])([^'"]+)\1/i);
   const label = match?.[2].toLowerCase() ?? 'utf-8';
   const sourceBom = nodeState(document).raw.startsWith('\uFEFF');
@@ -116,9 +119,7 @@ class PreservingXmlParser {
     const document = { type: 'document', children, root: null } as unknown as XmlDocument;
     let root: XmlElement | null = null;
     while (this.offset < this.source.length) {
-      const node = this.source[this.offset] === '<'
-        ? this.parseMarkup(document, new Map())
-        : this.parseText(document);
+      const node = this.source[this.offset] === '<' ? this.parseMarkup(document, new Map()) : this.parseText(document);
       children.push(node);
       if (node.type === 'element') {
         if (root) this.fail('XML 只能有一个根元素');
@@ -253,9 +254,7 @@ class PreservingXmlParser {
     let closeRaw = '';
     if (!selfClosing) {
       while (this.offset < this.source.length && !this.source.startsWith('</', this.offset)) {
-        const child = this.source[this.offset] === '<'
-          ? this.parseMarkup(element, namespaces)
-          : this.parseText(element);
+        const child = this.source[this.offset] === '<' ? this.parseMarkup(element, namespaces) : this.parseText(element);
         children.push(child);
       }
       if (!this.source.startsWith('</', this.offset)) this.fail(`元素 <${name}> 未闭合`);

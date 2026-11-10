@@ -60,14 +60,20 @@ export class AnimationPreviewController {
   private releasePlayback(): void {
     // Viewer 的 cancel 语义是“跳到终态”；编辑预览要真正移除 effect，故只回收本句柄的动画。
     for (const animation of this.playback?.animations ?? []) {
-      try { animation.cancel(); } catch { /* 浏览器已回收 */ }
+      try {
+        animation.cancel();
+      } catch {
+        /* 浏览器已回收 */
+      }
     }
     this.playback = null;
   }
 
   private captureStyles(): void {
-    this.styles = [...this.options.layer.querySelectorAll<SVGElement>('[data-el]')]
-      .map((node) => ({ node, value: node.getAttribute('style') }));
+    this.styles = [...this.options.layer.querySelectorAll<SVGElement>('[data-el]')].map((node) => ({
+      node,
+      value: node.getAttribute('style'),
+    }));
   }
 
   private restoreStyles(): void {

@@ -5,8 +5,22 @@ import mapWorkspaces from '@npmcli/map-workspaces';
 import packlist from 'npm-packlist';
 
 const templateExtensions = new Set([
-  '.ppt', '.pptx', '.pptm', '.pot', '.potx', '.potm', '.pps', '.ppsx', '.ppsm',
-  '.ppa', '.ppam', '.sldx', '.sldm', '.thmx', '.odp', '.otp',
+  '.ppt',
+  '.pptx',
+  '.pptm',
+  '.pot',
+  '.potx',
+  '.potm',
+  '.pps',
+  '.ppsx',
+  '.ppsm',
+  '.ppa',
+  '.ppam',
+  '.sldx',
+  '.sldm',
+  '.thmx',
+  '.odp',
+  '.otp',
 ]);
 
 export async function auditPublishedTemplateBinaries(directory) {
@@ -37,9 +51,9 @@ export async function auditPublishedTemplateBinaries(directory) {
     }
     packages.push({ name, files });
   }
-  const binaries = packages.flatMap(({ name, files }) => files
-    .filter((path) => templateExtensions.has(extname(path).toLowerCase()))
-    .map((path) => `${name}: ${path}`));
+  const binaries = packages.flatMap(({ name, files }) =>
+    files.filter((path) => templateExtensions.has(extname(path).toLowerCase())).map((path) => `${name}: ${path}`),
+  );
   if (binaries.length) throw new Error(`npm 发布包包含固定演示稿或模板二进制：${binaries.join(', ')}`);
   return packages;
 }

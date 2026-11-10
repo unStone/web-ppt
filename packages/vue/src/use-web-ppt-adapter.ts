@@ -1,13 +1,7 @@
-import {
-  onBeforeUnmount, onMounted, shallowRef, toValue, watchEffect,
-} from 'vue';
+import { onBeforeUnmount, onMounted, shallowRef, toValue, watchEffect } from 'vue';
 import type { MaybeRefOrGetter, ShallowRef } from 'vue';
-import {
-  applyWebPptAdapterBinding, createWebPptAdapter, WEB_PPT_IDLE_SNAPSHOT,
-} from '@web-ppt/editor';
-import type {
-  WebPptAdapter, WebPptAdapterBinding, WebPptAdapterSnapshot,
-} from '@web-ppt/editor';
+import { applyWebPptAdapterBinding, createWebPptAdapter, WEB_PPT_IDLE_SNAPSHOT } from '@web-ppt/editor';
+import type { WebPptAdapter, WebPptAdapterBinding, WebPptAdapterSnapshot } from '@web-ppt/editor';
 
 export interface UseWebPptAdapterResult {
   readonly container: ShallowRef<HTMLElement | null>;
@@ -16,9 +10,7 @@ export interface UseWebPptAdapterResult {
 }
 
 /** composable 只绑定 Vue 生命周期；文件与 DOM 所有权仍由共享 adapter 决定。 */
-export function useWebPptAdapter(
-  binding: MaybeRefOrGetter<WebPptAdapterBinding>,
-): UseWebPptAdapterResult {
+export function useWebPptAdapter(binding: MaybeRefOrGetter<WebPptAdapterBinding>): UseWebPptAdapterResult {
   const container = shallowRef<HTMLElement | null>(null);
   const adapter = shallowRef<WebPptAdapter | null>(null);
   const snapshot = shallowRef<WebPptAdapterSnapshot>(WEB_PPT_IDLE_SNAPSHOT);
@@ -27,7 +19,9 @@ export function useWebPptAdapter(
   onMounted(() => {
     const current = createWebPptAdapter();
     adapter.value = current;
-    unsubscribe = current.subscribe((value) => { snapshot.value = value; });
+    unsubscribe = current.subscribe((value) => {
+      snapshot.value = value;
+    });
     current.attach(container.value);
     snapshot.value = current.snapshot;
   });

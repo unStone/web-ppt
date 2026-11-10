@@ -1,19 +1,13 @@
 import { assertDataObject, own } from './data-validation';
 import { relationshipPartFor, resolveRelationshipTarget } from './clipboard-source';
-import type {
-  EditDoc, ElementInsertionRelationship, ElementRecord,
-} from './types';
+import type { EditDoc, ElementInsertionRelationship, ElementRecord } from './types';
 import { assertImageResource } from './commands/element-image-content';
 import { findXmlAttribute, xmlElementChildren } from './xml/query';
 import { parseXmlTree } from './xml/tree';
 
 const MEDIA_REL_TYPES = new Set(['image', 'audio', 'video', 'media']);
 
-function relationshipSource(
-  doc: EditDoc,
-  part: string,
-  duplicateSources: ReadonlyMap<string, string>,
-): Uint8Array | undefined {
+function relationshipSource(doc: EditDoc, part: string, duplicateSources: ReadonlyMap<string, string>): Uint8Array | undefined {
   const direct = doc.package?.parts[relationshipPartFor(part)];
   if (direct) return direct;
   const sourcePart = duplicateSources.get(part);
@@ -23,9 +17,7 @@ function relationshipSource(
 }
 
 function relationshipTriple(relationship: ElementInsertionRelationship): string {
-  return JSON.stringify([
-    relationship.type, relationship.target, relationship.targetMode ?? null,
-  ]);
+  return JSON.stringify([relationship.type, relationship.target, relationship.targetMode ?? null]);
 }
 
 /** 结构 Patch 是公开 JSON seam；内嵌 OOXML 闭包不能依赖命令曾经正确地产生过它。 */
@@ -34,32 +26,39 @@ export function assertElementInsertionSource(doc: EditDoc, record: ElementRecord
   if (!source) return;
   const label = `元素 ${record.id} 的插入闭包`;
   if (!record.meta.created || !record.meta.origin) throw new Error(`${label} 缺少新建宿主身份`);
-  assertDataObject(source, [
-    'markup', 'namespaces', 'spids', 'relationships', 'resources', 'containsDescendants', 'unmodeledSpids',
-  ], label);
+  assertDataObject(source, ['markup', 'namespaces', 'spids', 'relationships', 'resources', 'containsDescendants', 'unmodeledSpids'], label);
   if (source.containsDescendants !== undefined && source.containsDescendants !== false) {
     throw new Error(`${label}.containsDescendants 只能显式为 false`);
   }
   if (source.containsDescendants === false && record.src.kind !== 'group') {
     throw new Error(`${label} 只有组合能使用空容器语义`);
   }
-  if (typeof source.markup !== 'string' || !source.markup
-    || !source.namespaces || typeof source.namespaces !== 'object' || Array.isArray(source.namespaces)
-    || !source.spids || typeof source.spids !== 'object' || Array.isArray(source.spids)
-    || !Array.isArray(source.relationships ?? []) || !Array.isArray(source.resources ?? [])) {
+  if (
+    typeof source.markup !== 'string'
+    || !source.markup
+    || !source.namespaces
+    || typeof source.namespaces !== 'object'
+    || Array.isArray(source.namespaces)
+    || !source.spids
+    || typeof source.spids !== 'object'
+    || Array.isArray(source.spids)
+    || !Array.isArray(source.relationships ?? [])
+    || !Array.isArray(source.resources ?? [])
+  ) {
     throw new Error(`${label} 的 XML 或资源描述无效`);
   }
-  if (Object.entries(source.namespaces).some(([name, value]) =>
-    !/^xmlns(?::[A-Za-z_][A-Za-z0-9_.-]*)?$/.test(name) || typeof value !== 'string' || !value)
-    || Object.entries(source.spids).some(([spid, value]) =>
-      !/^\d+$/.test(spid) || !Number.isSafeInteger(value) || value <= 0)) {
+  if (
+    Object.entries(source.namespaces).some(
+      ([name, value]) => !/^xmlns(?::[A-Za-z_][A-Za-z0-9_.-]*)?$/.test(name) || typeof value !== 'string' || !value,
+    )
+    || Object.entries(source.spids).some(([spid, value]) => !/^\d+$/.test(spid) || !Number.isSafeInteger(value) || value <= 0)
+  ) {
     throw new Error(`${label} 的命名空间或 spid 映射无效`);
   }
   const unmodeled = source.unmodeledSpids ?? [];
   const targets = Object.values(source.spids);
   if (new Set(targets).size !== targets.length) throw new Error(`${label} 的目标身份重复`);
-  if (!Array.isArray(unmodeled) || new Set(unmodeled).size !== unmodeled.length
-    || unmodeled.some((spid) => !targets.includes(spid))) {
+  if (!Array.isArray(unmodeled) || new Set(unmodeled).size !== unmodeled.length || unmodeled.some((spid) => !targets.includes(spid))) {
     throw new Error(`${label} 的未建模宿主身份无效`);
   }
   if (unmodeled.length) {
@@ -74,11 +73,11 @@ export function assertElementInsertionSource(doc: EditDoc, record: ElementRecord
       if (child.meta.origin?.part === record.meta.origin.part && unmodeled.includes(child.meta.origin.spid)) {
         throw new Error(`${label} 的未建模身份与元素树重叠`);
       }
-      pending.push(...child.children ?? []);
+      pending.push(...(child.children ?? []));
     }
   }
   const resources = source.resources ?? [];
-  const byTarget = new Map<string, typeof resources[number]>();
+  const byTarget = new Map<string, (typeof resources)[number]>();
   for (const [index, resource] of resources.entries()) {
     assertImageResource(resource, `${label}.resources[${index}]`, doc);
     if (byTarget.has(resource.targetPart)) throw new Error(`${label} 的媒体目标重复`);
@@ -89,16 +88,19 @@ export function assertElementInsertionSource(doc: EditDoc, record: ElementRecord
   const referencedTargets = new Set<string>();
   const relationships = source.relationships ?? [];
   for (const [index, input] of relationships.entries()) {
-    assertDataObject(input, ['sourceId', 'targetId', 'type', 'target', 'targetMode'],
-      `${label}.relationships[${index}]`);
+    assertDataObject(input, ['sourceId', 'targetId', 'type', 'target', 'targetMode'], `${label}.relationships[${index}]`);
     const relationship = input as ElementInsertionRelationship;
-    if (!/^[A-Za-z_][A-Za-z0-9_.-]*$/.test(relationship.sourceId)
+    if (
+      !/^[A-Za-z_][A-Za-z0-9_.-]*$/.test(relationship.sourceId)
       || sourceIds.has(relationship.sourceId)
       || !/^[A-Za-z_][A-Za-z0-9_.-]*$/.test(relationship.targetId)
       || targetIds.has(relationship.targetId)
-      || typeof relationship.type !== 'string' || !relationship.type
-      || typeof relationship.target !== 'string' || !relationship.target
-      || (own(relationship, 'targetMode') && relationship.targetMode !== 'External')) {
+      || typeof relationship.type !== 'string'
+      || !relationship.type
+      || typeof relationship.target !== 'string'
+      || !relationship.target
+      || (own(relationship, 'targetMode') && relationship.targetMode !== 'External')
+    ) {
       throw new Error(`${label}.relationships[${index}] 无效`);
     }
     sourceIds.add(relationship.sourceId);
@@ -120,11 +122,7 @@ export function assertActiveRelationshipTargets(doc: EditDoc): void {
   const claims = new Map<string, Map<string, { triple: string; label: string }>>();
   const reserved = new Map<string, Set<string>>();
   const duplicateSources = new Map<string, string>();
-  const claim = (
-    part: string,
-    relationship: ElementInsertionRelationship,
-    label: string,
-  ): void => {
+  const claim = (part: string, relationship: ElementInsertionRelationship, label: string): void => {
     if (reserved.get(part)?.has(relationship.targetId)) {
       throw new Error(`${label} 的目标关系 ${relationship.targetId} 与页面身份冲突`);
     }
@@ -164,16 +162,15 @@ export function assertActiveRelationshipTargets(doc: EditDoc): void {
   }
   for (const [part, byId] of claims) {
     const bytes = relationshipSource(doc, part, duplicateSources);
-    const existing = new Map((bytes
-      ? xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' }) : [])
-      .flatMap((node) => {
+    const existing = new Map(
+      (bytes ? xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' }) : []).flatMap((node) => {
         const id = findXmlAttribute(node, { localName: 'Id', namespaceUri: null })?.value;
         const type = findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value;
         const target = findXmlAttribute(node, { localName: 'Target', namespaceUri: null })?.value;
         const mode = findXmlAttribute(node, { localName: 'TargetMode', namespaceUri: null })?.value;
-        return id && type && target
-          ? [[id, JSON.stringify([type, target, mode ?? null])] as const] : [];
-      }));
+        return id && type && target ? [[id, JSON.stringify([type, target, mode ?? null])] as const] : [];
+      }),
+    );
     for (const [id, value] of byId) {
       const sourceTriple = existing.get(id);
       if (sourceTriple && sourceTriple !== value.triple) {

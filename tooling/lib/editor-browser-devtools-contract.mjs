@@ -47,21 +47,23 @@ export async function browserResult(webSocketDebuggerUrl) {
   });
   socket.on('error', rejectPending);
   socket.on('close', () => rejectPending(new Error('Chrome DevTools 连接提前关闭')));
-  const request = (method, params) => new Promise((resolveRequest, rejectRequest) => {
-    const id = ++serial;
-    const timeout = setTimeout(() => {
-      pending.delete(id);
-      rejectRequest(new Error(`Chrome DevTools ${method} 请求超时（${phase}）${params?.expression ? '：' + params.expression.slice(0, 180) : ''}`));
-    }, 15000);
-    pending.set(id, {
-      resolve: (message) => message.error
-        ? rejectRequest(new Error(`Chrome DevTools ${method}: ${message.error.message}`))
-        : resolveRequest(message),
-      reject: rejectRequest,
-      timeout,
+  const request = (method, params) =>
+    new Promise((resolveRequest, rejectRequest) => {
+      const id = ++serial;
+      const timeout = setTimeout(() => {
+        pending.delete(id);
+        rejectRequest(
+          new Error(`Chrome DevTools ${method} 请求超时（${phase}）${params?.expression ? '：' + params.expression.slice(0, 180) : ''}`),
+        );
+      }, 15000);
+      pending.set(id, {
+        resolve: (message) =>
+          message.error ? rejectRequest(new Error(`Chrome DevTools ${method}: ${message.error.message}`)) : resolveRequest(message),
+        reject: rejectRequest,
+        timeout,
+      });
+      socket.send(JSON.stringify({ id, method, params }));
     });
-    socket.send(JSON.stringify({ id, method, params }));
-  });
   const evaluate = async (expression, awaitPromise = false) => {
     const response = await request('Runtime.evaluate', { expression, returnByValue: true, awaitPromise });
     if (response.result?.exceptionDetails) {
@@ -69,11 +71,16 @@ export async function browserResult(webSocketDebuggerUrl) {
     }
     return response.result?.result?.value;
   };
-  const dispatchTrustedMouse = (type, point, modifiers, buttons) => request('Input.dispatchMouseEvent', {
-    type, x: point.x, y: point.y,
-    button: type === 'mouseMoved' && buttons === 0 ? 'none' : 'left',
-    buttons, ...(type === 'mouseMoved' ? {} : { clickCount: 1 }), modifiers,
-  });
+  const dispatchTrustedMouse = (type, point, modifiers, buttons) =>
+    request('Input.dispatchMouseEvent', {
+      type,
+      x: point.x,
+      y: point.y,
+      button: type === 'mouseMoved' && buttons === 0 ? 'none' : 'left',
+      buttons,
+      ...(type === 'mouseMoved' ? {} : { clickCount: 1 }),
+      modifiers,
+    });
   const trustedMouseGesture = async (start, end, duringExpression, committedExpression, modifiers = 0) => {
     await dispatchTrustedMouse('mouseMoved', start, modifiers, 0);
     await dispatchTrustedMouse('mousePressed', start, modifiers, 1);
@@ -94,7 +101,9 @@ export async function browserResult(webSocketDebuggerUrl) {
   };
   const dispatchKey = async (key, code, virtualKeyCode, modifiers = 0, commands = undefined) => {
     const params = {
-      key, code, modifiers,
+      key,
+      code,
+      modifiers,
       // Windows 键码不是 macOS 原生扫描码；混用会让未消费的 Esc 落入 AppKit 键等价循环。
       windowsVirtualKeyCode: virtualKeyCode,
     };
@@ -111,7 +120,8 @@ export async function browserResult(webSocketDebuggerUrl) {
     throw new Error(`Chrome 测试页没有完成导航：${String(origin)}`);
   }
   await request('Browser.grantPermissions', {
-    origin, permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
+    origin,
+    permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
   });
   try {
     for (let attempt = 0; attempt < 600; attempt++) {
@@ -268,7 +278,10 @@ export async function browserResult(webSocketDebuggerUrl) {
           return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         })()`);
         const end = { x: start.x + 30, y: start.y + 18 };
-        const dragResult = await trustedMouseGesture(start, end, `(() => {
+        const dragResult = await trustedMouseGesture(
+          start,
+          end,
+          `(() => {
           const state = globalThis.trustedDragContract;
           const { perfSession } = globalThis.editorContract;
           const mount = document.querySelector('#mount');
@@ -280,7 +293,8 @@ export async function browserResult(webSocketDebuggerUrl) {
             svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
             defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
           };
-        })()`, `(() => {
+        })()`,
+          `(() => {
           const state = globalThis.trustedDragContract;
           const { perfSession } = globalThis.editorContract;
           const mount = document.querySelector('#mount');
@@ -301,9 +315,9 @@ export async function browserResult(webSocketDebuggerUrl) {
           state.view.destroy();
           delete globalThis.trustedDragContract;
           return result;
-        })()`);
-        const trusted = Object.values(dragResult.during).every(Boolean)
-          && Object.values(dragResult.committed).every(Boolean);
+        })()`,
+        );
+        const trusted = Object.values(dragResult.during).every(Boolean) && Object.values(dragResult.committed).every(Boolean);
         if (!trusted) throw new Error(`真实 pointer capture 拖动失败：${JSON.stringify(dragResult)}`);
 
         const resizeStart = await evaluate(`(() => {
@@ -329,7 +343,10 @@ export async function browserResult(webSocketDebuggerUrl) {
           return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         })()`);
         const resizeEnd = { x: resizeStart.x + 30, y: resizeStart.y + 18 };
-        const resizeResult = await trustedMouseGesture(resizeStart, resizeEnd, `(() => {
+        const resizeResult = await trustedMouseGesture(
+          resizeStart,
+          resizeEnd,
+          `(() => {
           const state = globalThis.trustedResizeContract;
           const { perfSession } = globalThis.editorContract;
           const mount = document.querySelector('#mount');
@@ -341,7 +358,8 @@ export async function browserResult(webSocketDebuggerUrl) {
             svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
             defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
           };
-        })()`, `(() => {
+        })()`,
+          `(() => {
           const state = globalThis.trustedResizeContract;
           const { perfSession } = globalThis.editorContract;
           const mount = document.querySelector('#mount');
@@ -364,9 +382,9 @@ export async function browserResult(webSocketDebuggerUrl) {
           state.view.destroy();
           delete globalThis.trustedResizeContract;
           return result;
-        })()`);
-        const trustedResize = Object.values(resizeResult.during).every(Boolean)
-          && Object.values(resizeResult.committed).every(Boolean);
+        })()`,
+        );
+        const trustedResize = Object.values(resizeResult.during).every(Boolean) && Object.values(resizeResult.committed).every(Boolean);
         if (!trustedResize) throw new Error(`真实 pointer capture 缩放失败：${JSON.stringify(resizeResult)}`);
 
         const rotationPoints = await evaluate(`(() => {
@@ -401,7 +419,8 @@ export async function browserResult(webSocketDebuggerUrl) {
           return { start, end };
         })()`);
         const rotationResult = await trustedMouseGesture(
-          rotationPoints.start, rotationPoints.end,
+          rotationPoints.start,
+          rotationPoints.end,
           `(() => {
             const state = globalThis.trustedRotationContract;
             const { perfSession } = globalThis.editorContract;
@@ -437,8 +456,8 @@ export async function browserResult(webSocketDebuggerUrl) {
             return result;
           })()`,
         );
-        const trustedRotation = Object.values(rotationResult.during).every(Boolean)
-          && Object.values(rotationResult.committed).every(Boolean);
+        const trustedRotation =
+          Object.values(rotationResult.during).every(Boolean) && Object.values(rotationResult.committed).every(Boolean);
         if (!trustedRotation) {
           throw new Error(`真实 pointer capture 旋转失败：${JSON.stringify(rotationResult)}`);
         }
@@ -499,14 +518,22 @@ export async function browserResult(webSocketDebuggerUrl) {
           report.textContent += '\\n真实 pointer capture 拖动/缩放/旋转/吸附/框选与真实键盘微移通过';
         })()`);
         return {
-          ...result, trustedDrag: 'pass', trustedResize: 'pass', trustedRotation: 'pass', trustedSnap: 'pass',
+          ...result,
+          trustedDrag: 'pass',
+          trustedResize: 'pass',
+          trustedRotation: 'pass',
+          trustedSnap: 'pass',
           trustedTouch: 'pass',
           touchZoomError: trustedTouchResult.zoomError,
           touchCenterError: trustedTouchResult.centerError,
           touchPanError: trustedTouchResult.panError,
           touchP95: trustedTouchResult.p95,
-          trustedMarquee: 'pass', trustedKeyboard: 'pass', trustedTab: 'pass',
-          trustedModifierSelection: 'pass', trustedHistory: 'pass', trustedDelete: 'pass',
+          trustedMarquee: 'pass',
+          trustedKeyboard: 'pass',
+          trustedTab: 'pass',
+          trustedModifierSelection: 'pass',
+          trustedHistory: 'pass',
+          trustedDelete: 'pass',
           trustedLayer: 'pass',
           trustedGroup: 'pass',
           trustedClipboard: 'pass',
@@ -517,10 +544,7 @@ export async function browserResult(webSocketDebuggerUrl) {
           trustedTableCellText: 'pass',
           trustedTextP95,
           functionalStatus: 'pass',
-          performanceFailures: [
-            ...JSON.parse(result.performanceFailures ?? '[]'),
-            ...readPerformanceFailures(),
-          ],
+          performanceFailures: [...JSON.parse(result.performanceFailures ?? '[]'), ...readPerformanceFailures()],
           environment: JSON.parse(result.performanceEnvironment),
         };
       }

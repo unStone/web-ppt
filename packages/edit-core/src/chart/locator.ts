@@ -4,8 +4,14 @@ import { findXmlAttribute, parseXmlTree, xmlElementChildren } from '@web-ppt/edi
 import type { XmlElement } from '@web-ppt/edit-core/xml';
 import { chartRelationships } from './context';
 import {
-  CHART_NS, DRAWING_NS, OFFICE_REL_NS, PRESENTATION_NS,
-  STRICT_CHART_NS, STRICT_DRAWING_NS, STRICT_OFFICE_REL_NS, STRICT_PRESENTATION_NS,
+  CHART_NS,
+  DRAWING_NS,
+  OFFICE_REL_NS,
+  PRESENTATION_NS,
+  STRICT_CHART_NS,
+  STRICT_DRAWING_NS,
+  STRICT_OFFICE_REL_NS,
+  STRICT_PRESENTATION_NS,
 } from './xml-namespaces';
 
 interface LocatorCache {
@@ -15,18 +21,17 @@ interface LocatorCache {
 
 const cache = new WeakMap<EditDoc, LocatorCache>();
 const child = (node: XmlElement | null, name: string, namespaceUri: string): XmlElement | null => {
-  const matches = node ? xmlElementChildren(node).filter((item) =>
-    item.localName === name && item.namespaceUri === namespaceUri) : [];
+  const matches = node ? xmlElementChildren(node).filter((item) => item.localName === name && item.namespaceUri === namespaceUri) : [];
   return matches.length === 1 ? matches[0] : null;
 };
 const attr = (node: XmlElement | null, name: string, namespaceUri: string | null = null): string | null =>
-  node ? findXmlAttribute(node, { localName: name, namespaceUri })?.value ?? null : null;
+  node ? (findXmlAttribute(node, { localName: name, namespaceUri })?.value ?? null) : null;
 
 function graphicFrames(root: XmlElement): XmlElement[] {
   const result: XmlElement[] = [];
   const collect = (node: XmlElement): void => {
-    if (node.localName === 'graphicFrame'
-      && (node.namespaceUri === PRESENTATION_NS || node.namespaceUri === STRICT_PRESENTATION_NS)) result.push(node);
+    if (node.localName === 'graphicFrame' && (node.namespaceUri === PRESENTATION_NS || node.namespaceUri === STRICT_PRESENTATION_NS))
+      result.push(node);
     else xmlElementChildren(node).forEach(collect);
   };
   collect(root);
@@ -55,18 +60,27 @@ export function chartPartForElement(doc: EditDoc, id: ElementId): string | null 
     return null;
   }
   const source = sourceElementXml(doc, id);
-  if (!source) { entries.set(id, null); return null; }
+  if (!source) {
+    entries.set(id, null);
+    return null;
+  }
   let result: string | null = null;
   const relationships = { ...chartRelationships(doc, source.part), ...source.relationships };
   for (const frame of graphicFrames(parseXmlTree(source.bytes).root)) {
-    const dialect = frame.namespaceUri === STRICT_PRESENTATION_NS
-      ? {
-        chart: STRICT_CHART_NS, drawing: STRICT_DRAWING_NS,
-        presentation: STRICT_PRESENTATION_NS, relationship: STRICT_OFFICE_REL_NS,
-      } : {
-        chart: CHART_NS, drawing: DRAWING_NS,
-        presentation: PRESENTATION_NS, relationship: OFFICE_REL_NS,
-      };
+    const dialect =
+      frame.namespaceUri === STRICT_PRESENTATION_NS
+        ? {
+            chart: STRICT_CHART_NS,
+            drawing: STRICT_DRAWING_NS,
+            presentation: STRICT_PRESENTATION_NS,
+            relationship: STRICT_OFFICE_REL_NS,
+          }
+        : {
+            chart: CHART_NS,
+            drawing: DRAWING_NS,
+            presentation: PRESENTATION_NS,
+            relationship: OFFICE_REL_NS,
+          };
     const nonVisual = child(frame, 'nvGraphicFramePr', dialect.presentation);
     const cNvPr = child(nonVisual, 'cNvPr', dialect.presentation);
     const shapeId = attr(cNvPr, 'id');
@@ -75,8 +89,8 @@ export function chartPartForElement(doc: EditDoc, id: ElementId): string | null 
     const data = child(graphic, 'graphicData', dialect.drawing);
     if (attr(data, 'uri') !== dialect.chart) break;
     const chart = child(data, 'chart', dialect.chart);
-    const relationshipId = chart?.attributes.find((item) => item.localName === 'id'
-      && item.namespaceUri === dialect.relationship)?.value ?? '';
+    const relationshipId =
+      chart?.attributes.find((item) => item.localName === 'id' && item.namespaceUri === dialect.relationship)?.value ?? '';
     const relationship = relationships[relationshipId];
     if (relationship?.type.endsWith('/chart')) result = relationship.target;
     break;

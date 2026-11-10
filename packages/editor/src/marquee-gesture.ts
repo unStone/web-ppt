@@ -44,7 +44,9 @@ export class MarqueeGestureController {
     this.lifecycle = new PointerGestureLifecycle(options.root);
   }
 
-  get isActive(): boolean { return this.lifecycle.isActive; }
+  get isActive(): boolean {
+    return this.lifecycle.isActive;
+  }
 
   begin(event: PointerEvent, enteredGroup: ElementId | null): void {
     this.cancel();
@@ -54,11 +56,15 @@ export class MarqueeGestureController {
       enteredGroup,
       candidates: [],
       priorIds: selection.kind === 'elements' ? [...selection.ids] : [],
-      selected: [], layer: null, frame: null, priorOverlay: null,
+      selected: [],
+      layer: null,
+      frame: null,
+      priorOverlay: null,
     };
     this.session = session;
     this.lifecycle.begin(event, {
-      cursor: 'crosshair', dataset: { name: 'editMarquee', value: '' },
+      cursor: 'crosshair',
+      dataset: { name: 'editMarquee', value: '' },
       start: () => this.startPreview(session),
       frame: (snapshot) => this.applyFrame(session, snapshot),
       finish: (snapshot) => this.commit(session, snapshot),
@@ -66,7 +72,9 @@ export class MarqueeGestureController {
     });
   }
 
-  move(event: PointerEvent): void { this.lifecycle.move(event); }
+  move(event: PointerEvent): void {
+    this.lifecycle.move(event);
+  }
   modifier(event: KeyboardEvent): boolean {
     return ['Shift', 'Control', 'Meta'].includes(event.key) && this.lifecycle.modifier(event);
   }
@@ -94,9 +102,7 @@ export class MarqueeGestureController {
     const document = this.options.root.ownerDocument;
     session.candidates = this.options.candidateIds(session.enteredGroup).map((id) => ({
       id,
-      corners: transformFrameCorners(
-        this.options.editor.doc, id, elementEditFrame(this.options.editor.doc, id),
-      ),
+      corners: transformFrameCorners(this.options.editor.doc, id, elementEditFrame(this.options.editor.doc, id)),
       preview: null,
     }));
     const layer = document.createElementNS(SVG_NS, 'g');
@@ -119,8 +125,7 @@ export class MarqueeGestureController {
       layer.append(preview);
       candidate.preview = preview;
     }
-    session.priorOverlay = this.options.interactionLayer
-      .querySelector<SVGGElement>('[data-edit-selection-ids]');
+    session.priorOverlay = this.options.interactionLayer.querySelector<SVGGElement>('[data-edit-selection-ids]');
     session.priorOverlay?.setAttribute('display', 'none');
     session.layer = layer;
     session.frame = frame;
@@ -130,8 +135,10 @@ export class MarqueeGestureController {
   private rectangle(session: MarqueeSession, snapshot: PointerGestureSnapshot) {
     const current = this.toSlide(snapshot.screen);
     return {
-      left: Math.min(session.start.x, current.x), top: Math.min(session.start.y, current.y),
-      right: Math.max(session.start.x, current.x), bottom: Math.max(session.start.y, current.y),
+      left: Math.min(session.start.x, current.x),
+      top: Math.min(session.start.y, current.y),
+      right: Math.max(session.start.x, current.x),
+      bottom: Math.max(session.start.y, current.y),
     };
   }
 
@@ -139,9 +146,16 @@ export class MarqueeGestureController {
     const rectangle = this.rectangle(session, snapshot);
     // 多层旋转/缩放的屏幕坐标往返会留下浮点尾差；容差固定在屏幕空间，避免随 zoom 改变手感。
     const tolerance = CONTAINMENT_SCREEN_TOLERANCE / this.options.zoom();
-    return session.candidates.filter((candidate) => candidate.corners.every((point) =>
-      point.x >= rectangle.left - tolerance && point.x <= rectangle.right + tolerance
-      && point.y >= rectangle.top - tolerance && point.y <= rectangle.bottom + tolerance))
+    return session.candidates
+      .filter((candidate) =>
+        candidate.corners.every(
+          (point) =>
+            point.x >= rectangle.left - tolerance
+            && point.x <= rectangle.right + tolerance
+            && point.y >= rectangle.top - tolerance
+            && point.y <= rectangle.bottom + tolerance,
+        ),
+      )
       .map((candidate) => candidate.id);
   }
 
@@ -163,15 +177,10 @@ export class MarqueeGestureController {
 
   private commit(session: MarqueeSession, snapshot: PointerGestureSnapshot): () => void {
     const ids = this.combinedSelectionAt(session, snapshot);
-    return () => this.options.editor.select(ids.length
-      ? { kind: 'elements', ids, enteredGroup: session.enteredGroup }
-      : { kind: 'none' });
+    return () => this.options.editor.select(ids.length ? { kind: 'elements', ids, enteredGroup: session.enteredGroup } : { kind: 'none' });
   }
 
-  private combinedSelectionAt(
-    session: MarqueeSession,
-    snapshot: PointerGestureSnapshot,
-  ): ElementId[] {
+  private combinedSelectionAt(session: MarqueeSession, snapshot: PointerGestureSnapshot): ElementId[] {
     return combineSelectionIds(
       session.candidates.map((candidate) => candidate.id),
       session.priorIds,

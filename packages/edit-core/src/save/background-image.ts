@@ -14,16 +14,11 @@ function drawingChild(parent: XmlElement, name: string): XmlElement | null {
   return findXmlChild(parent, { localName: name, namespaceUri: DRAWINGML_NS });
 }
 
-function ensureBefore(
-  parent: XmlElement,
-  name: string,
-  beforeNames: readonly string[] = [],
-): XmlElement {
+function ensureBefore(parent: XmlElement, name: string, beforeNames: readonly string[] = []): XmlElement {
   const found = drawingChild(parent, name);
   if (found) return found;
   const node = namespacedElement(parent, DRAWINGML_NS, name);
-  const before = xmlElementChildren(parent).find((child) =>
-    child.namespaceUri === DRAWINGML_NS && beforeNames.includes(child.localName));
+  const before = xmlElementChildren(parent).find((child) => child.namespaceUri === DRAWINGML_NS && beforeNames.includes(child.localName));
   insertXmlChildUnchecked(parent, node, before ?? null);
   return node;
 }
@@ -39,8 +34,7 @@ function patchAlpha(blip: XmlElement, alpha: number | undefined): void {
 }
 
 function hasUnknownCropContent(node: XmlElement): boolean {
-  return node.attributes.some((attribute) => !['l', 't', 'r', 'b'].includes(attribute.localName))
-    || xmlElementChildren(node).length > 0;
+  return node.attributes.some((attribute) => !['l', 't', 'r', 'b'].includes(attribute.localName)) || xmlElementChildren(node).length > 0;
 }
 
 function patchCrop(fill: XmlElement, crop: ImageFill['crop']): void {

@@ -46,12 +46,19 @@ export function assertRetainedElementOrigins(doc: EditDoc): void {
   }
   const anchors = new Map<string, string>();
   for (const [id, origin] of Object.entries(retained)) {
-    if (!id || !origin || typeof origin.part !== 'string' || !origin.part
-      || !Number.isSafeInteger(origin.spid) || origin.spid <= 0
-      || origin.sourcePart !== undefined && (typeof origin.sourcePart !== 'string' || !origin.sourcePart)) {
+    if (
+      !id
+      || !origin
+      || typeof origin.part !== 'string'
+      || !origin.part
+      || !Number.isSafeInteger(origin.spid)
+      || origin.spid <= 0
+      || (origin.sourcePart !== undefined && (typeof origin.sourcePart !== 'string' || !origin.sourcePart))
+    ) {
       throw new Error('保留来源身份无效');
     }
-    const key = `${origin.part}#${origin.spid}`, known = anchors.get(key);
+    const key = `${origin.part}#${origin.spid}`,
+      known = anchors.get(key);
     if (known && known !== id) throw new Error(`保留来源身份重复：${key}`);
     anchors.set(key, id);
     const current = (doc.elements[id] ?? doc.removedElements[id])?.meta.origin;

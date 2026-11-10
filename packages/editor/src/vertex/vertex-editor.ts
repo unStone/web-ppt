@@ -1,7 +1,12 @@
 import {
-  elementFrameToSlidePoint, moveCustomGeometryPoint, queryElementCustomGeometry,
-  screenToSlidePoint, setCustomGeometryClosed, setCustomGeometrySegmentType,
-  slideOfElement, slideToElementFramePoint,
+  elementFrameToSlidePoint,
+  moveCustomGeometryPoint,
+  queryElementCustomGeometry,
+  screenToSlidePoint,
+  setCustomGeometryClosed,
+  setCustomGeometrySegmentType,
+  slideOfElement,
+  slideToElementFramePoint,
 } from '@web-ppt/edit-core';
 import type { CustomGeometry, CustomGeometryPoint } from '@web-ppt/core';
 import type { ElementId, SpacePoint } from '@web-ppt/edit-core';
@@ -13,10 +18,7 @@ import type { VertexEditor, VertexEditorOptions } from './types';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-function svg<K extends keyof SVGElementTagNameMap>(
-  document: Document,
-  name: K,
-): SVGElementTagNameMap[K] {
+function svg<K extends keyof SVGElementTagNameMap>(document: Document, name: K): SVGElementTagNameMap[K] {
   return document.createElementNS(SVG_NS, name);
 }
 
@@ -56,19 +58,27 @@ class DomVertexEditor implements VertexEditor {
     this.observer.observe(staticLayer, { childList: true });
   }
 
-  get elementId(): ElementId | null { return this.activeId; }
+  get elementId(): ElementId | null {
+    return this.activeId;
+  }
   get geometry(): CustomGeometry | null {
     return this.activeId ? queryElementCustomGeometry(this.session.editor.doc, this.activeId) : null;
   }
-  get destroyed(): boolean { return this.isDestroyed; }
+  get destroyed(): boolean {
+    return this.isDestroyed;
+  }
 
   start(id?: ElementId): boolean {
     this.assertAlive();
     const selection = this.session.editor.selection;
-    const target = id ?? (selection.kind === 'elements' && selection.ids.length === 1
-      ? selection.ids[0] : null);
-    if (!target || this.view.mode !== 'edit' || slideOfElement(this.session.editor.doc, target) !== this.view.slideId
-      || !queryElementCustomGeometry(this.session.editor.doc, target)) return false;
+    const target = id ?? (selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null);
+    if (
+      !target
+      || this.view.mode !== 'edit'
+      || slideOfElement(this.session.editor.doc, target) !== this.view.slideId
+      || !queryElementCustomGeometry(this.session.editor.doc, target)
+    )
+      return false;
     this.activeId = target;
     this.preview = null;
     this.render();
@@ -85,8 +95,7 @@ class DomVertexEditor implements VertexEditor {
   convert(id?: ElementId): boolean {
     this.assertAlive();
     const selection = this.session.editor.selection;
-    const target = id ?? (selection.kind === 'elements' && selection.ids.length === 1
-      ? selection.ids[0] : null);
+    const target = id ?? (selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null);
     if (!target || this.view.mode !== 'edit') return false;
     try {
       this.session.editor.exec({ type: 'ConvertToCustomGeometry', id: target });
@@ -100,7 +109,8 @@ class DomVertexEditor implements VertexEditor {
   setClosed(pathId: string, closed: boolean): void {
     const geometry = this.requireGeometry();
     this.session.editor.exec({
-      type: 'SetGeometry', id: this.activeId!,
+      type: 'SetGeometry',
+      id: this.activeId!,
       geometry: setCustomGeometryClosed(geometry, pathId, closed),
     });
   }
@@ -108,12 +118,16 @@ class DomVertexEditor implements VertexEditor {
   setSegmentType(pathId: string, commandId: string, type: 'line' | 'cubic'): void {
     const geometry = this.requireGeometry();
     this.session.editor.exec({
-      type: 'SetGeometry', id: this.activeId!,
+      type: 'SetGeometry',
+      id: this.activeId!,
       geometry: setCustomGeometrySegmentType(geometry, pathId, commandId, type),
     });
   }
 
-  refresh(): void { this.assertAlive(); this.render(); }
+  refresh(): void {
+    this.assertAlive();
+    this.render();
+  }
 
   destroy(): void {
     if (this.isDestroyed) return;
@@ -152,17 +166,23 @@ class DomVertexEditor implements VertexEditor {
     const id = this.activeId!;
     const element = this.session.editor.effectiveElement(id);
     return elementFrameToSlidePoint(this.session.editor.doc, id, {
-      x: point.x.value / path.width * element.w,
-      y: point.y.value / path.height * element.h,
+      x: (point.x.value / path.width) * element.w,
+      y: (point.y.value / path.height) * element.h,
     });
   }
 
   private render(): void {
     this.group()?.remove();
     const id = this.activeId;
-    if (!id || this.isDestroyed || this.view.destroyed || this.view.mode !== 'edit'
+    if (
+      !id
+      || this.isDestroyed
+      || this.view.destroyed
+      || this.view.mode !== 'edit'
       || !this.session.editor.doc.elements[id]
-      || slideOfElement(this.session.editor.doc, id) !== this.view.slideId) return;
+      || slideOfElement(this.session.editor.doc, id) !== this.view.slideId
+    )
+      return;
     const geometry = this.preview ?? queryElementCustomGeometry(this.session.editor.doc, id);
     if (!geometry) return;
     const group = svg(this.layer.ownerDocument, 'g');
@@ -220,16 +240,17 @@ class DomVertexEditor implements VertexEditor {
 
   private geometryAt(snapshot: PointerGestureSnapshot, pointId: string, source: CustomGeometry): CustomGeometry {
     const id = this.activeId!;
-    const path = source.paths.find((candidate) => candidate.commands.some((command) =>
-      command.points.some((point) => point.id === pointId)));
+    const path = source.paths.find((candidate) =>
+      candidate.commands.some((command) => command.points.some((point) => point.id === pointId)),
+    );
     if (!path) throw new Error(`找不到顶点路径：${pointId}`);
     const rect = this.stage.getBoundingClientRect();
     const slide = screenToSlidePoint(snapshot.screen, { left: rect.left, top: rect.top, zoom: this.view.zoom });
     const frame = slideToElementFramePoint(this.session.editor.doc, id, slide);
     const element = this.session.editor.effectiveElement(id);
     return moveCustomGeometryPoint(source, pointId, {
-      x: frame.x / element.w * path.width,
-      y: frame.y / element.h * path.height,
+      x: (frame.x / element.w) * path.width,
+      y: (frame.y / element.h) * path.height,
     });
   }
 
@@ -241,7 +262,8 @@ class DomVertexEditor implements VertexEditor {
       this.render();
     };
     return {
-      cursor: 'crosshair', dataset: { name: 'pptVertexDragging', value: pointId },
+      cursor: 'crosshair',
+      dataset: { name: 'pptVertexDragging', value: pointId },
       start: () => {},
       frame: update,
       finish: (snapshot) => {
@@ -252,7 +274,10 @@ class DomVertexEditor implements VertexEditor {
           this.session.editor.exec({ type: 'SetGeometry', id, geometry: latest });
         };
       },
-      clear: () => { this.preview = null; this.render(); },
+      clear: () => {
+        this.preview = null;
+        this.render();
+      },
     };
   }
 
@@ -262,24 +287,35 @@ class DomVertexEditor implements VertexEditor {
   }
 
   private pointerDown = (event: PointerEvent): void => {
-    const target = event.target instanceof Element
-      ? event.target.closest<SVGCircleElement>('[data-ppt-vertex-point]') : null;
+    const target = event.target instanceof Element ? event.target.closest<SVGCircleElement>('[data-ppt-vertex-point]') : null;
     if (!target || event.button !== 0 || event.isPrimary === false) return;
     try {
       const pointId = target.dataset.pptVertexPoint!;
       this.lifecycle.begin(event, this.gesture(pointId, this.requireGeometry()));
       this.stop(event);
-    } catch (error) { this.report(error); }
+    } catch (error) {
+      this.report(error);
+    }
   };
 
   private pointerMove = (event: PointerEvent): void => {
     if (!this.lifecycle.isActive) return;
-    try { this.lifecycle.move(event); this.stop(event); } catch (error) { this.report(error); }
+    try {
+      this.lifecycle.move(event);
+      this.stop(event);
+    } catch (error) {
+      this.report(error);
+    }
   };
 
   private pointerUp = (event: PointerEvent): void => {
     if (!this.lifecycle.isActive) return;
-    try { this.lifecycle.finish(event); this.stop(event); } catch (error) { this.report(error); }
+    try {
+      this.lifecycle.finish(event);
+      this.stop(event);
+    } catch (error) {
+      this.report(error);
+    }
   };
 
   private pointerCancel = (event: PointerEvent): void => {
@@ -297,14 +333,13 @@ class DomVertexEditor implements VertexEditor {
   private report(error: unknown): void {
     this.lifecycle.cancel();
     this.options.onError?.(error);
-    if (!this.options.onError) queueMicrotask(() => { throw error; });
+    if (!this.options.onError)
+      queueMicrotask(() => {
+        throw error;
+      });
   }
 }
 
-export function createVertexEditor(
-  session: EditorSession,
-  view: SlideEditor,
-  options: VertexEditorOptions = {},
-): VertexEditor {
+export function createVertexEditor(session: EditorSession, view: SlideEditor, options: VertexEditorOptions = {}): VertexEditor {
   return new DomVertexEditor(session, view, options);
 }

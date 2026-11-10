@@ -12,14 +12,19 @@ export function isSlideTreePatch(patch: Patch): patch is SlideTreePatch {
 }
 
 function assertSnapshot(snapshot: SlideTreeSnapshot, id: SlideId, label: string): void {
-  if (!snapshot || typeof snapshot !== 'object' || !snapshot.slide || snapshot.slide.id !== id
+  if (
+    !snapshot
+    || typeof snapshot !== 'object'
+    || !snapshot.slide
+    || snapshot.slide.id !== id
     || (snapshot.after !== null && (typeof snapshot.after !== 'string' || !snapshot.after))
     || (snapshot.before !== null && (typeof snapshot.before !== 'string' || !snapshot.before))
-    || !snapshot.records || typeof snapshot.records !== 'object') {
+    || !snapshot.records
+    || typeof snapshot.records !== 'object'
+  ) {
     throw new Error(`${label} 的页面树快照无效`);
   }
-  if (snapshot.sectionId !== undefined
-    && (typeof snapshot.sectionId !== 'string' || !snapshot.sectionId)) {
+  if (snapshot.sectionId !== undefined && (typeof snapshot.sectionId !== 'string' || !snapshot.sectionId)) {
     throw new Error(`${label} 的节身份无效`);
   }
   if (snapshot.slide.children.some((child) => !snapshot.records[child])) {
@@ -72,7 +77,10 @@ const cloneRecord = (record: ElementRecord): ElementRecord => structuredClone(re
 export function applySlideTreePatch(doc: EditDoc, patch: SlideTreePatch): void {
   const { slide, after, records } = patch.value;
   if (patch.op === 'remove') {
-    retainElementOrigins(doc, Object.keys(records).map(id => doc.elements[id]));
+    retainElementOrigins(
+      doc,
+      Object.keys(records).map((id) => doc.elements[id]),
+    );
     beforeSlideDesignChange(doc, slide.id);
     const index = doc.slideOrder.indexOf(slide.id);
     if (index < 0) throw new Error(`删除页面不在 slideOrder 中：${slide.id}`);

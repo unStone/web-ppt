@@ -16,21 +16,30 @@ function paragraphProps(paragraph: Paragraph): Omit<Paragraph, 'runs'> {
 function sourceInheritedRunProps(run: TextRun): NonNullable<TextRun['editInfo']>['inheritedRunProps'] {
   if (run.editInfo?.inheritedRunProps) return run.editInfo.inheritedRunProps;
   return {
-    b: run.b, i: run.i, u: run.u, strike: run.strike,
+    b: run.b,
+    i: run.i,
+    u: run.u,
+    strike: run.strike,
     ...(run.underline ? { underline: run.underline } : {}),
     ...(run.strikeType ? { strikeType: run.strikeType } : {}),
-    size: run.size, color: run.color, fonts: [...run.fonts],
-    baseline: run.baseline, spacing: run.spacing, caps: run.caps,
-    outline: run.outline, gradient: run.gradient, highlight: run.highlight,
+    size: run.size,
+    color: run.color,
+    fonts: [...run.fonts],
+    baseline: run.baseline,
+    spacing: run.spacing,
+    caps: run.caps,
+    outline: run.outline,
+    gradient: run.gradient,
+    highlight: run.highlight,
     underlineColor: run.underlineColor,
-    gradientFill: run.gradientFill, shadow: run.shadow, shadowEffect: run.shadowEffect,
+    gradientFill: run.gradientFill,
+    shadow: run.shadow,
+    shadowEffect: run.shadowEffect,
     generationIssues: run.generationIssues,
   };
 }
 
-export function sourceParagraphBullet(
-  value: NonNullable<Paragraph['editInfo']>['bullet'] | undefined,
-): ParagraphBullet | undefined {
+export function sourceParagraphBullet(value: NonNullable<Paragraph['editInfo']>['bullet'] | undefined): ParagraphBullet | undefined {
   if (!value) return undefined;
   if (value.kind === 'none') return value;
   const style = {
@@ -43,8 +52,10 @@ export function sourceParagraphBullet(
   }
   if (value.kind === 'char') return { kind: 'char', char: value.char, ...style };
   return {
-    kind: 'autoNum', type: value.type as import('./types').ParagraphAutoNumberType,
-    startAt: value.startAt, ...style,
+    kind: 'autoNum',
+    type: value.type as import('./types').ParagraphAutoNumberType,
+    startAt: value.startAt,
+    ...style,
   };
 }
 
@@ -62,7 +73,9 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
         offset += text.length;
         const inheritedRunProps = sourceInheritedRunProps(run);
         return {
-          from, to: offset, props: runProps(run),
+          from,
+          to: offset,
+          props: runProps(run),
           inheritedProps: runProperties(inheritedRunProps),
           inheritedRunProps,
           inheritedFonts: inheritedRunProps.fonts,
@@ -74,8 +87,10 @@ export function flattenTextBody(body: TextBody): Extract<TextOverride, { kind: '
         };
       });
       return {
-        text: paragraph.runs.map((run) => run.math?.length ? TEXT_ATOM : run.text).join(''),
-        props: paragraphProps(paragraph), marks, sourceParagraph: paragraphIndex,
+        text: paragraph.runs.map((run) => (run.math?.length ? TEXT_ATOM : run.text)).join(''),
+        props: paragraphProps(paragraph),
+        marks,
+        sourceParagraph: paragraphIndex,
         inheritedParagraphProps: paragraph.editInfo?.inheritedParagraphProps,
         directParagraphProps: paragraph.editInfo?.directParagraphProps,
         sourceBullet: sourceParagraphBullet(paragraph.editInfo?.bullet),

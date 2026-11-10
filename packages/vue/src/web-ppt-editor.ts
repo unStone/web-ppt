@@ -1,9 +1,17 @@
 import { computed, defineComponent, h } from 'vue';
 import type { PropType } from 'vue';
 import type {
-  EditorChange, EditorSession, SlideEditor, WebPptAdapter, WebPptAdapterBinding,
-  WebPptAdapterCallbacks, WebPptAdapterProgress, WebPptViewOptions, WebPptViewState,
-  EditorContextRequest, TouchNavigationChange,
+  EditorChange,
+  EditorSession,
+  SlideEditor,
+  WebPptAdapter,
+  WebPptAdapterBinding,
+  WebPptAdapterCallbacks,
+  WebPptAdapterProgress,
+  WebPptViewOptions,
+  WebPptViewState,
+  EditorContextRequest,
+  TouchNavigationChange,
 } from '@web-ppt/editor';
 import { useWebPptAdapter } from './use-web-ppt-adapter';
 
@@ -16,8 +24,7 @@ export interface WebPptEditorHandle {
   redo(): EditorChange | null;
 }
 
-type BindingProp<Key extends keyof WebPptAdapterBinding> =
-  Exclude<WebPptAdapterBinding[Key], undefined>;
+type BindingProp<Key extends keyof WebPptAdapterBinding> = Exclude<WebPptAdapterBinding[Key], undefined>;
 
 export const WebPptEditor = defineComponent({
   name: 'WebPptEditor',
@@ -53,21 +60,21 @@ export const WebPptEditor = defineComponent({
   setup(props, { attrs, emit, expose }) {
     const binding = computed<WebPptAdapterBinding>(() => {
       const common = {
-      mode: props.mode,
-      slideId: props.slideId,
-      zoom: props.zoom,
-      textMode: props.textMode,
-      snapping: props.snapping,
-      snapMargins: props.snapMargins,
-      onLinkFollow: props.onLinkFollow,
-      onReady: (session: EditorSession) => emit('ready', session),
-      onError: (error: unknown) => emit('error', error),
-      onProgress: (progress: WebPptAdapterProgress) => emit('progress', progress),
-      onChange: (change: EditorChange) => emit('change', change),
-      onViewChange: (state: WebPptViewState) => emit('viewChange', state),
-      onTouchNavigate: (change: TouchNavigationChange) => emit('touchNavigate', change),
-      onContextRequest: (request: EditorContextRequest) => emit('contextRequest', request),
-      onRecovery: props.onRecovery,
+        mode: props.mode,
+        slideId: props.slideId,
+        zoom: props.zoom,
+        textMode: props.textMode,
+        snapping: props.snapping,
+        snapMargins: props.snapMargins,
+        onLinkFollow: props.onLinkFollow,
+        onReady: (session: EditorSession) => emit('ready', session),
+        onError: (error: unknown) => emit('error', error),
+        onProgress: (progress: WebPptAdapterProgress) => emit('progress', progress),
+        onChange: (change: EditorChange) => emit('change', change),
+        onViewChange: (state: WebPptViewState) => emit('viewChange', state),
+        onTouchNavigate: (change: TouchNavigationChange) => emit('touchNavigate', change),
+        onContextRequest: (request: EditorContextRequest) => emit('contextRequest', request),
+        onRecovery: props.onRecovery,
       } satisfies WebPptViewOptions & WebPptAdapterCallbacks;
       if (props.session != null && props.source == null && props.sessionOwnership === 'external') {
         return { ...common, session: props.session, sessionOwnership: 'external' };
@@ -80,17 +87,25 @@ export const WebPptEditor = defineComponent({
       }
       // Vue 的运行时 props 无法表达互斥联合；保留非法组合，让共享 adapter 统一发布 error。
       return {
-        ...common, source: props.source, session: props.session,
-        sessionOwnership: props.sessionOwnership, openOptions: props.openOptions,
+        ...common,
+        source: props.source,
+        session: props.session,
+        sessionOwnership: props.sessionOwnership,
+        openOptions: props.openOptions,
       } as unknown as WebPptAdapterBinding;
     });
     const state = useWebPptAdapter(binding);
     const handle: WebPptEditorHandle = {
-      get adapter(): WebPptAdapter | null { return state.adapter.value; },
-      get session(): EditorSession | null { return state.snapshot.value.session; },
-      get view(): SlideEditor | null { return state.snapshot.value.view; },
-      save: () => state.adapter.value?.save()
-        ?? Promise.reject(new Error('WebPptEditor 尚未挂载')),
+      get adapter(): WebPptAdapter | null {
+        return state.adapter.value;
+      },
+      get session(): EditorSession | null {
+        return state.snapshot.value.session;
+      },
+      get view(): SlideEditor | null {
+        return state.snapshot.value.view;
+      },
+      save: () => state.adapter.value?.save() ?? Promise.reject(new Error('WebPptEditor 尚未挂载')),
       undo: () => state.adapter.value?.undo() ?? null,
       redo: () => state.adapter.value?.redo() ?? null,
     };

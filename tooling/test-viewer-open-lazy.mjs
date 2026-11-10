@@ -50,13 +50,29 @@ const ppt = api.formatOpenFileInfo({
 });
 check(ppt.endsWith(' · .ppt 二进制格式'), '.ppt 仍标明二进制格式');
 
-assert.throws(() => api.formatOpenFileInfo({
-  name: 'x', pages: Number.NaN, width: 1, height: 1, parseMs: 0,
-}), /页数无效/);
+assert.throws(
+  () =>
+    api.formatOpenFileInfo({
+      name: 'x',
+      pages: Number.NaN,
+      width: 1,
+      height: 1,
+      parseMs: 0,
+    }),
+  /页数无效/,
+);
 count++;
-assert.throws(() => api.formatOpenFileInfo({
-  name: 'x', pages: 1, width: 1, height: 1, parseMs: -1,
-}), /耗时无效/);
+assert.throws(
+  () =>
+    api.formatOpenFileInfo({
+      name: 'x',
+      pages: 1,
+      width: 1,
+      height: 1,
+      parseMs: -1,
+    }),
+  /耗时无效/,
+);
 count++;
 
 const query = document.createElement('input');

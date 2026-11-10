@@ -12,7 +12,9 @@ import { applyRunOverrides } from './run-overrides';
 import { assertVectorFill } from '../shape-fill';
 
 const STYLE_NAMES = {
-  title: 'titleStyle', body: 'bodyStyle', other: 'otherStyle',
+  title: 'titleStyle',
+  body: 'bodyStyle',
+  other: 'otherStyle',
 } as const;
 
 export function hasMasterPropertyOverrides(record: MasterRecord): boolean {
@@ -24,7 +26,8 @@ function patchBackground(document: XmlDocument, record: MasterRecord): void {
   const fill = record.ovr.background!;
   assertVectorFill(fill, `母版 ${record.id} 的背景覆盖`);
   const common = findXmlChild(document.root, {
-    localName: 'cSld', namespaceUri: PRESENTATIONML_NS,
+    localName: 'cSld',
+    namespaceUri: PRESENTATIONML_NS,
   });
   if (!common) throw new Error(`母版 ${record.id} 缺少 p:cSld`);
   let background = findXmlChild(common, { localName: 'bg', namespaceUri: PRESENTATIONML_NS });
@@ -64,9 +67,13 @@ function patchTextStyles(document: XmlDocument, record: MasterRecord): void {
     for (const [levelText, level] of Object.entries(levels)) {
       const properties = child(style, DRAWINGML_NS, `lvl${Number(levelText) + 1}pPr`);
       if (level.paragraph) {
-        applyParagraphOverrides(properties, {
-          paragraphOverrides: level.paragraph,
-        } as unknown as FlatTextParagraph, 0);
+        applyParagraphOverrides(
+          properties,
+          {
+            paragraphOverrides: level.paragraph,
+          } as unknown as FlatTextParagraph,
+          0,
+        );
       }
       if (level.run) {
         const run = child(properties, DRAWINGML_NS, 'defRPr');

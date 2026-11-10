@@ -3,13 +3,11 @@ function readU16(bytes, offset) {
 }
 
 function readU32(bytes, offset) {
-  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16)
-    | (bytes[offset + 3] << 24)) >>> 0;
+  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
 }
 
 function readU32Be(bytes, offset) {
-  return (((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8)
-    | bytes[offset + 3]) >>> 0);
+  return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
 }
 
 export async function zipFiles(blob) {
@@ -47,8 +45,19 @@ function sameBytes(left, right) {
 
 function shape(id, color, x, y, w, h) {
   return {
-    kind: 'shape', id, x, y, w, h, rot: 0, flipH: false, flipV: false,
-    path: `M0 0 H${w} V${h} H0 Z`, fill: { type: 'solid', color }, stroke: null, text: null,
+    kind: 'shape',
+    id,
+    x,
+    y,
+    w,
+    h,
+    rot: 0,
+    flipH: false,
+    flipV: false,
+    path: `M0 0 H${w} V${h} H0 Z`,
+    fill: { type: 'solid', color },
+    stroke: null,
+    text: null,
   };
 }
 
@@ -77,8 +86,11 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
   });
   const firstZip = await zipFiles(first);
   const names = firstZip.files.map((file) => file.name);
-  if (names.length !== hidden.slides.length || names[0] !== 'slide-001.png'
-    || names.at(-1) !== `slide-${String(hidden.slides.length).padStart(3, '0')}.png`) {
+  if (
+    names.length !== hidden.slides.length
+    || names[0] !== 'slide-001.png'
+    || names.at(-1) !== `slide-${String(hidden.slides.length).padStart(3, '0')}.png`
+  ) {
     throw new Error(`批量导出命名或页序错误：${names.join(',')}`);
   }
   if (progress.join(',') !== names.join(',')) throw new Error('进度清单与 ZIP 页序不一致');
@@ -97,7 +109,8 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
   const visibleZip = await zipFiles(await presentationToImageZip(hidden, { scale: 0.1, skipHidden: true }));
   const expectedVisible = hidden.slides
     .map((slide, index) => ({ slide, name: `slide-${String(index + 1).padStart(3, '0')}.png` }))
-    .filter(({ slide }) => !slide.hidden).map(({ name }) => name);
+    .filter(({ slide }) => !slide.hidden)
+    .map(({ name }) => name);
   if (visibleZip.files.map((file) => file.name).join(',') !== expectedVisible.join(',')) {
     throw new Error('隐藏页策略改变了原始页码或页序');
   }
@@ -116,13 +129,17 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
   const inlineUrl = inlineCanvas.toDataURL('image/png');
   const externalUrl = `${location.origin}/fixtures/image-zip-external.png`;
   const resources = {
-    width: 40, height: 20, source: 'pptx',
-    slides: [{ elements: [
-      { kind: 'image', id: 1, x: 0, y: 0, w: 20, h: 20, rot: 0, flipH: false, flipV: false,
-        src: inlineUrl, crop: null },
-      { kind: 'image', id: 2, x: 20, y: 0, w: 20, h: 20, rot: 0, flipH: false, flipV: false,
-        src: externalUrl, crop: null },
-    ] }],
+    width: 40,
+    height: 20,
+    source: 'pptx',
+    slides: [
+      {
+        elements: [
+          { kind: 'image', id: 1, x: 0, y: 0, w: 20, h: 20, rot: 0, flipH: false, flipV: false, src: inlineUrl, crop: null },
+          { kind: 'image', id: 2, x: 20, y: 0, w: 20, h: 20, rot: 0, flipH: false, flipV: false, src: externalUrl, crop: null },
+        ],
+      },
+    ],
   };
   const realFetch = globalThis.fetch;
   const fetched = [];
@@ -135,20 +152,15 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
     const resourceZip = await zipFiles(await presentationToImageZip(resources, { scale: 1 }));
     const leftPixel = await pixelAt(resourceZip.files[0].bytes, 10, 10);
     const rightPixel = await pixelAt(resourceZip.files[0].bytes, 30, 10);
-    if (!fetched.includes(externalUrl) || !near(leftPixel, [229, 57, 53])
-      || !near(rightPixel, [17, 34, 51])) {
+    if (!fetched.includes(externalUrl) || !near(leftPixel, [229, 57, 53]) || !near(rightPixel, [17, 34, 51])) {
       throw new Error(`内联/外链图片未进入输出像素：left=${leftPixel}, right=${rightPixel}, fetched=${fetched}`);
     }
 
     fontPresentation = await parse(await load('sample-embedfont.pptx'));
     if ((fontPresentation.embeddedFonts ?? []).length < 3) throw new Error('有效嵌入字体固件没有解析出字体');
     const withFont = await zipFiles(await presentationToImageZip(fontPresentation, { scale: 0.2 }));
-    const withoutFont = await zipFiles(await presentationToImageZip(
-      { ...fontPresentation, embeddedFonts: [] },
-      { scale: 0.2 },
-    ));
-    if (!fetched.some((url) => url.startsWith('blob:'))
-      || sameBytes(withFont.files[0].bytes, withoutFont.files[0].bytes)) {
+    const withoutFont = await zipFiles(await presentationToImageZip({ ...fontPresentation, embeddedFonts: [] }, { scale: 0.2 }));
+    if (!fetched.some((url) => url.startsWith('blob:')) || sameBytes(withFont.files[0].bytes, withoutFont.files[0].bytes)) {
       throw new Error(`有效嵌入字体未改变输出像素：${fetched.join(',')}`);
     }
   } finally {
@@ -162,7 +174,10 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
   const nativeConvertToBlob = OffscreenCanvas.prototype.convertToBlob;
   // Chromium 的 toBlob/convertToBlob 要等主线程空闲任务，可见页面实测单页最长 6.7 秒；导出不能再经过它们。
   let deferredEncodes = 0;
-  prototype.toBlob = function deferred(...args) { deferredEncodes++; return nativeToBlob.apply(this, args); };
+  prototype.toBlob = function deferred(...args) {
+    deferredEncodes++;
+    return nativeToBlob.apply(this, args);
+  };
   OffscreenCanvas.prototype.convertToBlob = function deferred(...args) {
     deferredEncodes++;
     return nativeConvertToBlob.apply(this, args);
@@ -181,9 +196,14 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
     prototype.toDataURL = nativeToDataUrl;
   }
 
-  const many = { width: 4, height: 4, source: 'pptx', slides: Array.from({ length: 210 }, () => ({
-    elements: [shape(1, '#336699', 0, 0, 4, 4)],
-  })) };
+  const many = {
+    width: 4,
+    height: 4,
+    source: 'pptx',
+    slides: Array.from({ length: 210 }, () => ({
+      elements: [shape(1, '#336699', 0, 0, 4, 4)],
+    })),
+  };
   // 编码是同步的，在途窗口从 SVG 交给 <img> 开始到编码结束；人为推迟 onload 才能观察批次上界。
   const imageSource = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
   let active = 0;
@@ -204,7 +224,9 @@ export async function runCoreImageZipBrowserContract({ presentationToImageZip, p
   });
   prototype.toDataURL = function encoded(...args) {
     active--;
-    queueMicrotask(() => { if (this.width === 0 && this.height === 0) released++; });
+    queueMicrotask(() => {
+      if (this.width === 0 && this.height === 0) released++;
+    });
     return nativeToDataUrl.apply(this, args);
   };
   try {

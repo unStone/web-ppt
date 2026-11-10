@@ -5,20 +5,14 @@ import type { Patch } from './types';
 import type { ElementGeometryPatch, ElementPresetGeometryPatch } from './geometry-types';
 
 export function isElementGeometryPatch(patch: Patch): patch is ElementGeometryPatch {
-  return patch.path.length === 4 && patch.path[0] === 'elements'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'geometry';
+  return patch.path.length === 4 && patch.path[0] === 'elements' && patch.path[2] === 'ovr' && patch.path[3] === 'geometry';
 }
 
 export function isElementPresetGeometryPatch(patch: Patch): patch is ElementPresetGeometryPatch {
-  return patch.path.length === 4 && patch.path[0] === 'elements'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'presetGeometry';
+  return patch.path.length === 4 && patch.path[0] === 'elements' && patch.path[2] === 'ovr' && patch.path[3] === 'presetGeometry';
 }
 
-export function validateElementPresetGeometryPatch(
-  doc: EditDoc,
-  patch: ElementPresetGeometryPatch,
-  index: number,
-): void {
+export function validateElementPresetGeometryPatch(doc: EditDoc, patch: ElementPresetGeometryPatch, index: number): void {
   const record = doc.elements[patch.path[1]];
   if (!record) throw new Error(`Patch 指向不存在的元素：${patch.path[1]}`);
   if (record.src.kind !== 'shape' || record.meta.editable !== 'full') {
@@ -29,21 +23,14 @@ export function validateElementPresetGeometryPatch(
 
 export { applyRecordOverridePatch as applyElementPresetGeometryPatch } from './record-override';
 
-export function validateElementGeometryPatch(
-  doc: EditDoc,
-  patch: ElementGeometryPatch,
-  index: number,
-): void {
+export function validateElementGeometryPatch(doc: EditDoc, patch: ElementGeometryPatch, index: number): void {
   const record = doc.elements[patch.path[1]];
   if (!record) throw new Error(`Patch 指向不存在的元素：${patch.path[1]}`);
   if (record.src.kind !== 'shape' || record.meta.editable !== 'full') {
     throw new Error(`Patch ${index} 指向不支持顶点编辑的元素`);
   }
-  if (patch.op === 'set') assertCustomGeometryOverride(
-    record.ovr.geometry ?? record.meta.customGeometry ?? null,
-    patch.value,
-    `Patch ${index} 的 geometry`,
-  );
+  if (patch.op === 'set')
+    assertCustomGeometryOverride(record.ovr.geometry ?? record.meta.customGeometry ?? null, patch.value, `Patch ${index} 的 geometry`);
 }
 
 export { applyRecordOverridePatch as applyElementGeometryPatch } from './record-override';

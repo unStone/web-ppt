@@ -23,7 +23,7 @@ function addEffect(list: XmlElement, name: string): XmlElement {
 export function appendShadow(list: XmlElement, shadow: NonNullable<Effects['shadow']>): void {
   const node = addEffect(list, shadow.inner ? 'innerShdw' : 'outerShdw');
   const distance = Math.hypot(shadow.dx, shadow.dy);
-  let direction = Math.round(Math.atan2(shadow.dy, shadow.dx) * 180 / Math.PI * 60000);
+  let direction = Math.round(((Math.atan2(shadow.dy, shadow.dx) * 180) / Math.PI) * 60000);
   direction = ((direction % 21600000) + 21600000) % 21600000;
   setXmlAttribute(node, 'blurRad', emu(shadow.blur));
   setXmlAttribute(node, 'dist', emu(distance));
@@ -73,11 +73,7 @@ export function hasEffectsOverride(record: ElementRecord): boolean {
   return own(record.ovr, 'effects');
 }
 
-export function materializeElementEffects(
-  document: XmlDocument,
-  record: ElementRecord,
-  effects: Effects,
-): void {
+export function materializeElementEffects(document: XmlDocument, record: ElementRecord, effects: Effects): void {
   const properties = shapeProperties(document, record);
   let list = findXmlChild(properties, { localName: 'effectLst', namespaceUri: DRAWINGML_NS });
   const dag = findXmlChild(properties, { localName: 'effectDag', namespaceUri: DRAWINGML_NS });

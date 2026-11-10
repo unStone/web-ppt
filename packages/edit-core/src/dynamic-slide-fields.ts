@@ -2,17 +2,14 @@ import type { SlideElement, TextBody } from '@web-ppt/core';
 
 const DYNAMIC_LINK = /^(?:slide:(?:next|previous|first|last)|slide-part:)/;
 
-export const isDynamicSlideLink = (link: string | undefined): boolean =>
-  !!link && DYNAMIC_LINK.test(link);
+export const isDynamicSlideLink = (link: string | undefined): boolean => !!link && DYNAMIC_LINK.test(link);
 
 function textHasDynamicLink(text: TextBody | null): boolean {
-  return !!text?.paragraphs.some((paragraph) =>
-    paragraph.runs.some((run) => isDynamicSlideLink(run.link)));
+  return !!text?.paragraphs.some((paragraph) => paragraph.runs.some((run) => isDynamicSlideLink(run.link)));
 }
 
 function textHasDynamicSlideNumber(text: TextBody | null): boolean {
-  return !!text?.paragraphs.some((paragraph) =>
-    paragraph.runs.some((run) => run.field?.toLowerCase() === 'slidenum'));
+  return !!text?.paragraphs.some((paragraph) => paragraph.runs.some((run) => run.field?.toLowerCase() === 'slidenum'));
 }
 
 /** 组后代有独立记录和索引；字段身份来自内容，不依赖可选的页码占位符元数据。 */

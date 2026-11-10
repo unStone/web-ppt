@@ -9,4 +9,6 @@ export function emfPlusToSvg(bytes: Uint8Array, options?: MetafileOptions): stri
   const result = decodeEmfPlus(bytes, options);
   return result.mode === 'absent' ? metafileToSvg(bytes, options) : result.svg;
 }
-export function enableEmfPlus(): void { setMetafileDecoder(emfPlusToSvg); }
+export function enableEmfPlus(): void {
+  setMetafileDecoder(emfPlusToSvg);
+}

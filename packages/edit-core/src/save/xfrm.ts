@@ -23,10 +23,16 @@ const HOSTS: Readonly<Record<string, HostSpec>> = {
   cxnSp: { namespaceUri: PRESENTATIONML_NS, nonVisual: 'nvCxnSpPr', properties: 'spPr', frame: false },
   grpSp: { namespaceUri: PRESENTATIONML_NS, nonVisual: 'nvGrpSpPr', properties: 'grpSpPr', frame: false },
   graphicFrame: {
-    namespaceUri: PRESENTATIONML_NS, nonVisual: 'nvGraphicFramePr', properties: null, frame: true,
+    namespaceUri: PRESENTATIONML_NS,
+    nonVisual: 'nvGraphicFramePr',
+    properties: null,
+    frame: true,
   },
   contentPart: {
-    namespaceUri: POWERPOINT_2010_NS, nonVisual: 'nvContentPartPr', properties: null, frame: true,
+    namespaceUri: POWERPOINT_2010_NS,
+    nonVisual: 'nvContentPartPr',
+    properties: null,
+    frame: true,
   },
 };
 
@@ -39,9 +45,12 @@ function numericId(element: XmlElement): number | null {
 
 function hostSpid(host: XmlElement, spec: HostSpec): number | null {
   const nonVisual = findXmlChild(host, { localName: spec.nonVisual, namespaceUri: spec.namespaceUri });
-  const properties = nonVisual && findXmlChild(nonVisual, {
-    localName: 'cNvPr', namespaceUri: spec.namespaceUri,
-  });
+  const properties =
+    nonVisual
+    && findXmlChild(nonVisual, {
+      localName: 'cNvPr',
+      namespaceUri: spec.namespaceUri,
+    });
   return properties ? numericId(properties) : null;
 }
 
@@ -67,8 +76,8 @@ function alternateVariants(alternate: XmlElement): HostVariant[] | null {
   for (const branch of branches) {
     const children = xmlElementChildren(branch);
     const host = children[0];
-    if (branch.namespaceUri !== MARKUP_COMPATIBILITY_NS
-      || !['Choice', 'Fallback'].includes(branch.localName) || children.length !== 1) return null;
+    if (branch.namespaceUri !== MARKUP_COMPATIBILITY_NS || !['Choice', 'Fallback'].includes(branch.localName) || children.length !== 1)
+      return null;
     if (host.namespaceUri === MARKUP_COMPATIBILITY_NS && host.localName === 'AlternateContent') {
       const nested = alternateVariants(host);
       if (!nested) return null;
@@ -101,9 +110,9 @@ export function locateElementHosts(
     for (const child of xmlElementChildren(parent)) {
       if (child.namespaceUri === MARKUP_COMPATIBILITY_NS && child.localName === 'AlternateContent') {
         for (const branch of xmlElementChildren(child)) {
-          const isBranch = branch.namespaceUri === MARKUP_COMPATIBILITY_NS
-            && (branch.localName === 'Choice' || branch.localName === 'Fallback');
-          visit(branch, isBranch ? alternate ?? { host: child, parent } : undefined);
+          const isBranch =
+            branch.namespaceUri === MARKUP_COMPATIBILITY_NS && (branch.localName === 'Choice' || branch.localName === 'Fallback');
+          visit(branch, isBranch ? (alternate ?? { host: child, parent }) : undefined);
         }
         continue;
       }
@@ -111,7 +120,7 @@ export function locateElementHosts(
       const supported = spec?.namespaceUri === child.namespaceUri ? spec : undefined;
       if (supported) {
         const spid = hostSpid(child, supported);
-        for (const record of spid === null ? [] : wanted.get(spid) ?? []) {
+        for (const record of spid === null ? [] : (wanted.get(spid) ?? [])) {
           matches.get(record.id)!.push({ host: child, parent, spec: supported, alternate });
         }
       }
@@ -127,37 +136,40 @@ export function locateElementHosts(
     if (alternate) {
       const variants = alternateVariants(alternate.host);
       // Office 可以给备用图分配不同 spid；身份由一对一的 MC 外壳确定，不能跨对象合并。
-      const coherent = variants && record.meta.editable === 'frame' && !claimedAlternates.has(alternate.host)
+      const coherent =
+        variants
+        && record.meta.editable === 'frame'
+        && !claimedAlternates.has(alternate.host)
         && found.every((match) => match.alternate?.host === alternate.host);
       if (!coherent) throw new Error(`元素 ${record.id} 的兼容分支不是同一框架对象`);
       claimedAlternates.add(alternate.host);
       located.set(record.id, {
-        host: alternate.host, parent: alternate.parent, spec: found[0].spec,
+        host: alternate.host,
+        parent: alternate.parent,
+        spec: found[0].spec,
         variants,
       });
       continue;
     }
     if (found.length !== 1) {
       const origin = record.meta.origin!;
-      throw new Error(found.length
-        ? `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中存在歧义`
-        : `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中不存在`);
+      throw new Error(
+        found.length
+          ? `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中存在歧义`
+          : `元素 ${record.id} 的 spid ${origin.spid} 在 ${origin.part} 中不存在`,
+      );
     }
     located.set(record.id, found[0]);
   }
   return located;
 }
 
-export function elementHostVariants(
-  document: XmlDocument, record: Pick<ElementRecord, 'id' | 'meta'>,
-): readonly HostVariant[] {
+export function elementHostVariants(document: XmlDocument, record: Pick<ElementRecord, 'id' | 'meta'>): readonly HostVariant[] {
   const location = locateElementHost(document, record);
   return location.variants ?? [location];
 }
 
-export function elementNonVisualProperties(
-  document: XmlDocument, record: Pick<ElementRecord, 'id' | 'meta'>,
-): XmlElement[] {
+export function elementNonVisualProperties(document: XmlDocument, record: Pick<ElementRecord, 'id' | 'meta'>): XmlElement[] {
   return elementHostVariants(document, record).map(({ host, spec }) => {
     const nonVisual = findXmlChild(host, { localName: spec.nonVisual, namespaceUri: spec.namespaceUri });
     const properties = nonVisual && findXmlChild(nonVisual, { localName: 'cNvPr', namespaceUri: spec.namespaceUri });
@@ -166,10 +178,7 @@ export function elementNonVisualProperties(
   });
 }
 
-export function locateElementHost(
-  document: XmlDocument,
-  record: Pick<ElementRecord, 'id' | 'meta'>,
-): LocatedHost {
+export function locateElementHost(document: XmlDocument, record: Pick<ElementRecord, 'id' | 'meta'>): LocatedHost {
   return locateElementHosts(document, [record]).get(record.id)!;
 }
 
@@ -206,9 +215,7 @@ function materializeTransform(xfrm: XmlElement, effective: SlideElement, label: 
 }
 
 function transformNode({ host, spec }: HostVariant, record: ElementRecord): { xfrm: XmlElement; created: boolean } {
-  const container = spec.properties
-    ? findXmlChild(host, { localName: spec.properties, namespaceUri: spec.namespaceUri })
-    : host;
+  const container = spec.properties ? findXmlChild(host, { localName: spec.properties, namespaceUri: spec.namespaceUri }) : host;
   if (!container) throw new Error(`元素 ${record.id} 缺少 ${spec.properties} 容器`);
   const namespaceUri = spec.frame ? host.namespaceUri : DRAWINGML_NS;
   if (!namespaceUri) throw new Error(`元素 ${record.id} 的 xfrm 命名空间无法确定`);
@@ -227,8 +234,7 @@ export function hasXfrmOverrides(record: ElementRecord): boolean {
 export function patchElementXfrm(document: XmlDocument, record: ElementRecord): void {
   if (!hasXfrmOverrides(record)) return;
   if (record.meta.editable === 'none') throw new Error(`元素 ${record.id} 不可写回`);
-  if (record.meta.editable === 'frame'
-    && XFRM_FIELDS.some((field) => own(record.ovr, field) && !isFrameSaveXfrmField(field))) {
+  if (record.meta.editable === 'frame' && XFRM_FIELDS.some((field) => own(record.ovr, field) && !isFrameSaveXfrmField(field))) {
     throw new Error(`框架对象 ${record.id} 只允许写回位置、尺寸与粘贴补偿翻转`);
   }
   for (const variant of elementHostVariants(document, record)) patchVariantXfrm(variant, record);
@@ -272,11 +278,7 @@ function patchVariantXfrm(variant: HostVariant, record: ElementRecord): void {
 }
 
 /** 版式目标缺失时写入完整有效 frame，使 Office 重开不再依赖已经断开的旧版式宿主。 */
-export function materializeElementXfrm(
-  document: XmlDocument,
-  record: ElementRecord,
-  effective: SlideElement,
-): void {
+export function materializeElementXfrm(document: XmlDocument, record: ElementRecord, effective: SlideElement): void {
   if (record.meta.editable === 'none') throw new Error(`元素 ${record.id} 不可写回`);
   for (const variant of elementHostVariants(document, record)) {
     materializeTransform(transformNode(variant, record).xfrm, effective, record.id);

@@ -430,7 +430,7 @@ export interface DuplicateSlideCommand {
 }
 
 // @public (undocumented)
-export type EditableAnimationEffect = typeof ANIMATION_EFFECTS[number];
+export type EditableAnimationEffect = (typeof ANIMATION_EFFECTS)[number];
 
 // @public (undocumented)
 export type EditableKind = 'full' | 'frame' | 'none';
@@ -1401,7 +1401,7 @@ export type FlipField = 'flipH' | 'flipV';
 export const FORMAT_MASK_FIELDS: readonly ["fill", "stroke", "effects", "run", "paragraph", "body"];
 
 // @public (undocumented)
-export type FormatMaskField = typeof FORMAT_MASK_FIELDS[number];
+export type FormatMaskField = (typeof FORMAT_MASK_FIELDS)[number];
 
 // @public (undocumented)
 export type FractionalIndex = string;
@@ -3302,14 +3302,7 @@ export interface TableCellOverrides {
 // @public (undocumented)
 export type TableCellPropsPatch = {
     readonly op: 'set' | 'del';
-    readonly path: readonly [
-    'elements',
-    ElementId,
-    'ovr',
-    'tableCells',
-    string,
-    'fill' | 'borders' | 'margins' | 'vAlign' | 'vert'
-    ];
+    readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', string, 'fill' | 'borders' | 'margins' | 'vAlign' | 'vert'];
     readonly value?: TableCellOverrides[keyof Omit<TableCellOverrides, 'text'>];
     readonly origin: string;
 };

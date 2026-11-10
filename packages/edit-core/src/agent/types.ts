@@ -1,29 +1,28 @@
 import type { LayoutCheck, LayoutLintReport } from '../lint/types';
 import type { PresentationDescription } from '../describe/types';
 import type {
-  AddImageCommand as EditAddImageCommand, Command, ReplaceImageCommand as EditReplaceImageCommand,
-  SetBackgroundImageCommand as EditSetBackgroundImageCommand, TextRange,
+  AddImageCommand as EditAddImageCommand,
+  Command,
+  ReplaceImageCommand as EditReplaceImageCommand,
+  SetBackgroundImageCommand as EditSetBackgroundImageCommand,
+  TextRange,
 } from '../commands/types';
 import type { TableCellAddress } from '../types';
 
-type JsonBytes<T> = T extends { readonly bytes: Uint8Array }
-  ? { readonly [K in keyof T]: K extends 'bytes' ? string : T[K] }
-  : T;
+type JsonBytes<T> = T extends { readonly bytes: Uint8Array } ? { readonly [K in keyof T]: K extends 'bytes' ? string : T[K] } : T;
 type BinaryCommand = EditAddImageCommand | EditReplaceImageCommand | EditSetBackgroundImageCommand;
 export type AddImageCommand = JsonBytes<EditAddImageCommand>;
 export type ReplaceImageCommand = JsonBytes<EditReplaceImageCommand>;
 export type SetBackgroundImageCommand = JsonBytes<EditSetBackgroundImageCommand>;
 
 /** 与 Editor 命令一一对应；图片字节在 JSON 传输中使用 Base64。 */
-export type AgentCommand = Exclude<Command, BinaryCommand>
-  | AddImageCommand | ReplaceImageCommand | SetBackgroundImageCommand;
+export type AgentCommand = Exclude<Command, BinaryCommand> | AddImageCommand | ReplaceImageCommand | SetBackgroundImageCommand;
 
 export interface AgentDescribeInput {
   readonly maxChars?: number;
 }
 
-export type AgentElementQuery = 'describe' | 'fill' | 'stroke' | 'effects' | 'crop' | 'link'
-  | 'run' | 'paragraph' | 'body';
+export type AgentElementQuery = 'describe' | 'fill' | 'stroke' | 'effects' | 'crop' | 'link' | 'run' | 'paragraph' | 'body';
 
 export interface AgentElementInput {
   readonly id: string;
@@ -98,16 +97,18 @@ export interface AgentHistoryState {
 export interface AgentMutationResult {
   readonly affectedElements: readonly string[];
   readonly affectedSlides: readonly string[];
-  readonly lint: {
-    readonly status: 'ok';
-    readonly slideNumbers: readonly number[];
-    readonly report: LayoutLintReport | null;
-  } | {
-    readonly status: 'failed';
-    readonly slideNumbers: readonly number[];
-    readonly reason: string;
-    readonly message: string;
-  };
+  readonly lint:
+    | {
+        readonly status: 'ok';
+        readonly slideNumbers: readonly number[];
+        readonly report: LayoutLintReport | null;
+      }
+    | {
+        readonly status: 'failed';
+        readonly slideNumbers: readonly number[];
+        readonly reason: string;
+        readonly message: string;
+      };
   readonly history: AgentHistoryState;
 }
 
@@ -142,6 +143,4 @@ export interface AgentToolFailure {
   };
 }
 
-export type AgentToolResult<T extends AgentToolName> =
-  | { readonly ok: true; readonly value: AgentToolOutputMap[T] }
-  | AgentToolFailure;
+export type AgentToolResult<T extends AgentToolName> = { readonly ok: true; readonly value: AgentToolOutputMap[T] } | AgentToolFailure;

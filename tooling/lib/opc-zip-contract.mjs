@@ -8,12 +8,15 @@ function entryMetadataBytes(bytes, wanted) {
   for (const entry of scanCentralEntries(bytes)) {
     if (entry.name === wanted) {
       return {
-        localExtra: bytes.slice(entry.localOffset + 30 + entry.localNameLength,
-          entry.localOffset + 30 + entry.localNameLength + entry.localExtraLength),
-        centralExtra: bytes.slice(entry.cursor + 46 + entry.nameLength,
-          entry.cursor + 46 + entry.nameLength + entry.extraLength),
-        comment: bytes.slice(entry.cursor + 46 + entry.nameLength + entry.extraLength,
-          entry.cursor + 46 + entry.nameLength + entry.extraLength + entry.commentLength),
+        localExtra: bytes.slice(
+          entry.localOffset + 30 + entry.localNameLength,
+          entry.localOffset + 30 + entry.localNameLength + entry.localExtraLength,
+        ),
+        centralExtra: bytes.slice(entry.cursor + 46 + entry.nameLength, entry.cursor + 46 + entry.nameLength + entry.extraLength),
+        comment: bytes.slice(
+          entry.cursor + 46 + entry.nameLength + entry.extraLength,
+          entry.cursor + 46 + entry.nameLength + entry.extraLength + entry.commentLength,
+        ),
       };
     }
   }
@@ -76,65 +79,81 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
   check('直通保存产生新的包字节和句柄', patched.bytes !== source.bytes && patched.package !== source);
   const outputParts = unzipSync(patched.bytes);
   check('脏 part 解压后等于调用方提供的字节', equalBytes(outputParts[target], replacement));
-  check('全部净 part 解压内容保持相同', Object.entries(source.parts).every(([name, part]) =>
-    name === target || equalBytes(outputParts[name], part)));
+  check(
+    '全部净 part 解压内容保持相同',
+    Object.entries(source.parts).every(([name, part]) => name === target || equalBytes(outputParts[name], part)),
+  );
 
   const beforeRecords = localRecords(source.bytes);
   const afterRecords = localRecords(patched.bytes);
-  check('全部净条目的本地头、extra 与压缩流逐字节直通', [...beforeRecords].every(([name, record]) =>
-    name === target || equalBytes(afterRecords.get(name), record)));
+  check(
+    '全部净条目的本地头、extra 与压缩流逐字节直通',
+    [...beforeRecords].every(([name, record]) => name === target || equalBytes(afterRecords.get(name), record)),
+  );
   check('目标条目确实重新写入', !equalBytes(afterRecords.get(target), beforeRecords.get(target)));
   eq('直通统计只重写一个条目', patched.rewrittenEntries, 1);
   eq('直通统计保留其余条目', patched.preservedEntries, beforeRecords.size - 1);
-  eq('修改 part 不改变原中央目录顺序', JSON.stringify([...afterRecords.keys()]),
-    JSON.stringify([...beforeRecords.keys()]));
+  eq('修改 part 不改变原中央目录顺序', JSON.stringify([...afterRecords.keys()]), JSON.stringify([...beforeRecords.keys()]));
 
   const reparsed = await core.parse(patched.bytes, {
-    keepPackage: true, lazy: false, assets: 'defer',
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   eq('直通产物可由公开解析器重新打开', reparsed.slides.length, pres.slides.length);
   check('重新解析后的统一投影逐字段相同', JSON.stringify(reparsed.slides) === JSON.stringify(pres.slides));
-  check('重新解析后的两条文本渲染路径逐页相同', pres.slides.every((slide, index) =>
-    ['html', 'svg'].every((textMode) => core.renderSlideToSvg(pres, slide, {
-      textMode, idPrefix: `opc-${index}-`,
-    }) === core.renderSlideToSvg(reparsed, reparsed.slides[index], {
-      textMode, idPrefix: `opc-${index}-`,
-    }))));
+  check(
+    '重新解析后的两条文本渲染路径逐页相同',
+    pres.slides.every((slide, index) =>
+      ['html', 'svg'].every(
+        (textMode) =>
+          core.renderSlideToSvg(pres, slide, {
+            textMode,
+            idPrefix: `opc-${index}-`,
+          })
+          === core.renderSlideToSvg(reparsed, reparsed.slides[index], {
+            textMode,
+            idPrefix: `opc-${index}-`,
+          }),
+      ),
+    ),
+  );
   const sameAgain = opc.patchOpcPackage(patched.package, { [target]: replacement });
   eq('相同修改第二次保存退化为 identity', sameAgain.mode, 'identity');
   eq('相同修改第二次保存不再复制字节', sameAgain.bytes, patched.bytes);
 
   const nextTarget = 'ppt/slides/slide2.xml';
-  const nextReplacement = new TextEncoder().encode(
-    `${decoder.decode(patched.package.parts[nextTarget])}<!--second-patch-->`,
-  );
+  const nextReplacement = new TextEncoder().encode(`${decoder.decode(patched.package.parts[nextTarget])}<!--second-patch-->`);
   const second = opc.patchOpcPackage(patched.package, { [nextTarget]: nextReplacement });
   const secondParts = unzipSync(second.bytes);
   const secondRecords = localRecords(second.bytes);
   eq('刷新包后修改另一 part 仍使用直通模式', second.mode, 'passthrough');
-  check('连续保存保留上次脏 part 的新内容与压缩区间', equalBytes(secondParts[target], replacement)
-    && equalBytes(secondRecords.get(target), afterRecords.get(target)));
-  check('连续保存只改写第二个目标 part', equalBytes(secondParts[nextTarget], nextReplacement)
-    && second.rewrittenEntries === 1);
-
-  const mutableInput = new TextEncoder().encode(
-    `${decoder.decode(source.parts[nextTarget])}<!--mutable-input-->`,
+  check(
+    '连续保存保留上次脏 part 的新内容与压缩区间',
+    equalBytes(secondParts[target], replacement) && equalBytes(secondRecords.get(target), afterRecords.get(target)),
   );
+  check('连续保存只改写第二个目标 part', equalBytes(secondParts[nextTarget], nextReplacement) && second.rewrittenEntries === 1);
+
+  const mutableInput = new TextEncoder().encode(`${decoder.decode(source.parts[nextTarget])}<!--mutable-input-->`);
   const snapshotted = opc.patchOpcPackage(source, { [nextTarget]: mutableInput });
   const expectedSnapshot = snapshotted.package.parts[nextTarget].slice();
   check('刷新后的包句柄仍可 structuredClone', structuredClone(snapshotted.package).disposed === false);
   mutableInput.fill(0);
-  check('保存对脏缓冲拍快照，调用方后续修改不会破坏包与 ZIP 一致性',
+  check(
+    '保存对脏缓冲拍快照，调用方后续修改不会破坏包与 ZIP 一致性',
     equalBytes(snapshotted.package.parts[nextTarget], expectedSnapshot)
-    && equalBytes(unzipSync(snapshotted.bytes)[nextTarget], expectedSnapshot)
-    && opc.patchOpcPackage(snapshotted.package, { [nextTarget]: expectedSnapshot }).mode === 'identity');
+      && equalBytes(unzipSync(snapshotted.bytes)[nextTarget], expectedSnapshot)
+      && opc.patchOpcPackage(snapshotted.package, { [nextTarget]: expectedSnapshot }).mode === 'identity',
+  );
   const bufferInput = Buffer.from('buffer-owned-payload');
   const bufferExpected = new Uint8Array(bufferInput);
   const bufferPatched = opc.patchOpcPackage(source, { 'customXml/buffer.bin': bufferInput });
   bufferInput.fill(0);
-  check('补丁保存对 Buffer 输入取得独立所有权',
+  check(
+    '补丁保存对 Buffer 输入取得独立所有权',
     equalBytes(bufferPatched.package.parts['customXml/buffer.bin'], bufferExpected)
-    && equalBytes(unzipSync(bufferPatched.bytes)['customXml/buffer.bin'], bufferExpected));
+      && equalBytes(unzipSync(bufferPatched.bytes)['customXml/buffer.bin'], bufferExpected),
+  );
   opc.disposeOpcPackage(bufferPatched.package);
   reparsed.dispose?.();
 
@@ -143,75 +162,101 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
   const addedBytes = new Uint8Array([0, 1, 2, 3, 0xfe, 0xff]);
   const structural = opc.patchOpcPackage(source, { [deletedPart]: null, [addedPart]: addedBytes });
   const structuralParts = unzipSync(structural.bytes);
-  check('补丁保存可删除 OPC part', !(deletedPart in structuralParts)
-    && !(deletedPart in structural.package.parts));
-  check('补丁保存可新增二进制 OPC part', equalBytes(structuralParts[addedPart], addedBytes)
-    && equalBytes(structural.package.parts[addedPart], addedBytes));
+  check('补丁保存可删除 OPC part', !(deletedPart in structuralParts) && !(deletedPart in structural.package.parts));
+  check(
+    '补丁保存可新增二进制 OPC part',
+    equalBytes(structuralParts[addedPart], addedBytes) && equalBytes(structural.package.parts[addedPart], addedBytes),
+  );
   const structuralOrder = [...localRecords(structural.bytes).keys()];
   const expectedStructuralOrder = [...beforeRecords.keys()].filter((name) => name !== deletedPart);
   expectedStructuralOrder.push(addedPart);
-  eq('删除保持原顺序且新增 part 稳定追加', JSON.stringify(structuralOrder),
-    JSON.stringify(expectedStructuralOrder));
+  eq('删除保持原顺序且新增 part 稳定追加', JSON.stringify(structuralOrder), JSON.stringify(expectedStructuralOrder));
   eq('新增与删除各计为一个重写条目', structural.rewrittenEntries, 2);
 
   const commentedBytes = withArchiveComment(source.bytes);
   const commentedPackage = Object.freeze({
-    format: 'pptx', bytes: commentedBytes, parts: source.parts, disposed: false,
+    format: 'pptx',
+    bytes: commentedBytes,
+    parts: source.parts,
+    disposed: false,
   });
   const commented = opc.patchOpcPackage(commentedPackage, { [target]: replacement });
   eq('存档注释触发可解释的整包重压', commented.mode, 'repacked');
   eq('存档注释降级原因可供 UI 展示', commented.fallbackReason, 'archive-comment');
   const commentedParts = unzipSync(commented.bytes);
-  check('整包重压仍保持每个 part 的解压内容', Object.entries(source.parts).every(([name, part]) =>
-    equalBytes(commentedParts[name], name === target ? replacement : part)));
+  check(
+    '整包重压仍保持每个 part 的解压内容',
+    Object.entries(source.parts).every(([name, part]) => equalBytes(commentedParts[name], name === target ? replacement : part)),
+  );
   const unsupportedIdentity = opc.patchOpcPackage(commentedPackage, {});
   eq('不支持特性的包在无修改时仍保持整包身份', unsupportedIdentity.bytes, commentedBytes);
 
   const unsupportedCases = [
-    ['data-descriptor', mutateZip(source.bytes, ({ view, central, local }) => {
-      view.setUint16(central + 8, view.getUint16(central + 8, true) | 8, true);
-      view.setUint16(local + 6, view.getUint16(local + 6, true) | 8, true);
-    })],
-    ['data-descriptor', mutateZip(source.bytes, ({ view, local }) => {
-      view.setUint16(local + 6, view.getUint16(local + 6, true) | 8, true);
-    })],
-    ['encrypted-entry', mutateZip(source.bytes, ({ view, central, local }) => {
-      view.setUint16(central + 8, view.getUint16(central + 8, true) | 1, true);
-      view.setUint16(local + 6, view.getUint16(local + 6, true) | 1, true);
-    })],
-    ['unsupported-compression', mutateZip(source.bytes, ({ view, central, local }) => {
-      view.setUint16(central + 10, 99, true);
-      view.setUint16(local + 8, 99, true);
-    })],
-    ['zip64', mutateZip(source.bytes, ({ view, end }) => {
-      view.setUint16(end + 8, 0xffff, true);
-      view.setUint16(end + 10, 0xffff, true);
-    })],
-    ['zip64', mutateZip(source.bytes, ({ view, central }) => {
-      view.setUint32(central + 20, 0xffffffff, true);
-    })],
+    [
+      'data-descriptor',
+      mutateZip(source.bytes, ({ view, central, local }) => {
+        view.setUint16(central + 8, view.getUint16(central + 8, true) | 8, true);
+        view.setUint16(local + 6, view.getUint16(local + 6, true) | 8, true);
+      }),
+    ],
+    [
+      'data-descriptor',
+      mutateZip(source.bytes, ({ view, local }) => {
+        view.setUint16(local + 6, view.getUint16(local + 6, true) | 8, true);
+      }),
+    ],
+    [
+      'encrypted-entry',
+      mutateZip(source.bytes, ({ view, central, local }) => {
+        view.setUint16(central + 8, view.getUint16(central + 8, true) | 1, true);
+        view.setUint16(local + 6, view.getUint16(local + 6, true) | 1, true);
+      }),
+    ],
+    [
+      'unsupported-compression',
+      mutateZip(source.bytes, ({ view, central, local }) => {
+        view.setUint16(central + 10, 99, true);
+        view.setUint16(local + 8, 99, true);
+      }),
+    ],
+    [
+      'zip64',
+      mutateZip(source.bytes, ({ view, end }) => {
+        view.setUint16(end + 8, 0xffff, true);
+        view.setUint16(end + 10, 0xffff, true);
+      }),
+    ],
+    [
+      'zip64',
+      mutateZip(source.bytes, ({ view, central }) => {
+        view.setUint32(central + 20, 0xffffffff, true);
+      }),
+    ],
     ['zip64', withZip64Locator(source.bytes)],
     ['multi-disk', mutateZip(source.bytes, ({ view, end }) => view.setUint16(end + 4, 1, true))],
   ];
   let explainedFallbacks = true;
   for (const [reason, unsupportedBytes] of unsupportedCases) {
     const unsupportedPackage = Object.freeze({
-      format: 'pptx', bytes: unsupportedBytes, parts: source.parts, disposed: false,
+      format: 'pptx',
+      bytes: unsupportedBytes,
+      parts: source.parts,
+      disposed: false,
     });
     const result = opc.patchOpcPackage(unsupportedPackage, { [target]: replacement });
     const parts = unzipSync(result.bytes);
-    explainedFallbacks &&= result.mode === 'repacked' && result.fallbackReason === reason
-      && Object.entries(source.parts).every(([name, part]) =>
-        equalBytes(parts[name], name === target ? replacement : part));
+    explainedFallbacks &&=
+      result.mode === 'repacked'
+      && result.fallbackReason === reason
+      && Object.entries(source.parts).every(([name, part]) => equalBytes(parts[name], name === target ? replacement : part));
   }
   check('zip64、数据描述符、加密、未知压缩与多磁盘均可解释降级', explainedFallbacks);
 
   let rejectedBrokenZip = false;
   try {
-    opc.patchOpcPackage(
-      Object.freeze({ format: 'pptx', bytes: new Uint8Array([1, 2, 3]), parts: source.parts, disposed: false }),
-      { [target]: replacement },
-    );
+    opc.patchOpcPackage(Object.freeze({ format: 'pptx', bytes: new Uint8Array([1, 2, 3]), parts: source.parts, disposed: false }), {
+      [target]: replacement,
+    });
   } catch {
     rejectedBrokenZip = true;
   }
@@ -219,7 +264,11 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
 
   let rejectedInvalidPaths = 0;
   for (const name of ['/absolute.xml', '../escape.xml', 'a//b.xml', 'a\\b.xml']) {
-    try { opc.patchOpcPackage(source, { [name]: new Uint8Array() }); } catch { rejectedInvalidPaths++; }
+    try {
+      opc.patchOpcPackage(source, { [name]: new Uint8Array() });
+    } catch {
+      rejectedInvalidPaths++;
+    }
   }
   eq('新增和修改统一拒绝非法 OPC part 路径', rejectedInvalidPaths, 4);
   let rejectedDisposed = false;
@@ -233,8 +282,7 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
   const savedDocument = globalThis.document;
   globalThis.document = undefined;
   try {
-    check('ZIP 补丁器可在 Worker 无 DOM 环境运行',
-      opc.patchOpcPackage(source, { [target]: replacement }).mode === 'passthrough');
+    check('ZIP 补丁器可在 Worker 无 DOM 环境运行', opc.patchOpcPackage(source, { [target]: replacement }).mode === 'passthrough');
   } finally {
     globalThis.document = savedDocument;
   }
@@ -249,24 +297,29 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
       const featureBefore = entryMetadataBytes(featureBytes, featureTarget);
       const cleanBefore = entryMetadataBytes(featureBytes, featureClean);
       const cleanRecordBefore = localRecords(featureBytes).get(featureClean);
-      check('特性固件确实包含本地/中央 extra 与条目注释', featureBefore?.localExtra.length > 0
-        && featureBefore.centralExtra.length > 0 && featureBefore.comment.length > 0
-        && cleanBefore?.localExtra.length > 0 && cleanBefore.centralExtra.length > 0
-        && cleanBefore.comment.length > 0);
-      const changed = new TextEncoder().encode(
-        `${decoder.decode(featurePackage.parts[featureTarget])}<!--feature-patch-->`,
+      check(
+        '特性固件确实包含本地/中央 extra 与条目注释',
+        featureBefore?.localExtra.length > 0
+          && featureBefore.centralExtra.length > 0
+          && featureBefore.comment.length > 0
+          && cleanBefore?.localExtra.length > 0
+          && cleanBefore.centralExtra.length > 0
+          && cleanBefore.comment.length > 0,
       );
+      const changed = new TextEncoder().encode(`${decoder.decode(featurePackage.parts[featureTarget])}<!--feature-patch-->`);
       const featurePatched = opc.patchOpcPackage(featurePackage, { [featureTarget]: changed });
       const featureAfter = entryMetadataBytes(featurePatched.bytes, featureTarget);
       const cleanAfter = entryMetadataBytes(featurePatched.bytes, featureClean);
       check('重写脏条目仍逐字保留 local extra', equalBytes(featureAfter?.localExtra, featureBefore?.localExtra));
       check('重写脏条目仍逐字保留 central extra', equalBytes(featureAfter?.centralExtra, featureBefore?.centralExtra));
       check('重写脏条目仍逐字保留 entry comment', equalBytes(featureAfter?.comment, featureBefore?.comment));
-      check('带 extra/comment 的净条目仍整段直通',
+      check(
+        '带 extra/comment 的净条目仍整段直通',
         equalBytes(localRecords(featurePatched.bytes).get(featureClean), cleanRecordBefore)
-        && equalBytes(cleanAfter?.localExtra, cleanBefore?.localExtra)
-        && equalBytes(cleanAfter?.centralExtra, cleanBefore?.centralExtra)
-        && equalBytes(cleanAfter?.comment, cleanBefore?.comment));
+          && equalBytes(cleanAfter?.localExtra, cleanBefore?.localExtra)
+          && equalBytes(cleanAfter?.centralExtra, cleanBefore?.centralExtra)
+          && equalBytes(cleanAfter?.comment, cleanBefore?.comment),
+      );
 
       const zip64ExtraBytes = mutateZip(featureBytes, ({ view, central, local }) => {
         const centralNameLength = view.getUint16(central + 28, true);
@@ -275,7 +328,10 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
         view.setUint16(local + 30 + localNameLength, 0x0001, true);
       });
       const zip64ExtraPackage = Object.freeze({
-        format: 'pptx', bytes: zip64ExtraBytes, parts: featurePackage.parts, disposed: false,
+        format: 'pptx',
+        bytes: zip64ExtraBytes,
+        parts: featurePackage.parts,
+        disposed: false,
       });
       const zip64Extra = opc.patchOpcPackage(zip64ExtraPackage, { [featureTarget]: changed });
       eq('冗余 ZIP64 extra 也触发可解释重压', zip64Extra.fallbackReason, 'zip64');
@@ -296,7 +352,7 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
         const current = source.parts[name];
         const changed = new Uint8Array(current.length + 2);
         changed.set(current);
-        changed.set([seed & 0xff, seed >>> 8 & 0xff], current.length);
+        changed.set([seed & 0xff, (seed >>> 8) & 0xff], current.length);
         changes[name] = changed;
         expected.set(name, changed);
       } else {
@@ -305,12 +361,13 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
       }
     }
     const addedName = `customXml/property-${round}.bin`;
-    const added = new Uint8Array([seed & 0xff, seed >>> 8 & 0xff]);
+    const added = new Uint8Array([seed & 0xff, (seed >>> 8) & 0xff]);
     changes[addedName] = added;
     expected.set(addedName, added);
     const result = opc.patchOpcPackage(source, changes);
     const output = unzipSync(result.bytes);
-    patchProperty &&= Object.keys(output).length === expected.size
+    patchProperty &&=
+      Object.keys(output).length === expected.size
       && Object.entries(output).every(([name, part]) => equalBytes(part, expected.get(name)))
       && opc.patchOpcPackage(result.package, changes).mode === 'identity';
   }
@@ -318,9 +375,13 @@ export async function runOpcZipContract({ opc, core, load, check, eq }) {
   const disposable = opc.patchOpcPackage(source, { [target]: replacement }).package;
   const retainedAssets = Object.keys(disposable.assets ?? {}).length;
   opc.disposeOpcPackage(disposable);
-  check('独立保存结果可显式释放大包字节', disposable.disposed
-    && retainedAssets > 0
-    && disposable.bytes.length === 0 && Object.keys(disposable.parts).length === 0
-    && Object.keys(disposable.assets ?? {}).length === 0);
+  check(
+    '独立保存结果可显式释放大包字节',
+    disposable.disposed
+      && retainedAssets > 0
+      && disposable.bytes.length === 0
+      && Object.keys(disposable.parts).length === 0
+      && Object.keys(disposable.assets ?? {}).length === 0,
+  );
   pres.dispose?.();
 }

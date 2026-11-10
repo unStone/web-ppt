@@ -9,21 +9,24 @@ import { chartXml, xmlAttribute as attr, xmlContent as content } from './xml-dat
 import { CHART_PLOTS as PLOTS } from './plot-kinds';
 import type { XmlElement } from '@web-ppt/edit-core/xml';
 import type {
-  ChartDataBinding, ChartDataset, ChartDatasetState, ChartFormulaBinding, ChartPlotKind,
-  ChartPoint, ChartPointId, ChartSeries, ChartSeriesId,
+  ChartDataBinding,
+  ChartDataset,
+  ChartDatasetState,
+  ChartFormulaBinding,
+  ChartPlotKind,
+  ChartPoint,
+  ChartPointId,
+  ChartSeries,
+  ChartSeriesId,
 } from './types';
-import {
-  MAX_CHART_CELLS, MAX_CHART_POINTS, MAX_CHART_SERIES,
-} from './validation';
+import { MAX_CHART_CELLS, MAX_CHART_POINTS, MAX_CHART_SERIES } from './validation';
 import { workbookCanSync } from './workbook';
 import { readCategoryLevels } from './category-levels';
 import { readChartIdentityManifest } from './identity';
 import { chartRelationships } from './context';
 import { chartPartForElement, chartFrameKey } from './locator';
 import { orderedChartRecords } from './ordering';
-import {
-  OFFICE_REL_NS, STRICT_CHART_NS, STRICT_OFFICE_REL_NS,
-} from './xml-namespaces';
+import { OFFICE_REL_NS, STRICT_CHART_NS, STRICT_OFFICE_REL_NS } from './xml-namespaces';
 
 const { child, children } = chartXml;
 const formula = (holder: XmlElement | null): string | null => {
@@ -43,8 +46,7 @@ function cacheKind(holder: XmlElement | null): ChartFormulaBinding['cache'] {
   const container = dataContainer(holder);
   if (!container) return 'missing';
   if (container.localName.endsWith('Lit')) return 'literal';
-  return container.localName.startsWith('str') || container.localName.startsWith('multiLvl')
-    ? 'string' : 'number';
+  return container.localName.startsWith('str') || container.localName.startsWith('multiLvl') ? 'string' : 'number';
 }
 
 function dataPointCount(holder: XmlElement | null): number {
@@ -54,8 +56,7 @@ function dataPointCount(holder: XmlElement | null): number {
   let count = Number.isInteger(declared) && declared >= 0 ? declared : 0;
   let scanned = 0;
   for (const node of container?.children ?? []) {
-    if (node.type !== 'element' || node.namespaceUri !== container?.namespaceUri
-      || node.localName !== 'pt') continue;
+    if (node.type !== 'element' || node.namespaceUri !== container?.namespaceUri || node.localName !== 'pt') continue;
     if (++scanned > MAX_CHART_POINTS) return MAX_CHART_POINTS + 1;
     const rawIndex = attr(node, 'idx');
     const index = rawIndex === null ? Number.NaN : Number(rawIndex);
@@ -70,8 +71,7 @@ function cache(holder: XmlElement | null, numeric: boolean): Map<number, string 
   if (!container) return result;
   let scanned = 0;
   for (const point of container.children) {
-    if (point.type !== 'element' || point.namespaceUri !== container.namespaceUri
-      || point.localName !== 'pt') continue;
+    if (point.type !== 'element' || point.namespaceUri !== container.namespaceUri || point.localName !== 'pt') continue;
     if (++scanned > MAX_CHART_POINTS) break;
     const rawIndex = attr(point, 'idx');
     const index = rawIndex === null ? Number.NaN : Number(rawIndex);
@@ -118,16 +118,16 @@ function workbookBinding(
   if (inconsistentCategories) {
     return { chartPart, workbookPart: null, mode: 'readonly', reason: '不同系列的类别来源不一致，无法统一编辑' };
   }
-  const external = children(root).flatMap((node) => node.localName === 'externalData' ? [node] : [])
-    .concat(children(child(root, 'chart'), 'externalData'))[0] ?? null;
-  const relationshipNamespace = root.namespaceUri === STRICT_CHART_NS
-    ? STRICT_OFFICE_REL_NS : OFFICE_REL_NS;
+  const external =
+    children(root)
+      .flatMap((node) => (node.localName === 'externalData' ? [node] : []))
+      .concat(children(child(root, 'chart'), 'externalData'))[0] ?? null;
+  const relationshipNamespace = root.namespaceUri === STRICT_CHART_NS ? STRICT_OFFICE_REL_NS : OFFICE_REL_NS;
   const relationshipId = external
-    ? external.attributes.find((item) => item.localName === 'id'
-      && item.namespaceUri === relationshipNamespace)?.value ?? null
+    ? (external.attributes.find((item) => item.localName === 'id' && item.namespaceUri === relationshipNamespace)?.value ?? null)
     : null;
   const relationships = chartRelationships(doc, chartPart);
-  const workbookPart = relationshipId ? relationships[relationshipId]?.target ?? null : null;
+  const workbookPart = relationshipId ? (relationships[relationshipId]?.target ?? null) : null;
   if (relationshipId && relationships[relationshipId]?.external) {
     return { chartPart, workbookPart: null, mode: 'readonly', reason: '图表绑定外部工作簿，不能写回内嵌包' };
   }
@@ -135,16 +135,14 @@ function workbookBinding(
     return { chartPart, workbookPart: null, mode: 'cache', reason: '图表没有可写的内嵌工作簿' };
   }
   const missingCache = Object.values(series).some((item) =>
-    Object.values(item.bindings).some((itemBinding) =>
-      itemBinding?.formula && itemBinding.cache === 'missing'));
+    Object.values(item.bindings).some((itemBinding) => itemBinding?.formula && itemBinding.cache === 'missing'),
+  );
   if (missingCache) {
     return { chartPart, workbookPart, mode: 'readonly', reason: '图表公式缺少缓存，不能把未知工作簿值当成空值覆盖' };
   }
   const workbook = chartSourceBytes(doc, workbookPart);
   const sync = workbookCanSync(workbook, { categories, series }, true, deferWorkbookPlanning ? false : []);
-  return sync.ok
-    ? { chartPart, workbookPart, mode: 'workbook' }
-    : { chartPart, workbookPart, mode: 'readonly', reason: sync.reason };
+  return sync.ok ? { chartPart, workbookPart, mode: 'workbook' } : { chartPart, workbookPart, mode: 'readonly', reason: sync.reason };
 }
 
 function sourceState(doc: EditDoc, id: ElementId, deferred = false, part?: string): ChartDatasetState {
@@ -156,8 +154,8 @@ function readSourceState(doc: EditDoc, chartId: ElementId, deferWorkbookPlanning
   const record = doc.elements[chartId];
   const part = nativePart ?? (record && chartPartForElement(doc, chartId));
   // 保存会替换当前 OPC 包，但编辑覆盖的基线必须像普通 record.src 一样保持不变，撤销才能回到打开时状态。
-  const bytes = part && (chartSourceBytes(doc, part));
-  if (!record && !nativePart || !part || !bytes) throw new Error(`元素 ${chartId} 不是可读取的经典图表`);
+  const bytes = part && chartSourceBytes(doc, part);
+  if ((!record && !nativePart) || !part || !bytes) throw new Error(`元素 ${chartId} 不是可读取的经典图表`);
   const root = parseXmlTree(bytes).root;
   const identities = readChartIdentityManifest(root, nativePart ? undefined : chartFrameKey(doc, chartId), chartId);
   const plotArea = child(child(root, 'chart'), 'plotArea');
@@ -193,8 +191,11 @@ function readSourceState(doc: EditDoc, chartId: ElementId, deferWorkbookPlanning
     hasCategory ||= !xy;
     for (const source of children(plot, 'ser')) {
       sourceSeries.push({
-        source, plotKind, identity: identities?.series[physicalSequence],
-        fallback: physicalSequence, removed: false,
+        source,
+        plotKind,
+        identity: identities?.series[physicalSequence],
+        fallback: physicalSequence,
+        removed: false,
       });
       physicalSequence++;
     }
@@ -202,119 +203,142 @@ function readSourceState(doc: EditDoc, chartId: ElementId, deferWorkbookPlanning
   for (const template of identities?.templates ?? []) {
     if (!availableKinds.has(template.plotKind)) continue;
     sourceSeries.push({
-      source: template.node, plotKind: template.plotKind, identity: template,
-      fallback: template.sourceIndex, removed: true,
+      source: template.node,
+      plotKind: template.plotKind,
+      identity: template,
+      fallback: template.sourceIndex,
+      removed: true,
     });
   }
   for (const descriptor of sourceSeries) {
-      if (Object.keys(series).length >= MAX_CHART_SERIES) { unsupportedScale = true; break; }
-      const { source, plotKind } = descriptor;
-      const xy = plotKind === 'scatter' || plotKind === 'bubble';
-      const indexValue = attr(child(source, 'idx'), 'val');
-      const rawIndex = indexValue === null ? Number.NaN : Number(indexValue);
-      const sourceIndex = Number.isInteger(rawIndex) && rawIndex >= 0 && rawIndex <= 0x7fffffff
-        ? rawIndex : descriptor.fallback;
-      const orderValue = attr(child(source, 'order'), 'val');
-      const rawOrder = orderValue === null ? Number.NaN : Number(orderValue);
-      const sourceOrder = Number.isInteger(rawOrder) && rawOrder >= 0 && rawOrder <= 0x7fffffff
-        ? rawOrder : descriptor.fallback;
-      const baseId = `${chartId}:s${sourceIndex}`;
-      const occurrence = seenSeriesIds.get(baseId) ?? 0;
-      seenSeriesIds.set(baseId, occurrence + 1);
-      const id = descriptor.identity?.id
-        ?? `${baseId}${occurrence ? `~${occurrence}` : ''}` as ChartSeriesId;
-      const yHolder = child(source, xy ? 'yVal' : 'val');
-      const y = cache(yHolder, true);
-      const xHolder = xy ? child(source, 'xVal') : null;
-      const x = cache(xHolder, true);
-      const sizeHolder = plotKind === 'bubble' ? child(source, 'bubbleSize') : null;
-      const sizes = cache(sizeHolder, true);
-      const catHolder = xy ? null : child(source, 'cat');
-      let multi: ReturnType<typeof readCategoryLevels>;
-      try { multi = readCategoryLevels(catHolder, formula(yHolder), identities?.categoryOrientation); } catch (error) {
-        unsupportedMultiLevel = error instanceof Error ? error.message : '多级类别来源无效';
-      }
-      if (child(child(source, 'tx'), 'multiLvlStrRef')) unsupportedMultiLevel = '系列名称使用不支持的多级引用';
-      if (multi && (dataPointCount(yHolder) > multi.count || [...y.keys()].some(index => index >= multi.count))) {
-        unsupportedMultiLevel = '多级类别与系列数据点数不一致';
-      }
-      const seriesCategories = multi ? new Map(multi.slots.map((path, index) => [index, path[path.length - 1]]))
-        : catHolder ? cache(catHolder, false) : new Map<number, string>();
-      if (!categoryLevels && multi) categoryLevels = multi.slots;
-      if (!categorySource && catHolder) categorySource = seriesCategories;
-      const holderCounts = [
-        multi?.count ?? dataPointCount(catHolder), dataPointCount(yHolder), dataPointCount(xHolder),
-        dataPointCount(sizeHolder),
-      ];
-      if (!xy) {
-        const signature = JSON.stringify([
-          formula(catHolder), cacheKind(catHolder), holderCounts[0], [...seriesCategories], multi,
-        ]);
-        if (categorySignature === undefined) categorySignature = signature;
-        else inconsistentCategories ||= categorySignature !== signature;
-      }
-      if (holderCounts.some((count) => count > MAX_CHART_POINTS)) {
-        unsupportedScale = true;
-        break;
-      }
-      categoryCount = Math.max(categoryCount, holderCounts[0], identities?.categories.length ?? 0);
-      const pointCount = Math.min(MAX_CHART_POINTS, Math.max(
-        holderCounts[1], holderCounts[2], holderCounts[3],
-        xy ? descriptor.identity?.points.length ?? 0 : categoryCount,
-      ));
-      if (sourceCells + pointCount > MAX_CHART_CELLS) {
-        unsupportedScale = true;
-        break;
-      }
-      sourceCells += pointCount;
-      const points: Record<ChartPointId, ChartPoint> = Object.create(null);
-      for (let index = 0; index < pointCount; index++) {
-        const pointId = (xy ? descriptor.identity?.points[index] : identities?.categories[index])
-          ?? `${xy ? id : chartId}:p${index}` as ChartPointId;
-        points[pointId] = {
-          id: pointId,
-          order: initialFractionalIndex(index),
-          value: (y.get(index) as number | null | undefined) ?? null,
-          ...(xy ? { x: (x.get(index) as number | null | undefined) ?? null } : {}),
-          ...(plotKind === 'bubble'
-            ? { size: (sizes.get(index) as number | null | undefined) ?? null } : {}),
-        };
-      }
-      series[id] = {
-        id, order: initialFractionalIndex(sourceOrder), sourceIndex, plotKind,
-        name: seriesName(child(source, 'tx')),
-        points,
-        bindings: {
-          name: binding(child(source, 'tx')),
-          ...(xy ? { x: binding(xHolder), y: binding(yHolder) }
-            : { categories: { ...binding(catHolder), ...(multi ? { hierarchy: multi.hierarchy } : {}) }, values: binding(yHolder) }),
-          ...(plotKind === 'bubble' ? { size: binding(sizeHolder) } : {}),
-        },
-        ...(descriptor.removed ? { removed: true as const, sourceTemplate: true as const } : {}),
+    if (Object.keys(series).length >= MAX_CHART_SERIES) {
+      unsupportedScale = true;
+      break;
+    }
+    const { source, plotKind } = descriptor;
+    const xy = plotKind === 'scatter' || plotKind === 'bubble';
+    const indexValue = attr(child(source, 'idx'), 'val');
+    const rawIndex = indexValue === null ? Number.NaN : Number(indexValue);
+    const sourceIndex = Number.isInteger(rawIndex) && rawIndex >= 0 && rawIndex <= 0x7fffffff ? rawIndex : descriptor.fallback;
+    const orderValue = attr(child(source, 'order'), 'val');
+    const rawOrder = orderValue === null ? Number.NaN : Number(orderValue);
+    const sourceOrder = Number.isInteger(rawOrder) && rawOrder >= 0 && rawOrder <= 0x7fffffff ? rawOrder : descriptor.fallback;
+    const baseId = `${chartId}:s${sourceIndex}`;
+    const occurrence = seenSeriesIds.get(baseId) ?? 0;
+    seenSeriesIds.set(baseId, occurrence + 1);
+    const id = descriptor.identity?.id ?? (`${baseId}${occurrence ? `~${occurrence}` : ''}` as ChartSeriesId);
+    const yHolder = child(source, xy ? 'yVal' : 'val');
+    const y = cache(yHolder, true);
+    const xHolder = xy ? child(source, 'xVal') : null;
+    const x = cache(xHolder, true);
+    const sizeHolder = plotKind === 'bubble' ? child(source, 'bubbleSize') : null;
+    const sizes = cache(sizeHolder, true);
+    const catHolder = xy ? null : child(source, 'cat');
+    let multi: ReturnType<typeof readCategoryLevels>;
+    try {
+      multi = readCategoryLevels(catHolder, formula(yHolder), identities?.categoryOrientation);
+    } catch (error) {
+      unsupportedMultiLevel = error instanceof Error ? error.message : '多级类别来源无效';
+    }
+    if (child(child(source, 'tx'), 'multiLvlStrRef')) unsupportedMultiLevel = '系列名称使用不支持的多级引用';
+    if (multi && (dataPointCount(yHolder) > multi.count || [...y.keys()].some((index) => index >= multi.count))) {
+      unsupportedMultiLevel = '多级类别与系列数据点数不一致';
+    }
+    const seriesCategories = multi
+      ? new Map(multi.slots.map((path, index) => [index, path[path.length - 1]]))
+      : catHolder
+        ? cache(catHolder, false)
+        : new Map<number, string>();
+    if (!categoryLevels && multi) categoryLevels = multi.slots;
+    if (!categorySource && catHolder) categorySource = seriesCategories;
+    const holderCounts = [
+      multi?.count ?? dataPointCount(catHolder),
+      dataPointCount(yHolder),
+      dataPointCount(xHolder),
+      dataPointCount(sizeHolder),
+    ];
+    if (!xy) {
+      const signature = JSON.stringify([formula(catHolder), cacheKind(catHolder), holderCounts[0], [...seriesCategories], multi]);
+      if (categorySignature === undefined) categorySignature = signature;
+      else inconsistentCategories ||= categorySignature !== signature;
+    }
+    if (holderCounts.some((count) => count > MAX_CHART_POINTS)) {
+      unsupportedScale = true;
+      break;
+    }
+    categoryCount = Math.max(categoryCount, holderCounts[0], identities?.categories.length ?? 0);
+    const pointCount = Math.min(
+      MAX_CHART_POINTS,
+      Math.max(holderCounts[1], holderCounts[2], holderCounts[3], xy ? (descriptor.identity?.points.length ?? 0) : categoryCount),
+    );
+    if (sourceCells + pointCount > MAX_CHART_CELLS) {
+      unsupportedScale = true;
+      break;
+    }
+    sourceCells += pointCount;
+    const points: Record<ChartPointId, ChartPoint> = Object.create(null);
+    for (let index = 0; index < pointCount; index++) {
+      const pointId =
+        (xy ? descriptor.identity?.points[index] : identities?.categories[index]) ?? (`${xy ? id : chartId}:p${index}` as ChartPointId);
+      points[pointId] = {
+        id: pointId,
+        order: initialFractionalIndex(index),
+        value: (y.get(index) as number | null | undefined) ?? null,
+        ...(xy ? { x: (x.get(index) as number | null | undefined) ?? null } : {}),
+        ...(plotKind === 'bubble' ? { size: (sizes.get(index) as number | null | undefined) ?? null } : {}),
       };
+    }
+    series[id] = {
+      id,
+      order: initialFractionalIndex(sourceOrder),
+      sourceIndex,
+      plotKind,
+      name: seriesName(child(source, 'tx')),
+      points,
+      bindings: {
+        name: binding(child(source, 'tx')),
+        ...(xy
+          ? { x: binding(xHolder), y: binding(yHolder) }
+          : { categories: { ...binding(catHolder), ...(multi ? { hierarchy: multi.hierarchy } : {}) }, values: binding(yHolder) }),
+        ...(plotKind === 'bubble' ? { size: binding(sizeHolder) } : {}),
+      },
+      ...(descriptor.removed ? { removed: true as const, sourceTemplate: true as const } : {}),
+    };
   }
   for (let index = 0; index < categoryCount; index++) {
     const value = categorySource?.get(index) ?? null;
-    const id = identities?.categories[index] ?? `${chartId}:p${index}` as ChartPointId;
-    categories[id] = { id, order: initialFractionalIndex(index), label: String(value ?? ''),
-      ...(categoryLevels ? { levels: categoryLevels[index] } : {}) };
+    const id = identities?.categories[index] ?? (`${chartId}:p${index}` as ChartPointId);
+    categories[id] = {
+      id,
+      order: initialFractionalIndex(index),
+      label: String(value ?? ''),
+      ...(categoryLevels ? { levels: categoryLevels[index] } : {}),
+    };
   }
-  const dataBinding = workbookBinding(doc, chartId, part, root, categories, series,
-    unsupportedMultiLevel, inconsistentCategories, unsupportedScale, deferWorkbookPlanning);
+  const dataBinding = workbookBinding(
+    doc,
+    chartId,
+    part,
+    root,
+    categories,
+    series,
+    unsupportedMultiLevel,
+    inconsistentCategories,
+    unsupportedScale,
+    deferWorkbookPlanning,
+  );
   return {
     kind: hasCategory && hasXY ? 'mixed' : hasXY ? 'xy' : 'category',
     categories,
     series,
-    binding: identities?.scopes && !sharedChartRuntime() && dataBinding.mode !== 'readonly'
-      ? { ...dataBinding, mode: 'readonly', reason: SHARED_CHART_REASON } : dataBinding,
+    binding:
+      identities?.scopes && !sharedChartRuntime() && dataBinding.mode !== 'readonly'
+        ? { ...dataBinding, mode: 'readonly', reason: SHARED_CHART_REASON }
+        : dataBinding,
   };
 }
 
-
-
-function materializedState(
-  doc: EditDoc, id: ElementId,
-): { readonly state: ChartDatasetState; readonly deferred: boolean } {
+function materializedState(doc: EditDoc, id: ElementId): { readonly state: ChartDatasetState; readonly deferred: boolean } {
   const source = sourceState(doc, id, !!sharedChartRuntime()?.owns(doc, id));
   const sparse = chartDatasetOverrides(doc, id);
   const { state: merged, deferred } = mergeChartDatasetState(source, sparse);
@@ -369,26 +393,28 @@ function comparableSource(doc: EditDoc, id: ElementId): unknown {
 
 export function chartStateMatchesSource(doc: EditDoc, id: ElementId): boolean {
   const current = materializedState(doc, id);
-  return !current.deferred
-    && JSON.stringify(comparableState(current.state)) === JSON.stringify(comparableSource(doc, id));
+  return !current.deferred && JSON.stringify(comparableState(current.state)) === JSON.stringify(comparableSource(doc, id));
 }
 
 export function chartStateHasEffectiveChanges(doc: EditDoc, id: ElementId): boolean {
-  return JSON.stringify(comparableState(materializedState(doc, id).state))
-    !== JSON.stringify(comparableSource(doc, id));
+  return JSON.stringify(comparableState(materializedState(doc, id).state)) !== JSON.stringify(comparableSource(doc, id));
 }
 
 export function readChartDataset(doc: EditDoc, id: ElementId): ChartDataset {
   const state = currentChartDatasetState(doc, id);
-  const categories = orderedChartRecords(Object.values(state.categories).filter((item) => !item.removed))
-    .map(({ levelParent: _parent, levelClears: _clears, ...item }) => item);
+  const categories = orderedChartRecords(Object.values(state.categories).filter((item) => !item.removed)).map(
+    ({ levelParent: _parent, levelClears: _clears, ...item }) => item,
+  );
   const allSeries = orderedChartRecords(Object.values(state.series));
-  const series = allSeries.filter((item) => !item.removed)
-    .map((item): ChartSeries => ({
-      ...item, bindings: structuredClone(item.bindings),
-      points: orderedChartRecords(Object.values(item.points).filter((point) => !point.removed))
-        .map((point) => ({ ...point })),
-    }));
+  const series = allSeries
+    .filter((item) => !item.removed)
+    .map(
+      (item): ChartSeries => ({
+        ...item,
+        bindings: structuredClone(item.bindings),
+        points: orderedChartRecords(Object.values(item.points).filter((point) => !point.removed)).map((point) => ({ ...point })),
+      }),
+    );
   const plotKinds = [...new Set(allSeries.map((item) => item.plotKind))];
   return { chartId: id, kind: state.kind, plotKinds, categories, series, binding: { ...state.binding } };
 }
@@ -403,6 +429,7 @@ export function hydrateChartPart(doc: EditDoc, part: string): ChartDatasetState 
 }
 
 export function chartRecordIds(doc: EditDoc): ElementId[] {
-  return Object.values(doc.elements).filter((record) => chartPartForElement(doc, record.id))
+  return Object.values(doc.elements)
+    .filter((record) => chartPartForElement(doc, record.id))
     .map((record) => record.id);
 }

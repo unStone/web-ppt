@@ -31,8 +31,7 @@ function reject(message: OpenKindMessage): OpenKindResult {
 function looksLikeHtml(bytes: Uint8Array): boolean {
   let offset = 0;
   if (hasPrefix(bytes, [0xef, 0xbb, 0xbf])) offset = 3;
-  while (offset < bytes.length && (bytes[offset] === 0x20 || bytes[offset] === 0x09
-    || bytes[offset] === 0x0a || bytes[offset] === 0x0d)) {
+  while (offset < bytes.length && (bytes[offset] === 0x20 || bytes[offset] === 0x09 || bytes[offset] === 0x0a || bytes[offset] === 0x0d)) {
     offset += 1;
   }
   const head = new TextDecoder().decode(bytes.subarray(offset, offset + 32)).toLowerCase();
@@ -43,24 +42,17 @@ function identifyZip(bytes: Uint8Array): OpenKindResult {
   let files: Record<string, Uint8Array>;
   try {
     files = safeUnzipSync(bytes, {
-      filter: (entry) => (
-        entry.name === '[Content_Types].xml'
-        || entry.name === 'ppt/presentation.xml'
-        || entry.name === 'mimetype'
-      ) && entry.originalSize <= 4 * 1024 * 1024,
+      filter: (entry) =>
+        (entry.name === '[Content_Types].xml' || entry.name === 'ppt/presentation.xml' || entry.name === 'mimetype')
+        && entry.originalSize <= 4 * 1024 * 1024,
     });
   } catch {
     return reject(OPEN_KIND.zip);
   }
   if (files['ppt/presentation.xml']) return { kind: 'presentation' };
-  const types = files['[Content_Types].xml']
-    ? new TextDecoder().decode(files['[Content_Types].xml'])
-    : '';
+  const types = files['[Content_Types].xml'] ? new TextDecoder().decode(files['[Content_Types].xml']) : '';
   const mime = files.mimetype ? new TextDecoder().decode(files.mimetype) : '';
-  if (
-    types.includes('vnd.openxmlformats-officedocument.presentationml')
-    || types.includes('vnd.ms-powerpoint.presentation')
-  ) {
+  if (types.includes('vnd.openxmlformats-officedocument.presentationml') || types.includes('vnd.ms-powerpoint.presentation')) {
     return { kind: 'presentation' };
   }
   if (types.includes('wordprocessingml') || types.includes('msword')) return reject(OPEN_KIND.word);
@@ -83,7 +75,10 @@ export function identifyOpenBytes(input: ArrayBuffer | Uint8Array): OpenKindResu
   if (
     bytes.length >= 12
     && hasPrefix(bytes, [0x52, 0x49, 0x46, 0x46])
-    && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+    && bytes[8] === 0x57
+    && bytes[9] === 0x45
+    && bytes[10] === 0x42
+    && bytes[11] === 0x50
   ) {
     return reject(OPEN_KIND.image);
   }

@@ -3,11 +3,16 @@ import type { EditDoc, DesignTarget, ElementId, SlideId } from './types';
 export type CanvasTarget = { readonly kind: 'slide'; readonly id: SlideId } | DesignTarget;
 
 export function assertDesignTarget(doc: EditDoc, target: DesignTarget): void {
-  if (!target || typeof target !== 'object'
-    || Object.getPrototypeOf(target) !== Object.prototype || typeof target.id !== 'string' || !target.id
-    || target.kind === 'layout' && !doc.layouts[target.id]
-    || target.kind === 'master' && !doc.masters[target.id]
-    || target.kind !== 'layout' && target.kind !== 'master') {
+  if (
+    !target
+    || typeof target !== 'object'
+    || Object.getPrototypeOf(target) !== Object.prototype
+    || typeof target.id !== 'string'
+    || !target.id
+    || (target.kind === 'layout' && !doc.layouts[target.id])
+    || (target.kind === 'master' && !doc.masters[target.id])
+    || (target.kind !== 'layout' && target.kind !== 'master')
+  ) {
     throw new Error(`找不到设计目标：${String(target?.id)}`);
   }
 }
@@ -27,8 +32,7 @@ export function canvasTargetOfElement(doc: EditDoc, id: ElementId): CanvasTarget
 }
 
 export function canvasChildren(doc: EditDoc, target: CanvasTarget): ElementId[] {
-  const root = target.kind === 'slide' ? doc.slides[target.id]
-    : target.kind === 'layout' ? doc.layouts[target.id] : doc.masters[target.id];
+  const root = target.kind === 'slide' ? doc.slides[target.id] : target.kind === 'layout' ? doc.layouts[target.id] : doc.masters[target.id];
   if (!root) throw new Error(`找不到${target.kind === 'slide' ? '页面' : '设计'}画布：${target.id}`);
   return root.children;
 }

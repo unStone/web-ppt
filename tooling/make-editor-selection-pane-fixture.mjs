@@ -2,14 +2,17 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  deck, label, px, slideXml, solid, sp,
-} from './lib/ooxml.mjs';
+import { deck, label, px, slideXml, solid, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const child = sp({
-  x: 20, y: 20, w: 120, h: 60, fill: solid('accent2'),
-  name: 'pane-child', text: label('child'),
+  x: 20,
+  y: 20,
+  w: 120,
+  h: 60,
+  fill: solid('accent2'),
+  name: 'pane-child',
+  text: label('child'),
 });
 const inner = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="2601" name="pane-inner-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -37,12 +40,19 @@ const pageOne = [
   frame,
 ].join('');
 const pageTwo = sp({
-  x: 100, y: 100, w: 240, h: 100, fill: solid('accent6'),
-  name: 'pane-second-slide', text: label('page 2'),
+  x: 100,
+  y: 100,
+  w: 240,
+  h: 100,
+  fill: solid('accent6'),
+  name: 'pane-second-slide',
+  text: label('page 2'),
 });
 
 const bytes = deck({
-  name: 'Editor Selection Pane', width: 1120, height: 630,
+  name: 'Editor Selection Pane',
+  width: 1120,
+  height: 630,
   slides: [slideXml(pageOne), slideXml(pageTwo)],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });

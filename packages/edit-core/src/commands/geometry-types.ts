@@ -27,24 +27,28 @@ export interface SetAdjCommand {
   readonly value: number;
 }
 
-export type ElementGeometryPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'geometry'];
-  readonly value: CustomGeometry;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'geometry'];
-  readonly origin: string;
-};
+export type ElementGeometryPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'geometry'];
+      readonly value: CustomGeometry;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'geometry'];
+      readonly origin: string;
+    };
 
-export type ElementPresetGeometryPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'presetGeometry'];
-  readonly value: GeomSpec;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'presetGeometry'];
-  readonly origin: string;
-};
+export type ElementPresetGeometryPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'presetGeometry'];
+      readonly value: GeomSpec;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'presetGeometry'];
+      readonly origin: string;
+    };
