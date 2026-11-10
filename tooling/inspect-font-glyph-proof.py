@@ -3,7 +3,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
-import fitz
+import pymupdf as fitz
 from fontTools.ttLib import TTFont
 from fontTools.pens.basePen import BasePen
 from fontTools.svgLib.path import parse_path

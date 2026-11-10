@@ -4,3 +4,16 @@ zopfli==0.4.3
 pymupdf==2.1
 pypdfium2==5.14.0
 pillow==10.4.0
+# PyMuPDF 2.x 起把 pymupdf4llm / pymupdf-layout（含 onnxruntime、numpy）列为无条件依赖；
+# 传递依赖不钉版会让精确钉版落空（不同日期安装得到不同组合），这里钉住当前解析结果。
+flatbuffers==25.12.19
+networkx==3.6.1
+numpy==2.4.6
+onnxruntime==1.31.1
+packaging==26.3
+protobuf==7.36.2
+psutil==7.2.2
+pymupdf-layout==2.1
+pymupdf4llm==2.1
+pyyaml==6.0.3
+tabulate==0.10.0
