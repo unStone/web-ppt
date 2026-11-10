@@ -2,7 +2,7 @@ fonttools[woff]==4.68.0
 brotli==1.2.1
 zopfli==0.4.3
 pymupdf==2.1
-pypdfium2==5.14.0
+pypdfium2==5.15.0
 pillow==13.0.0
 # PyMuPDF 2.x 起把 pymupdf4llm / pymupdf-layout（含 onnxruntime、numpy）列为无条件依赖；
 # 传递依赖不钉版会让精确钉版落空（不同日期安装得到不同组合），这里钉住当前解析结果。
