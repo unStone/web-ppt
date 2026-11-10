@@ -25,8 +25,8 @@ jobs:
     outputs:
       code: ${{ github.event_name == 'workflow_dispatch' || steps.paths.outputs.code == 'true' || steps.paths.outputs.runtime == 'true' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
         id: paths
         with:
           predicate-quantifier: every
@@ -44,8 +44,8 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: npm
@@ -59,7 +59,7 @@ jobs:
         run: git diff --exit-code --stat fixtures/ tooling/agent-eval/fixtures/
       - name: 构建
         run: npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages
           overwrite: true
@@ -77,18 +77,18 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - name: 源码保存契约
         run: node tooling/ci/run-group.mjs source saving
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: source-saving
           overwrite: true
           path: out/ci-results/
           if-no-files-found: error
           retention-days: 1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: save-inputs
           overwrite: true
@@ -103,20 +103,20 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           office: impress
       - name: 源码编辑与保存契约
         run: node tooling/ci/run-group.mjs source editing
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: source-editing
           overwrite: true
           path: out/ci-results/
           if-no-files-found: error
           retention-days: 1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: edit-inputs
           overwrite: true
@@ -130,7 +130,7 @@ jobs:
           retention-days: 1
       - name: 上传快照差异
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: snapshot-actual
           overwrite: true
@@ -144,15 +144,15 @@ jobs:
     needs: [saving, editing]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           office: impress
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: save-inputs
           path: out/edit-save
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: edit-inputs
           path: out
@@ -160,14 +160,14 @@ jobs:
         run: node tooling/ci/run-group.mjs source integration
       - name: 设计旅程统一清单外部打开测试
         run: node tooling/test-design-journey-libreoffice.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: source-integration
           overwrite: true
           path: out/ci-results/
           if-no-files-found: error
           retention-days: 1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: integration-inputs
           overwrite: true
@@ -188,14 +188,14 @@ jobs:
       matrix:
         group: [browser-unit, agent, expanded, render, charts, migration-0, migration-1, equivalence-0, equivalence-1, equivalence-2, equivalence-3]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           python: ${{ matrix.group == 'render' }}
           media: ${{ matrix.group == 'render' }}
       - name: 全量功能测试分组
         run: node tooling/ci/run-group.mjs source ${{ matrix.group }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: source-${{ matrix.group }}
           overwrite: true
@@ -203,7 +203,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
       # Agent 命令工具、MCP 与模板填充的保存产物同样要过 OOXML 合法性门禁
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: matrix.group == 'agent'
         with:
           name: agent-inputs
@@ -219,12 +219,12 @@ jobs:
     needs: saving
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           python: 'true'
           office: impress
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: save-inputs
           path: out/edit-save
@@ -232,7 +232,7 @@ jobs:
         run: node tooling/ci/run-group.mjs source browser
       - name: 官网下载产物外部打开测试
         run: node tooling/test-edit-libreoffice-all.mjs --site-only
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: source-browser
           overwrite: true
@@ -248,17 +248,17 @@ jobs:
       matrix:
         group: [agent, expanded, render, charts, migration-0, migration-1]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           python: ${{ matrix.group == 'render' }}
           media: ${{ matrix.group == 'render' }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: packages
       - name: 发布产物复验分组
         run: node tooling/ci/run-group.mjs dist ${{ matrix.group }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-${{ matrix.group }}
           overwrite: true
@@ -270,17 +270,17 @@ jobs:
     needs: saving
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           office: 'true'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: save-inputs
           path: out/edit-save
       - name: 保存产物外部打开测试
         run: node tooling/ci/run-group.mjs external office
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: external-office
           overwrite: true
@@ -292,15 +292,15 @@ jobs:
     needs: [build, saving, integration, source]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
       - name: 缓存 OOXML schema 与 NuGet 包
         # schema 由 prepare 脚本按 SHA256 钉版下载，脚本不变则内容不变；
         # NuGet 还原结果只取决于 csproj 的包引用版本。
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             out/ooxml-schemas
@@ -310,25 +310,25 @@ jobs:
         run: sudo apt-get install -y --no-install-recommends libxml2-utils
       - name: 构建 Open XML SDK 校验器
         run: dotnet build tooling/ooxml-validate
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: packages
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: save-inputs
           path: out/edit-save
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: integration-inputs
           path: out
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: agent-inputs
           path: out
       - name: OOXML 合法性门禁
         # XSD（ECMA-376 Transitional）与 Open XML SDK 双通道，任一错误失败并打印错误 Id、部件与 XPath。
         run: node tooling/ci/run-group.mjs external ooxml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: external-ooxml
           overwrite: true
@@ -340,37 +340,37 @@ jobs:
     needs: [saving, editing, integration, source, browser, office, ooxml, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # verify 按 tag v<版本> 判定发布记录是否已成历史，看不到 tag 时直接失败。
       # checkout 按 SHA 浅取时会忽略 fetch-tags（实测 fetch 命令不带 --tags），只能显式取
       - run: git fetch --no-recurse-submodules --depth=1 origin '+refs/tags/v*:refs/tags/v*'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: packages
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: source-*
           merge-multiple: true
           path: out/ci-results
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: external-*
           merge-multiple: true
           path: out/ci-results
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: edit-inputs
           path: out
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: integration-inputs
           path: out
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: save-inputs
           path: out/edit-save
@@ -378,7 +378,7 @@ jobs:
         run: node tooling/ci/merge-results.mjs source
       - name: 跨产物一致性
         run: node tooling/ci/run-group.mjs dist base
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-base
           overwrite: true
@@ -390,14 +390,14 @@ jobs:
     needs: [saving, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           python: 'true'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: packages
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: save-inputs
           path: out/edit-save
@@ -405,7 +405,7 @@ jobs:
         run: npm run test:site:i18n
         env:
           SITE_BASE: /web-ppt/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: site-dist
           overwrite: true
@@ -419,13 +419,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: packages
       - name: 本机 MCP 发布产物
@@ -441,31 +441,31 @@ jobs:
     needs: [changes, build, saving, editing, integration, source, browser, dist, office, ooxml, verify, site, node-minimum]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: 核对全部门禁结论
         env:
           RESULTS: ${{ toJSON(needs) }}
         run: node tooling/ci/job-status.mjs
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: needs.changes.outputs.code == 'true'
         with:
           node-version-file: .node-version
           cache: npm
       - run: npm ci --no-audit --no-fund
         if: needs.changes.outputs.code == 'true'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: needs.changes.outputs.code == 'true'
         with:
           pattern: source-*
           merge-multiple: true
           path: out/ci-results
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: needs.changes.outputs.code == 'true'
         with:
           pattern: dist-*
           merge-multiple: true
           path: out/ci-results
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: needs.changes.outputs.code == 'true'
         with:
           pattern: external-*

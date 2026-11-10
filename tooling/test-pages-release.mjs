@@ -123,7 +123,9 @@ await check('手动允许历史可信产物重部署', async () => {
   assert.equal((await run({ head: 'new', manual: true })).outputs.deploy, 'true');
 });
 await check('下载精确 ID 且保持站点根目录', async () => {
-  const download = pages.jobs.prepare.steps.find((step) => step.uses === 'actions/download-artifact@v4');
+  // 契约约束的是下载配置而不是 action 版本；版本由 dependabot 升级，写死会让每次升级误报。
+  const download = pages.jobs.prepare.steps.find((step) => step.uses?.startsWith('actions/download-artifact@'));
+  assert.ok(download, 'pages.yml 的 prepare 任务缺少 download-artifact 步骤');
   assert.equal(download.with['merge-multiple'], true);
   assert.equal(download.with.path, 'site');
   assert.ok(download.with['artifact-ids']);
