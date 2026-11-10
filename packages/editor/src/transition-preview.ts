@@ -1,8 +1,6 @@
 import type { Transition } from '@web-ppt/core';
 import { normalizeSlideTransition, type SlideTransitionInput } from '@web-ppt/edit-core';
-import {
-  playTransitionControlled, transitionFrames, type TransitionPlayHandle,
-} from '@web-ppt/viewer-core';
+import { playTransitionControlled, transitionFrames, type TransitionPlayHandle } from '@web-ppt/viewer-core';
 
 interface TransitionPreviewOptions {
   readonly layer: HTMLElement;
@@ -22,9 +20,7 @@ export class TransitionPreviewController {
 
   async preview(input?: SlideTransitionInput): Promise<boolean> {
     if (this.options.destroyed()) return false;
-    const value = input === undefined
-      ? this.options.current()
-      : normalizeSlideTransition(input, 'previewTransition.t');
+    const value = input === undefined ? this.options.current() : normalizeSlideTransition(input, 'previewTransition.t');
     this.cancel();
     if (!value || value.type === 'none') return false;
     const generation = ++this.generation;
@@ -32,9 +28,7 @@ export class TransitionPreviewController {
     this.outgoing = outgoing;
     this.hideChrome();
     // 同页没有可供 morph 配对的真实前态；整层缩放比逐元素复制/配对更诚实且不随页复杂度退化。
-    const playbackValue: Transition = value.type === 'morph'
-      ? { type: 'zoom', dir: 'in', durationMs: value.durationMs }
-      : value;
+    const playbackValue: Transition = value.type === 'morph' ? { type: 'zoom', dir: 'in', durationMs: value.durationMs } : value;
     this.playback = playTransitionControlled(outgoing, this.options.layer, playbackValue);
     await this.playback.finished;
     if (generation === this.generation) this.releaseAnimations();
@@ -83,8 +77,7 @@ export class TransitionPreviewController {
       'linear-gradient(145deg, rgba(255,255,255,.18), transparent 55%),'
       + 'linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px)';
     outgoing.style.backgroundSize = 'auto, 48px 100%';
-    const changes = (frames: Keyframe[]): boolean =>
-      JSON.stringify(frames[0] ?? {}) !== JSON.stringify(frames[frames.length - 1] ?? {});
+    const changes = (frames: Keyframe[]): boolean => JSON.stringify(frames[0] ?? {}) !== JSON.stringify(frames[frames.length - 1] ?? {});
     const incomingChanges = changes(transitionFrames(value, true));
     // 入场层静止而出场层变化（如 split-in/cut）时，出场副本必须位于上层才可见。
     if (!incomingChanges) this.options.layer.after(outgoing);

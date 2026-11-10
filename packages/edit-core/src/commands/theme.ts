@@ -1,19 +1,14 @@
 import { THEME_COLOR_SLOTS } from '@web-ppt/core';
 import { assertDataObject, own } from '../data-validation';
-import {
-  assertThemeColor, assertThemeFont, isThemeColorSlot, normalizeThemeColor,
-} from '../theme';
+import { assertThemeColor, assertThemeFont, isThemeColorSlot, normalizeThemeColor } from '../theme';
 import type { EditDoc, ThemeFontCollectionOverrides } from '../types';
 import type { CommandPatches } from './types';
-import type {
-  SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch,
-} from './theme-types';
+import type { SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch } from './theme-types';
 
 const FONT_FIELDS = ['latin', 'ea', 'cs'] as const;
 
 export function isThemePatch(patch: { readonly path: readonly unknown[] }): patch is ThemePatch {
-  return patch.path[0] === 'themes' && patch.path[2] === 'ovr'
-    && (patch.path[3] === 'colors' || patch.path[3] === 'fonts');
+  return patch.path[0] === 'themes' && patch.path[2] === 'ovr' && (patch.path[3] === 'colors' || patch.path[3] === 'fonts');
 }
 
 function commandPatch<P extends ThemePatch>(
@@ -24,12 +19,8 @@ function commandPatch<P extends ThemePatch>(
 ): { forward: ThemePatch; inverse: ThemePatch } | null {
   if (value === null && previous === undefined) return null;
   if (value !== null && value === previous) return null;
-  const forward = value === null
-    ? { op: 'del' as const, path, origin }
-    : { op: 'set' as const, path, value, origin };
-  const inverse = previous === undefined
-    ? { op: 'del' as const, path, origin }
-    : { op: 'set' as const, path, value: previous, origin };
+  const forward = value === null ? { op: 'del' as const, path, origin } : { op: 'set' as const, path, value, origin };
+  const inverse = previous === undefined ? { op: 'del' as const, path, origin } : { op: 'set' as const, path, value: previous, origin };
   return { forward: forward as ThemePatch, inverse: inverse as ThemePatch };
 }
 
@@ -48,11 +39,7 @@ function assertFontCommand(value: unknown, label: string): void {
   }
 }
 
-export function setThemePatches(
-  doc: EditDoc,
-  command: SetThemeCommand,
-  origin: string,
-): CommandPatches {
+export function setThemePatches(doc: EditDoc, command: SetThemeCommand, origin: string): CommandPatches {
   if (doc.meta.readonly || doc.meta.source !== 'pptx' || !doc.package) {
     throw new Error('只读或非 OOXML 编辑文档不能编辑主题');
   }
@@ -98,11 +85,7 @@ export function setThemePatches(
 
 export function validateThemePatch(doc: EditDoc, patch: ThemePatch, index: number): void {
   const expectedLength = patch.path[3] === 'colors' ? 5 : patch.path[5] === 'scripts' ? 7 : 6;
-  assertDataObject(
-    patch,
-    patch.op === 'set' ? ['op', 'path', 'value', 'origin'] : ['op', 'path', 'origin'],
-    `Patch ${index}`,
-  );
+  assertDataObject(patch, patch.op === 'set' ? ['op', 'path', 'value', 'origin'] : ['op', 'path', 'origin'], `Patch ${index}`);
   if (patch.path.length !== expectedLength || !own(doc.themes, patch.path[1])) {
     throw new Error(`Patch ${index} 指向无效主题字段`);
   }

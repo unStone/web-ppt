@@ -3,8 +3,7 @@ import type { EditDoc } from '../types';
 import type { ElementEffectsPatch, Patch } from './types';
 
 export function isElementEffectsPatch(patch: Patch): patch is ElementEffectsPatch {
-  return patch.path.length === 4 && patch.path[0] === 'elements'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'effects';
+  return patch.path.length === 4 && patch.path[0] === 'elements' && patch.path[2] === 'ovr' && patch.path[3] === 'effects';
 }
 
 export function validateElementEffectsPatch(doc: EditDoc, patch: ElementEffectsPatch, index: number): void {

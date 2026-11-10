@@ -16,9 +16,7 @@ export const OPEN_KIND = {
 
 export type OpenKindMessage = (typeof OPEN_KIND)[keyof typeof OPEN_KIND];
 
-export type OpenKindResult =
-  | { kind: 'presentation' }
-  | { kind: 'reject'; message: OpenKindMessage };
+export type OpenKindResult = { kind: 'presentation' } | { kind: 'reject'; message: OpenKindMessage };
 
 /** 种类不对用专用错误，避免页面把人话再套一层「打开失败：」。 */
 export class OpenKindError extends Error {

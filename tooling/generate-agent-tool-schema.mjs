@@ -8,8 +8,11 @@ const root = resolve(import.meta.dirname, '..');
 const config = {
   path: join(root, 'packages/edit-core/src/agent/types.ts'),
   tsconfig: join(root, 'tooling/tsconfig.agent-tools.json'),
-  type: 'AgentToolInputMap', expose: 'export', jsDoc: 'extended',
-  additionalProperties: false, sortProps: true,
+  type: 'AgentToolInputMap',
+  expose: 'export',
+  jsDoc: 'extended',
+  additionalProperties: false,
+  sortProps: true,
 };
 let schema;
 try {

@@ -20,15 +20,20 @@ export function canonicalSectionState(doc: EditDoc, state = doc.sections): Secti
   return {
     edited: state.edited,
     order: [...state.order],
-    records: Object.fromEntries(state.order.map((id) => {
-      const section = state.records[id];
-      return [id, {
-        ...section,
-        slideIds: [...section.slideIds].sort((left, right) =>
-          (position.get(left) ?? Number.MAX_SAFE_INTEGER)
-            - (position.get(right) ?? Number.MAX_SAFE_INTEGER)),
-      }];
-    })),
+    records: Object.fromEntries(
+      state.order.map((id) => {
+        const section = state.records[id];
+        return [
+          id,
+          {
+            ...section,
+            slideIds: [...section.slideIds].sort(
+              (left, right) => (position.get(left) ?? Number.MAX_SAFE_INTEGER) - (position.get(right) ?? Number.MAX_SAFE_INTEGER),
+            ),
+          },
+        ];
+      }),
+    ),
   };
 }
 

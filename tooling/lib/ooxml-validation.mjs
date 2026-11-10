@@ -4,8 +4,13 @@ import { spawnSync } from 'node:child_process';
 import { zipSync } from 'fflate';
 import { safeUnzipSync } from '../../packages/core/dist/zip.js';
 import {
-  cloneXmlNode, insertXmlChildUnchecked, parseXmlTree, removeXmlAttribute, removeXmlChild,
-  serializeXmlTree, xmlElementChildren,
+  cloneXmlNode,
+  insertXmlChildUnchecked,
+  parseXmlTree,
+  removeXmlAttribute,
+  removeXmlChild,
+  serializeXmlTree,
+  xmlElementChildren,
 } from '../../packages/edit-core/dist/xml.js';
 
 export function collectOoxmlArtifacts(root) {
@@ -20,41 +25,45 @@ export function collectOoxmlArtifacts(root) {
     }
   }
   for (const directory of ['out/agent-tools', 'out/agent-mcp', 'out/template-fill']) {
-    for (const name of readdirSync(join(root, directory)).filter(name => name.endsWith('.pptx')).sort()) {
+    for (const name of readdirSync(join(root, directory))
+      .filter((name) => name.endsWith('.pptx'))
+      .sort()) {
       files.push(join(root, directory, name));
     }
   }
   return [...new Set(files)];
 }
 
-const NAMESPACE_SCHEMA = new Map(Object.entries({
-  'http://schemas.openxmlformats.org/package/2006/content-types': 'opc-contentTypes.xsd',
-  'http://schemas.openxmlformats.org/package/2006/relationships': 'opc-relationships.xsd',
-  'http://schemas.openxmlformats.org/package/2006/metadata/core-properties': 'opc-coreProperties.xsd',
-  'http://schemas.openxmlformats.org/presentationml/2006/main': 'pml.xsd',
-  'http://schemas.openxmlformats.org/drawingml/2006/main': 'dml-main.xsd',
-  'http://schemas.openxmlformats.org/drawingml/2006/chart': 'dml-chart.xsd',
-  'http://schemas.openxmlformats.org/drawingml/2006/chartDrawing': 'dml-chartDrawing.xsd',
-  'http://schemas.openxmlformats.org/drawingml/2006/diagram': 'dml-diagram.xsd',
-  'http://schemas.openxmlformats.org/drawingml/2006/lockedCanvas': 'dml-lockedCanvas.xsd',
-  'http://schemas.openxmlformats.org/drawingml/2006/picture': 'dml-picture.xsd',
-  'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing': 'dml-spreadsheetDrawing.xsd',
-  'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing': 'dml-wordprocessingDrawing.xsd',
-  'http://schemas.openxmlformats.org/spreadsheetml/2006/main': 'sml.xsd',
-  'http://schemas.openxmlformats.org/wordprocessingml/2006/main': 'wml.xsd',
-  'http://schemas.openxmlformats.org/officeDocument/2006/math': 'shared-math.xsd',
-  'http://schemas.openxmlformats.org/officeDocument/2006/bibliography': 'shared-bibliography.xsd',
-  'http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes': 'shared-documentPropertiesVariantTypes.xsd',
-  'http://schemas.openxmlformats.org/officeDocument/2006/extended-properties': 'shared-documentPropertiesExtended.xsd',
-  'http://schemas.openxmlformats.org/officeDocument/2006/custom-properties': 'shared-documentPropertiesCustom.xsd',
-  'http://schemas.openxmlformats.org/officeDocument/2006/customXml': 'shared-customXmlDataProperties.xsd',
-  'http://schemas.openxmlformats.org/schemaLibrary/2006/main': 'shared-customXmlSchemaProperties.xsd',
-  'urn:schemas-microsoft-com:vml': 'vml-main.xsd',
-  'urn:schemas-microsoft-com:office:office': 'vml-officeDrawing.xsd',
-  'urn:schemas-microsoft-com:office:powerpoint': 'vml-presentationDrawing.xsd',
-  'urn:schemas-microsoft-com:office:excel': 'vml-spreadsheetDrawing.xsd',
-  'urn:schemas-microsoft-com:office:word': 'vml-wordprocessingDrawing.xsd',
-}));
+const NAMESPACE_SCHEMA = new Map(
+  Object.entries({
+    'http://schemas.openxmlformats.org/package/2006/content-types': 'opc-contentTypes.xsd',
+    'http://schemas.openxmlformats.org/package/2006/relationships': 'opc-relationships.xsd',
+    'http://schemas.openxmlformats.org/package/2006/metadata/core-properties': 'opc-coreProperties.xsd',
+    'http://schemas.openxmlformats.org/presentationml/2006/main': 'pml.xsd',
+    'http://schemas.openxmlformats.org/drawingml/2006/main': 'dml-main.xsd',
+    'http://schemas.openxmlformats.org/drawingml/2006/chart': 'dml-chart.xsd',
+    'http://schemas.openxmlformats.org/drawingml/2006/chartDrawing': 'dml-chartDrawing.xsd',
+    'http://schemas.openxmlformats.org/drawingml/2006/diagram': 'dml-diagram.xsd',
+    'http://schemas.openxmlformats.org/drawingml/2006/lockedCanvas': 'dml-lockedCanvas.xsd',
+    'http://schemas.openxmlformats.org/drawingml/2006/picture': 'dml-picture.xsd',
+    'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing': 'dml-spreadsheetDrawing.xsd',
+    'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing': 'dml-wordprocessingDrawing.xsd',
+    'http://schemas.openxmlformats.org/spreadsheetml/2006/main': 'sml.xsd',
+    'http://schemas.openxmlformats.org/wordprocessingml/2006/main': 'wml.xsd',
+    'http://schemas.openxmlformats.org/officeDocument/2006/math': 'shared-math.xsd',
+    'http://schemas.openxmlformats.org/officeDocument/2006/bibliography': 'shared-bibliography.xsd',
+    'http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes': 'shared-documentPropertiesVariantTypes.xsd',
+    'http://schemas.openxmlformats.org/officeDocument/2006/extended-properties': 'shared-documentPropertiesExtended.xsd',
+    'http://schemas.openxmlformats.org/officeDocument/2006/custom-properties': 'shared-documentPropertiesCustom.xsd',
+    'http://schemas.openxmlformats.org/officeDocument/2006/customXml': 'shared-customXmlDataProperties.xsd',
+    'http://schemas.openxmlformats.org/schemaLibrary/2006/main': 'shared-customXmlSchemaProperties.xsd',
+    'urn:schemas-microsoft-com:vml': 'vml-main.xsd',
+    'urn:schemas-microsoft-com:office:office': 'vml-officeDrawing.xsd',
+    'urn:schemas-microsoft-com:office:powerpoint': 'vml-presentationDrawing.xsd',
+    'urn:schemas-microsoft-com:office:excel': 'vml-spreadsheetDrawing.xsd',
+    'urn:schemas-microsoft-com:office:word': 'vml-wordprocessingDrawing.xsd',
+  }),
+);
 
 /**
  * 无 ECMA-376 XSD 映射、但属于已知合法的根命名空间，逐条登记原因（票据 005 的例外清单）：
@@ -74,13 +83,14 @@ const UNMAPPED_ROOT_EXCEPTIONS = [
 const XSD_ERROR_EXCEPTIONS = [
   {
     test: /\}buSzPct', attribute 'val': \[facet 'pattern'\]/,
-    reason: '5th edition XSD 把 ST_TextBulletSizePercent 定为带百分号的字符串；'
+    reason:
+      '5th edition XSD 把 ST_TextBulletSizePercent 定为带百分号的字符串；'
       + 'PowerPoint 与 Open XML SDK 实际写千分比整数（如 val="135000"）',
   },
   {
     test: /\{http:\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/math\}oMath(?:Para)?': This element is not expected/,
-    reason: '两个校验器的 schema 都未在 DrawingML 段落声明 Office Math；'
-      + 'LibreOffice 与本引擎直接书写裸 m:oMath，PowerPoint 实际宽容接受',
+    reason:
+      '两个校验器的 schema 都未在 DrawingML 段落声明 Office Math；' + 'LibreOffice 与本引擎直接书写裸 m:oMath，PowerPoint 实际宽容接受',
   },
 ];
 
@@ -88,7 +98,8 @@ const XSD_ERROR_EXCEPTIONS = [
 const SDK_ERROR_EXCEPTIONS = [
   {
     test: (block) => block.includes('[Sch_InvalidElementContentExpectingComplex]') && /math:oMath/.test(block),
-    reason: 'DrawingML 段落中的裸 m:oMath：SDK schema 未声明，PowerPoint 实际接受（LibreOffice 同样如此书写）；'
+    reason:
+      'DrawingML 段落中的裸 m:oMath：SDK schema 未声明，PowerPoint 实际接受（LibreOffice 同样如此书写）；'
       + '改写为 MCE a14:m 包装属于后续数学创作票据，不在本门禁范围',
   },
 ];
@@ -114,15 +125,21 @@ const isMarkerNamespace = (uri) => typeof uri === 'string' && uri.startsWith(MAR
  */
 function normalizeElement(element, ignorablePrefixes, insideProductExtension = false) {
   if (element.type !== 'element') return;
-  const productExtension = insideProductExtension
-    || (element.localName === 'ext' && (element.attributes.find((item) => item.localName === 'uri')?.value ?? '').startsWith(MARKER_NAMESPACE_PREFIX));
+  const productExtension =
+    insideProductExtension
+    || (element.localName === 'ext'
+      && (element.attributes.find((item) => item.localName === 'uri')?.value ?? '').startsWith(MARKER_NAMESPACE_PREFIX));
   for (const attribute of [...element.attributes]) {
     if (productExtension) continue;
     if (isMarkerNamespace(attribute.namespaceUri)) removeXmlAttribute(element, attribute.name);
     else if (attribute.namespaceUri === MC && attribute.localName === 'Ignorable') removeXmlAttribute(element, 'mc:Ignorable');
     else if (ignorablePrefixes.has(attribute.prefix)) removeXmlAttribute(element, attribute.name);
-    else if (element.namespaceUri === DRAWINGML_NS && element.localName === 't'
-      && attribute.namespaceUri === 'http://www.w3.org/XML/1998/namespace') removeXmlAttribute(element, 'xml:space');
+    else if (
+      element.namespaceUri === DRAWINGML_NS
+      && element.localName === 't'
+      && attribute.namespaceUri === 'http://www.w3.org/XML/1998/namespace'
+    )
+      removeXmlAttribute(element, 'xml:space');
   }
   for (const child of [...element.children]) {
     if (child.type !== 'element') continue;
@@ -153,11 +170,11 @@ function ignorablePrefixesOf(root) {
 }
 
 function alternateReplacement(element) {
-  const branches = element.children.filter(node => node.type === 'element');
-  const fallback = branches.find(node => node.namespaceUri === MC && node.localName === 'Fallback');
-  const choice = branches.find(node => node.namespaceUri === MC && node.localName === 'Choice');
+  const branches = element.children.filter((node) => node.type === 'element');
+  const fallback = branches.find((node) => node.namespaceUri === MC && node.localName === 'Fallback');
+  const choice = branches.find((node) => node.namespaceUri === MC && node.localName === 'Choice');
   const selected = fallback ?? choice;
-  return selected ? selected.children.map(node => cloneXmlNode(node)) : [];
+  return selected ? selected.children.map((node) => cloneXmlNode(node)) : [];
 }
 
 export function normalizedXml(bytes) {
@@ -191,15 +208,13 @@ export function unmappedRootReason(root) {
  */
 const SDK_ERROR_ID = /\[(?:[A-Za-z]+_\w+|load-error)\]/;
 export function sdkErrorBlocks(output) {
-  return output.split(/(?=\n?\s*\[(?:[A-Za-z]+_\w+|load-error)\])/g)
-    .filter((block) => SDK_ERROR_ID.test(block));
+  return output.split(/(?=\n?\s*\[(?:[A-Za-z]+_\w+|load-error)\])/g).filter((block) => SDK_ERROR_ID.test(block));
 }
 
 /** 例外与 XSD 通道共用同一登记原则：逐条匹配规则形态，不按部件或文件整类忽略。 */
 export function filterSdkErrors(output) {
   const blocks = sdkErrorBlocks(output);
-  const rejected = blocks.filter((block) =>
-    !SDK_ERROR_EXCEPTIONS.some(({ test }) => test(block)));
+  const rejected = blocks.filter((block) => !SDK_ERROR_EXCEPTIONS.some(({ test }) => test(block)));
   return { rejected, total: blocks.length, exempted: blocks.length - rejected.length };
 }
 
@@ -209,8 +224,9 @@ export function validateXsdParts(file, schemaDirectory) {
   for (const [name, bytes] of Object.entries(parts)) {
     if (!name.endsWith('.xml') && !name.endsWith('.rels')) continue;
     let root;
-    try { root = parseXmlTree(bytes).root; }
-    catch (error) {
+    try {
+      root = parseXmlTree(bytes).root;
+    } catch (error) {
       errors.push({ file, part: name, schema: '(well-formed)', message: error.message });
       continue;
     }
@@ -218,14 +234,21 @@ export function validateXsdParts(file, schemaDirectory) {
     if (!schema) {
       const reason = unmappedRootReason(root);
       if (!reason) {
-        errors.push({ file, part: name, schema: '(unmapped)',
-          message: `没有 ECMA-376 Transitional XSD 映射：${root.namespaceUri}/${root.localName}` });
+        errors.push({
+          file,
+          part: name,
+          schema: '(unmapped)',
+          message: `没有 ECMA-376 Transitional XSD 映射：${root.namespaceUri}/${root.localName}`,
+        });
       }
       continue;
     }
     const normalized = normalizedXml(bytes);
-    const result = spawnSync('xmllint', ['--noout', '--schema', join(schemaDirectory, schema), '-'],
-      { input: normalized, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+    const result = spawnSync('xmllint', ['--noout', '--schema', join(schemaDirectory, schema), '-'], {
+      input: normalized,
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024,
+    });
     if (result.status !== 0) {
       for (const line of `${result.stderr}\n${result.stdout}`.split('\n')) {
         if (!line.includes('Schemas validity error')) continue;
@@ -246,9 +269,17 @@ export function writeNormalizedPackage(file, destination) {
   const parts = safeUnzipSync(readFileSync(file));
   const normalized = {};
   for (const [name, bytes] of Object.entries(parts)) {
-    if (!(name.endsWith('.xml') || name.endsWith('.rels'))) { normalized[name] = bytes; continue; }
+    if (!(name.endsWith('.xml') || name.endsWith('.rels'))) {
+      normalized[name] = bytes;
+      continue;
+    }
     let root;
-    try { root = parseXmlTree(bytes).root; } catch { normalized[name] = bytes; continue; }
+    try {
+      root = parseXmlTree(bytes).root;
+    } catch {
+      normalized[name] = bytes;
+      continue;
+    }
     // 测试标记根与无 XSD 映射的部件原样保留，交给 SDK 的跳过或豁免语义
     const out = isMarkerNamespace(root.namespaceUri) ? bytes : normalizedXml(bytes);
     normalized[name] = typeof out === 'string' ? new TextEncoder().encode(out) : out;

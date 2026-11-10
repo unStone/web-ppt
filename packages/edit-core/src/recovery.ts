@@ -4,12 +4,14 @@ import type { Patch, Selection } from './commands/types';
 import { bytesToBase64 } from './clipboard-binary';
 import { releaseLayoutProjectionCache } from './layout-projection';
 import { validateEditDoc } from './model-invariants';
-import {
-  assertRecoveryIdentity, assertRecoveryIdentityFloor, createRecoveryIdentityFloor,
-} from './recovery-identity';
+import { assertRecoveryIdentity, assertRecoveryIdentityFloor, createRecoveryIdentityFloor } from './recovery-identity';
 import { releaseProjectionCache } from './projection';
 import type {
-  RecoveryAssetReference, RecoveryFrame, RecoveryFrameSource, RecoveryRestoreResult, RecoverySubscriber,
+  RecoveryAssetReference,
+  RecoveryFrame,
+  RecoveryFrameSource,
+  RecoveryRestoreResult,
+  RecoverySubscriber,
 } from './recovery-types';
 import { cloneSelection, normalizeSelection } from './selection';
 import { sessionAsset } from './session-assets';
@@ -24,9 +26,7 @@ import { setLegacyExtensionReplay } from './extension-recovery-context';
 
 export const EDITOR_RECOVERY_VERSION = 1 as const;
 
-const SOURCES = new Set<RecoveryFrameSource>([
-  'transaction', 'undo', 'redo', 'selection', 'savepoint',
-]);
+const SOURCES = new Set<RecoveryFrameSource>(['transaction', 'undo', 'redo', 'selection', 'savepoint']);
 const SELECTION_KINDS = new Set<Selection['kind']>(['none', 'elements', 'text', 'table']);
 // NUL 不可能出现在 URL 或合法 OOXML 文本中，避免用户内容被误认成内部资源占位符。
 const RECOVERY_ASSET_TOKEN = '\0web-ppt-recovery-asset:';
@@ -35,12 +35,7 @@ export function cloneRecoveryFrame(frame: RecoveryFrame): RecoveryFrame {
   return structuredClone(frame);
 }
 
-function visitStrings(
-  value: unknown,
-  visit: (value: string) => string,
-  mutate: boolean,
-  seen = new WeakSet<object>(),
-): unknown {
+function visitStrings(value: unknown, visit: (value: string) => string, mutate: boolean, seen = new WeakSet<object>()): unknown {
   if (typeof value === 'string') return visit(value);
   if (!value || typeof value !== 'object' || seen.has(value)) return value;
   seen.add(value);
@@ -53,24 +48,26 @@ function visitStrings(
 
 function frameAssets(doc: EditDoc, patches: readonly Patch[]): RecoveryAssetReference[] {
   const found = new Map<string, RecoveryAssetReference>();
-  visitStrings(patches, (url) => {
-    const asset = sessionAsset(doc, url);
-    if (!asset || found.has(url)) return url;
-    found.set(url, {
-      url, mime: asset.mime,
-      ...(asset.sourcePart ? { sourcePart: asset.sourcePart } : { data: bytesToBase64(asset.bytes) }),
-    });
-    return url;
-  }, false);
+  visitStrings(
+    patches,
+    (url) => {
+      const asset = sessionAsset(doc, url);
+      if (!asset || found.has(url)) return url;
+      found.set(url, {
+        url,
+        mime: asset.mime,
+        ...(asset.sourcePart ? { sourcePart: asset.sourcePart } : { data: bytesToBase64(asset.bytes) }),
+      });
+      return url;
+    },
+    false,
+  );
   return [...found.values()];
 }
 
 const recoveryAssetToken = (url: string): string => `${RECOVERY_ASSET_TOKEN}${url}`;
 
-function persistentPatches(
-  patches: readonly Patch[],
-  assets: readonly RecoveryAssetReference[],
-): Patch[] {
+function persistentPatches(patches: readonly Patch[], assets: readonly RecoveryAssetReference[]): Patch[] {
   const clone = structuredClone([...patches]);
   if (!assets.length) return clone;
   const tokens = new Map(assets.map((asset) => [asset.url, recoveryAssetToken(asset.url)]));
@@ -85,11 +82,18 @@ function assertAssets(frame: RecoveryFrame): void {
   const mimeType = /^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*\/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$/;
   const base64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
   for (const asset of frame.assets) {
-    if (!asset || typeof asset !== 'object' || typeof asset.url !== 'string' || !asset.url
-      || typeof asset.mime !== 'string' || !mimeType.test(asset.mime) || urls.has(asset.url)
+    if (
+      !asset
+      || typeof asset !== 'object'
+      || typeof asset.url !== 'string'
+      || !asset.url
+      || typeof asset.mime !== 'string'
+      || !mimeType.test(asset.mime)
+      || urls.has(asset.url)
       || (asset.sourcePart !== undefined && (typeof asset.sourcePart !== 'string' || !asset.sourcePart))
       || (asset.data !== undefined && (typeof asset.data !== 'string' || !asset.data || !base64.test(asset.data)))
-      || (asset.sourcePart === undefined) === (asset.data === undefined)) {
+      || (asset.sourcePart === undefined) === (asset.data === undefined)
+    ) {
       throw new Error(`恢复帧 ${frame.sequence} 的资源引用无效`);
     }
     urls.add(asset.url);
@@ -98,23 +102,29 @@ function assertAssets(frame: RecoveryFrame): void {
 
 function reboundPatches(doc: EditDoc, frame: RecoveryFrame): Patch[] {
   const current = Object.entries(doc.package?.assets ?? {});
-  const bindings = new Map((frame.assets ?? []).map((asset) => {
-    const exact = asset.sourcePart ? current.find(([, candidate]) =>
-      candidate.sourcePart === asset.sourcePart && candidate.mime === asset.mime) : undefined;
-    const matched = exact ?? (asset.sourcePart
-      ? current.find(([, candidate]) => candidate.sourcePart === asset.sourcePart) : undefined);
-    if (asset.sourcePart && !matched) {
-      throw new Error(`恢复资源在当前原包中不存在：${asset.sourcePart}`);
-    }
-    return [recoveryAssetToken(asset.url), matched?.[0] ?? `data:${asset.mime};base64,${asset.data}`] as const;
-  }));
+  const bindings = new Map(
+    (frame.assets ?? []).map((asset) => {
+      const exact = asset.sourcePart
+        ? current.find(([, candidate]) => candidate.sourcePart === asset.sourcePart && candidate.mime === asset.mime)
+        : undefined;
+      const matched = exact ?? (asset.sourcePart ? current.find(([, candidate]) => candidate.sourcePart === asset.sourcePart) : undefined);
+      if (asset.sourcePart && !matched) {
+        throw new Error(`恢复资源在当前原包中不存在：${asset.sourcePart}`);
+      }
+      return [recoveryAssetToken(asset.url), matched?.[0] ?? `data:${asset.mime};base64,${asset.data}`] as const;
+    }),
+  );
   const referenced = new Set<string>();
-  visitStrings(frame.patches, (value) => {
-    if (!value.startsWith(RECOVERY_ASSET_TOKEN)) return value;
-    if (!bindings.has(value)) throw new Error(`恢复帧 ${frame.sequence} 缺少资源闭包`);
-    referenced.add(value);
-    return value;
-  }, false);
+  visitStrings(
+    frame.patches,
+    (value) => {
+      if (!value.startsWith(RECOVERY_ASSET_TOKEN)) return value;
+      if (!bindings.has(value)) throw new Error(`恢复帧 ${frame.sequence} 缺少资源闭包`);
+      referenced.add(value);
+      return value;
+    },
+    false,
+  );
   if (referenced.size !== bindings.size) throw new Error(`恢复帧 ${frame.sequence} 含未引用的资源闭包`);
   if (!referenced.size) return frame.patches;
   const patches = structuredClone(frame.patches);
@@ -130,11 +140,16 @@ function assertFrame(frame: RecoveryFrame, previousSequence: number, prefix: str
   if (!Number.isSafeInteger(value.sequence) || value.sequence! <= previousSequence) {
     throw new Error('恢复帧序号必须严格递增');
   }
-  if (!SOURCES.has(value.source as RecoveryFrameSource) || !Array.isArray(value.patches)
-    || !value.selection || typeof value.selection !== 'object'
+  if (
+    !SOURCES.has(value.source as RecoveryFrameSource)
+    || !Array.isArray(value.patches)
+    || !value.selection
+    || typeof value.selection !== 'object'
     || !SELECTION_KINDS.has((value.selection as Partial<Selection>).kind as Selection['kind'])
-    || typeof value.dirty !== 'boolean' || typeof value.label !== 'string'
-    || !Number.isFinite(value.time)) {
+    || typeof value.dirty !== 'boolean'
+    || typeof value.label !== 'string'
+    || !Number.isFinite(value.time)
+  ) {
     throw new Error(`恢复帧 ${String(value.sequence)} 的结构无效`);
   }
   assertRecoveryIdentity(value.identity, prefix, value.sequence!);
@@ -199,10 +214,7 @@ function commitStage(doc: EditDoc, staged: EditDoc): void {
 }
 
 /** 只应在新解析文档建立 Editor 前调用；成功时一次性交换模型，失败时目标保持原样。 */
-export function restoreRecoveryFrames(
-  doc: EditDoc,
-  frames: readonly RecoveryFrame[],
-): RecoveryRestoreResult {
+export function restoreRecoveryFrames(doc: EditDoc, frames: readonly RecoveryFrame[]): RecoveryRestoreResult {
   if (!Array.isArray(frames)) throw new Error('恢复日志必须是数组');
   const staged = stageDoc(doc);
   setLegacyExtensionReplay(staged, recoveryMigrationSources(frames));
@@ -252,12 +264,16 @@ export class RecoveryJournal {
   private sequence: number;
   private readonly addresses = new ExtensionAddressJournal();
 
-  constructor(sequence = 0) { this.sequence = sequence; }
+  constructor(sequence = 0) {
+    this.sequence = sequence;
+  }
 
   subscribe(subscriber: RecoverySubscriber): () => void {
     if (typeof subscriber !== 'function') throw new Error('恢复订阅者必须是函数');
     this.subscribers.add(subscriber);
-    return () => { this.subscribers.delete(subscriber); };
+    return () => {
+      this.subscribers.delete(subscriber);
+    };
   }
 
   prepare(doc: EditDoc, patches: readonly Patch[]): readonly Patch[] {
@@ -273,8 +289,7 @@ export class RecoveryJournal {
     }
     // 构造会话时可能已加载迁移插件；首个持久化事件也要带声明，不能依赖尚未存在的观察者。
     const patches = input.preparedPatches ?? this.addresses.prepare(input.doc, input.patches, 'recovery');
-    const source = patches.length && (input.source === 'selection' || input.source === 'savepoint')
-      ? 'transaction' : input.source;
+    const source = patches.length && (input.source === 'selection' || input.source === 'savepoint') ? 'transaction' : input.source;
     const assets = frameAssets(input.doc, patches);
     const frame: RecoveryFrame = {
       version: EDITOR_RECOVERY_VERSION,
@@ -295,9 +310,14 @@ export class RecoveryJournal {
     try {
       while (this.pending.length) {
         const batch = this.pending.splice(0, this.pending.length);
-        for (const pending of batch) for (const subscriber of [...this.subscribers]) {
-          try { subscriber(cloneRecoveryFrame(pending)); } catch (error) { reportEditorSubscriberError(error); }
-        }
+        for (const pending of batch)
+          for (const subscriber of [...this.subscribers]) {
+            try {
+              subscriber(cloneRecoveryFrame(pending));
+            } catch (error) {
+              reportEditorSubscriberError(error);
+            }
+          }
       }
     } finally {
       this.dispatching = false;

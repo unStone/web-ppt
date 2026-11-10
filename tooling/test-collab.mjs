@@ -21,12 +21,22 @@ mkdirSync(out, { recursive: true });
 
 const bundle = (entry, name, aliases = [], externals = [], { sourceWorkspace = true } = {}) => {
   const file = join(out, `${name}.mjs`);
-  execFileSync('npx', [
-    'esbuild', entry, '--bundle', '--format=esm', '--platform=browser', '--log-level=error',
-    // 包体门禁测的是发布边界，不能把已声明 external 的 peer 又通过源码 alias 内联回来。
-    ...(sourceWorkspace ? sourceAliasArgs(root, aliases) : []),
-    ...externals.map((name) => `--external:${name}`), `--outfile=${file}`,
-  ], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      entry,
+      '--bundle',
+      '--format=esm',
+      '--platform=browser',
+      '--log-level=error',
+      // 包体门禁测的是发布边界，不能把已声明 external 的 peer 又通过源码 alias 内联回来。
+      ...(sourceWorkspace ? sourceAliasArgs(root, aliases) : []),
+      ...externals.map((name) => `--external:${name}`),
+      `--outfile=${file}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return file;
 };
 
@@ -40,9 +50,7 @@ const collabEntry = join(root, 'packages/collab/src/index.ts');
 const thinFile = bundle(collabEntry, 'collab-thin', [], ['@web-ppt/edit-core'], {
   sourceWorkspace: false,
 });
-const { core, edit, generate, collab, templates } = await import(
-  `${pathToFileURL(runtimeFile)}?t=${Date.now()}`
-);
+const { core, edit, generate, collab, templates } = await import(`${pathToFileURL(runtimeFile)}?t=${Date.now()}`);
 
 let passed = 0;
 const failures = [];
@@ -64,7 +72,9 @@ class OfflineHub {
       },
       subscribe: (listener) => {
         this.listeners.set(id, listener);
-        return () => { this.listeners.delete(id); };
+        return () => {
+          this.listeners.delete(id);
+        };
       },
     };
   }
@@ -98,7 +108,8 @@ const createPairFromBytes = async (bytes, prefix) => {
   const left = edit.createDoc(leftPresentation, { idPrefix: prefix });
   const right = edit.createDoc(rightPresentation, { idPrefix: prefix });
   return {
-    left, right,
+    left,
+    right,
     leftEditor: new edit.Editor(left, { origin: 'left-local' }),
     rightEditor: new edit.Editor(right, { origin: 'right-local' }),
   };
@@ -109,23 +120,30 @@ const canonical = (value) => {
   if (Array.isArray(value)) return value.map(canonical);
   if (!value || typeof value !== 'object') return value;
   if (value instanceof Uint8Array) return [...value];
-  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]));
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort()
+      .map((key) => [key, canonical(value[key])]),
+  );
 };
 
-const semanticDoc = (doc) => JSON.stringify(canonical({
-  meta: doc.meta,
-  slideOrder: doc.slideOrder,
-  sections: doc.sections,
-  slides: doc.slides,
-  layouts: doc.layouts,
-  layoutOrder: doc.layoutOrder,
-  masters: doc.masters,
-  masterOrder: doc.masterOrder,
-  themes: doc.themes,
-  elements: doc.elements,
-  removedElements: doc.removedElements,
-  imageResources: doc.imageResources,
-}));
+const semanticDoc = (doc) =>
+  JSON.stringify(
+    canonical({
+      meta: doc.meta,
+      slideOrder: doc.slideOrder,
+      sections: doc.sections,
+      slides: doc.slides,
+      layouts: doc.layouts,
+      layoutOrder: doc.layoutOrder,
+      masters: doc.masters,
+      masterOrder: doc.masterOrder,
+      themes: doc.themes,
+      elements: doc.elements,
+      removedElements: doc.removedElements,
+      imageResources: doc.imageResources,
+    }),
+  );
 
 const stringDiff = (left, right) => {
   let index = 0;
@@ -144,20 +162,26 @@ const seededShuffle = (items, seed) => {
 
 const bindPair = (pair, hub, errors = []) => [
   collab.bindCollaboration(pair.leftEditor, {
-    documentId: 'deck', replicaId: 'a', replicaSlot: 1, provider: hub.endpoint('a'),
+    documentId: 'deck',
+    replicaId: 'a',
+    replicaSlot: 1,
+    provider: hub.endpoint('a'),
     onError: (error) => errors.push(error),
   }),
   collab.bindCollaboration(pair.rightEditor, {
-    documentId: 'deck', replicaId: 'b', replicaSlot: 2, provider: hub.endpoint('b'),
+    documentId: 'deck',
+    replicaId: 'b',
+    replicaSlot: 2,
+    provider: hub.endpoint('b'),
     onError: (error) => errors.push(error),
   }),
 ];
 
-const editableShapes = (doc) => Object.values(doc.elements)
-  .filter((record) => record.src.kind === 'shape' && record.meta.editable === 'full');
+const editableShapes = (doc) =>
+  Object.values(doc.elements).filter((record) => record.src.kind === 'shape' && record.meta.editable === 'full');
 
-const flatText = (record) => record.ovr.text?.kind === 'flat'
-  ? record.ovr.text.paragraphs.map((paragraph) => paragraph.text).join('\n') : '';
+const flatText = (record) =>
+  record.ovr.text?.kind === 'flat' ? record.ovr.text.paragraphs.map((paragraph) => paragraph.text).join('\n') : '';
 
 console.log('\n\x1b[36m▸ 主题颜色与字体槽字段级 LWW\x1b[0m');
 {
@@ -168,18 +192,22 @@ console.log('\n\x1b[36m▸ 主题颜色与字体槽字段级 LWW\x1b[0m');
   const themeId = pair.left.themeOrder[0];
   pair.leftEditor.exec({ type: 'SetTheme', id: themeId, clrScheme: { accent1: '#112233' } });
   pair.rightEditor.exec({
-    type: 'SetTheme', id: themeId, fontScheme: { minor: { latin: 'Collaborative Theme' } },
+    type: 'SetTheme',
+    id: themeId,
+    fontScheme: { minor: { latin: 'Collaborative Theme' } },
   });
   hub.flush((items) => items.reverse());
   const independent = edit.queryTheme(pair.left, themeId);
   pair.leftEditor.exec({ type: 'SetTheme', id: themeId, clrScheme: { accent2: '#223344' } });
   pair.rightEditor.exec({ type: 'SetTheme', id: themeId, clrScheme: { accent2: '#334455' } });
   hub.flush((items) => seededShuffle(items, 0x7007001));
-  check('不同主题槽独立保留且同槽并发确定性收敛',
+  check(
+    '不同主题槽独立保留且同槽并发确定性收敛',
     independent.colors.accent1 === 'rgb(17,34,51)'
       && independent.fonts.minor.latin === 'Collaborative Theme'
       && semanticDoc(pair.left) === semanticDoc(pair.right),
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
   check('主题协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
   bindings.forEach((binding) => binding.dispose());
   edit.disposeDoc(pair.left);
@@ -195,22 +223,29 @@ console.log('\n\x1b[36m▸ 版式设计画布字段级 LWW\x1b[0m');
   const layoutId = pair.left.layoutOrder[0];
   const target = { kind: 'layout', id: layoutId };
   const element = pair.left.layouts[layoutId].children
-    .map((id) => pair.left.elements[id]).find((record) => record.meta.editable === 'full');
+    .map((id) => pair.left.elements[id])
+    .find((record) => record.meta.editable === 'full');
   pair.leftEditor.execDesign(target, {
-    type: 'SetBackground', target, fill: { type: 'solid', color: '#112233' },
+    type: 'SetBackground',
+    target,
+    fill: { type: 'solid', color: '#112233' },
   });
   pair.rightEditor.execDesign(target, {
-    type: 'SetTransition', target, t: { type: 'push', dir: 'r' },
+    type: 'SetTransition',
+    target,
+    t: { type: 'push', dir: 'r' },
   });
   hub.flush((items) => items.reverse());
   pair.leftEditor.execDesign(target, { type: 'SetXfrm', id: element.id, x: element.src.x + 21 });
   pair.rightEditor.execDesign(target, { type: 'SetXfrm', id: element.id, x: element.src.x + 34 });
   hub.flush((items) => seededShuffle(items, 0x0707002));
-  check('版式不同字段独立保留且同字段并发确定性收敛',
+  check(
+    '版式不同字段独立保留且同字段并发确定性收敛',
     pair.left.layouts[layoutId].ovr.background?.type === 'solid'
       && pair.left.layouts[layoutId].ovr.transition?.type === 'push'
       && semanticDoc(pair.left) === semanticDoc(pair.right),
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
   check('版式协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
   bindings.forEach((binding) => binding.dispose());
   edit.disposeDoc(pair.left);
@@ -226,30 +261,46 @@ console.log('\n\x1b[36m▸ 母版文字默认值字段级 LWW\x1b[0m');
   const masterId = pair.left.masterOrder[1];
   const target = { kind: 'master', id: masterId };
   pair.leftEditor.execDesign(target, {
-    type: 'SetMasterTextStyle', target, category: 'body', level: 1,
+    type: 'SetMasterTextStyle',
+    target,
+    category: 'body',
+    level: 1,
     paragraph: { align: 'right' },
   });
   pair.rightEditor.execDesign(target, {
-    type: 'SetMasterTextStyle', target, category: 'body', level: 1,
+    type: 'SetMasterTextStyle',
+    target,
+    category: 'body',
+    level: 1,
     run: { size: 27 },
   });
   hub.flush((items) => items.reverse());
   pair.leftEditor.execDesign(target, {
-    type: 'SetMasterTextStyle', target, category: 'body', level: 1,
+    type: 'SetMasterTextStyle',
+    target,
+    category: 'body',
+    level: 1,
     run: { font: '协同母版 A' },
   });
   pair.rightEditor.execDesign(target, {
-    type: 'SetMasterTextStyle', target, category: 'body', level: 1,
+    type: 'SetMasterTextStyle',
+    target,
+    category: 'body',
+    level: 1,
     run: { font: '协同母版 B' },
   });
   hub.flush((items) => seededShuffle(items, 0x0707003));
   const state = edit.queryMaster(pair.left, target).textStyles.body[1];
-  check('母版类别、级别与段落/run 字段独立收敛',
-    state.value.paragraph.align === 'right' && state.value.run.size === 27
+  check(
+    '母版类别、级别与段落/run 字段独立收敛',
+    state.value.paragraph.align === 'right'
+      && state.value.run.size === 27
       && state.direct.paragraph.includes('align')
-      && state.direct.run.includes('size') && state.direct.run.includes('font')
+      && state.direct.run.includes('size')
+      && state.direct.run.includes('font')
       && semanticDoc(pair.left) === semanticDoc(pair.right),
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
   check('母版协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
   bindings.forEach((binding) => binding.dispose());
   edit.disposeDoc(pair.left);
@@ -257,8 +308,15 @@ console.log('\n\x1b[36m▸ 母版文字默认值字段级 LWW\x1b[0m');
 }
 
 await runV07CollabContract({
-  templates, edit, createPairFromBytes, OfflineHub, bindPair, seededShuffle,
-  semanticDoc, stringDiff, check,
+  templates,
+  edit,
+  createPairFromBytes,
+  OfflineHub,
+  bindPair,
+  seededShuffle,
+  semanticDoc,
+  stringDiff,
+  check,
 });
 
 console.log('\n\x1b[36m▸ 字段级 LWW 与顺序收敛\x1b[0m');
@@ -269,14 +327,16 @@ console.log('\n\x1b[36m▸ 字段级 LWW 与顺序收敛\x1b[0m');
   const bindings = bindPair(pair, hub, errors);
   const shapes = editableShapes(pair.left);
   const textShape = shapes.find((record) => record.src.text);
-  const layerShape = shapes.find((record) => record.id !== textShape?.id
-    && pair.left.elements[record.id].parent === pair.left.elements[textShape.id].parent);
+  const layerShape = shapes.find(
+    (record) => record.id !== textShape?.id && pair.left.elements[record.id].parent === pair.left.elements[textShape.id].parent,
+  );
   const movedSlide = pair.left.slideOrder.at(-1);
   const firstSlide = pair.left.slideOrder[0];
 
   pair.leftEditor.exec({ type: 'SetXfrm', id: textShape.id, x: textShape.src.x + 17 });
   pair.rightEditor.exec({
-    type: 'EditText', id: textShape.id,
+    type: 'EditText',
+    id: textShape.id,
     ops: [{ type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: '协同' }],
   });
   pair.leftEditor.exec({ type: 'SetZ', id: layerShape.id, to: 'front' });
@@ -284,18 +344,27 @@ console.log('\n\x1b[36m▸ 字段级 LWW 与顺序收敛\x1b[0m');
   pair.leftEditor.exec({ type: 'MoveSlide', id: firstSlide, at: { after: movedSlide } });
 
   hub.flush((items) => seededShuffle(items, 0x072c011a));
-  check('固定种子乱序投递后两份 EditDoc 语义相同', semanticDoc(pair.left) === semanticDoc(pair.right),
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
-  check('并发变换与文字修改都保留', pair.left.elements[textShape.id].ovr.x === textShape.src.x + 17
-    && pair.right.elements[textShape.id].ovr.x === textShape.src.x + 17
-    && pair.left.elements[textShape.id].ovr.text?.kind === 'flat'
-    && pair.right.elements[textShape.id].ovr.text?.kind === 'flat', JSON.stringify({
+  check(
+    '固定种子乱序投递后两份 EditDoc 语义相同',
+    semanticDoc(pair.left) === semanticDoc(pair.right),
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
+  check(
+    '并发变换与文字修改都保留',
+    pair.left.elements[textShape.id].ovr.x === textShape.src.x + 17
+      && pair.right.elements[textShape.id].ovr.x === textShape.src.x + 17
+      && pair.left.elements[textShape.id].ovr.text?.kind === 'flat'
+      && pair.right.elements[textShape.id].ovr.text?.kind === 'flat',
+    JSON.stringify({
       left: pair.left.elements[textShape.id].ovr,
       right: pair.right.elements[textShape.id].ovr,
-    }).slice(0, 500));
-  check('元素分数序与页面顺序都收敛', pair.left.elements[layerShape.id].order
-    === pair.right.elements[layerShape.id].order
-    && JSON.stringify(pair.left.slideOrder) === JSON.stringify(pair.right.slideOrder));
+    }).slice(0, 500),
+  );
+  check(
+    '元素分数序与页面顺序都收敛',
+    pair.left.elements[layerShape.id].order === pair.right.elements[layerShape.id].order
+      && JSON.stringify(pair.left.slideOrder) === JSON.stringify(pair.right.slideOrder),
+  );
 
   let expectedX = 0;
   let propertySeed = 0x5eed072;
@@ -307,9 +376,10 @@ console.log('\n\x1b[36m▸ 字段级 LWW 与顺序收敛\x1b[0m');
     pair.rightEditor.exec({ type: 'SetXfrm', id: textShape.id, x: expectedX });
   }
   hub.flush((items) => seededShuffle(items, 0x072f1e1d));
-  check('固定种子 128 次同字段并发满足 LWW 收敛性质',
-    pair.left.elements[textShape.id].ovr.x === expectedX
-    && pair.right.elements[textShape.id].ovr.x === expectedX);
+  check(
+    '固定种子 128 次同字段并发满足 LWW 收敛性质',
+    pair.left.elements[textShape.id].ovr.x === expectedX && pair.right.elements[textShape.id].ovr.x === expectedX,
+  );
   check('正常并发没有适配错误', errors.length === 0, errors.map(String).join(' / '));
   bindings.forEach((binding) => binding.dispose());
 }
@@ -320,10 +390,8 @@ console.log('\n\x1b[36m▸ 高频对象与页面字段协同\x1b[0m');
   const hub = new OfflineHub();
   const errors = [];
   const bindings = bindPair(pair, hub, errors);
-  const byName = (doc, name) => Object.values(doc.elements)
-    .find((record) => record.src.name === name);
-  const ids = ['common-left', 'common-middle-a', 'common-middle-b', 'common-right']
-    .map((name) => byName(pair.left, name).id);
+  const byName = (doc, name) => Object.values(doc.elements).find((record) => record.src.name === name);
+  const ids = ['common-left', 'common-middle-a', 'common-middle-b', 'common-right'].map((name) => byName(pair.left, name).id);
   const alt = byName(pair.left, 'common-alt');
   const firstSection = edit.listSections(pair.left)[0];
   pair.leftEditor.transaction((transaction) => {
@@ -336,10 +404,10 @@ console.log('\n\x1b[36m▸ 高频对象与页面字段协同\x1b[0m');
     transaction.exec({ type: 'DuplicateSlide', id: pair.right.slideOrder[0] });
   }, '右侧公共命令');
   hub.flush((items) => items.reverse());
-  const leftBounds = ids.map((id) => edit.elementWorldBounds(pair.left, id))
-    .sort((a, b) => a.left - b.left);
+  const leftBounds = ids.map((id) => edit.elementWorldBounds(pair.left, id)).sort((a, b) => a.left - b.left);
   const gaps = leftBounds.slice(1).map((item, index) => item.left - leftBounds[index].right);
-  check('分布、替代文字、节与页面尺寸跨副本乱序投递后收敛',
+  check(
+    '分布、替代文字、节与页面尺寸跨副本乱序投递后收敛',
     semanticDoc(pair.left) === semanticDoc(pair.right)
       && Math.max(...gaps) - Math.min(...gaps) < 1e-6
       && edit.queryElementAltText(pair.right, alt.id).title === '协同标题'
@@ -347,7 +415,8 @@ console.log('\n\x1b[36m▸ 高频对象与页面字段协同\x1b[0m');
       && edit.listSections(pair.left)[0].slideIds.length === 3
       && edit.listSections(pair.right)[0].slideIds.length === 3
       && edit.querySlideSize(pair.left).w === 1600,
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
   check('公共字段协同没有适配错误', errors.length === 0, errors.map(String).join(' / '));
   bindings.forEach((binding) => binding.dispose());
   edit.disposeDoc(pair.left);
@@ -362,34 +431,38 @@ console.log('\n\x1b[36m▸ 0.6 跨能力协同旅程\x1b[0m');
   const bindings = bindPair(pair, hub, errors);
   applyV06Journey(edit, pair.leftEditor);
   hub.flush((items) => items.reverse());
-  const shape = Object.values(pair.right.elements)
-    .find((record) => pair.rightEditor.effectiveElement(record.id).name === '0.6 列表形状');
-  const table = Object.values(pair.right.elements)
-    .find((record) => pair.rightEditor.effectiveElement(record.id).name === '0.6 结构表格');
+  const shape = Object.values(pair.right.elements).find((record) => pair.rightEditor.effectiveElement(record.id).name === '0.6 列表形状');
+  const table = Object.values(pair.right.elements).find((record) => pair.rightEditor.effectiveElement(record.id).name === '0.6 结构表格');
   const grid = edit.queryTableGrid(pair.right, table.id);
-  const initialConvergence = semanticDoc(pair.left) === semanticDoc(pair.right)
+  const initialConvergence =
+    semanticDoc(pair.left) === semanticDoc(pair.right)
     && edit.queryElementPresetGeometry(pair.right, [shape.id]).value?.adj.adj === 36_000
     && edit.queryParaProps(pair.right, shape.id, {
-      from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
+      from: { p: 0, r: 0, off: 0 },
+      to: { p: 0, r: 0, off: 0 },
     }).bullet.value?.kind === 'char'
-    && grid.rows.length === 3 && grid.columns.length === 3
+    && grid.rows.length === 3
+    && grid.columns.length === 3
     && edit.listSections(pair.right)[0]?.slideIds.length === 2
     && edit.querySlideSize(pair.right).w === 1200;
   pair.leftEditor.exec({
-    type: 'SetRunProps', id: shape.id,
+    type: 'SetRunProps',
+    id: shape.id,
     range: { from: { p: 1, r: 0, off: 0 }, to: { p: 1, r: 0, off: 4 } },
     props: { highlight: '#BFDBFE' },
   });
   pair.rightEditor.exec({
-    type: 'SetCellProps', id: table.id,
+    type: 'SetCellProps',
+    id: table.id,
     cell: { row: grid.rows[2].id, column: grid.columns[2].id },
     props: { fill: { type: 'solid', color: '#DCFCE7' } },
   });
   hub.flush((items) => items.reverse());
-  check('新建文稿的七类 0.6 命令与后续并发字段通过同一协议收敛',
-    initialConvergence && semanticDoc(pair.left) === semanticDoc(pair.right)
-      && errors.length === 0,
-    errors.length ? errors.map(String).join(' / ') : stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+  check(
+    '新建文稿的七类 0.6 命令与后续并发字段通过同一协议收敛',
+    initialConvergence && semanticDoc(pair.left) === semanticDoc(pair.right) && errors.length === 0,
+    errors.length ? errors.map(String).join(' / ') : stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
   bindings.forEach((binding) => binding.dispose());
   edit.disposeDoc(pair.left);
   edit.disposeDoc(pair.right);
@@ -408,11 +481,14 @@ console.log('\n\x1b[36m▸ 节与页面结构并发收敛\x1b[0m');
   pair.rightEditor.exec({ type: 'DuplicateSlide', id: sourceSlide });
   const duplicateId = pair.right.slideOrder.find((id) => !beforeDuplicate.has(id));
   hub.flush((items) => items.reverse());
-  check('删节与成员页复制并发时删除归属且保留未分节副本',
+  check(
+    '删节与成员页复制并发时删除归属且保留未分节副本',
     semanticDoc(pair.left) === semanticDoc(pair.right)
-      && !!duplicateId && !!pair.left.slides[duplicateId]
+      && !!duplicateId
+      && !!pair.left.slides[duplicateId]
       && edit.sectionOfSlide(pair.left, duplicateId) === null,
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
 
   for (const section of edit.listSections(pair.left)) {
     pair.leftEditor.exec({ type: 'RemoveSection', id: section.id });
@@ -422,23 +498,32 @@ console.log('\n\x1b[36m▸ 节与页面结构并发收敛\x1b[0m');
   const rightSlide = pair.right.slideOrder.at(-1);
   const leftSectionsBefore = new Set(pair.left.sections.order);
   pair.leftEditor.exec({
-    type: 'AddSection', name: '并发左节', slideIds: [leftSlide], at: { after: null },
+    type: 'AddSection',
+    name: '并发左节',
+    slideIds: [leftSlide],
+    at: { after: null },
   });
   const leftSectionId = pair.left.sections.order.find((id) => !leftSectionsBefore.has(id));
   const rightSectionsBefore = new Set(pair.right.sections.order);
   pair.rightEditor.exec({
-    type: 'AddSection', name: '并发右节', slideIds: [rightSlide], at: { after: null },
+    type: 'AddSection',
+    name: '并发右节',
+    slideIds: [rightSlide],
+    at: { after: null },
   });
   const rightSectionId = pair.right.sections.order.find((id) => !rightSectionsBefore.has(id));
   hub.flush((items) => items.reverse());
-  const addConverged = semanticDoc(pair.left) === semanticDoc(pair.right)
+  const addConverged =
+    semanticDoc(pair.left) === semanticDoc(pair.right)
     && pair.left.sections.order[0] === rightSectionId
     && pair.left.sections.order[1] === leftSectionId;
 
   const assigned = new Set(edit.listSections(pair.left).flatMap((section) => section.slideIds));
   const thirdSlide = pair.left.slideOrder.find((id) => !assigned.has(id));
   pair.leftEditor.exec({
-    type: 'AddSection', name: '第三节', slideIds: [thirdSlide],
+    type: 'AddSection',
+    name: '第三节',
+    slideIds: [thirdSlide],
     at: { after: pair.left.sections.order.at(-1) },
   });
   hub.flush();
@@ -448,10 +533,14 @@ console.log('\n\x1b[36m▸ 节与页面结构并发收敛\x1b[0m');
   // 左侧已是 first→third；这个远端移动会局部 no-op，但仍须触发全量意图物化。
   pair.rightEditor.exec({ type: 'MoveSection', id: third, at: { after: first } });
   hub.flush((items) => items.reverse());
-  check('同锚点新增节与不同目标移动都按全量意图确定性收敛',
-    addConverged && semanticDoc(pair.left) === semanticDoc(pair.right)
-      && bindings[0].checkpoint().sectionMoves.length >= 3 && errors.length === 0,
-    errors.length ? errors.map(String).join(' / ') : stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+  check(
+    '同锚点新增节与不同目标移动都按全量意图确定性收敛',
+    addConverged
+      && semanticDoc(pair.left) === semanticDoc(pair.right)
+      && bindings[0].checkpoint().sectionMoves.length >= 3
+      && errors.length === 0,
+    errors.length ? errors.map(String).join(' / ') : stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
   bindings.forEach((binding) => binding.dispose());
   edit.disposeDoc(pair.left);
   edit.disposeDoc(pair.right);
@@ -464,42 +553,48 @@ console.log('\n\x1b[36m▸ 文字、层级与页序固定种子并发性质\x1b[
   const errors = [];
   const bindings = bindPair(pair, hub, errors);
   const textShape = editableShapes(pair.left).find((record) => record.src.text);
-  const siblings = Object.values(pair.left.elements)
-    .filter((record) => record.parent === textShape.parent && record.id !== textShape.id);
+  const siblings = Object.values(pair.left.elements).filter((record) => record.parent === textShape.parent && record.id !== textShape.id);
   const layerShape = siblings[Math.floor(siblings.length / 2)];
   const slides = pair.left.slideOrder;
 
   for (let index = 0; index < 24; index++) {
     pair.leftEditor.exec({
-      type: 'EditText', id: textShape.id,
+      type: 'EditText',
+      id: textShape.id,
       ops: [{ type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: `甲${index}` }],
     });
     pair.rightEditor.exec({
-      type: 'EditText', id: textShape.id,
+      type: 'EditText',
+      id: textShape.id,
       ops: [{ type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: `乙${index}` }],
     });
     pair.leftEditor.exec({ type: 'SetZ', id: layerShape.id, to: index % 2 ? 'front' : 'back' });
     pair.rightEditor.exec({ type: 'SetZ', id: layerShape.id, to: index % 2 ? 'back' : 'front' });
     pair.leftEditor.exec({
-      type: 'MoveSlide', id: slides[index % slides.length],
+      type: 'MoveSlide',
+      id: slides[index % slides.length],
       at: { after: slides[(index + 1) % slides.length] },
     });
     const rightSlide = slides[(index + 2) % slides.length];
     const rightAfter = index % 3 ? slides[0] : null;
     pair.rightEditor.exec({
-      type: 'MoveSlide', id: rightSlide,
+      type: 'MoveSlide',
+      id: rightSlide,
       at: { after: rightAfter === rightSlide ? null : rightAfter },
     });
   }
   hub.flush((items) => seededShuffle(items, 0x72f13e1d));
-  check('固定种子文字对文字并发按整段 LWW 收敛', flatText(pair.left.elements[textShape.id])
-    === flatText(pair.right.elements[textShape.id]));
-  check('固定种子 z 序对 z 序并发收敛', pair.left.elements[layerShape.id].order
-    === pair.right.elements[layerShape.id].order);
-  check('固定种子页序对页序并发收敛', JSON.stringify(pair.left.slideOrder)
-    === JSON.stringify(pair.right.slideOrder));
-  check('三类同字段并发最终 EditDoc 收敛', semanticDoc(pair.left) === semanticDoc(pair.right),
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+  check(
+    '固定种子文字对文字并发按整段 LWW 收敛',
+    flatText(pair.left.elements[textShape.id]) === flatText(pair.right.elements[textShape.id]),
+  );
+  check('固定种子 z 序对 z 序并发收敛', pair.left.elements[layerShape.id].order === pair.right.elements[layerShape.id].order);
+  check('固定种子页序对页序并发收敛', JSON.stringify(pair.left.slideOrder) === JSON.stringify(pair.right.slideOrder));
+  check(
+    '三类同字段并发最终 EditDoc 收敛',
+    semanticDoc(pair.left) === semanticDoc(pair.right),
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
   check('属性并发没有适配错误', errors.length === 0, errors.map(String).join(' / '));
   bindings.forEach((binding) => binding.dispose());
 }
@@ -518,10 +613,16 @@ console.log('\n\x1b[36m▸ 删除冲突、并发插入与身份水位\x1b[0m');
   pair.leftEditor.exec({ type: 'RemoveElement', id: target.id });
   pair.rightEditor.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + 99 });
   pair.leftEditor.exec({
-    type: 'AddShape', slideId, preset: 'rect', rect: { x: 20, y: 20, w: 120, h: 80 },
+    type: 'AddShape',
+    slideId,
+    preset: 'rect',
+    rect: { x: 20, y: 20, w: 120, h: 80 },
   });
   pair.rightEditor.exec({
-    type: 'AddShape', slideId, preset: 'ellipse', rect: { x: 40, y: 40, w: 120, h: 80 },
+    type: 'AddShape',
+    slideId,
+    preset: 'ellipse',
+    rect: { x: 40, y: 40, w: 120, h: 80 },
   });
   const replay = structuredClone(hub.queue);
   hub.flush((items) => items.reverse());
@@ -530,25 +631,30 @@ console.log('\n\x1b[36m▸ 删除冲突、并发插入与身份水位\x1b[0m');
 
   const created = Object.values(pair.left.elements).filter((record) => record.meta.created);
   check('并发删除与编辑采用 remove-wins', !pair.left.elements[target.id] && !pair.right.elements[target.id]);
-  check('同页并发插入保留两个唯一元素和唯一分数序', created.length >= 2
-    && new Set(created.map((record) => record.id)).size === created.length
-    && new Set(created.map((record) => record.order ?? record.z)).size === created.length);
-  check('离线消息重复回放幂等', semanticDoc(pair.left) === first
-    && semanticDoc(pair.left) === semanticDoc(pair.right),
-  stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
-  check('身份水位从不倒退', pair.left.identity.nextElement >= beforeLeft
-    && pair.right.identity.nextElement >= beforeRight);
+  check(
+    '同页并发插入保留两个唯一元素和唯一分数序',
+    created.length >= 2
+      && new Set(created.map((record) => record.id)).size === created.length
+      && new Set(created.map((record) => record.order ?? record.z)).size === created.length,
+  );
+  check(
+    '离线消息重复回放幂等',
+    semanticDoc(pair.left) === first && semanticDoc(pair.left) === semanticDoc(pair.right),
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
+  check('身份水位从不倒退', pair.left.identity.nextElement >= beforeLeft && pair.right.identity.nextElement >= beforeRight);
   check('结构冲突没有适配错误', errors.length === 0, errors.map(String).join(' / '));
 
   // 协同状态仍是普通 EditDoc；解除 binding 后走与单机完全相同的保存入口。
   bindings[0].dispose();
   const [leftBytes, rightBytes] = await Promise.all([pair.leftEditor.save(), pair.rightEditor.save()]);
-  const [leftSaved, rightSaved] = await Promise.all([
-    core.parse(leftBytes, { lazy: false }), core.parse(rightBytes, { lazy: false }),
-  ]);
+  const [leftSaved, rightSaved] = await Promise.all([core.parse(leftBytes, { lazy: false }), core.parse(rightBytes, { lazy: false })]);
   const savedSemantics = (presentation) => JSON.stringify(canonical(presentation.slides));
-  check('解除协同后的单机保存与另一副本回读语义相同', savedSemantics(leftSaved)
-    === savedSemantics(rightSaved), stringDiff(savedSemantics(leftSaved), savedSemantics(rightSaved)));
+  check(
+    '解除协同后的单机保存与另一副本回读语义相同',
+    savedSemantics(leftSaved) === savedSemantics(rightSaved),
+    stringDiff(savedSemantics(leftSaved), savedSemantics(rightSaved)),
+  );
   bindings.forEach((binding) => binding.dispose());
 }
 
@@ -558,16 +664,24 @@ console.log('\n\x1b[36m▸ 因果乱序、重连续号与结构历史 rebase\x1b
   const hub = new OfflineHub();
   const bindings = bindPair(pair, hub);
   const slideId = pair.left.slideOrder[0];
-  const inserted = pair.leftEditor.exec({
-    type: 'AddShape', slideId, preset: 'rect', rect: { x: 10, y: 10, w: 80, h: 60 },
-  }).forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements')?.path[1];
+  const inserted = pair.leftEditor
+    .exec({
+      type: 'AddShape',
+      slideId,
+      preset: 'rect',
+      rect: { x: 10, y: 10, w: 80, h: 60 },
+    })
+    .forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements')?.path[1];
   pair.leftEditor.exec({ type: 'SetXfrm', id: inserted, x: 777 });
   hub.flush((items) => items.sort((left, right) => right.message.sequence - left.message.sequence));
   check('字段补丁先于元素插入到达时会在依赖出现后重放', pair.right.elements[inserted]?.ovr.x === 777);
 
   bindings[0].dispose();
   const rebound = collab.bindCollaboration(pair.leftEditor, {
-    documentId: 'deck', replicaId: 'a', replicaSlot: 1, provider: hub.endpoint('a'),
+    documentId: 'deck',
+    replicaId: 'a',
+    replicaSlot: 1,
+    provider: hub.endpoint('a'),
   });
   pair.leftEditor.exec({ type: 'SetXfrm', id: inserted, x: 888 });
   hub.flush();
@@ -586,7 +700,11 @@ console.log('\n\x1b[36m▸ 因果乱序、重连续号与结构历史 rebase\x1b
   pair.rightEditor.exec({ type: 'RemoveElement', id: target.id });
   hub.flush();
   let undo = 'threw';
-  try { undo = pair.leftEditor.undo(); } catch { /* 失败值保留，断言报告根因。 */ }
+  try {
+    undo = pair.leftEditor.undo();
+  } catch {
+    /* 失败值保留，断言报告根因。 */
+  }
   check('远端结构删除会裁掉本地后代字段历史', pair.leftEditor.history.undoCount === 0 && undo === null);
   bindings.forEach((binding) => binding.dispose());
 }
@@ -605,8 +723,10 @@ console.log('\n\x1b[36m▸ 同步重入、失败绑定与恶意时钟隔离\x1b[
   const bindings = bindPair(pair, hub);
   pair.leftEditor.exec({ type: 'SetXfrm', id: target.id, x: target.src.x + 101 });
   hub.flush();
-  check('同步重入事务仍按提交 FIFO 发号', pair.left.elements[target.id].ovr.x === target.src.x + 202
-    && pair.right.elements[target.id].ovr.x === target.src.x + 202);
+  check(
+    '同步重入事务仍按提交 FIFO 发号',
+    pair.left.elements[target.id].ovr.x === target.src.x + 202 && pair.right.elements[target.id].ovr.x === target.src.x + 202,
+  );
   stopReentrant();
   let viewNested = false;
   const stopViewReentrant = pair.leftEditor.subscribe((change) => {
@@ -616,8 +736,10 @@ console.log('\n\x1b[36m▸ 同步重入、失败绑定与恶意时钟隔离\x1b[
   });
   pair.leftEditor.exec({ type: 'SetXfrm', id: target.id, y: target.src.y + 102 });
   hub.flush();
-  check('普通视图订阅者同步重入也不反转补丁因果序', pair.left.elements[target.id].ovr.y
-    === target.src.y + 204 && pair.right.elements[target.id].ovr.y === target.src.y + 204);
+  check(
+    '普通视图订阅者同步重入也不反转补丁因果序',
+    pair.left.elements[target.id].ovr.y === target.src.y + 204 && pair.right.elements[target.id].ovr.y === target.src.y + 204,
+  );
   stopViewReentrant();
   bindings.forEach((binding) => binding.dispose());
 }
@@ -628,18 +750,31 @@ console.log('\n\x1b[36m▸ 同步重入、失败绑定与恶意时钟隔离\x1b[
   let rejected = false;
   try {
     collab.bindCollaboration(pair.leftEditor, {
-      documentId: 'deck', replicaId: 'a', replicaSlot: 1,
-      provider: { send() {}, subscribe() { return null; } },
+      documentId: 'deck',
+      replicaId: 'a',
+      replicaSlot: 1,
+      provider: {
+        send() {},
+        subscribe() {
+          return null;
+        },
+      },
     });
-  } catch { rejected = true; }
-  check('provider 绑定失败会回滚全部身份分区', rejected
-    && JSON.stringify(pair.left.identity) === before);
+  } catch {
+    rejected = true;
+  }
+  check('provider 绑定失败会回滚全部身份分区', rejected && JSON.stringify(pair.left.identity) === before);
   const hub = new OfflineHub();
   const binding = collab.bindCollaboration(pair.leftEditor, {
-    documentId: 'deck', replicaId: 'a', replicaSlot: 1, provider: hub.endpoint('a'),
+    documentId: 'deck',
+    replicaId: 'a',
+    replicaSlot: 1,
+    provider: hub.endpoint('a'),
   });
-  check('失败绑定后仍能用同一身份正常重试', pair.left.identity.prefix === 'collab-bind-failure-'
-    && pair.left.identity.allocation?.replicaId === 'a');
+  check(
+    '失败绑定后仍能用同一身份正常重试',
+    pair.left.identity.prefix === 'collab-bind-failure-' && pair.left.identity.allocation?.replicaId === 'a',
+  );
   binding.dispose();
 }
 
@@ -673,12 +808,20 @@ console.log('\n\x1b[36m▸ 协同身份恢复与并发粘贴\x1b[0m');
   const firstHub = new OfflineHub();
   firstHub.endpoint('observer').subscribe(() => {});
   const firstBinding = collab.bindCollaboration(editor, {
-    documentId: 'recover', replicaId: 'a', replicaSlot: 7, provider: firstHub.endpoint('a'),
+    documentId: 'recover',
+    replicaId: 'a',
+    replicaSlot: 7,
+    provider: firstHub.endpoint('a'),
   });
   const slideId = doc.slideOrder[0];
-  const first = editor.exec({
-    type: 'AddShape', slideId, preset: 'rect', rect: { x: 10, y: 10, w: 50, h: 40 },
-  }).forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements')?.path[1];
+  const first = editor
+    .exec({
+      type: 'AddShape',
+      slideId,
+      preset: 'rect',
+      rect: { x: 10, y: 10, w: 50, h: 40 },
+    })
+    .forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements')?.path[1];
   const firstSpid = doc.elements[first].meta.origin.spid;
   const checkpoint = firstBinding.checkpoint();
   stopRecovery();
@@ -690,19 +833,29 @@ console.log('\n\x1b[36m▸ 协同身份恢复与并发粘贴\x1b[0m');
   const secondHub = new OfflineHub();
   secondHub.endpoint('observer').subscribe(() => {});
   const secondBinding = collab.bindCollaboration(restoredEditor, {
-    documentId: 'recover', replicaId: 'a', replicaSlot: 7,
-    provider: secondHub.endpoint('restored'), checkpoint,
+    documentId: 'recover',
+    replicaId: 'a',
+    replicaSlot: 7,
+    provider: secondHub.endpoint('restored'),
+    checkpoint,
   });
-  const second = restoredEditor.exec({
-    type: 'AddShape', slideId, preset: 'ellipse', rect: { x: 80, y: 10, w: 50, h: 40 },
-  }).forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements')?.path[1];
-  check('恢复日志保留基准 prefix 与副本身份分区', restoredDoc.identity.prefix === 'collab-recovery-'
-    && restoredDoc.identity.allocation?.replicaId === 'a' && !!restoredDoc.elements[first]);
-  check('恢复重开后逻辑 id 与 cNvPr 游标都不复用', first !== second
-    && restoredDoc.elements[second].meta.origin.spid > firstSpid);
+  const second = restoredEditor
+    .exec({
+      type: 'AddShape',
+      slideId,
+      preset: 'ellipse',
+      rect: { x: 80, y: 10, w: 50, h: 40 },
+    })
+    .forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements')?.path[1];
+  check(
+    '恢复日志保留基准 prefix 与副本身份分区',
+    restoredDoc.identity.prefix === 'collab-recovery-'
+      && restoredDoc.identity.allocation?.replicaId === 'a'
+      && !!restoredDoc.elements[first],
+  );
+  check('恢复重开后逻辑 id 与 cNvPr 游标都不复用', first !== second && restoredDoc.elements[second].meta.origin.spid > firstSpid);
   const resumedMessage = secondHub.queue.find((item) => item.from === 'restored')?.message;
-  check('恢复重开后 Lamport 时钟与消息序号继续递增', resumedMessage?.stamp.clock === 2
-    && resumedMessage.sequence === 2);
+  check('恢复重开后 Lamport 时钟与消息序号继续递增', resumedMessage?.stamp.clock === 2 && resumedMessage.sequence === 2);
   secondBinding.dispose();
 }
 
@@ -714,51 +867,115 @@ console.log('\n\x1b[36m▸ 协同身份恢复与并发粘贴\x1b[0m');
   const leftPayload = edit.copyElements(pair.left, [source.id]);
   const rightPayload = edit.copyElements(pair.right, [source.id]);
   pair.leftEditor.exec({
-    type: 'PasteElements', payload: leftPayload,
+    type: 'PasteElements',
+    payload: leftPayload,
     at: { parentId: source.parent, x: source.src.x + 20, y: source.src.y + 20 },
   });
   pair.rightEditor.exec({
-    type: 'PasteElements', payload: rightPayload,
+    type: 'PasteElements',
+    payload: rightPayload,
     at: { parentId: source.parent, x: source.src.x + 40, y: source.src.y + 40 },
   });
   hub.flush((items) => items.reverse());
   const pasted = Object.values(pair.left.elements).filter((record) => record.meta.created);
-  check('并发 PasteElements 的逻辑 id、spid 与分数序互不复用', pasted.length >= 2
-    && new Set(pasted.map((record) => record.id)).size === pasted.length
-    && new Set(pasted.map((record) => record.meta.origin?.spid)).size === pasted.length
-    && new Set(pasted.map((record) => record.order ?? record.z)).size === pasted.length,
-  JSON.stringify(pasted.map((record) => ({
-    id: record.id, spid: record.meta.origin?.spid, order: record.order ?? record.z, parent: record.parent,
-  }))));
-  check('并发 PasteElements 乱序投递后收敛', semanticDoc(pair.left) === semanticDoc(pair.right),
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
+  check(
+    '并发 PasteElements 的逻辑 id、spid 与分数序互不复用',
+    pasted.length >= 2
+      && new Set(pasted.map((record) => record.id)).size === pasted.length
+      && new Set(pasted.map((record) => record.meta.origin?.spid)).size === pasted.length
+      && new Set(pasted.map((record) => record.order ?? record.z)).size === pasted.length,
+    JSON.stringify(
+      pasted.map((record) => ({
+        id: record.id,
+        spid: record.meta.origin?.spid,
+        order: record.order ?? record.z,
+        parent: record.parent,
+      })),
+    ),
+  );
+  check(
+    '并发 PasteElements 乱序投递后收敛',
+    semanticDoc(pair.left) === semanticDoc(pair.right),
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
   bindings.forEach((binding) => binding.dispose());
 }
 
 await runCollabSlideIdentityContract({
-  bindPair, canonical, check, collab, core, createPair, edit, OfflineHub, semanticDoc, stringDiff,
+  bindPair,
+  canonical,
+  check,
+  collab,
+  core,
+  createPair,
+  edit,
+  OfflineHub,
+  semanticDoc,
+  stringDiff,
 });
 
 await runCollabHardeningContract({
-  bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub,
-  semanticDoc, stringDiff,
+  bindPair,
+  check,
+  collab,
+  core,
+  createPair,
+  edit,
+  editableShapes,
+  load,
+  OfflineHub,
+  semanticDoc,
+  stringDiff,
 });
 
 await runCollabProtocolContract({
-  bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub,
-  semanticDoc, seededShuffle, stringDiff,
+  bindPair,
+  check,
+  collab,
+  core,
+  createPair,
+  edit,
+  editableShapes,
+  load,
+  OfflineHub,
+  semanticDoc,
+  seededShuffle,
+  stringDiff,
 });
 
 await runPresetShapeCollabContract({
-  bindPair, check, createPair, edit, OfflineHub, semanticDoc, seededShuffle, stringDiff,
+  bindPair,
+  check,
+  createPair,
+  edit,
+  OfflineHub,
+  semanticDoc,
+  seededShuffle,
+  stringDiff,
 });
 
 await runAdvancedRunFormatCollabContract({
-  bindPair, check, createPair, edit, OfflineHub, semanticDoc, seededShuffle, stringDiff,
+  bindPair,
+  check,
+  createPair,
+  edit,
+  OfflineHub,
+  semanticDoc,
+  seededShuffle,
+  stringDiff,
 });
 
 await runCollabAtomicContract({
-  bindPair, check, collab, core, createPair, edit, editableShapes, load, OfflineHub, semanticDoc,
+  bindPair,
+  check,
+  collab,
+  core,
+  createPair,
+  edit,
+  editableShapes,
+  load,
+  OfflineHub,
+  semanticDoc,
   stringDiff,
 });
 
@@ -772,30 +989,44 @@ console.log('\n\x1b[36m▸ BroadcastChannel 双标签页 provider\x1b[0m');
       peers.add(this);
       channels.set(name, peers);
     }
-    addEventListener(type, listener) { if (type === 'message') this.listener = listener; }
-    removeEventListener(type, listener) { if (type === 'message' && this.listener === listener) this.listener = null; }
+    addEventListener(type, listener) {
+      if (type === 'message') this.listener = listener;
+    }
+    removeEventListener(type, listener) {
+      if (type === 'message' && this.listener === listener) this.listener = null;
+    }
     postMessage(data) {
       for (const peer of channels.get(this.name) ?? []) {
         if (peer !== this) peer.listener?.({ data: structuredClone(data) });
       }
     }
-    close() { channels.get(this.name)?.delete(this); }
+    close() {
+      channels.get(this.name)?.delete(this);
+    }
   }
   const pair = await createPair('showcase.pptx', 'collab-tabs-');
   const leftProvider = new collab.BroadcastChannelCollabProvider('web-ppt-demo', FakeBroadcastChannel);
   const rightProvider = new collab.BroadcastChannelCollabProvider('web-ppt-demo', FakeBroadcastChannel);
   const left = collab.bindCollaboration(pair.leftEditor, {
-    documentId: 'tabs', replicaId: 'tab-a', replicaSlot: 3, provider: leftProvider,
+    documentId: 'tabs',
+    replicaId: 'tab-a',
+    replicaSlot: 3,
+    provider: leftProvider,
   });
   const right = collab.bindCollaboration(pair.rightEditor, {
-    documentId: 'tabs', replicaId: 'tab-b', replicaSlot: 4, provider: rightProvider,
+    documentId: 'tabs',
+    replicaId: 'tab-b',
+    replicaSlot: 4,
+    provider: rightProvider,
   });
   const target = editableShapes(pair.left)[0];
   pair.leftEditor.exec({ type: 'SetXfrm', id: target.id, y: target.src.y + 23 });
-  check('BroadcastChannel provider 实时同步两个标签页', semanticDoc(pair.left) === semanticDoc(pair.right),
-    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)));
-  check('远端补丁不进入接收方本地历史', pair.rightEditor.history.undoCount === 0
-    && pair.rightEditor.history.redoCount === 0);
+  check(
+    'BroadcastChannel provider 实时同步两个标签页',
+    semanticDoc(pair.left) === semanticDoc(pair.right),
+    stringDiff(semanticDoc(pair.left), semanticDoc(pair.right)),
+  );
+  check('远端补丁不进入接收方本地历史', pair.rightEditor.history.undoCount === 0 && pair.rightEditor.history.redoCount === 0);
   left.dispose();
   right.dispose();
   leftProvider.dispose();

@@ -15,6 +15,9 @@ jobs:
       id-token: write        # OIDC 换取短期发布令牌所必需，缺了会退回要 NPM_TOKEN
     steps:
       - uses: actions/checkout@v4
+      # verify 按 tag v<版本> 判定发布记录是否已成历史，看不到 tag 时直接失败。
+      # checkout 按 SHA 浅取时会忽略 fetch-tags（实测 fetch 命令不带 --tags），只能显式取
+      - run: git fetch --no-recurse-submodules --depth=1 origin '+refs/tags/v*:refs/tags/v*'
       - uses: actions/setup-node@v4
         with:
           # Trusted Publishing 要求 Node ≥ 22.14.0
@@ -37,7 +40,16 @@ jobs:
           echo "NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN:+非空}${NODE_AUTH_TOKEN:-未设置（符合预期）}"
           echo "生效的 .npmrc:"; npm config list | sed -E 's#(_authToken *= *).*#\1<隐去>#'
 
-      - run: npm ci
+      - name: 门禁信任判定
+        # 先确定是否复用同 commit 的完整 CI，避免快路径仍安装只供源码门禁使用的 LibreOffice。
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          node tooling/check-ci-green.mjs --sha "$commit"
+
+      - run: npm ci --no-audit --no-fund
 
       - uses: actions/setup-python@v5
         with:
@@ -60,11 +72,15 @@ jobs:
       - name: 安装字体与 PDF 独立读取依赖
         run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt
 
+      - name: 安装中文字体
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+
       - name: 安装图元真实样本依赖
         # test:metafile 会用 LibreOffice 把 showcase 转成真实 EMF/WMF；缺依赖时会
         # 合法跳过 22 项，但 verify 仍会按发布文档声明的完整 130 项拒绝发布。
-        # libxml2-utils 提供 OOXML 门禁的 xmllint（XSD 结构校验）。
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-impress fonts-noto-cjk libxml2-utils
+        # libxml2-utils 提供 OOXML 门禁的 xmllint（XSD 结构校验）；该门禁同样只在补跑全量时执行。
+        if: steps.gate.outputs.ci-green != 'green'
+        run: sudo apt-get install -y --no-install-recommends libreoffice-impress libxml2-utils
 
       - name: 校验 tag 与包版本一致
         # tag 与 package.json 对不上时，发出去的版本号会让人迷惑，不如直接失败
@@ -76,19 +92,6 @@ jobs:
             [ "$v" = "$tag" ] || { echo "::error::$p 版本 $v 与 tag $tag 不一致"; exit 1; }
           done
           echo "tag $tag 与九个包版本一致"
-
-      - name: 门禁信任判定
-        # tag 指向的 commit 若已有绿色的 push CI，说明同口径门禁（check / fixtures /
-        # test:functional / 性能采样 / bench / build / verify）已在干净环境全量跑过，
-        # 下面的重复步骤可以跳过。判定拿不到绿色（查无 run、未完成、结论非成功、
-        # API 失败）时一律走全量，安全级别与改造前一致。
-        id: gate
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # annotated tag 的 GITHUB_SHA 是 tag 对象而非 commit，CI run 按 commit SHA 索引
-          commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
-          node tooling/check-ci-green.mjs --sha "$commit"
 
       - name: 类型检查
         if: steps.gate.outputs.ci-green != 'green'
@@ -116,8 +119,7 @@ jobs:
         if: steps.gate.outputs.ci-green != 'green'
         run: npm run test:functional
 
-      # 各包的 prepublishOnly 会跑一次 build，这里先构建一遍是为了
-      # 万一构建失败，能在动 registry 之前就失败掉
+      # 根构建和 verify 完成后，发布步骤显式复用产物，避免逐包重复构建。
       - name: 构建
         run: npm run build
 
@@ -143,31 +145,31 @@ jobs:
       # 新包第一版在本地手工发过的情况同理。
       - name: 发布 @web-ppt/core
         working-directory: packages/core
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       # 新包第一版仍须按仓库 AGENTS 的说明手工引导发布并配置 Trusted Publishing；
       # registry 已存在后，后续版本才由这里接管。
       - name: 发布 @web-ppt/edit-core
         working-directory: packages/edit-core
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       - name: 发布 @web-ppt/viewer-core
         working-directory: packages/viewer-core
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       - name: 发布 @web-ppt/editor
         working-directory: packages/editor
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       # react/vue 只依赖已发布的 editor 与各自 optional peer，因此必须排在 editor 后面。
       # 两个新包的第一版仍须本地手工发布，再到 npm 配好 Trusted Publishing。
       - name: 发布 @web-ppt/react
         working-directory: packages/react
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       - name: 发布 @web-ppt/vue
         working-directory: packages/vue
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       # 注意：npm 要求包已存在才能配置 Trusted Publishing，所以**新包的第一版
       # 走不了 OIDC**（scoped 包在无凭据时返回的是 404，不是 401，极难排查）。
@@ -175,13 +177,13 @@ jobs:
       # trusted publisher，之后这一步才会通。
       - name: 发布 @web-ppt/fonts
         working-directory: packages/fonts
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       # collab 只以 edit-core 为 peer；首版仍须先手工发布并配置 Trusted Publishing。
       - name: 发布 @web-ppt/collab
         working-directory: packages/collab
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build
 
       - name: 发布 @web-ppt/agent-mcp
         working-directory: packages/agent-mcp
-        run: bash ../../tooling/publish-if-new.sh
+        run: bash ../../tooling/publish-if-new.sh --verified-build

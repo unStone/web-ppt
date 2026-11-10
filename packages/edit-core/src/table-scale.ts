@@ -7,18 +7,15 @@ export function scaledDimensions(values: readonly number[], total: number): numb
   let remaining = total;
   return values.map((value, index) => {
     if (index === values.length - 1) return remaining;
-    const scaled = value / sourceTotal * total;
+    const scaled = (value / sourceTotal) * total;
     remaining -= scaled;
     return scaled;
   });
 }
 
-const scaledTableRow = (row: TableRow, scale: number): TableRow =>
-  scale === 1 ? row : { ...row, height: row.height * scale };
+const scaledTableRow = (row: TableRow, scale: number): TableRow => (scale === 1 ? row : { ...row, height: row.height * scale });
 
-export function scaledTableEditInfo(
-  editInfo: TableElement['editInfo'], scale: number,
-): TableElement['editInfo'] {
+export function scaledTableEditInfo(editInfo: TableElement['editInfo'], scale: number): TableElement['editInfo'] {
   const append = editInfo?.tableRowAppend;
   if (!append || scale === 1) return editInfo;
   return {

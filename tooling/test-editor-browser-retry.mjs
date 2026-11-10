@@ -26,9 +26,7 @@ assert.equal(computeDisturbedEnvironment.disturbed, true, '受扰固定计算基
 clearPerformanceFailures();
 recordPerformanceBudget('安静预算', 8, 8);
 recordPerformanceBudget('超时预算', 8.01, 8);
-assert.deepEqual(readPerformanceFailures(), [
-  { name: '超时预算', actual: 8.01, budget: 8 },
-], '性能预算只汇总超标项，不能中断功能断言');
+assert.deepEqual(readPerformanceFailures(), [{ name: '超时预算', actual: 8.01, budget: 8 }], '性能预算只汇总超标项，不能中断功能断言');
 
 const passAttempts = [];
 const pass = await runPerformanceAttempts({
@@ -61,10 +59,10 @@ const recovered = await runPerformanceAttempts({
     retryAttempts.push(number);
     return number === 1
       ? {
-        functionalStatus: 'pass',
-        performanceFailures: [{ name: '60 元素删除', actual: 14, budget: 8 }],
-        environment: disturbedEnvironment,
-      }
+          functionalStatus: 'pass',
+          performanceFailures: [{ name: '60 元素删除', actual: 14, budget: 8 }],
+          environment: disturbedEnvironment,
+        }
       : { functionalStatus: 'pass', performanceFailures: [], environment: quietEnvironment };
   },
   onRetry: (result) => retryNotices.push(result),

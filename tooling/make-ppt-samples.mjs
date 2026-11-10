@@ -26,9 +26,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
  * 全局计数器，同进程里连算两份必然不等，详见 lib/ppt-fingerprint.mjs。
  */
 function fingerprint(bundle, file) {
-  return execFileSync(process.execPath,
-    [join(root, 'tooling/lib/ppt-fingerprint.mjs'), bundle, file],
-    { cwd: root, encoding: 'utf8' });
+  return execFileSync(process.execPath, [join(root, 'tooling/lib/ppt-fingerprint.mjs'), bundle, file], { cwd: root, encoding: 'utf8' });
 }
 
 const SOFFICE = findSoffice();
@@ -45,8 +43,19 @@ const tmp = join(root, 'out/pptconv');
 // 比较渲染结果要真的跑一遍解析与渲染，和测试用同一套环境
 mkdirSync(join(root, 'out/pptbundle'), { recursive: true });
 const bundle = 'out/pptbundle/lib.mjs';
-execFileSync('npx', ['esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error', `--outfile=${join(root, bundle)}`], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/core/src/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    `--outfile=${join(root, bundle)}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 
 for (const name of TARGETS) {
   const src = join(root, 'fixtures', name);

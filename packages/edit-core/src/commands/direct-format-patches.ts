@@ -1,9 +1,7 @@
 import type { Effects, Fill, Stroke } from '@web-ppt/core';
 import { own } from '../data-validation';
 import type { EditDoc } from '../types';
-import type {
-  CommandPatches, ElementEffectsPatch, ElementFillPatch, ElementStrokePatch,
-} from './types';
+import type { CommandPatches, ElementEffectsPatch, ElementFillPatch, ElementStrokePatch } from './types';
 
 type DirectFormatPatch = ElementFillPatch | ElementStrokePatch | ElementEffectsPatch;
 type FormatField = 'fill' | 'stroke' | 'effects';
@@ -25,10 +23,11 @@ export function directFormatPatches<F extends FormatField>(
     if (JSON.stringify(before) === JSON.stringify(value)) return { forward: [], inverse: [] };
   }
   const forward = {
-    op: 'set', path, value: structuredClone(value), origin,
+    op: 'set',
+    path,
+    value: structuredClone(value),
+    origin,
   } as DirectFormatPatch;
-  const inverse = (direct
-    ? { op: 'set', path, value: structuredClone(before), origin }
-    : { op: 'del', path, origin }) as DirectFormatPatch;
+  const inverse = (direct ? { op: 'set', path, value: structuredClone(before), origin } : { op: 'del', path, origin }) as DirectFormatPatch;
   return { forward: [forward], inverse: [inverse] };
 }

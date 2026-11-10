@@ -1,7 +1,5 @@
 import { TEXT_RUN_DIRECT_BITS, tableStyleCellAppearance, tableStylePreview } from '@web-ppt/core';
-import type {
-  CellBorders, TableElement, TableStyleDefinition, TableStylePart, TableStyleSettings, TextBody,
-} from '@web-ppt/core';
+import type { CellBorders, TableElement, TableStyleDefinition, TableStylePart, TableStyleSettings, TextBody } from '@web-ppt/core';
 import { assertDataObject, own } from './data-validation';
 import { canvasTargetOfElement } from './design-target';
 import { resolvedLayoutTemplate, resolvedMasterTemplate } from './layout-projection';
@@ -26,14 +24,11 @@ function definitionsForSlide(doc: EditDoc, slideId: SlideId): readonly TableStyl
   if (!slide) throw new Error(`找不到幻灯片：${slideId}`);
   const changedLayout = slide.layoutId !== slide.sourceLayoutId;
   return changedLayout
-    ? doc.layouts[slide.layoutId ?? '']?.tableStyles ?? slide.tableStyles ?? []
-    : slide.tableStyles ?? doc.layouts[slide.layoutId ?? '']?.tableStyles ?? [];
+    ? (doc.layouts[slide.layoutId ?? '']?.tableStyles ?? slide.tableStyles ?? [])
+    : (slide.tableStyles ?? doc.layouts[slide.layoutId ?? '']?.tableStyles ?? []);
 }
 
-function definitionsForTarget(
-  doc: EditDoc,
-  target: CanvasTarget,
-): readonly TableStyleDefinition[] {
+function definitionsForTarget(doc: EditDoc, target: CanvasTarget): readonly TableStyleDefinition[] {
   if (target.kind === 'slide') return definitionsForSlide(doc, target.id);
   if (target.kind === 'master') {
     const master = doc.masters[target.id];
@@ -45,29 +40,17 @@ function definitionsForTarget(
   return resolvedLayoutTemplate(doc, target.id)?.tableStyles ?? layout.tableStyles ?? [];
 }
 
-function definitionFor(
-  doc: EditDoc,
-  target: CanvasTarget,
-  styleId: string,
-): TableStyleDefinition | undefined {
+function definitionFor(doc: EditDoc, target: CanvasTarget, styleId: string): TableStyleDefinition | undefined {
   const key = styleId.toUpperCase();
-  return definitionsForTarget(doc, target)
-    .find((definition) => definition.styleId.toUpperCase() === key);
+  return definitionsForTarget(doc, target).find((definition) => definition.styleId.toUpperCase() === key);
 }
 
-export function tableStyleDefinitionForElement(
-  doc: EditDoc,
-  id: ElementId,
-  styleId: string,
-): TableStyleDefinition | undefined {
+export function tableStyleDefinitionForElement(doc: EditDoc, id: ElementId, styleId: string): TableStyleDefinition | undefined {
   return definitionFor(doc, canvasTargetOfElement(doc, id), styleId);
 }
 
 /** 目录以页面或版式主题为上下文；返回值不泄露 OOXML，也不要求 UI 复刻样式优先级。 */
-export function listTableStyles(
-  doc: EditDoc,
-  target: SlideId | DesignTarget,
-): readonly TableStyleCatalogItem[] {
+export function listTableStyles(doc: EditDoc, target: SlideId | DesignTarget): readonly TableStyleCatalogItem[] {
   const canvas = typeof target === 'string' ? { kind: 'slide' as const, id: target } : target;
   return definitionsForTarget(doc, canvas).map((definition) => ({
     styleId: definition.styleId,
@@ -77,15 +60,8 @@ export function listTableStyles(
   }));
 }
 
-export function assertTableStyleSettings(
-  doc: EditDoc,
-  id: ElementId,
-  input: unknown,
-  label: string,
-): TableStyleSettings {
-  assertDataObject(input, [
-    'styleId', 'firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol',
-  ], label);
+export function assertTableStyleSettings(doc: EditDoc, id: ElementId, input: unknown, label: string): TableStyleSettings {
+  assertDataObject(input, ['styleId', 'firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol'], label);
   const value = input as unknown as TableStyleSettings;
   if (typeof value.styleId !== 'string' || !value.styleId.trim()) {
     throw new Error(`${label}.styleId 必须是非空字符串`);
@@ -109,11 +85,7 @@ export function queryTableStyle(doc: EditDoc, id: ElementId): TableStyleState {
   };
 }
 
-function styledTextBody(
-  current: TextBody | null,
-  base: TextBody | null | undefined,
-  style: TableStylePart['text'],
-): TextBody | null {
+function styledTextBody(current: TextBody | null, base: TextBody | null | undefined, style: TableStylePart['text']): TextBody | null {
   if (!current) return null;
   return {
     ...current,
@@ -124,10 +96,8 @@ function styledTextBody(
         const direct = (paragraph.editInfo?.directRun ?? 0) | (run.editInfo?.direct ?? 0);
         return {
           ...run,
-          ...(!(direct & TEXT_RUN_DIRECT_BITS.b)
-            ? { b: style?.b ?? baseRun?.b ?? run.b } : {}),
-          ...(!(direct & TEXT_RUN_DIRECT_BITS.color)
-            ? { color: style?.color ?? baseRun?.color ?? run.color } : {}),
+          ...(!(direct & TEXT_RUN_DIRECT_BITS.b) ? { b: style?.b ?? baseRun?.b ?? run.b } : {}),
+          ...(!(direct & TEXT_RUN_DIRECT_BITS.color) ? { color: style?.color ?? baseRun?.color ?? run.color } : {}),
         };
       }),
     })),
@@ -135,12 +105,7 @@ function styledTextBody(
 }
 
 /** 来源直设基线最后叠加，因此样式切换不会清洗单元格直接格式。 */
-export function projectTableStyle(
-  doc: EditDoc,
-  target: CanvasTarget,
-  table: TableElement,
-  settings: TableStyleSettings,
-): TableElement {
+export function projectTableStyle(doc: EditDoc, target: CanvasTarget, table: TableElement, settings: TableStyleSettings): TableElement {
   const definition = definitionFor(doc, target, settings.styleId);
   if (!definition) throw new Error(`表样式不在当前画布目录中：${settings.styleId}`);
   const rowCount = table.rows.length;
@@ -153,9 +118,7 @@ export function projectTableStyle(
         const base = cell.editInfo?.styleBase;
         // 自包含新增/粘贴表格没有可分离的样式基线；全部视觉都按直接格式保留。
         if (!base) return cell;
-        const appearance = tableStyleCellAppearance(
-          definition, settings, rowIndex, columnIndex, rowCount, row.cells.length,
-        );
+        const appearance = tableStyleCellAppearance(definition, settings, rowIndex, columnIndex, rowCount, row.cells.length);
         const borders: CellBorders = { ...appearance.borders };
         for (const side of ['l', 'r', 't', 'b'] as const) {
           if (own(base.borders, side)) borders[side] = structuredClone(base.borders[side]);

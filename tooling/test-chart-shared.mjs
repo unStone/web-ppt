@@ -48,29 +48,41 @@ import { testSharedMixedAxes } from './lib/chart-shared-mixed-axes-contract.mjs'
 import { testSharedMixedRendering } from './lib/chart-shared-mixed-render-contract.mjs';
 
 const { assert, record } = countedAssert('chartShared');
-const root = resolve('.'), out = join(root, 'out/chart-shared');
+const root = resolve('.'),
+  out = join(root, 'out/chart-shared');
 mkdirSync(out, { recursive: true });
 for (const { stem } of JSON.parse(readFileSync('tooling/chart-shared-cases.json', 'utf8'))) {
   for (const mode of ['patched', 'generated']) rmSync(join(out, `${stem}-${mode}.pptx`), { force: true });
 }
-writeFileSync(join(out, 'entry.mjs'), `export * as core from '@web-ppt/core';export { renderChartXml } from '@web-ppt/core/chart-edit';
+writeFileSync(
+  join(out, 'entry.mjs'),
+  `export * as core from '@web-ppt/core';export { renderChartXml } from '@web-ppt/core/chart-edit';
 export * as edit from '@web-ppt/edit-core';export * as chart from '@web-ppt/edit-core/chart-shared';
 export * as generate from '@web-ppt/edit-core/generate';
 export * as chartDesign from '@web-ppt/edit-core/chart-design';
-export * as basicChart from '@web-ppt/edit-core/chart';export * as collab from '@web-ppt/collab';`);
-const { core, edit, chart, collab, basicChart, chartDesign, generate, renderChartXml } = process.argv.includes('--dist') ? {
-  renderChartXml: (await import('@web-ppt/core/chart-edit')).renderChartXml,
-  core: await import('@web-ppt/core'), edit: await import('@web-ppt/edit-core'),
-  chart: await import('@web-ppt/edit-core/chart-shared'), collab: await import('@web-ppt/collab'),
-  basicChart: await import('@web-ppt/edit-core/chart'),
-  chartDesign: await import('@web-ppt/edit-core/chart-design'),
-  generate: await import('@web-ppt/edit-core/generate'),
-} : await bundleBrowser({ root, entry: join(out, 'entry.mjs'),
-  output: join(out, 'contract.mjs'), aliases: [
-    ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
-    ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
-    ['@web-ppt/collab', join(root, 'packages/collab/src/index.ts')],
-  ] });
+export * as basicChart from '@web-ppt/edit-core/chart';export * as collab from '@web-ppt/collab';`,
+);
+const { core, edit, chart, collab, basicChart, chartDesign, generate, renderChartXml } = process.argv.includes('--dist')
+  ? {
+      renderChartXml: (await import('@web-ppt/core/chart-edit')).renderChartXml,
+      core: await import('@web-ppt/core'),
+      edit: await import('@web-ppt/edit-core'),
+      chart: await import('@web-ppt/edit-core/chart-shared'),
+      collab: await import('@web-ppt/collab'),
+      basicChart: await import('@web-ppt/edit-core/chart'),
+      chartDesign: await import('@web-ppt/edit-core/chart-design'),
+      generate: await import('@web-ppt/edit-core/generate'),
+    }
+  : await bundleBrowser({
+      root,
+      entry: join(out, 'entry.mjs'),
+      output: join(out, 'contract.mjs'),
+      aliases: [
+        ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
+        ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
+        ['@web-ppt/collab', join(root, 'packages/collab/src/index.ts')],
+      ],
+    });
 await testDocumentExtensions({ core, edit, input: readFileSync('fixtures/sample-chart-shared.pptx'), assert });
 await testSharedLoading({ core, edit, chart, basicChart, input: readFileSync('fixtures/sample-chart-shared.pptx'), assert });
 await testSharedClipboard({ core, edit, chart, chartDesign, generate, assert });
@@ -84,69 +96,127 @@ await testSharedJoint({ core, edit, chart, assert });
 await testSharedJointCollaboration({ core, edit, chart, collab, assert });
 await testSharedJointRebuild({ core, edit, chart, assert });
 await testSharedTopology({ core, edit, chart, generate, assert });
-const presentation = await core.parse(readFileSync('fixtures/sample-chart-shared.pptx'),
-  { edit: true, keepPackage: true, lazy: false });
+const presentation = await core.parse(readFileSync('fixtures/sample-chart-shared.pptx'), { edit: true, keepPackage: true, lazy: false });
 const editor = new edit.Editor(edit.createDoc(presentation));
 const charts = chart.listEditableCharts(editor.doc);
 assert.equal(charts.length, 3);
-assert.deepEqual(charts.map(item => item.binding.mode), ['workbook', 'workbook', 'workbook'],
-  '两个图表部件与三个框架共同编辑一个内嵌工作簿');
-const api = chart.createChartDataEditor(editor), first = chart.queryChartData(editor.doc, charts[0].id);
-const before = charts.map(item => JSON.stringify(editor.effectiveElement(item.id)));
+assert.deepEqual(
+  charts.map((item) => item.binding.mode),
+  ['workbook', 'workbook', 'workbook'],
+  '两个图表部件与三个框架共同编辑一个内嵌工作簿',
+);
+const api = chart.createChartDataEditor(editor),
+  first = chart.queryChartData(editor.doc, charts[0].id);
+const before = charts.map((item) => JSON.stringify(editor.effectiveElement(item.id)));
 const changes = [];
 const recoveryFrames = [];
-editor.subscribe(change => changes.push(change));
-editor.subscribeRecovery(frame => recoveryFrames.push(frame));
+editor.subscribe((change) => changes.push(change));
+editor.subscribeRecovery((frame) => recoveryFrames.push(frame));
 api.setPoint(charts[0].id, first.series[0].id, first.series[0].points[1].id, { value: 777 });
-assert.deepEqual(charts.map(item => chart.queryChartData(editor.doc, item.id).series[0].points[1].value),
-  [777, 777, 777], '共享单元格的一次修改更新全部关联图表');
-assert.ok(charts.every((item, index) => JSON.stringify(editor.effectiveElement(item.id)) !== before[index]),
-  '文档级编辑使三个框架的已缓存投影同时失效');
-assert.ok(charts.every(item => changes.at(-1).renderElements.has(item.id)), '同一通知要求视图层重绘全部关联框架');
+assert.deepEqual(
+  charts.map((item) => chart.queryChartData(editor.doc, item.id).series[0].points[1].value),
+  [777, 777, 777],
+  '共享单元格的一次修改更新全部关联图表',
+);
+assert.ok(
+  charts.every((item, index) => JSON.stringify(editor.effectiveElement(item.id)) !== before[index]),
+  '文档级编辑使三个框架的已缓存投影同时失效',
+);
+assert.ok(
+  charts.every((item) => changes.at(-1).renderElements.has(item.id)),
+  '同一通知要求视图层重绘全部关联框架',
+);
 editor.undo();
-assert.deepEqual(charts.map(item => chart.queryChartData(editor.doc, item.id).series[0].points[1].value),
-  [10, 10, 10], '一次撤销恢复所有视图');
+assert.deepEqual(
+  charts.map((item) => chart.queryChartData(editor.doc, item.id).series[0].points[1].value),
+  [10, 10, 10],
+  '一次撤销恢复所有视图',
+);
 editor.redo();
-const removed = [...charts].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)[0];
+const removed = [...charts].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0];
 editor.exec({ type: 'RemoveElement', id: removed.id });
-assert.deepEqual(charts.filter(item => item !== removed).map(item =>
-  chart.queryChartData(editor.doc, item.id).series[0].points[1].value), [777, 777],
-  '删除任一图表框架不能删除文档共享数据');
+assert.deepEqual(
+  charts.filter((item) => item !== removed).map((item) => chart.queryChartData(editor.doc, item.id).series[0].points[1].value),
+  [777, 777],
+  '删除任一图表框架不能删除文档共享数据',
+);
 editor.undo();
 api.setCategoryLevel(charts[0].id, first.categories[3].id, 1, 'Shared leaf');
-assert.deepEqual(charts.map(item => chart.queryChartData(editor.doc, item.id).categories[3].levels),
-  [['', 'Shared leaf'], ['', 'Shared leaf'], ['', 'Shared leaf']], '缺失叶类别转成文本后关联图表同时更新');
-assert.ok(charts.every(item => chart.queryChartData(editor.doc, item.id).categories[3].label === 'Shared leaf'));
+assert.deepEqual(
+  charts.map((item) => chart.queryChartData(editor.doc, item.id).categories[3].levels),
+  [
+    ['', 'Shared leaf'],
+    ['', 'Shared leaf'],
+    ['', 'Shared leaf'],
+  ],
+  '缺失叶类别转成文本后关联图表同时更新',
+);
+assert.ok(charts.every((item) => chart.queryChartData(editor.doc, item.id).categories[3].label === 'Shared leaf'));
 api.setCategoryLevel(charts[0].id, first.categories[0].id, 0, 'West');
-assert.deepEqual(charts.map(item => chart.queryChartData(editor.doc, item.id).categories.slice(0, 2).map(category => category.levels)),
-  [[['West', 'A'], [null, 'A']], [['West', 'A'], [null, 'A']], [['West', 'A'], [null, 'A']]],
-  '共享父组改名保留原生跨度及重复叶标签');
+assert.deepEqual(
+  charts.map((item) =>
+    chart
+      .queryChartData(editor.doc, item.id)
+      .categories.slice(0, 2)
+      .map((category) => category.levels),
+  ),
+  [
+    [
+      ['West', 'A'],
+      [null, 'A'],
+    ],
+    [
+      ['West', 'A'],
+      [null, 'A'],
+    ],
+    [
+      ['West', 'A'],
+      [null, 'A'],
+    ],
+  ],
+  '共享父组改名保留原生跨度及重复叶标签',
+);
 api.setCategoryLevel(charts[0].id, first.categories[2].id, 0, null);
-assert.ok(charts.every(item => chart.queryChartData(editor.doc, item.id).categories[2].levels[0] === null),
-  '清空共享组首表达延续前组，而不是同名新组');
+assert.ok(
+  charts.every((item) => chart.queryChartData(editor.doc, item.id).categories[2].levels[0] === null),
+  '清空共享组首表达延续前组，而不是同名新组',
+);
 editor.undo();
-assert.ok(charts.every(item => chart.queryChartData(editor.doc, item.id).categories[2].levels[0] === 'South'));
+assert.ok(charts.every((item) => chart.queryChartData(editor.doc, item.id).categories[2].levels[0] === 'South'));
 const bytes = await editor.save();
-const identities = charts.map(item => chart.queryChartData(editor.doc, item.id)).map(data => ({
-  categories: data.categories.map(category => category.id), series: data.series.map(series => series.id),
-}));
+const identities = charts
+  .map((item) => chart.queryChartData(editor.doc, item.id))
+  .map((data) => ({
+    categories: data.categories.map((category) => category.id),
+    series: data.series.map((series) => series.id),
+  }));
 const reopened = await core.parse(bytes, { edit: true, keepPackage: true, lazy: false });
 const savedDoc = edit.createDoc(reopened);
-assert.deepEqual(chart.listEditableCharts(savedDoc).map(item => chart.queryChartData(savedDoc, item.id))
-  .map(data => ({ categories: data.categories.map(category => category.id), series: data.series.map(series => series.id) })),
-  identities, '同一图表部件的不同框架保存后保留各自原有身份，不受新会话前缀影响');
-assert.deepEqual(chart.listEditableCharts(savedDoc).map(item =>
-  chart.queryChartData(savedDoc, item.id).series[0].points[1].value), [777, 777, 777],
-  '共享编辑保存重开保留全部视图');
+assert.deepEqual(
+  chart
+    .listEditableCharts(savedDoc)
+    .map((item) => chart.queryChartData(savedDoc, item.id))
+    .map((data) => ({ categories: data.categories.map((category) => category.id), series: data.series.map((series) => series.id) })),
+  identities,
+  '同一图表部件的不同框架保存后保留各自原有身份，不受新会话前缀影响',
+);
+assert.deepEqual(
+  chart.listEditableCharts(savedDoc).map((item) => chart.queryChartData(savedDoc, item.id).series[0].points[1].value),
+  [777, 777, 777],
+  '共享编辑保存重开保留全部视图',
+);
 reopened.dispose();
-const recovering = await core.parse(readFileSync('fixtures/sample-chart-shared.pptx'),
-  { edit: true, keepPackage: true, lazy: false });
+const recovering = await core.parse(readFileSync('fixtures/sample-chart-shared.pptx'), { edit: true, keepPackage: true, lazy: false });
 const restored = new edit.Editor(edit.createDoc(recovering, { idPrefix: editor.doc.identity.prefix }), { recoveryFrames });
-assert.deepEqual(chart.listEditableCharts(restored.doc).map(item =>
-  chart.queryChartData(restored.doc, item.id).series[0].points[1].value), [777, 777, 777],
-  '冷恢复重放文档覆盖与框架删除撤销');
-restored.dispose(); recovering.dispose();
-editor.dispose(); presentation.dispose();
+assert.deepEqual(
+  chart.listEditableCharts(restored.doc).map((item) => chart.queryChartData(restored.doc, item.id).series[0].points[1].value),
+  [777, 777, 777],
+  '冷恢复重放文档覆盖与框架删除撤销',
+);
+restored.dispose();
+recovering.dispose();
+editor.dispose();
+presentation.dispose();
 await testSharedCollaboration({ core, edit, chart, collab, input: readFileSync('fixtures/sample-chart-shared.pptx'), assert });
 await testSharedBoundaries({ core, edit, chart, input: readFileSync('fixtures/sample-chart-shared.pptx'), assert });
 await testSharedViews({ core, edit, chart, input: readFileSync('fixtures/sample-chart-shared-views.pptx'), assert });

@@ -6,15 +6,32 @@ import { deck, px, slideXml, solid, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const plain = sp({
-  x: 100, y: 100, w: 100, h: 80, fill: solid('accent1'), name: 'nudge-plain',
+  x: 100,
+  y: 100,
+  w: 100,
+  h: 80,
+  fill: solid('accent1'),
+  name: 'nudge-plain',
 });
 const rotated = sp({
-  x: 320, y: 100, w: 120, h: 90, rot: 1800000, flipH: true,
-  fill: solid('accent3'), name: 'nudge-rotated-flipped',
+  x: 320,
+  y: 100,
+  w: 120,
+  h: 90,
+  rot: 1800000,
+  flipH: true,
+  fill: solid('accent3'),
+  name: 'nudge-rotated-flipped',
 });
 const leaf = sp({
-  x: 20, y: 15, w: 50, h: 40, rot: 900000, flipV: true,
-  fill: solid('accent5'), name: 'nudge-nested-leaf',
+  x: 20,
+  y: 15,
+  w: 50,
+  h: 40,
+  rot: 900000,
+  flipV: true,
+  fill: solid('accent5'),
+  name: 'nudge-nested-leaf',
 });
 const inner = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="1001" name="nudge-inner-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -24,7 +41,12 @@ const inner = `<p:grpSp>
 ${leaf}
 </p:grpSp>`;
 const sibling = sp({
-  x: 10, y: 10, w: 35, h: 30, fill: solid('accent2'), name: 'nudge-group-sibling',
+  x: 10,
+  y: 10,
+  w: 35,
+  h: 30,
+  fill: solid('accent2'),
+  name: 'nudge-group-sibling',
 });
 const outer = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="1002" name="nudge-outer-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -36,12 +58,21 @@ ${sibling}
 </p:grpSp>`;
 
 const bytes = deck({
-  name: 'Editor Keyboard', width: 1000, height: 600,
+  name: 'Editor Keyboard',
+  width: 1000,
+  height: 600,
   slides: [
     slideXml(plain + rotated + outer),
-    slideXml(sp({
-      x: 100, y: 100, w: 100, h: 80, fill: solid('accent4'), name: 'nudge-second-slide',
-    })),
+    slideXml(
+      sp({
+        x: 100,
+        y: 100,
+        w: 100,
+        h: 80,
+        fill: solid('accent4'),
+        name: 'nudge-second-slide',
+      }),
+    ),
   ],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });

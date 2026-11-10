@@ -2,7 +2,12 @@ import { readFileSync } from 'node:fs';
 
 /** LibreOffice 的 SVG path 是独立于浏览器模型的最终 Office 几何真值。 */
 export function runCommonObjectSlideLibreOfficeContract({
-  savedPath, exportSvg, expectedBounds, savedShapeGeometry, shapeByFillAndFrame, geometryError,
+  savedPath,
+  exportSvg,
+  expectedBounds,
+  savedShapeGeometry,
+  shapeByFillAndFrame,
+  geometryError,
 }) {
   if (!savedPath.endsWith('/common-object-slide.pptx')) return '';
   const markup = exportSvg('对象分布与页面尺寸');

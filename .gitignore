@@ -12,3 +12,4 @@ corpus/
 # .NET 校验工具的构建产物（nuget 还原与编译输出不入库）
 tooling/ooxml-validate/bin/
 tooling/ooxml-validate/obj/
+.turbo/

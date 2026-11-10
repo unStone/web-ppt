@@ -69,10 +69,8 @@ export function squeezePlan(chars: readonly string[], forceAll: boolean): Squeez
   for (let i = 0; i < n; i++) {
     const em = squeezeEm(chars[i]);
     if (!em) continue;
-    const forced = forceAll
-      || (i === 0 && isOpening(chars[i]))
-      || (i === n - 1 && !isOpening(chars[i]))
-      || (i > 0 && squeezeEm(chars[i - 1]) > 0);
+    const forced =
+      forceAll || (i === 0 && isOpening(chars[i])) || (i === n - 1 && !isOpening(chars[i])) || (i > 0 && squeezeEm(chars[i - 1]) > 0);
     if (!forced) continue;
     amount[i] = em;
     total += em;
@@ -88,16 +86,18 @@ export function squeezePlan(chars: readonly string[], forceAll: boolean): Squeez
  */
 export function isFullWidth(ch: string): boolean {
   const c = ch.codePointAt(0) ?? 0;
-  return (c >= 0x1100 && c <= 0x115f)      // 韩文字母
-    || (c >= 0x2e80 && c <= 0x303e)        // CJK 部首、假名标点、CJK 符号
-    || (c >= 0x3041 && c <= 0x33ff)        // 假名、注音、兼容符号
-    || (c >= 0x3400 && c <= 0x4dbf)        // 扩展 A
-    || (c >= 0x4e00 && c <= 0x9fff)        // 统一汉字
-    || (c >= 0xa000 && c <= 0xa4cf)        // 彝文
-    || (c >= 0xac00 && c <= 0xd7a3)        // 韩文音节
-    || (c >= 0xf900 && c <= 0xfaff)        // 兼容汉字
-    || (c >= 0xfe30 && c <= 0xfe6f)        // 竖排 / 小写变体
-    || (c >= 0xff00 && c <= 0xff60)        // 全角 ASCII 与标点
-    || (c >= 0xffe0 && c <= 0xffe6)        // 全角货币符号
-    || (c >= 0x20000 && c <= 0x3fffd);     // 扩展 B 及以后
+  return (
+    (c >= 0x1100 && c <= 0x115f) // 韩文字母
+    || (c >= 0x2e80 && c <= 0x303e) // CJK 部首、假名标点、CJK 符号
+    || (c >= 0x3041 && c <= 0x33ff) // 假名、注音、兼容符号
+    || (c >= 0x3400 && c <= 0x4dbf) // 扩展 A
+    || (c >= 0x4e00 && c <= 0x9fff) // 统一汉字
+    || (c >= 0xa000 && c <= 0xa4cf) // 彝文
+    || (c >= 0xac00 && c <= 0xd7a3) // 韩文音节
+    || (c >= 0xf900 && c <= 0xfaff) // 兼容汉字
+    || (c >= 0xfe30 && c <= 0xfe6f) // 竖排 / 小写变体
+    || (c >= 0xff00 && c <= 0xff60) // 全角 ASCII 与标点
+    || (c >= 0xffe0 && c <= 0xffe6) // 全角货币符号
+    || (c >= 0x20000 && c <= 0x3fffd)
+  ); // 扩展 B 及以后
 }

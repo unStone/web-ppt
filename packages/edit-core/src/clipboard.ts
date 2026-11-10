@@ -7,10 +7,7 @@ import { outermostSelectedElementIds } from './selection';
 import { elementFrameToSlideMatrix, elementFrameToSlidePoint } from './space';
 import { insertionOwner } from './clipboard-source';
 import { elementTreeSources } from './clipboard-trees';
-import type {
-  ClipboardElementRecord, ElementClipboardPayload,
-  ElementClipboardRecordMeta,
-} from './commands/types';
+import type { ClipboardElementRecord, ElementClipboardPayload, ElementClipboardRecordMeta } from './commands/types';
 import type { EditDoc, ElementId, ElementMeta } from './types';
 import { copiedLinkMeta } from './clipboard-links';
 import { effectivePresetGeometry } from './preset-geometry';
@@ -51,13 +48,10 @@ function copiedMeta(
 
 function copiedSource(doc: EditDoc, id: ElementId, assets: Set<string>, effective = effectiveElement(doc, id)): SlideElement {
   const source = effective.kind === 'group' ? { ...effective, children: [] } : effective;
-  const portable = tokenizeElementAssets(
-    doc, source, assets, [
-      ...(insertionOwner(doc, id)?.meta.insertion?.resources ?? []),
-      ...(doc.elements[id].meta.imageReplacement
-        ? [doc.imageResources[doc.elements[id].meta.imageReplacement!.resourceHash]!] : []),
-    ],
-  );
+  const portable = tokenizeElementAssets(doc, source, assets, [
+    ...(insertionOwner(doc, id)?.meta.insertion?.resources ?? []),
+    ...(doc.elements[id].meta.imageReplacement ? [doc.imageResources[doc.elements[id].meta.imageReplacement!.resourceHash]!] : []),
+  ]);
   let tableRowAppend: TableRowAppendEditInfo | undefined;
   if (portable.kind === 'table' && portable.editInfo?.tableRowAppend) {
     const sourceAppend = portable.editInfo.tableRowAppend;
@@ -65,8 +59,7 @@ function copiedSource(doc: EditDoc, id: ElementId, assets: Set<string>, effectiv
     const parity = appended % 2;
     // src 已包含有效追加行；模板起点也必须前移同样次数，否则再次追加会重复上一条纹。
     tableRowAppend = {
-      ...(portable.rows.length === 1 && sourceAppend.previousLast
-        ? { previousLast: sourceAppend.previousLast } : {}),
+      ...(portable.rows.length === 1 && sourceAppend.previousLast ? { previousLast: sourceAppend.previousLast } : {}),
       regular: [sourceAppend.regular[parity], sourceAppend.regular[1 - parity]],
       last: [sourceAppend.last[parity], sourceAppend.last[1 - parity]],
     };
@@ -74,9 +67,11 @@ function copiedSource(doc: EditDoc, id: ElementId, assets: Set<string>, effectiv
   // 来源锚点等解析期身份不能跨文档传播；表格追加模板则是后续结构编辑的必要语义。
   const requiresOriginal = portable.editInfo?.requiresOriginal;
   delete portable.editInfo;
-  if (tableRowAppend || requiresOriginal) portable.editInfo = {
-    ...(tableRowAppend ? { tableRowAppend } : {}), ...(requiresOriginal ? { requiresOriginal } : {}),
-  };
+  if (tableRowAppend || requiresOriginal)
+    portable.editInfo = {
+      ...(tableRowAppend ? { tableRowAppend } : {}),
+      ...(requiresOriginal ? { requiresOriginal } : {}),
+    };
   delete portable.id;
   return portable;
 }
@@ -85,8 +80,10 @@ function rootBounds(doc: EditDoc, ids: readonly ElementId[]): { left: number; to
   const points = ids.flatMap((id) => {
     const element = effectiveElement(doc, id);
     return [
-      { x: 0, y: 0 }, { x: element.w, y: 0 },
-      { x: element.w, y: element.h }, { x: 0, y: element.h },
+      { x: 0, y: 0 },
+      { x: element.w, y: 0 },
+      { x: element.w, y: element.h },
+      { x: 0, y: element.h },
     ].map((point) => elementFrameToSlidePoint(doc, id, point));
   });
   return {
@@ -97,13 +94,13 @@ function rootBounds(doc: EditDoc, ids: readonly ElementId[]): { left: number; to
 
 /** 载荷身份只在自身 JSON 内有效；不能泄漏或复用会话级 EditDoc id。 */
 export function copyElements(doc: EditDoc, input: readonly ElementId[]): ElementClipboardPayload {
-  if (!Array.isArray(input) || !input.length
-    || input.some((id) => typeof id !== 'string' || !id)) {
+  if (!Array.isArray(input) || !input.length || input.some((id) => typeof id !== 'string' || !id)) {
     throw new Error('复制元素必须提供非空 id 数组');
   }
   if (new Set(input).size !== input.length) throw new Error('复制元素不能包含重复 id');
-  const roots = outermostSelectedElementIds(doc, input)
-    .sort((left, right) => elementOrder(doc.elements[left]).localeCompare(elementOrder(doc.elements[right])));
+  const roots = outermostSelectedElementIds(doc, input).sort((left, right) =>
+    elementOrder(doc.elements[left]).localeCompare(elementOrder(doc.elements[right])),
+  );
   if (roots.length !== input.length) throw new Error('复制元素不能同时包含祖先与其后代');
   const parent = doc.elements[roots[0]]?.parent;
   if (!parent || roots.some((id) => doc.elements[id]?.parent !== parent)) {
@@ -123,9 +120,14 @@ export function copyElements(doc: EditDoc, input: readonly ElementId[]): Element
   let next = 1;
   const visitProjection = (owner: ElementId, element: SlideElement, parent: string): string => {
     const id = `e${next++}`;
-    const children = element.kind === 'group' ? element.children.map(child => visitProjection(owner, child, id)) : [];
-    records[id] = { id, parent, children, src: copiedSource(doc, owner, assetHashes, element),
-      meta: { copyBatchId, editable: 'none', anchored: false } };
+    const children = element.kind === 'group' ? element.children.map((child) => visitProjection(owner, child, id)) : [];
+    records[id] = {
+      id,
+      parent,
+      children,
+      src: copiedSource(doc, owner, assetHashes, element),
+      meta: { copyBatchId, editable: 'none', anchored: false },
+    };
     return id;
   };
   const visit = (id: ElementId, clipboardParent: string | null): string => {
@@ -134,16 +136,21 @@ export function copyElements(doc: EditDoc, input: readonly ElementId[]): Element
     const clipboardId = `e${next++}`;
     const effective = effectiveElement(doc, id);
     // 原生框架的孩子是派生视图，数据编辑后数量和几何都可能改变；旧记录树不是当前画面。
-    const children = record.meta.editable === 'frame' && effective.kind === 'group'
-      ? effective.children.map(child => visitProjection(id, child, clipboardId))
-      : (record.children ?? []).map((child) => visit(child, clipboardId));
+    const children =
+      record.meta.editable === 'frame' && effective.kind === 'group'
+        ? effective.children.map((child) => visitProjection(id, child, clipboardId))
+        : (record.children ?? []).map((child) => visit(child, clipboardId));
     const source = copiedSource(doc, id, assetHashes, effective);
     records[clipboardId] = {
       id: clipboardId,
       parent: clipboardParent,
       src: source,
       meta: copiedMeta(
-        doc, id, record.meta, copyBatchId, sourcePart,
+        doc,
+        id,
+        record.meta,
+        copyBatchId,
+        sourcePart,
         clipboardParent === null ? elementFrameToSlideMatrix(doc, id) : undefined,
         source,
       ),

@@ -5,10 +5,19 @@ const center = (rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.he
 const distance = (left, right) => Math.hypot(left.x - right.x, left.y - right.y);
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 const resizeHandles = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
-const pointer = (type, point, pointerId) => new PointerEvent(type, {
-  bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', pointerId, isPrimary: true,
-  button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: point.x, clientY: point.y,
-});
+const pointer = (type, point, pointerId) =>
+  new PointerEvent(type, {
+    bubbles: true,
+    composed: true,
+    cancelable: true,
+    pointerType: 'mouse',
+    pointerId,
+    isPrimary: true,
+    button: 0,
+    buttons: type === 'pointerup' ? 0 : 1,
+    clientX: point.x,
+    clientY: point.y,
+  });
 
 function contractMount() {
   const mount = document.createElement('div');
@@ -30,8 +39,7 @@ async function geometryContract(openEditor, load) {
   const session = await openEditor(await load('sample-editor-space.pptx'), { idPrefix: 'browser-resize-' });
   try {
     const view = session.mount(mount, { mode: 'edit', textMode: 'svg' });
-    const record = Object.values(session.editor.doc.elements)
-      .find((candidate) => candidate.src.name === 'space-rotated-flipped');
+    const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === 'space-rotated-flipped');
     let geometryError = 0;
     let hitSizeError = 0;
     for (const [index, zoom] of [0.5, 1, 2].entries()) {
@@ -46,23 +54,25 @@ async function geometryContract(openEditor, load) {
       const visibleRect = mount.querySelector('[data-edit-handle="se"]').getBoundingClientRect();
       const hit = mount.querySelector('[data-edit-resize-handle="se"]');
       geometryError = Math.max(geometryError, distance(center(visibleRect), startExpected));
-      const visibleRects = resizeHandles.map((handle) => mount
-        .querySelector(`[data-edit-handle="${handle}"]`).getBoundingClientRect());
-      const hitRects = resizeHandles.map((handle) => mount
-        .querySelector(`[data-edit-resize-handle="${handle}"]`).getBoundingClientRect());
-      hitSizeError = Math.max(hitSizeError,
+      const visibleRects = resizeHandles.map((handle) => mount.querySelector(`[data-edit-handle="${handle}"]`).getBoundingClientRect());
+      const hitRects = resizeHandles.map((handle) => mount.querySelector(`[data-edit-resize-handle="${handle}"]`).getBoundingClientRect());
+      hitSizeError = Math.max(
+        hitSizeError,
         ...visibleRects.flatMap((rect) => [Math.abs(rect.width - 8), Math.abs(rect.height - 8)]),
-        ...hitRects.flatMap((rect) => [Math.abs(rect.width - 16), Math.abs(rect.height - 16)]));
+        ...hitRects.flatMap((rect) => [Math.abs(rect.width - 16), Math.abs(rect.height - 16)]),
+      );
       hit.dispatchEvent(pointer('pointerdown', startExpected, 90 + index));
       view.element.dispatchEvent(pointer('pointermove', endExpected, 90 + index));
       await nextFrame();
       const previewHandle = center(mount.querySelector('[data-edit-handle="se"]').getBoundingClientRect());
       geometryError = Math.max(geometryError, distance(previewHandle, endExpected));
-      if (!mount.querySelector('[data-edit-resize-ghost]')
+      if (
+        !mount.querySelector('[data-edit-resize-ghost]')
         || mount.querySelector(`[data-edit-id="${record.id}"]`) !== target
         || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg
         || staticSvg.querySelector('defs') !== defs
-        || session.editor.effectiveElement(record.id).w !== record.src.w) {
+        || session.editor.effectiveElement(record.id).w !== record.src.w
+      ) {
         throw new Error(`zoom ${zoom} 缩放预览重建了静态 DOM 或写入模型`);
       }
       view.element.dispatchEvent(pointer('pointerup', endExpected, 90 + index));
@@ -80,27 +90,22 @@ async function geometryContract(openEditor, load) {
       }
       session.editor.undo();
     }
-    const plain = Object.values(session.editor.doc.elements)
-      .find((candidate) => candidate.src.name === 'space-plain');
+    const plain = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === 'space-plain');
     view.setZoom(1);
     session.editor.select({ kind: 'elements', ids: [plain.id], enteredGroup: null });
     const plainMatrix = renderedFrameMatrix(mount, plain.id).matrix;
     const crossingStart = new DOMPoint(plain.src.w, plain.src.h).matrixTransform(plainMatrix);
     const crossingEnd = new DOMPoint(-20, -10).matrixTransform(plainMatrix);
     const crossingAnchor = new DOMPoint(0, 0).matrixTransform(plainMatrix);
-    mount.querySelector('[data-edit-resize-handle="se"]')
-      .dispatchEvent(pointer('pointerdown', crossingStart, 99));
+    mount.querySelector('[data-edit-resize-handle="se"]').dispatchEvent(pointer('pointerdown', crossingStart, 99));
     view.element.dispatchEvent(pointer('pointermove', crossingEnd, 99));
     await nextFrame();
     const activeHandle = center(mount.querySelector('[data-edit-handle="se"]').getBoundingClientRect());
     const oppositeHandle = center(mount.querySelector('[data-edit-handle="nw"]').getBoundingClientRect());
-    geometryError = Math.max(
-      geometryError, distance(activeHandle, crossingEnd), distance(oppositeHandle, crossingAnchor),
-    );
+    geometryError = Math.max(geometryError, distance(activeHandle, crossingEnd), distance(oppositeHandle, crossingAnchor));
     view.element.dispatchEvent(pointer('pointerup', crossingEnd, 99));
     const crossed = session.editor.effectiveElement(plain.id);
-    if (!crossed.flipH || !crossed.flipV || Math.abs(crossed.w - 20) > 1e-6
-      || Math.abs(crossed.h - 10) > 1e-6) {
+    if (!crossed.flipH || !crossed.flipV || Math.abs(crossed.w - 20) > 1e-6 || Math.abs(crossed.h - 10) > 1e-6) {
       throw new Error('过锚翻面时活动手柄没有连续跟随指针');
     }
     session.editor.undo();
@@ -137,8 +142,7 @@ function measureResizeFrames(mount, view, { pointerId, endAt, finish = 'pointeru
   const samples = [];
   let end = endAt(start, 0);
   try {
-    mount.querySelector('[data-edit-resize-handle="se"]')
-      .dispatchEvent(pointer('pointerdown', start, pointerId));
+    mount.querySelector('[data-edit-resize-handle="se"]').dispatchEvent(pointer('pointerdown', start, pointerId));
     view.element.dispatchEvent(pointer('pointermove', end, pointerId));
     samples.push(flush());
     for (let index = 0; index < 80; index++) {
@@ -170,18 +174,21 @@ async function performanceContract(openEditor, load) {
     const p95 = measureResizeFrames(mount, view, {
       pointerId: 101,
       endAt: (start, index) => ({
-        x: start.x + (index ? 20 + index % 3 : 4),
-        y: start.y + (index ? 16 + index % 2 : 4),
+        x: start.x + (index ? 20 + (index % 3) : 4),
+        y: start.y + (index ? 16 + (index % 2) : 4),
       }),
     });
     const committed = session.editor.effectiveElement(id);
-    if (committed.w <= source.w || committed.h <= source.h
+    if (
+      committed.w <= source.w
+      || committed.h <= source.h
       || session.editor.history.undoCount !== 1
       || mount.querySelector('[data-edit-resize-ghost]')
       || mount.querySelector(`[data-edit-id="${id}"]`) === target
       || mount.querySelector(`[data-edit-id="${siblingId}"]`) !== sibling
       || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg
-      || staticSvg.querySelector('defs') !== defs) {
+      || staticSvg.querySelector('defs') !== defs
+    ) {
       throw new Error('60 元素缩放提交或增量 DOM 身份失败');
     }
     recordPerformanceBudget('60 元素缩放帧 p95', p95, 8);
@@ -196,17 +203,20 @@ async function performanceContract(openEditor, load) {
       pointerId: 102,
       finish: 'pointercancel',
       endAt: (start, index) => ({
-        x: start.x + (index ? 40 + index % 3 : 4),
-        y: start.y + (index ? 2 + index % 2 : 4),
+        x: start.x + (index ? 40 + (index % 3) : 4),
+        y: start.y + (index ? 2 + (index % 2) : 4),
       }),
     });
     const singularStable = singularIds.every((targetId, index) => {
       const current = session.editor.effectiveElement(targetId);
-      return current.w === singularSources[index].w && current.h === singularSources[index].h
-        && current.rot === singularSources[index].rot;
+      return current.w === singularSources[index].w && current.h === singularSources[index].h && current.rot === singularSources[index].rot;
     });
-    if (singularIds.length !== 60 || !singularStable
-      || session.editor.history.undoCount !== 0 || mount.querySelector('[data-edit-resize-ghost]')) {
+    if (
+      singularIds.length !== 60
+      || !singularStable
+      || session.editor.history.undoCount !== 0
+      || mount.querySelector('[data-edit-resize-ghost]')
+    ) {
       throw new Error('60 个 45° 元素近奇异缩放取消恢复失败');
     }
     recordPerformanceBudget('60 个 45° 元素近奇异缩放帧 p95', singularP95, 8);
@@ -219,5 +229,5 @@ async function performanceContract(openEditor, load) {
 
 export async function runEditorResizeBrowserContract({ openEditor, load }) {
   const geometry = await geometryContract(openEditor, load);
-  return { ...geometry, ...await performanceContract(openEditor, load) };
+  return { ...geometry, ...(await performanceContract(openEditor, load)) };
 }

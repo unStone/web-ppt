@@ -15,7 +15,8 @@ export async function runViewerMediaFallbackBrowserContract({ Viewer, parse, loa
     viewer = new Viewer(mount, presentation, { index: 0, textMode: 'html', media: 'player' });
     await new Promise((resolve) => requestAnimationFrame(resolve));
     const players = [...mount.querySelectorAll('audio, video')].map((player) => ({
-      player, spid: Number(player.closest('[data-el]')?.getAttribute('data-el')),
+      player,
+      spid: Number(player.closest('[data-el]')?.getAttribute('data-el')),
     }));
     const layout = players.map(({ player, spid }) => `${spid}:${player.localName}:${player.src.split(':')[0]}`).join(',');
     const expected = '10:audio:blob,11:video:blob,12:video:blob,13:audio:blob,14:video:https,15:audio:https,16:video:blob';
@@ -40,10 +41,14 @@ export async function runViewerMediaFallbackBrowserContract({ Viewer, parse, loa
           const failed = () => finish(new Error(`音频 ${spid} 播放失败：${player.error?.message}`));
           player.addEventListener('ended', ended);
           player.addEventListener('error', failed);
-          face.addEventListener('click', (event) => {
-            delete face.dataset.mediaPlayback;
-            if (!event.isTrusted) finish(new Error('音频封面播放缺少真实用户点击'));
-          }, { once: true });
+          face.addEventListener(
+            'click',
+            (event) => {
+              delete face.dataset.mediaPlayback;
+              if (!event.isTrusted) finish(new Error('音频封面播放缺少真实用户点击'));
+            },
+            { once: true },
+          );
           face.dataset.mediaPlayback = '';
         });
         if (!(player.duration > 0 && player.currentTime > 0) || player.error) throw new Error(`音频 ${spid} 未被真实解码`);
@@ -69,15 +74,22 @@ export async function runViewerMediaFallbackBrowserContract({ Viewer, parse, loa
         player.addEventListener('ended', ended);
         player.addEventListener('error', failed);
         // 静音媒体同样受自动播放限制；由 DevTools 驱动真实点击，不放宽浏览器策略
-        play.addEventListener('click', (event) => {
-          if (!event.isTrusted) return finish(new Error('回退媒体播放缺少真实用户点击'));
-          play.disabled = true;
-          player.play().catch((error) => finish(new Error(`回退媒体 ${spid} 播放被拒绝：${String(error)}`)));
-        }, { once: true });
+        play.addEventListener(
+          'click',
+          (event) => {
+            if (!event.isTrusted) return finish(new Error('回退媒体播放缺少真实用户点击'));
+            play.disabled = true;
+            player.play().catch((error) => finish(new Error(`回退媒体 ${spid} 播放被拒绝：${String(error)}`)));
+          },
+          { once: true },
+        );
       });
       if (!(player.duration > 0 && player.currentTime > 0) || player.error) throw new Error(`回退媒体 ${spid} 未被真实解码`);
-      if (player.localName === 'video' && (player.videoWidth !== 32 || player.videoHeight !== 24
-        || player.getVideoPlaybackQuality().totalVideoFrames < 1)) throw new Error(`回退视频 ${spid} 未产生真实画面帧`);
+      if (
+        player.localName === 'video'
+        && (player.videoWidth !== 32 || player.videoHeight !== 24 || player.getVideoPlaybackQuality().totalVideoFrames < 1)
+      )
+        throw new Error(`回退视频 ${spid} 未产生真实画面帧`);
       results.push({ spid, kind: player.localName, duration: player.duration });
     }
   } finally {

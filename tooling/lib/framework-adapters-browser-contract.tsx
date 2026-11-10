@@ -1,20 +1,18 @@
-import React, { StrictMode, createRef, useState } from 'react';
+import { StrictMode, createRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createApp, h, reactive } from 'vue';
 import { openEditor } from '@web-ppt/editor';
-import {
-  WebPptEditor as ReactWebPptEditor, WebPptSelectionPane as ReactSelectionPane,
-} from '@web-ppt/react';
+import { WebPptEditor as ReactWebPptEditor, WebPptSelectionPane as ReactSelectionPane } from '@web-ppt/react';
 import type {
-  EditAnimationStep as ReactAnimationStep, WebPptEditorHandle as ReactHandle,
+  EditAnimationStep as ReactAnimationStep,
+  WebPptEditorHandle as ReactHandle,
   WebPptSelectionPaneHandle as ReactPaneHandle,
 } from '@web-ppt/react';
 import type { RecoveryStore, RecoveryStoreJournal } from '@web-ppt/editor';
-import {
-  WebPptEditor as VueWebPptEditor, WebPptSelectionPane as VueSelectionPane,
-} from '@web-ppt/vue';
+import { WebPptEditor as VueWebPptEditor, WebPptSelectionPane as VueSelectionPane } from '@web-ppt/vue';
 import type {
-  EditAnimationStep as VueAnimationStep, WebPptEditorHandle as VueHandle,
+  EditAnimationStep as VueAnimationStep,
+  WebPptEditorHandle as VueHandle,
   WebPptSelectionPaneHandle as VuePaneHandle,
 } from '@web-ppt/vue';
 
@@ -38,10 +36,19 @@ const dispatchTouchPinch = async (view: NonNullable<ReactHandle['view']>): Promi
   const rect = root.querySelector<HTMLElement>('[data-ppt-stage]')!.getBoundingClientRect();
   const center = { x: rect.left + Math.min(rect.width / 2, 300), y: rect.top + Math.min(rect.height / 2, 200) };
   const dispatch = (type: string, pointerId: number, x: number, y: number, isPrimary: boolean) => {
-    root.dispatchEvent(new PointerEvent(type, {
-      bubbles: true, cancelable: true, pointerType: 'touch', pointerId, isPrimary,
-      button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y,
-    }));
+    root.dispatchEvent(
+      new PointerEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        pointerType: 'touch',
+        pointerId,
+        isPrimary,
+        button: 0,
+        buttons: type === 'pointerup' ? 0 : 1,
+        clientX: x,
+        clientY: y,
+      }),
+    );
   };
   dispatch('pointerdown', 71, center.x - 50, center.y, true);
   dispatch('pointerdown', 72, center.x + 50, center.y, false);
@@ -58,9 +65,11 @@ export async function runFrameworkAdaptersBrowserContract(
 ): Promise<{ reactReady: number; vueReady: number }> {
   const activeDownloads = new Set<string>();
   const download = async (bytes: Uint8Array, name: string): Promise<void> => {
-    const url = URL.createObjectURL(new Blob([bytes], {
-      type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    }));
+    const url = URL.createObjectURL(
+      new Blob([bytes], {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      }),
+    );
     activeDownloads.add(url);
     const link = Object.assign(document.createElement('a'), { href: url, download: name });
     document.body.append(link);
@@ -81,23 +90,42 @@ export async function runFrameworkAdaptersBrowserContract(
   let viewChanges = 0;
   let errors = 0;
   const reactProps = (source: ArrayBuffer, mode: 'view' | 'edit', zoom: number) => ({
-    ref: reactRef, source, mode, zoom, textMode: 'svg' as const,
+    ref: reactRef,
+    source,
+    mode,
+    zoom,
+    textMode: 'svg' as const,
     openOptions: { idPrefix: 'react-adapter-' },
-    onReady: (session: NonNullable<ReactHandle['session']>) => { reactSessions.push(session); },
-    onProgress: () => { progress++; },
-    onChange: () => { changes++; },
-    onViewChange: () => { viewChanges++; },
-    onError: () => { errors++; },
+    onReady: (session: NonNullable<ReactHandle['session']>) => {
+      reactSessions.push(session);
+    },
+    onProgress: () => {
+      progress++;
+    },
+    onChange: () => {
+      changes++;
+    },
+    onViewChange: () => {
+      viewChanges++;
+    },
+    onError: () => {
+      errors++;
+    },
   });
   reactRoot.render(
-    <StrictMode><ReactWebPptEditor {...reactProps(notes, 'view', 1.25)} /></StrictMode>,
+    <StrictMode>
+      <ReactWebPptEditor {...reactProps(notes, 'view', 1.25)} />
+    </StrictMode>,
   );
-  await waitFor(() => reactRef.current?.session?.editor.doc.slideOrder.length === 4,
-    'React StrictMode 打开');
+  await waitFor(() => reactRef.current?.session?.editor.doc.slideOrder.length === 4, 'React StrictMode 打开');
   const firstSession = reactRef.current!.session!;
-  if (reactMount.querySelectorAll('[data-web-ppt-editor]').length !== 1
-    || reactRef.current!.view?.mode !== 'view' || reactRef.current!.view?.zoom !== 1.25
-    || reactRef.current!.view?.setNotes('只读越权') !== false || firstSession.editor.isDirty()) {
+  if (
+    reactMount.querySelectorAll('[data-web-ppt-editor]').length !== 1
+    || reactRef.current!.view?.mode !== 'view'
+    || reactRef.current!.view?.zoom !== 1.25
+    || reactRef.current!.view?.setNotes('只读越权') !== false
+    || firstSession.editor.isDirty()
+  ) {
     throw new Error('React StrictMode 初始视图、缩放或只读边界失败');
   }
   const secondSlide = firstSession.editor.doc.slideOrder[1];
@@ -106,12 +134,18 @@ export async function runFrameworkAdaptersBrowserContract(
       <ReactWebPptEditor {...reactProps(notes, 'edit', 0.8)} slideId={secondSlide} />
     </StrictMode>,
   );
-  await waitFor(() => reactRef.current?.view?.mode === 'edit'
-    && reactRef.current.view.zoom === 0.8 && reactRef.current.view.slideId === secondSlide,
-  'React 受控视图更新');
+  await waitFor(
+    () => reactRef.current?.view?.mode === 'edit' && reactRef.current.view.zoom === 0.8 && reactRef.current.view.slideId === secondSlide,
+    'React 受控视图更新',
+  );
   reactRef.current!.view!.setNotes('React 编辑备注');
-  if (changes < 1 || viewChanges < 1 || !firstSession.editor.isDirty()
-    || reactRef.current!.undo() === null || firstSession.editor.isDirty()) {
+  if (
+    changes < 1
+    || viewChanges < 1
+    || !firstSession.editor.isDirty()
+    || reactRef.current!.undo() === null
+    || firstSession.editor.isDirty()
+  ) {
     throw new Error('React change、受控页或撤销入口失败');
   }
   reactRef.current!.view!.setNotes('React 保存备注');
@@ -121,10 +155,14 @@ export async function runFrameworkAdaptersBrowserContract(
     throw new Error('React 保存入口失败');
   }
   reactRoot.render(
-    <StrictMode><ReactWebPptEditor {...reactProps(replacement, 'edit', 1)} /></StrictMode>,
+    <StrictMode>
+      <ReactWebPptEditor {...reactProps(replacement, 'edit', 1)} />
+    </StrictMode>,
   );
-  await waitFor(() => reactRef.current?.session !== firstSession
-    && reactRef.current?.session?.editor.doc.slideOrder.length === 1, 'React 文件替换');
+  await waitFor(
+    () => reactRef.current?.session !== firstSession && reactRef.current?.session?.editor.doc.slideOrder.length === 1,
+    'React 文件替换',
+  );
   if (!firstSession.disposed || reactMount.querySelectorAll('[data-web-ppt-editor]').length !== 1) {
     throw new Error('React 文件替换未释放旧 session 或产生重复视图');
   }
@@ -139,8 +177,14 @@ export async function runFrameworkAdaptersBrowserContract(
       if (request.signal?.aborted) throw request.signal.reason;
       const time = Date.now();
       recoveryRecords.set(request.source.fingerprint, {
-        version: 1, source: structuredClone(request.source), idPrefix: request.idPrefix,
-        epoch: request.epoch, createdAt: time, updatedAt: time, estimatedBytes: 0, frames: [],
+        version: 1,
+        source: structuredClone(request.source),
+        idPrefix: request.idPrefix,
+        epoch: request.epoch,
+        createdAt: time,
+        updatedAt: time,
+        estimatedBytes: 0,
+        frames: [],
       });
     },
     async append(request) {
@@ -150,10 +194,14 @@ export async function runFrameworkAdaptersBrowserContract(
       }
       const frames = [...current.frames, ...structuredClone(request.frames)];
       recoveryRecords.set(request.source.fingerprint, {
-        version: 1, source: structuredClone(request.source), idPrefix: request.idPrefix,
-        epoch: request.epoch, createdAt: current.createdAt,
+        version: 1,
+        source: structuredClone(request.source),
+        idPrefix: request.idPrefix,
+        epoch: request.epoch,
+        createdAt: current.createdAt,
         updatedAt: Math.max(current.updatedAt, frames[frames.length - 1].time),
-        estimatedBytes: JSON.stringify(frames).length, frames,
+        estimatedBytes: JSON.stringify(frames).length,
+        frames,
       });
     },
     async remove(identity) {
@@ -175,15 +223,19 @@ export async function runFrameworkAdaptersBrowserContract(
   const reactRecoveryRoot = createRoot(reactRecoveryMount);
   const reactRecoveryRef = createRef<ReactHandle>();
   let reactRecoveryPrompts = 0;
-  reactRecoveryRoot.render(<ReactWebPptEditor ref={reactRecoveryRef} source={notes}
-    openOptions={recoveryOpenOptions} onRecovery={() => {
-      reactRecoveryPrompts++;
-      return 'restore';
-    }} />);
-  await waitFor(() => reactRecoveryRef.current?.session?.editor.isDirty() === true,
-    'React 恢复候选');
-  if (reactRecoveryPrompts !== 1
-    || reactRecoveryRef.current!.view!.queryNotes().value !== '跨框架恢复备注') {
+  reactRecoveryRoot.render(
+    <ReactWebPptEditor
+      ref={reactRecoveryRef}
+      source={notes}
+      openOptions={recoveryOpenOptions}
+      onRecovery={() => {
+        reactRecoveryPrompts++;
+        return 'restore';
+      }}
+    />,
+  );
+  await waitFor(() => reactRecoveryRef.current?.session?.editor.isDirty() === true, 'React 恢复候选');
+  if (reactRecoveryPrompts !== 1 || reactRecoveryRef.current!.view!.queryNotes().value !== '跨框架恢复备注') {
     throw new Error('React 没有透传恢复决策或恢复模型');
   }
   const reactRecoverySession = reactRecoveryRef.current!.session!;
@@ -195,17 +247,22 @@ export async function runFrameworkAdaptersBrowserContract(
   let vueRecoveryHandle: VueHandle | null = null;
   let vueRecoveryPrompts = 0;
   const vueRecoveryApp = createApp({
-    setup: () => () => h(VueWebPptEditor, {
-      ref: (value: unknown) => { vueRecoveryHandle = value as VueHandle | null; },
-      source: notes, openOptions: recoveryOpenOptions,
-      onRecovery: () => { vueRecoveryPrompts++; return 'restore'; },
-    }),
+    setup: () => () =>
+      h(VueWebPptEditor, {
+        ref: (value: unknown) => {
+          vueRecoveryHandle = value as VueHandle | null;
+        },
+        source: notes,
+        openOptions: recoveryOpenOptions,
+        onRecovery: () => {
+          vueRecoveryPrompts++;
+          return 'restore';
+        },
+      }),
   });
   vueRecoveryApp.mount(vueRecoveryMount);
-  await waitFor(() => vueRecoveryHandle?.session?.editor.isDirty() === true,
-    'Vue 恢复候选');
-  if (vueRecoveryPrompts !== 1
-    || vueRecoveryHandle!.view!.queryNotes().value !== '跨框架恢复备注') {
+  await waitFor(() => vueRecoveryHandle?.session?.editor.isDirty() === true, 'Vue 恢复候选');
+  if (vueRecoveryPrompts !== 1 || vueRecoveryHandle!.view!.queryNotes().value !== '跨框架恢复备注') {
     throw new Error('Vue 没有透传恢复决策或恢复模型');
   }
   const vueRecoverySession = vueRecoveryHandle!.session!;
@@ -223,15 +280,23 @@ export async function runFrameworkAdaptersBrowserContract(
   const sharedReactPaneRef = createRef<ReactPaneHandle>();
   const SharedReactHost = ({ pane = false }: { pane?: boolean }) => {
     const [, setTouchRevision] = useState(0);
-    return <>
-      <ReactWebPptEditor ref={sharedReactRef} session={external} sessionOwnership="external"
-        mode="edit" textMode="svg" onLinkFollow={() => false} onTouchNavigate={() => {
-          reactTouchNavigation++;
-          setTouchRevision((value) => value + 1);
-        }} />
-      {pane && <ReactSelectionPane ref={sharedReactPaneRef}
-        adapter={sharedReactRef.current?.adapter ?? null} />}
-    </>;
+    return (
+      <>
+        <ReactWebPptEditor
+          ref={sharedReactRef}
+          session={external}
+          sessionOwnership="external"
+          mode="edit"
+          textMode="svg"
+          onLinkFollow={() => false}
+          onTouchNavigate={() => {
+            reactTouchNavigation++;
+            setTouchRevision((value) => value + 1);
+          }}
+        />
+        {pane && <ReactSelectionPane ref={sharedReactPaneRef} adapter={sharedReactRef.current?.adapter ?? null} />}
+      </>
+    );
   };
   sharedReactRoot.render(<SharedReactHost />);
 
@@ -241,84 +306,105 @@ export async function runFrameworkAdaptersBrowserContract(
   let vueReady = 0;
   let vueTouchNavigation = 0;
   const vueApp = createApp({
-    setup: () => () => h(VueWebPptEditor, {
-      ref: (value: unknown) => { vueHandle = value as VueHandle | null; },
-      session: external, sessionOwnership: 'external', mode: vueState.mode,
-      zoom: vueState.zoom, textMode: 'svg',
-      onReady: () => { vueReady++; },
-      onTouchNavigate: () => { vueTouchNavigation++; },
-    }),
+    setup: () => () =>
+      h(VueWebPptEditor, {
+        ref: (value: unknown) => {
+          vueHandle = value as VueHandle | null;
+        },
+        session: external,
+        sessionOwnership: 'external',
+        mode: vueState.mode,
+        zoom: vueState.zoom,
+        textMode: 'svg',
+        onReady: () => {
+          vueReady++;
+        },
+        onTouchNavigate: () => {
+          vueTouchNavigation++;
+        },
+      }),
   });
   vueApp.mount(vueMount);
-  await waitFor(() => !!sharedReactRef.current?.view && !!vueHandle?.view,
-    'React/Vue 外部 session 双视图');
+  await waitFor(() => !!sharedReactRef.current?.view && !!vueHandle?.view, 'React/Vue 外部 session 双视图');
   const reactAdapter = sharedReactRef.current!.adapter!;
   const vueAdapter = vueHandle!.adapter!;
-  if (!reactAdapter.setTransition({ type: 'fade', durationMs: 90 })
+  if (
+    !reactAdapter.setTransition({ type: 'fade', durationMs: 90 })
     || vueAdapter.queryTransition()?.value?.type !== 'fade'
-    || vueAdapter.setTransition({ type: 'cut' }) !== false) {
+    || vueAdapter.setTransition({ type: 'cut' }) !== false
+  ) {
     throw new Error('React/Vue 没有透传共享切换查询、编辑或查看权限边界');
   }
   const vueTransitionPreview = vueAdapter.previewTransition({
-    type: 'push', dir: 'r', durationMs: 80,
+    type: 'push',
+    dir: 'r',
+    durationMs: 80,
   });
   const vueTransitionLayer = vueMount.querySelector('[data-ppt-layer="static"]');
-  if (vueTransitionLayer?.getAnimations().length !== 1 || !await vueTransitionPreview) {
+  if (vueTransitionLayer?.getAnimations().length !== 1 || !(await vueTransitionPreview)) {
     throw new Error('Vue 查看模式没有透传真实切换预览');
   }
   const sharedSlide = reactAdapter.snapshot.slideId!;
   const animationTarget = external.editor.doc.slides[sharedSlide].children[0];
-  const reactAnimation: ReactAnimationStep[] = [{
-    target: animationTarget, kind: 'entrance', effect: 'fade', trigger: 'click',
-    delayMs: 0, durationMs: 80,
-  }];
+  const reactAnimation: ReactAnimationStep[] = [
+    {
+      target: animationTarget,
+      kind: 'entrance',
+      effect: 'fade',
+      trigger: 'click',
+      delayMs: 0,
+      durationMs: 80,
+    },
+  ];
   const vueAnimation: VueAnimationStep[] = reactAnimation;
-  if (!reactAdapter.setAnimations(reactAnimation)
-    || vueAdapter.queryAnimations()?.value[0]?.target !== animationTarget) {
+  if (!reactAdapter.setAnimations(reactAnimation) || vueAdapter.queryAnimations()?.value[0]?.target !== animationTarget) {
     throw new Error('React/Vue 没有透传共享元素动画类型、查询或编辑');
   }
   const vueAnimationPreview = vueAdapter.previewAnimations(vueAnimation);
-  if (vueTransitionLayer?.getAnimations({ subtree: true }).length !== 1
-    || !await vueAnimationPreview) {
+  if (vueTransitionLayer?.getAnimations({ subtree: true }).length !== 1 || !(await vueAnimationPreview)) {
     throw new Error('Vue 查看模式没有透传真实元素动画预览');
   }
   sharedReactRoot.render(<SharedReactHost pane />);
   const vuePaneMount = mountPoint();
   let vuePaneHandle: VuePaneHandle | null = null;
   const vuePaneApp = createApp({
-    setup: () => () => h(VueSelectionPane, {
-      ref: (value: unknown) => { vuePaneHandle = value as VuePaneHandle | null; },
-      adapter: vueHandle!.adapter,
-    }),
+    setup: () => () =>
+      h(VueSelectionPane, {
+        ref: (value: unknown) => {
+          vuePaneHandle = value as VuePaneHandle | null;
+        },
+        adapter: vueHandle!.adapter,
+      }),
   });
   vuePaneApp.mount(vuePaneMount);
-  await waitFor(() => !!sharedReactPaneRef.current?.pane && !!vuePaneHandle?.pane,
-    'React/Vue 选择窗格薄包装');
-  if (sharedReactPaneRef.current!.pane!.mode !== 'edit' || vuePaneHandle!.pane!.mode !== 'view'
+  await waitFor(() => !!sharedReactPaneRef.current?.pane && !!vuePaneHandle?.pane, 'React/Vue 选择窗格薄包装');
+  if (
+    sharedReactPaneRef.current!.pane!.mode !== 'edit'
+    || vuePaneHandle!.pane!.mode !== 'view'
     || sharedReactMount.querySelectorAll('[role="treeitem"]').length === 0
-    || vuePaneMount.querySelectorAll('[role="treeitem"]').length === 0) {
+    || vuePaneMount.querySelectorAll('[role="treeitem"]').length === 0
+  ) {
     throw new Error('React/Vue 选择窗格没有复用 adapter 的模式或目录');
   }
   sharedReactRef.current!.view!.setNotes('跨框架同步');
-  if (vueHandle.view.queryNotes().value !== '跨框架同步'
-    || vueHandle.view.setNotes('Vue 查看越权') !== false) {
+  if (vueHandle.view.queryNotes().value !== '跨框架同步' || vueHandle.view.setNotes('Vue 查看越权') !== false) {
     throw new Error('React/Vue 外部 session 同步或只读边界失败');
   }
-  const painterSource = Object.values(external.editor.doc.elements)
-    .find((record) => record.src.kind === 'shape' && record.meta.editable === 'full')!;
+  const painterSource = Object.values(external.editor.doc.elements).find(
+    (record) => record.src.kind === 'shape' && record.meta.editable === 'full',
+  )!;
   external.editor.select({ kind: 'elements', ids: [painterSource.id], enteredGroup: null });
   if (!sharedReactRef.current!.adapter.startFormatPainter({ continuous: true })) {
     throw new Error('React adapter 没有启用共享会话格式刷');
   }
-  await waitFor(() => vueHandle?.adapter.snapshot.formatPainter.active === true,
-    'React/Vue 格式刷快照同步');
-  if (sharedReactRef.current!.adapter.snapshot.formatPainter.source
-      !== external.formatPainter.snapshot.source
-    || vueHandle!.adapter.snapshot.formatPainter.source
-      !== external.formatPainter.snapshot.source
+  await waitFor(() => vueHandle?.adapter.snapshot.formatPainter.active === true, 'React/Vue 格式刷快照同步');
+  if (
+    sharedReactRef.current!.adapter.snapshot.formatPainter.source !== external.formatPainter.snapshot.source
+    || vueHandle!.adapter.snapshot.formatPainter.source !== external.formatPainter.snapshot.source
     || vueHandle!.adapter.snapshot.formatPainter.readonly !== true
     || sharedReactRef.current!.view!.element.dataset.formatPainter !== 'continuous'
-    || vueHandle!.view!.element.dataset.formatPainter !== 'continuous') {
+    || vueHandle!.view!.element.dataset.formatPainter !== 'continuous'
+  ) {
     throw new Error('React/Vue 没有直接观察同一个会话格式刷状态机');
   }
   vueHandle!.adapter.cancelFormatPainter();
@@ -327,22 +413,28 @@ export async function runFrameworkAdaptersBrowserContract(
   }
   vueState.mode = 'edit';
   vueState.zoom = 0.7;
-  await waitFor(() => vueHandle?.view?.mode === 'edit' && vueHandle.view.zoom === 0.7,
-    'Vue 受控模式更新');
+  await waitFor(() => vueHandle?.view?.mode === 'edit' && vueHandle.view.zoom === 0.7, 'Vue 受控模式更新');
   if (vuePaneHandle!.pane!.mode !== 'edit') throw new Error('Vue 选择窗格没有跟随受控模式');
   const reactGestureView = sharedReactRef.current!.view!;
   let callbackViewSetters = 0;
   const originalSetMode = reactGestureView.setMode.bind(reactGestureView);
   const originalSetZoom = reactGestureView.setZoom.bind(reactGestureView);
-  reactGestureView.setMode = (value) => { callbackViewSetters++; originalSetMode(value); };
-  reactGestureView.setZoom = (value) => { callbackViewSetters++; originalSetZoom(value); };
+  reactGestureView.setMode = (value) => {
+    callbackViewSetters++;
+    originalSetMode(value);
+  };
+  reactGestureView.setZoom = (value) => {
+    callbackViewSetters++;
+    originalSetZoom(value);
+  };
   await dispatchTouchPinch(reactGestureView);
   await dispatchTouchPinch(vueHandle!.view!);
-  if (reactTouchNavigation < 3 || vueTouchNavigation < 3
-    || (sharedReactRef.current?.view?.zoom ?? 0) < 1.49 || callbackViewSetters !== 0) {
-    throw new Error(`React/Vue 没有透传触屏导航或 React 回调重渲染中断缩放：`
-      + `${reactTouchNavigation}/${vueTouchNavigation} zoom=${sharedReactRef.current?.view?.zoom}`
-      + ` setters=${callbackViewSetters}`);
+  if (reactTouchNavigation < 3 || vueTouchNavigation < 3 || (sharedReactRef.current?.view?.zoom ?? 0) < 1.49 || callbackViewSetters !== 0) {
+    throw new Error(
+      `React/Vue 没有透传触屏导航或 React 回调重渲染中断缩放：`
+        + `${reactTouchNavigation}/${vueTouchNavigation} zoom=${sharedReactRef.current?.view?.zoom}`
+        + ` setters=${callbackViewSetters}`,
+    );
   }
   const notesBeforeVueEdit = vueHandle!.view!.queryNotes().value;
   vueHandle!.view!.setNotes('Vue 编辑备注');
@@ -364,10 +456,16 @@ export async function runFrameworkAdaptersBrowserContract(
 
   let remountedHandle: VueHandle | null = null;
   const remountedVue = createApp({
-    setup: () => () => h(VueWebPptEditor, {
-      ref: (value: unknown) => { remountedHandle = value as VueHandle | null; },
-      session: external, sessionOwnership: 'external', mode: 'view', textMode: 'svg',
-    }),
+    setup: () => () =>
+      h(VueWebPptEditor, {
+        ref: (value: unknown) => {
+          remountedHandle = value as VueHandle | null;
+        },
+        session: external,
+        sessionOwnership: 'external',
+        mode: 'view',
+        textMode: 'svg',
+      }),
   });
   remountedVue.mount(vueMount);
   await waitFor(() => !!remountedHandle?.view, 'Vue 重挂载');
@@ -380,9 +478,13 @@ export async function runFrameworkAdaptersBrowserContract(
 
   reactRoot.unmount();
   await waitFor(() => lastReactSession.disposed, 'React 卸载释放 session');
-  if (reactMount.childElementCount !== 0 || errors !== 0 || progress < 2
+  if (
+    reactMount.childElementCount !== 0
+    || errors !== 0
+    || progress < 2
     || activeDownloads.size !== 0
-    || reactSessions.some((session) => !session.disposed)) {
+    || reactSessions.some((session) => !session.disposed)
+  ) {
     throw new Error('React StrictMode 卸载泄漏或事件失败');
   }
   reactMount.remove();

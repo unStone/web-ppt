@@ -11,7 +11,13 @@ ${bullet}<a:defRPr sz="${size}"><a:solidFill><a:srgbClr val="${color}"/></a:soli
 </a:lvl${level + 1}pPr>`;
 
 const list = sp({
-  x: 110, y: 70, w: 1060, h: 580, prst: 'roundRect', fill: solid('F8FAFC'), name: '多级列表',
+  x: 110,
+  y: 70,
+  w: 1060,
+  h: 580,
+  prst: 'roundRect',
+  fill: solid('F8FAFC'),
+  name: '多级列表',
   bodyPr: '<a:bodyPr wrap="square" anchor="t"><a:normAutofit fontScale="100000"/></a:bodyPr>',
   lstStyle: `<a:lstStyle>
 ${levelStyle(0, 48, '<a:buAutoNum type="arabicPeriod"/>', 2400, '1D4ED8')}
@@ -35,7 +41,9 @@ ${levelStyle(8, 432, '<a:buChar char="■"/>', 1200, '111827')}
 });
 
 const bytes = deck({
-  name: 'Editor List Level', width: 1280, height: 720,
+  name: 'Editor List Level',
+  width: 1280,
+  height: 720,
   slides: [slideXml(list)],
 });
 

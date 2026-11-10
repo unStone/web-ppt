@@ -3,16 +3,11 @@ import { normalizeLinkTarget, queryElementLink, supportsElementLink } from '../h
 import type { EditDoc, LinkOverride } from '../types';
 import type { CommandPatches, ElementLinkPatch, SetLinkCommand } from './types';
 
-export function setLinkPatches(
-  doc: EditDoc,
-  command: SetLinkCommand,
-  origin: string,
-): CommandPatches {
+export function setLinkPatches(doc: EditDoc, command: SetLinkCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改链接');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
-  if (!supportsElementLink(record.src.kind)
-    || record.meta.editable !== 'full') {
+  if (!supportsElementLink(record.src.kind) || record.meta.editable !== 'full') {
     throw new Error(`元素不支持链接：${command.id}`);
   }
   if (record.meta.locked) throw new Error(`元素已锁定：${command.id}`);

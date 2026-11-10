@@ -19,12 +19,7 @@ function shapeProperties(document: XmlDocument, record: ElementRecord): XmlEleme
   return properties;
 }
 
-function materializeGeometry(
-  document: XmlDocument,
-  record: ElementRecord,
-  geom: GeomSpec | undefined,
-  sourceGeometry?: XmlElement,
-): void {
+function materializeGeometry(document: XmlDocument, record: ElementRecord, geom: GeomSpec | undefined, sourceGeometry?: XmlElement): void {
   if (!geom && !sourceGeometry) return;
   const properties = shapeProperties(document, record);
   for (const child of [...xmlElementChildren(properties)]) {
@@ -66,26 +61,31 @@ export function materializeLayoutFallback(
   if (!(direct & PLACEHOLDER_DIRECT_BITS.transform)) {
     materializeElementXfrm(document, record, effective);
   }
-  if ((record.src.kind === 'shape' || record.src.kind === 'image')
-    && !(direct & PLACEHOLDER_DIRECT_BITS.geometry)) {
+  if ((record.src.kind === 'shape' || record.src.kind === 'image') && !(direct & PLACEHOLDER_DIRECT_BITS.geometry)) {
     materializeGeometry(document, record, geom, sourceGeometry);
   }
   if (record.src.kind === 'shape' && effective.kind === 'shape') {
     if (!styled && !(direct & PLACEHOLDER_DIRECT_BITS.fill)) {
-      materializeElementFill(
-        document, record, effective.fill?.type === 'image' ? { type: 'none' } : effective.fill,
-      );
+      materializeElementFill(document, record, effective.fill?.type === 'image' ? { type: 'none' } : effective.fill);
     }
     if (!styled && !(direct & PLACEHOLDER_DIRECT_BITS.stroke) && effective.stroke) {
       materializeElementStroke(document, record, effective.stroke);
     }
-  } else if (record.src.kind === 'image' && effective.kind === 'image'
-    && !styled && !(direct & PLACEHOLDER_DIRECT_BITS.stroke) && effective.stroke) {
+  } else if (
+    record.src.kind === 'image'
+    && effective.kind === 'image'
+    && !styled
+    && !(direct & PLACEHOLDER_DIRECT_BITS.stroke)
+    && effective.stroke
+  ) {
     materializeElementStroke(document, record, effective.stroke);
   }
-  if ((record.src.kind === 'shape' || record.src.kind === 'image' || record.src.kind === 'group')
-    && !styled && !(direct & PLACEHOLDER_DIRECT_BITS.effects)
-    && effective.effects) {
+  if (
+    (record.src.kind === 'shape' || record.src.kind === 'image' || record.src.kind === 'group')
+    && !styled
+    && !(direct & PLACEHOLDER_DIRECT_BITS.effects)
+    && effective.effects
+  ) {
     materializeElementEffects(document, record, effective.effects);
   }
 }

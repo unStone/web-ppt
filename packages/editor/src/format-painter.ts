@@ -1,34 +1,39 @@
 import { assertFormatMask, textPositionToIndex } from '@web-ppt/edit-core';
+import type { Editor, FormatMaskField, Selection, TextRange } from '@web-ppt/edit-core';
 import type {
-  Editor, FormatMaskField, Selection, TextRange,
-} from '@web-ppt/edit-core';
-import type {
-  FormatPainter, FormatPainterSnapshot, FormatPainterSource, FormatPainterStartOptions,
-  FormatPainterSubscriber, FormatPainterTarget,
+  FormatPainter,
+  FormatPainterSnapshot,
+  FormatPainterSource,
+  FormatPainterStartOptions,
+  FormatPainterSubscriber,
+  FormatPainterTarget,
 } from './format-painter-types';
 
 const INACTIVE: FormatPainterSnapshot = Object.freeze({
-  active: false, mode: 'inactive', source: null,
+  active: false,
+  mode: 'inactive',
+  source: null,
 });
 
 function cloneRange(range: TextRange): TextRange {
   return { from: { ...range.from }, to: { ...range.to } };
 }
 
-function snapshotOf(
-  mode: Exclude<FormatPainterSnapshot['mode'], 'inactive'>,
-  source: FormatPainterSource,
-): FormatPainterSnapshot {
+function snapshotOf(mode: Exclude<FormatPainterSnapshot['mode'], 'inactive'>, source: FormatPainterSource): FormatPainterSnapshot {
   return Object.freeze({
     active: true,
     mode,
     source: Object.freeze({
       id: source.id,
       ...(source.cell ? { cell: Object.freeze({ ...source.cell }) } : {}),
-      ...(source.range ? { range: Object.freeze({
-        from: Object.freeze({ ...source.range.from }),
-        to: Object.freeze({ ...source.range.to }),
-      }) } : {}),
+      ...(source.range
+        ? {
+            range: Object.freeze({
+              from: Object.freeze({ ...source.range.from }),
+              to: Object.freeze({ ...source.range.to }),
+            }),
+          }
+        : {}),
       mask: Object.freeze([...source.mask]),
     }),
   });
@@ -67,8 +72,12 @@ export class SessionFormatPainter implements FormatPainter {
     });
   }
 
-  get snapshot(): FormatPainterSnapshot { return this.current; }
-  get disposed(): boolean { return this.isDisposed; }
+  get snapshot(): FormatPainterSnapshot {
+    return this.current;
+  }
+  get disposed(): boolean {
+    return this.isDisposed;
+  }
 
   start(options: FormatPainterStartOptions = {}): boolean {
     this.assertActive();
@@ -101,7 +110,10 @@ export class SessionFormatPainter implements FormatPainter {
     const source = this.current.source;
     if (!source) return false;
     this.editor.exec({
-      type: 'ApplyFormat', from: source.id, to: target.id, mask: [...source.mask],
+      type: 'ApplyFormat',
+      from: source.id,
+      to: target.id,
+      mask: [...source.mask],
       ...(source.cell ? { fromCell: { ...source.cell } } : {}),
       ...(target.cell ? { toCell: { ...target.cell } } : {}),
       ...(source.range ? { fromRange: cloneRange(source.range) } : {}),
@@ -121,7 +133,9 @@ export class SessionFormatPainter implements FormatPainter {
     this.assertActive();
     if (typeof subscriber !== 'function') throw new Error('格式刷订阅者必须是函数');
     this.subscribers.add(subscriber);
-    return () => { this.subscribers.delete(subscriber); };
+    return () => {
+      this.subscribers.delete(subscriber);
+    };
   }
 
   dispose(): void {
@@ -140,7 +154,9 @@ export class SessionFormatPainter implements FormatPainter {
       ? element.kind === 'table'
         ? element.rows[selection.cell.r]?.cells[selection.cell.c]?.text
         : null
-      : element.kind === 'shape' ? element.text : null;
+      : element.kind === 'shape'
+        ? element.text
+        : null;
     if (!body) throw new Error('格式来源没有可读文字体');
     const anchor = textPositionToIndex(body, selection.anchor);
     const focus = textPositionToIndex(body, selection.focus);
@@ -151,7 +167,11 @@ export class SessionFormatPainter implements FormatPainter {
 
   private emit(): void {
     for (const subscriber of [...this.subscribers]) {
-      try { subscriber(this.current); } catch (error) { globalThis.reportError?.(error); }
+      try {
+        subscriber(this.current);
+      } catch (error) {
+        globalThis.reportError?.(error);
+      }
     }
   }
 

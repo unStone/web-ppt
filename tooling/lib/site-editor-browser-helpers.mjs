@@ -1,5 +1,6 @@
 export async function openFixture({ evaluate, waitFor, click }, url, name, { discardRecovery = false } = {}) {
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     window.confirm = () => true;
     const bytes = await fetch(${JSON.stringify(url)}).then((response) => response.arrayBuffer());
     const transfer = new DataTransfer();
@@ -9,7 +10,9 @@ export async function openFixture({ evaluate, waitFor, click }, url, name, { dis
     const input = document.querySelector('#fileInput');
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+    true,
+  );
   const ready = `document.querySelector('#fileName')?.textContent === ${JSON.stringify(name)}
     && !document.querySelector('#editorApp')?.dataset.loading`;
   if (discardRecovery) {
@@ -25,9 +28,12 @@ export async function selectPaneObject({ evaluate, waitFor }, name) {
       .find((candidate) => candidate.querySelector('[data-pane-name]')?.textContent === ${JSON.stringify(name)});
     row?.click();
   })()`);
-  await waitFor(`[...document.querySelectorAll('[data-pane-element]')].some((candidate) =>
+  await waitFor(
+    `[...document.querySelectorAll('[data-pane-element]')].some((candidate) =>
     candidate.getAttribute('aria-selected') === 'true'
-    && candidate.querySelector('[data-pane-name]')?.textContent === ${JSON.stringify(name)})`, `${name} 选中`);
+    && candidate.querySelector('[data-pane-name]')?.textContent === ${JSON.stringify(name)})`,
+    `${name} 选中`,
+  );
 }
 
 export async function changeValue({ evaluate }, selector, value, event = 'change') {
@@ -49,8 +55,9 @@ export async function captureSaveAndReopen(context, name) {
       else original.call(this);
     };
   })()`);
-  try { await saveAndReopen(context, name); }
-  finally {
+  try {
+    await saveAndReopen(context, name);
+  } finally {
     await context.evaluate('globalThis.__restoreSaveDownload(); delete globalThis.__restoreSaveDownload');
   }
 }
@@ -59,7 +66,8 @@ export async function saveAndReopen({ evaluate, waitFor, click }, name) {
   await evaluate('globalThis.__capturedDownload = null');
   await click('#saveFile');
   await waitFor('!!globalThis.__capturedDownload', `${name} 下载`);
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const captured = globalThis.__capturedDownload;
     const bytes = await fetch(captured.href).then((response) => response.arrayBuffer());
     const transfer = new DataTransfer();
@@ -69,7 +77,12 @@ export async function saveAndReopen({ evaluate, waitFor, click }, name) {
     const input = document.querySelector('#fileInput');
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
-  await waitFor(`document.querySelector('#fileName')?.textContent === ${JSON.stringify(name)}
-    && !document.querySelector('#editorApp')?.dataset.loading`, `${name} 重开`);
+  })()`,
+    true,
+  );
+  await waitFor(
+    `document.querySelector('#fileName')?.textContent === ${JSON.stringify(name)}
+    && !document.querySelector('#editorApp')?.dataset.loading`,
+    `${name} 重开`,
+  );
 }

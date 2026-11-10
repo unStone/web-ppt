@@ -5,7 +5,14 @@
 import { inkStrokes } from '../ink/render';
 import { PLACEHOLDER_TYPE_EQUIVALENTS } from '../placeholder-match';
 import type {
-  ElementBase, GroupElement, ImageElement, MediaInfo, ShapeElement, SlideElement, TextBody, UnsupportedElement,
+  ElementBase,
+  GroupElement,
+  ImageElement,
+  MediaInfo,
+  ShapeElement,
+  SlideElement,
+  TextBody,
+  UnsupportedElement,
 } from '../types';
 import { attr, kid, numAttr, walk } from '../xml';
 import { parseColor } from './color';
@@ -19,17 +26,40 @@ import { Env, findPh } from './slide-inheritance';
 import { parseCompatibleShapes } from './shape-compatibility';
 import { retainCompatibilitySource } from './compatibility-source';
 import {
-  base, blipFilter, blipUrl, editInfoOf, movementLocked, parseFillProps, parseLnElement, parseXfrm,
-  placeholderDirectBits, resolveStyleRefs, styleTextColorLayer,
+  base,
+  blipFilter,
+  blipUrl,
+  editInfoOf,
+  movementLocked,
+  parseFillProps,
+  parseLnElement,
+  parseXfrm,
+  placeholderDirectBits,
+  resolveStyleRefs,
+  styleTextColorLayer,
 } from './shape-props';
 import { parseGraphicFrame } from './graphic-frame';
 
 /** 音视频容器 → MIME；未知扩展名按媒体类型给个兜底值 */
 const MEDIA_MIME: Record<string, string> = {
-  mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
-  ogv: 'video/ogg', avi: 'video/x-msvideo', wmv: 'video/x-ms-wmv', mpg: 'video/mpeg', mpeg: 'video/mpeg',
-  mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', wma: 'audio/x-ms-wma',
-  ogg: 'audio/ogg', oga: 'audio/ogg', aac: 'audio/aac', mid: 'audio/midi', midi: 'audio/midi',
+  mp4: 'video/mp4',
+  m4v: 'video/mp4',
+  mov: 'video/quicktime',
+  webm: 'video/webm',
+  ogv: 'video/ogg',
+  avi: 'video/x-msvideo',
+  wmv: 'video/x-ms-wmv',
+  mpg: 'video/mpeg',
+  mpeg: 'video/mpeg',
+  mp3: 'audio/mpeg',
+  m4a: 'audio/mp4',
+  wav: 'audio/wav',
+  wma: 'audio/x-ms-wma',
+  ogg: 'audio/ogg',
+  oga: 'audio/ogg',
+  aac: 'audio/aac',
+  mid: 'audio/midi',
+  midi: 'audio/midi',
 };
 
 // ---------------- 形状树 ----------------
@@ -80,8 +110,13 @@ function parseOneShape(node: Element, env: Env, skipPh: boolean): SlideElement |
         break;
       case 'AlternateContent': {
         if (env.edit) retainCompatibilitySource(env.pkg, node, env.partPath);
-        return parseCompatibleShapes(node, (branch) => parseShapeTree(branch, env, skipPh),
-          (source) => brokenShapePlaceholder(source, '不支持的兼容内容', env), env.edit, env.pkg);
+        return parseCompatibleShapes(
+          node,
+          (branch) => parseShapeTree(branch, env, skipPh),
+          (source) => brokenShapePlaceholder(source, '不支持的兼容内容', env),
+          env.edit,
+          env.pkg,
+        );
       }
     }
     return el;
@@ -90,8 +125,13 @@ function parseOneShape(node: Element, env: Env, skipPh: boolean): SlideElement |
 
 /** 解析失败时给一个可见但不打断阅读的占位，方便定位问题而不是整页丢失 */
 function brokenShapePlaceholder(node: Element, err: unknown, env: Env): UnsupportedElement | null {
-  const nv = kid(node, 'nvSpPr') ?? kid(node, 'nvPicPr') ?? kid(node, 'nvGrpSpPr')
-    ?? kid(node, 'nvCxnSpPr') ?? kid(node, 'nvGraphicFramePr') ?? kid(node, 'nvContentPartPr');
+  const nv =
+    kid(node, 'nvSpPr')
+    ?? kid(node, 'nvPicPr')
+    ?? kid(node, 'nvGrpSpPr')
+    ?? kid(node, 'nvCxnSpPr')
+    ?? kid(node, 'nvGraphicFramePr')
+    ?? kid(node, 'nvContentPartPr');
   const xf = parseXfrm(walk(node, 'spPr', 'xfrm') ?? walk(node, 'grpSpPr', 'xfrm') ?? kid(node, 'xfrm'));
   if (!xf || xf.w <= 0 || xf.h <= 0) return null;
   const cNvPr = kid(nv, 'cNvPr');
@@ -163,11 +203,10 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
 
   const effects = parseEffects(kid(spPr, 'effectLst'), env.ctx) ?? styleRef.effects;
   // Presentation 的既有字段不改语义；编辑模式另存解绑旧版式时才需要的继承来源。
-  const placeholderInheritedEffects = env.edit && !effects && ph && !kid(sp, 'style')
-    ? parseEffects(
-      walk(layoutSp, 'spPr', 'effectLst') ?? walk(masterSp, 'spPr', 'effectLst'), env.ctx,
-    ) ?? undefined
-    : undefined;
+  const placeholderInheritedEffects =
+    env.edit && !effects && ph && !kid(sp, 'style')
+      ? (parseEffects(walk(layoutSp, 'spPr', 'effectLst') ?? walk(masterSp, 'spPr', 'effectLst'), env.ctx) ?? undefined)
+      : undefined;
 
   // 无几何但有填充/描边时按矩形处理（常见于省略 prstGeom 的文本框）
   if (!path && (fill || stroke)) path = presetGeom('rect', xf.w, xf.h, {}).d;
@@ -179,8 +218,12 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
   if (txBody) {
     const chain: LevelStyles[] = [env.docDefaults];
     if (ph) {
-      const cat = phType === 'title' || phType === 'ctrTitle' ? 'title'
-        : !phType || PLACEHOLDER_TYPE_EQUIVALENTS.body.includes(phType) ? 'body' : 'other';
+      const cat =
+        phType === 'title' || phType === 'ctrTitle'
+          ? 'title'
+          : !phType || PLACEHOLDER_TYPE_EQUIVALENTS.body.includes(phType)
+            ? 'body'
+            : 'other';
       chain.push(env.masterStyles[cat]);
       chain.push(extractLstStyle(walk(masterSp, 'txBody', 'lstStyle'), env.ctx, env.theme.fonts));
       chain.push(extractLstStyle(walk(layoutSp, 'txBody', 'lstStyle'), env.ctx, env.theme.fonts));
@@ -218,8 +261,15 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
   if (!path && !text && !textTemplate) return null;
   const hyperlink = hyperlinkOf(cNvPr, env);
   const editing = editInfoOf(
-    env, cNvPr, ph, editableGeom, undefined, movementLocked(nv), hyperlink.unsupported,
-    placeholderDirectBits(spPr, kid(sp, 'style')), editableCustomGeometry,
+    env,
+    cNvPr,
+    ph,
+    editableGeom,
+    undefined,
+    movementLocked(nv),
+    hyperlink.unsupported,
+    placeholderDirectBits(spPr, kid(sp, 'style')),
+    editableCustomGeometry,
   );
   if (editing.editInfo && textTemplate) editing.editInfo.textTemplate = textTemplate;
   if (editing.editInfo && textLevelTemplate) editing.editInfo.textLevelTemplate = textLevelTemplate;
@@ -227,7 +277,12 @@ function parseSp(sp: Element, env: Env): ShapeElement | null {
     editing.editInfo.placeholderInheritedEffects = placeholderInheritedEffects;
   }
   return {
-    kind: 'shape', ...base(xf), path, fill, stroke, text,
+    kind: 'shape',
+    ...base(xf),
+    path,
+    fill,
+    stroke,
+    text,
     openGeom: openGeom || undefined,
     effects,
     scene3d: parse3D(spPr, env.ctx),
@@ -270,8 +325,7 @@ function parseMedia(nvPr: Element | null, env: Env): MediaInfo | undefined {
   const kind: MediaInfo['kind'] | null = audio ? 'audio' : video || extension ? 'video' : null;
   if (!kind) return undefined;
 
-  const candidates = [audio ?? video, extension]
-    .flatMap((node) => (node ? [attr(node, 'r:link'), attr(node, 'r:embed')] : []));
+  const candidates = [audio ?? video, extension].flatMap((node) => (node ? [attr(node, 'r:link'), attr(node, 'r:embed')] : []));
   for (const rid of candidates) {
     const rel = rid ? env.rels[rid] : undefined;
     if (!rel) continue;
@@ -297,7 +351,8 @@ export function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElem
   if (!xf && ph) {
     const phType = attr(ph, 'type');
     const phIdx = attr(ph, 'idx');
-    xf = parseXfrm(walk(findPh(env.layoutPh, phType, phIdx), 'spPr', 'xfrm'))
+    xf =
+      parseXfrm(walk(findPh(env.layoutPh, phType, phIdx), 'spPr', 'xfrm'))
       ?? parseXfrm(walk(findPh(env.masterPh, phType, phIdx), 'spPr', 'xfrm'));
   }
   if (!xf) return null;
@@ -311,7 +366,9 @@ export function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElem
   // 媒体对象即使没有封面帧也要出现（渲染层画深色底 + 播放标识）
   if (!src && !media) {
     return {
-      kind: 'unsupported', ...base(xf), label: `${label}（格式不支持）`,
+      kind: 'unsupported',
+      ...base(xf),
+      label: `${label}（格式不支持）`,
       link: hyperlink.link,
       name: attr(cNvPr, 'name') ?? undefined,
       id: numAttr(cNvPr, 'id') ?? undefined,
@@ -338,8 +395,8 @@ export function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElem
   } else if (env.edit && ph) {
     const phType = attr(ph, 'type');
     const phIdx = attr(ph, 'idx');
-    const inherited = walk(findPh(env.layoutPh, phType, phIdx), 'spPr', 'prstGeom')
-      ?? walk(findPh(env.masterPh, phType, phIdx), 'spPr', 'prstGeom');
+    const inherited =
+      walk(findPh(env.layoutPh, phType, phIdx), 'spPr', 'prstGeom') ?? walk(findPh(env.masterPh, phType, phIdx), 'spPr', 'prstGeom');
     if (inherited) {
       editableGeom = {
         preset: attr(inherited, 'prst') ?? 'rect',
@@ -349,11 +406,14 @@ export function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElem
   }
 
   const alphaMod = numAttr(kid(kid(blipFill, 'blip'), 'alphaModFix'), 'amt');
-  const tones = Array.from(kid(kid(blipFill, 'blip'), 'duotone')?.children ?? [])
-    .map((color) => parseColor(color, env.ctx));
+  const tones = Array.from(kid(kid(blipFill, 'blip'), 'duotone')?.children ?? []).map((color) => parseColor(color, env.ctx));
 
   return {
-    kind: 'image', ...base(xf), src: src ?? '', crop, clipPath,
+    kind: 'image',
+    ...base(xf),
+    src: src ?? '',
+    crop,
+    clipPath,
     alpha: alphaMod !== null ? alphaMod / 100000 : undefined,
     filter: blipFilter(blipFill),
     ...(tones.length === 2 ? { duotone: tones as [string, string] } : {}),
@@ -364,8 +424,13 @@ export function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElem
     id: numAttr(cNvPr, 'id') ?? undefined,
     media,
     ...editInfoOf(
-      env, cNvPr, ph, editableGeom, media ? 'frame' : undefined,
-      movementLocked(nv), hyperlink.unsupported,
+      env,
+      cNvPr,
+      ph,
+      editableGeom,
+      media ? 'frame' : undefined,
+      movementLocked(nv),
+      hyperlink.unsupported,
       placeholderDirectBits(spPr, null),
     ),
   };
@@ -391,8 +456,12 @@ function parseContentPart(node: Element, env: Env): GroupElement | null {
     edit.editInfo = { ...edit.editInfo, requiresOriginal: true };
   }
   return {
-    kind: 'group', ...base(xf),
-    childX: 0, childY: 0, scaleX: 1, scaleY: 1,
+    kind: 'group',
+    ...base(xf),
+    childX: 0,
+    childY: 0,
+    scaleX: 1,
+    scaleY: 1,
     children,
     name: attr(cNvPr, 'name') ?? '墨迹',
     id: numAttr(cNvPr, 'id') ?? undefined,
@@ -421,8 +490,6 @@ function parseGroup(grp: Element, env: Env, skipPh: boolean): GroupElement | nul
     link: hyperlink.link,
     name: attr(cNvPr, 'name') ?? undefined,
     id: numAttr(cNvPr, 'id') ?? undefined,
-    ...editInfoOf(
-      env, cNvPr, null, undefined, undefined, movementLocked(nv), hyperlink.unsupported,
-    ),
+    ...editInfoOf(env, cNvPr, null, undefined, undefined, movementLocked(nv), hyperlink.unsupported),
   };
 }

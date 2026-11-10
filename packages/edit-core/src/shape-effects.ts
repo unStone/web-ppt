@@ -14,8 +14,7 @@ function assertCoordinate(value: unknown, label: string): asserts value is numbe
 }
 
 function assertSignedCoordinate(value: unknown, label: string): asserts value is number {
-  if (typeof value !== 'number' || !Number.isFinite(value)
-    || value < -MAX_COORDINATE || value > MAX_COORDINATE) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < -MAX_COORDINATE || value > MAX_COORDINATE) {
     throw new Error(`${label} 必须是 DrawingML 可写回的有限像素值`);
   }
 }
@@ -26,10 +25,10 @@ function coordinate(value: number): number {
 
 function normalizeShadow(shadow: NonNullable<Effects['shadow']>): NonNullable<Effects['shadow']> {
   const distanceUnits = Math.round(Math.hypot(shadow.dx, shadow.dy) * EMU_PER_PX);
-  let directionUnits = Math.round(Math.atan2(shadow.dy, shadow.dx) * 180 / Math.PI * 60000);
+  let directionUnits = Math.round(((Math.atan2(shadow.dy, shadow.dx) * 180) / Math.PI) * 60000);
   directionUnits = ((directionUnits % 21600000) + 21600000) % 21600000;
   const distance = distanceUnits / EMU_PER_PX;
-  const radians = directionUnits / 60000 * Math.PI / 180;
+  const radians = ((directionUnits / 60000) * Math.PI) / 180;
   return {
     dx: distance * Math.cos(radians),
     dy: distance * Math.sin(radians),
@@ -70,8 +69,7 @@ export function assertEffects(value: unknown, label: string): asserts value is E
     assertDataObject(effects.reflection, ['alpha', 'size', 'distance'], `${label}.reflection`);
     for (const field of ['alpha', 'size'] as const) {
       const fieldValue = effects.reflection[field];
-      if (typeof fieldValue !== 'number' || !Number.isFinite(fieldValue)
-        || fieldValue < 0 || fieldValue > 1) {
+      if (typeof fieldValue !== 'number' || !Number.isFinite(fieldValue) || fieldValue < 0 || fieldValue > 1) {
         throw new Error(`${label}.reflection.${field} 必须在 0–1 之间`);
       }
     }
@@ -83,15 +81,24 @@ export function assertEffects(value: unknown, label: string): asserts value is E
 export function normalizeEffects(effects: Effects): Effects {
   return {
     ...(effects.shadow ? { shadow: normalizeShadow(effects.shadow) } : {}),
-    ...(effects.glow ? { glow: {
-      radius: coordinate(effects.glow.radius), color: normalizeDrawingColor(effects.glow.color),
-    } } : {}),
+    ...(effects.glow
+      ? {
+          glow: {
+            radius: coordinate(effects.glow.radius),
+            color: normalizeDrawingColor(effects.glow.color),
+          },
+        }
+      : {}),
     ...(effects.softEdge !== undefined ? { softEdge: coordinate(effects.softEdge) } : {}),
-    ...(effects.reflection ? { reflection: {
-      alpha: Math.round(effects.reflection.alpha * 100000) / 100000,
-      size: Math.round(effects.reflection.size * 100000) / 100000,
-      distance: coordinate(effects.reflection.distance),
-    } } : {}),
+    ...(effects.reflection
+      ? {
+          reflection: {
+            alpha: Math.round(effects.reflection.alpha * 100000) / 100000,
+            size: Math.round(effects.reflection.size * 100000) / 100000,
+            distance: coordinate(effects.reflection.distance),
+          },
+        }
+      : {}),
   };
 }
 

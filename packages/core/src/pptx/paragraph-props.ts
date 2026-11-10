@@ -3,7 +3,11 @@ import type { Paragraph } from '../types';
 import type { LevelStyles, ParaProps } from './text';
 
 const ALIGN: Record<string, Paragraph['align']> = {
-  l: 'left', ctr: 'center', r: 'right', just: 'justify', dist: 'justify',
+  l: 'left',
+  ctr: 'center',
+  r: 'right',
+  just: 'justify',
+  dist: 'justify',
 };
 
 export function mergeParagraphProps(base: ParaProps, over: ParaProps): ParaProps {
@@ -45,9 +49,7 @@ export function effectiveParagraphProps(
   };
 }
 
-export function directParagraphProps(
-  props: ParaProps,
-): NonNullable<Paragraph['editInfo']>['directParagraphProps'] {
+export function directParagraphProps(props: ParaProps): NonNullable<Paragraph['editInfo']>['directParagraphProps'] {
   return {
     ...(props.lvl !== undefined ? { level: true as const } : {}),
     ...(props.algn !== undefined ? { align: true as const } : {}),

@@ -2,7 +2,9 @@ import { equalBytes } from './bytes.mjs';
 
 function addShape(editor, slideId, name, x) {
   editor.exec({
-    type: 'AddShape', slideId, preset: 'roundRect',
+    type: 'AddShape',
+    slideId,
+    preset: 'roundRect',
     rect: { x, y: 70, w: 220, h: 120 },
   });
   const id = editor.selection.ids[0];
@@ -19,41 +21,61 @@ export function applyV06Journey(edit, editor) {
     addShape(editor, firstSlide, '0.6 分布末项', 690),
   ];
   editor.exec({
-    type: 'EditText', id: shapeIds[0], ops: [{
-      type: 'replaceFragment',
-      from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
-      fragment: { paragraphs: [
-        { text: '表格结构', marks: [{ from: 0, to: 4, props: {} }] },
-        { text: '批量导出', marks: [{ from: 0, to: 4, props: {} }] },
-      ] },
-    }],
+    type: 'EditText',
+    id: shapeIds[0],
+    ops: [
+      {
+        type: 'replaceFragment',
+        from: { p: 0, r: 0, off: 0 },
+        to: { p: 0, r: 0, off: 0 },
+        fragment: {
+          paragraphs: [
+            { text: '表格结构', marks: [{ from: 0, to: 4, props: {} }] },
+            { text: '批量导出', marks: [{ from: 0, to: 4, props: {} }] },
+          ],
+        },
+      },
+    ],
   });
   editor.exec({
-    type: 'SetParaProps', id: shapeIds[0],
+    type: 'SetParaProps',
+    id: shapeIds[0],
     range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 } },
     props: { bullet: { kind: 'char', char: '◆' } },
   });
   editor.exec({
-    type: 'SetParaProps', id: shapeIds[0],
+    type: 'SetParaProps',
+    id: shapeIds[0],
     range: { from: { p: 1, r: 0, off: 0 }, to: { p: 1, r: 0, off: 0 } },
     props: { bullet: { kind: 'autoNum', type: 'arabicPeriod', startAt: 3 } },
   });
   editor.exec({
-    type: 'SetRunProps', id: shapeIds[0],
+    type: 'SetRunProps',
+    id: shapeIds[0],
     range: { from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 4 } },
     props: {
-      underline: 'wavyDbl', strikeType: 'sngStrike', highlight: '#FDE68A',
-      spacing: 2, caps: 'small', baseline: 18,
+      underline: 'wavyDbl',
+      strikeType: 'sngStrike',
+      highlight: '#FDE68A',
+      spacing: 2,
+      caps: 'small',
+      baseline: 18,
     },
   });
   editor.exec({ type: 'SetAdj', id: shapeIds[0], name: 'adj', value: 36_000 });
   editor.exec({
-    type: 'SetAltText', id: shapeIds[0], title: '0.6 集成形状', descr: '列表与高级字符格式',
+    type: 'SetAltText',
+    id: shapeIds[0],
+    title: '0.6 集成形状',
+    descr: '列表与高级字符格式',
   });
   editor.exec({ type: 'DistributeElements', ids: shapeIds, axis: 'horizontal' });
 
   editor.exec({
-    type: 'AddTable', slideId: firstSlide, rows: 2, cols: 2,
+    type: 'AddTable',
+    slideId: firstSlide,
+    rows: 2,
+    cols: 2,
     rect: { x: 170, y: 260, w: 760, h: 270 },
   });
   const tableId = editor.selection.ids[0];
@@ -68,54 +90,76 @@ export function applyV06Journey(edit, editor) {
   );
   const anchor = { row: grid.rows[0].id, column: grid.columns[0].id };
   editor.exec({
-    type: 'MergeCells', id: tableId, from: anchor,
+    type: 'MergeCells',
+    id: tableId,
+    from: anchor,
     to: { row: grid.rows[0].id, column: grid.columns[1].id },
   });
   editor.exec({
-    type: 'SetCellProps', id: tableId, cell: anchor,
+    type: 'SetCellProps',
+    id: tableId,
+    cell: anchor,
     props: { fill: { type: 'solid', color: '#DBEAFE' }, margins: [6, 8, 6, 8], vAlign: 'middle' },
   });
   editor.exec({
-    type: 'EditText', id: tableId, cell: { r: 0, c: 0 }, ops: [{
-      type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
-      text: '跨能力旅程',
-    }],
+    type: 'EditText',
+    id: tableId,
+    cell: { r: 0, c: 0 },
+    ops: [
+      {
+        type: 'replace',
+        from: { p: 0, r: 0, off: 0 },
+        to: { p: 0, r: 0, off: 0 },
+        text: '跨能力旅程',
+      },
+    ],
   });
 
-  const layoutId = doc.layoutOrder.find((id) => doc.layouts[id].name === '空白')
-    ?? doc.layoutOrder[0];
+  const layoutId = doc.layoutOrder.find((id) => doc.layouts[id].name === '空白') ?? doc.layoutOrder[0];
   const result = editor.exec({ type: 'AddSlide', layoutId, at: { after: firstSlide } });
   const secondSlide = [...result.createdSlides][0];
-  const fieldId = doc.slides[secondSlide].dynamicSlideNumbers.find((id) =>
-    editor.effectiveElement(id).kind === 'shape');
+  const fieldId = doc.slides[secondSlide].dynamicSlideNumbers.find((id) => editor.effectiveElement(id).kind === 'shape');
   const fieldShape = fieldId ? editor.effectiveElement(fieldId) : undefined;
-  const fieldParagraph = fieldShape?.kind === 'shape'
-    ? fieldShape.text?.paragraphs.findIndex((paragraph) =>
-      paragraph.runs.some((run) => run.field?.toLowerCase() === 'slidenum')) ?? -1
-    : -1;
-  const fieldRun = fieldParagraph >= 0 && fieldShape?.kind === 'shape'
-    ? fieldShape.text?.paragraphs[fieldParagraph].runs.findIndex((run) =>
-      run.field?.toLowerCase() === 'slidenum') ?? -1
-    : -1;
-  const fieldText = fieldParagraph >= 0 && fieldRun >= 0 && fieldShape?.kind === 'shape'
-    ? fieldShape.text?.paragraphs[fieldParagraph].runs[fieldRun].text : undefined;
+  const fieldParagraph =
+    fieldShape?.kind === 'shape'
+      ? (fieldShape.text?.paragraphs.findIndex((paragraph) => paragraph.runs.some((run) => run.field?.toLowerCase() === 'slidenum')) ?? -1)
+      : -1;
+  const fieldRun =
+    fieldParagraph >= 0 && fieldShape?.kind === 'shape'
+      ? (fieldShape.text?.paragraphs[fieldParagraph].runs.findIndex((run) => run.field?.toLowerCase() === 'slidenum') ?? -1)
+      : -1;
+  const fieldText =
+    fieldParagraph >= 0 && fieldRun >= 0 && fieldShape?.kind === 'shape'
+      ? fieldShape.text?.paragraphs[fieldParagraph].runs[fieldRun].text
+      : undefined;
   if (!fieldId || fieldParagraph < 0 || fieldRun < 0 || fieldText === undefined) {
     throw new Error('0.6 生成旅程缺少动态页码字段');
   }
   editor.exec({
-    type: 'SetRunProps', id: fieldId,
+    type: 'SetRunProps',
+    id: fieldId,
     range: {
       from: { p: fieldParagraph, r: fieldRun, off: 0 },
       to: { p: fieldParagraph, r: fieldRun, off: fieldText.length },
     },
     props: {
-      font: 'Courier New', size: 22, color: '#FF0000', b: true, i: true,
-      underline: 'wavyDbl', strikeType: 'dblStrike', highlight: '#00FF00',
-      spacing: 2, caps: 'small', baseline: 12,
+      font: 'Courier New',
+      size: 22,
+      color: '#FF0000',
+      b: true,
+      i: true,
+      underline: 'wavyDbl',
+      strikeType: 'dblStrike',
+      highlight: '#00FF00',
+      spacing: 2,
+      caps: 'small',
+      baseline: 12,
     },
   });
   editor.exec({
-    type: 'AddSection', name: '0.6 集成旅程', slideIds: [firstSlide, secondSlide],
+    type: 'AddSection',
+    name: '0.6 集成旅程',
+    slideIds: [firstSlide, secondSlide],
     at: { after: null },
   });
   editor.exec({ type: 'SetSlideSize', w: 1200, h: 675 });
@@ -124,10 +168,11 @@ export function applyV06Journey(edit, editor) {
   const redoWorked = editor.redo();
   const redoSize = edit.querySlideSize(doc);
   return {
-    firstSlide, secondSlide, shapeIds, tableId,
-    historyRoundTrip: undoWorked && redoWorked
-      && undoSize.w === 1280 && undoSize.h === 720
-      && redoSize.w === 1200 && redoSize.h === 675,
+    firstSlide,
+    secondSlide,
+    shapeIds,
+    tableId,
+    historyRoundTrip: undoWorked && redoWorked && undoSize.w === 1280 && undoSize.h === 720 && redoSize.w === 1200 && redoSize.h === 675,
   };
 }
 
@@ -137,45 +182,68 @@ function reopenedEvidence(presentation) {
   const table = first?.elements.find((element) => element.name === '0.6 结构表格');
   const paragraphs = shape?.kind === 'shape' ? shape.text?.paragraphs : undefined;
   const firstRun = paragraphs?.[0]?.runs[0];
-  const formattedField = presentation.slides.flatMap((slide) => slide.elements)
-    .flatMap((element) => element.kind === 'shape' ? element.text?.paragraphs ?? [] : [])
+  const formattedField = presentation.slides
+    .flatMap((slide) => slide.elements)
+    .flatMap((element) => (element.kind === 'shape' ? (element.text?.paragraphs ?? []) : []))
     .flatMap((paragraph) => paragraph.runs)
-    .find((run) => run.field?.toLowerCase() === 'slidenum'
-      && run.color === 'rgb(255,0,0)');
+    .find((run) => run.field?.toLowerCase() === 'slidenum' && run.color === 'rgb(255,0,0)');
   return {
-    complete: presentation.width === 1200 && presentation.height === 675
+    complete:
+      presentation.width === 1200
+      && presentation.height === 675
       && presentation.slides.length === 2
       && presentation.sections?.[0]?.name === '0.6 集成旅程'
-      && presentation.slides.some((slide) => slide.elements.some((element) =>
-        element.kind === 'shape' && element.text?.paragraphs.some((paragraph) =>
-          paragraph.runs.some((run) => run.field?.toLowerCase() === 'slidenum'))))
-      && formattedField?.fonts[0] === 'Courier New' && formattedField.size === 22
-      && formattedField.b && formattedField.i
-      && formattedField.underline === 'wavyDbl' && formattedField.strikeType === 'dblStrike'
-      && formattedField.highlight === 'rgb(0,255,0)' && formattedField.spacing === 2
-      && formattedField.caps === 'small' && formattedField.baseline === 12
+      && presentation.slides.some((slide) =>
+        slide.elements.some(
+          (element) =>
+            element.kind === 'shape'
+            && element.text?.paragraphs.some((paragraph) => paragraph.runs.some((run) => run.field?.toLowerCase() === 'slidenum')),
+        ),
+      )
+      && formattedField?.fonts[0] === 'Courier New'
+      && formattedField.size === 22
+      && formattedField.b
+      && formattedField.i
+      && formattedField.underline === 'wavyDbl'
+      && formattedField.strikeType === 'dblStrike'
+      && formattedField.highlight === 'rgb(0,255,0)'
+      && formattedField.spacing === 2
+      && formattedField.caps === 'small'
+      && formattedField.baseline === 12
       && shape?.kind === 'shape'
       && shape.editInfo?.altText?.title === '0.6 集成形状'
       && shape.editInfo.altText.descr === '列表与高级字符格式'
       && shape.editInfo?.geom?.preset === 'roundRect'
       && shape.editInfo.geom.adj.adj === 36_000
-      && paragraphs?.[0]?.bullet === '◆' && paragraphs?.[1]?.bullet === '3.'
-      && firstRun?.underline === 'wavyDbl' && firstRun.strikeType === 'sngStrike'
-      && firstRun.highlight === 'rgb(253,230,138)' && firstRun.spacing === 2
-      && firstRun.caps === 'small' && firstRun.baseline === 18
-      && table?.kind === 'table' && table.rows.length === 3 && table.colWidths.length === 3
-      && table.rows[0].height === 96 && table.colWidths[0] === 300
+      && paragraphs?.[0]?.bullet === '◆'
+      && paragraphs?.[1]?.bullet === '3.'
+      && firstRun?.underline === 'wavyDbl'
+      && firstRun.strikeType === 'sngStrike'
+      && firstRun.highlight === 'rgb(253,230,138)'
+      && firstRun.spacing === 2
+      && firstRun.caps === 'small'
+      && firstRun.baseline === 18
+      && table?.kind === 'table'
+      && table.rows.length === 3
+      && table.colWidths.length === 3
+      && table.rows[0].height === 96
+      && table.colWidths[0] === 300
       && table.rows[0].cells[0].colSpan === 2
       && table.rows[0].cells[0].fill?.type === 'solid'
       && table.rows[0].cells[0].text?.paragraphs[0]?.runs
-        .map((run) => run.text).join('').startsWith('跨能力旅程'),
+        .map((run) => run.text)
+        .join('')
+        .startsWith('跨能力旅程'),
     slideCount: presentation.slides.length,
   };
 }
 
 async function saveRecovered({ core, edit, blank, frames, mode, saveArtifact }) {
   const presentation = await core.parse(blank, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const doc = edit.createDoc(presentation, { idPrefix: 'v06-journey-' });
   const editor = new edit.Editor(doc, { recoveryFrames: frames });
@@ -196,7 +264,10 @@ export async function runV06IntegrationSaveContract({ core, edit, generate, chec
   const blank = generate.createBlankPptx();
   check('新建文稿固件连续生成逐字节一致', equalBytes(blank, generate.createBlankPptx()));
   const presentation = await core.parse(blank, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const doc = edit.createDoc(presentation, { idPrefix: 'v06-journey-' });
   const editor = new edit.Editor(doc);
@@ -205,29 +276,41 @@ export async function runV06IntegrationSaveContract({ core, edit, generate, chec
   const journey = applyV06Journey(edit, editor);
   unsubscribe();
   check('跨能力旅程的撤销与重做保持页面尺寸事务完整', journey.historyRoundTrip);
-  check('跨能力旅程写入可序列化恢复日志', frames.length > 0
-    && JSON.parse(JSON.stringify(frames)).length === frames.length);
+  check('跨能力旅程写入可序列化恢复日志', frames.length > 0 && JSON.parse(JSON.stringify(frames)).length === frames.length);
   const projected = editor.toSlide(journey.firstSlide);
-  check('同一投影同时包含列表预设形状、结构表格和页面命令',
+  check(
+    '同一投影同时包含列表预设形状、结构表格和页面命令',
     projected.elements.some((element) => element.name === '0.6 列表形状')
       && projected.elements.some((element) => element.name === '0.6 结构表格')
       && edit.listSections(doc)[0]?.slideIds.length === 2
-      && edit.querySlideSize(doc).w === 1200);
+      && edit.querySlideSize(doc).w === 1200,
+  );
   edit.disposeDoc(doc);
 
   const recoveredFrames = JSON.parse(JSON.stringify(frames));
   const patch = await saveRecovered({
-    core, edit, blank, frames: recoveredFrames, mode: 'patch', saveArtifact,
+    core,
+    edit,
+    blank,
+    frames: recoveredFrames,
+    mode: 'patch',
+    saveArtifact,
   });
   const generated = await saveRecovered({
-    core, edit, blank, frames: recoveredFrames, mode: 'generated', saveArtifact,
+    core,
+    edit,
+    blank,
+    frames: recoveredFrames,
+    mode: 'generated',
+    saveArtifact,
   });
   check('恢复后的补丁保存重开保留七类 0.6 语义', patch.complete);
   check('恢复后的生成保存重开保留七类 0.6 语义', generated.complete);
-  check('恢复后的补丁与生成保存连续执行都逐字节确定',
-    patch.deterministic && generated.deterministic);
-  check('同一恢复日志的两条保存路径页数一致且模式明确',
+  check('恢复后的补丁与生成保存连续执行都逐字节确定', patch.deterministic && generated.deterministic);
+  check(
+    '同一恢复日志的两条保存路径页数一致且模式明确',
     patch.slideCount === generated.slideCount
       && ['passthrough', 'repacked'].includes(patch.saved.mode)
-      && generated.saved.mode === 'repacked');
+      && generated.saved.mode === 'repacked',
+  );
 }

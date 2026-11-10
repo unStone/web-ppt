@@ -17,30 +17,41 @@ function sessionSchema(base: JsonObject, extra: 'close' | 'save' | 'render' | 'c
   }
   const properties: JsonObject = { ...(resolved.properties as JsonObject | undefined), sessionId: { type: 'string' } };
   if (extra === 'save' || extra === 'render') properties.path = { type: 'string' };
-  const required = new Set([...resolved.required as string[] | undefined ?? [], 'sessionId']);
+  const required = new Set([...((resolved.required as string[] | undefined) ?? []), 'sessionId']);
   if (extra === 'save') required.add('path');
   return {
-    ...resolved, type: 'object', properties, required: [...required],
+    ...resolved,
+    type: 'object',
+    properties,
+    required: [...required],
     ...(base.definitions ? { definitions: base.definitions } : {}),
   };
 }
 
 function toolDefinitions(): JsonObject[] {
-  const tools: JsonObject[] = [{
-    name: 'ppt_open', description: '打开本地 PPTX / PPT 并创建编辑会话',
-    inputSchema: {
-      type: 'object', properties: { path: { type: 'string' } }, required: ['path'], additionalProperties: false,
+  const tools: JsonObject[] = [
+    {
+      name: 'ppt_open',
+      description: '打开本地 PPTX / PPT 并创建编辑会话',
+      inputSchema: {
+        type: 'object',
+        properties: { path: { type: 'string' } },
+        required: ['path'],
+        additionalProperties: false,
+      },
     },
-  }];
+  ];
   for (const tool of listAgentTools()) {
     const extra = tool.name === 'save' ? 'save' : tool.name === 'render' ? 'render' : 'call';
     tools.push({
-      name: `ppt_${tool.name}`, description: tool.description,
+      name: `ppt_${tool.name}`,
+      description: tool.description,
       inputSchema: sessionSchema(tool.inputSchema, extra),
     });
   }
   tools.push({
-    name: 'ppt_close', description: '关闭会话并释放文档资源',
+    name: 'ppt_close',
+    description: '关闭会话并释放文档资源',
     inputSchema: sessionSchema({ type: 'object', additionalProperties: false }, 'close'),
   });
   return tools;
@@ -50,16 +61,21 @@ function failure(error: unknown) {
   const candidate = error as { reason?: unknown; message?: unknown; commandIndex?: unknown; elementId?: unknown; slideNumber?: unknown };
   return {
     isError: true,
-    content: [{ type: 'text' as const, text: JSON.stringify({
-      ok: false,
-      error: {
-        reason: typeof candidate?.reason === 'string' ? candidate.reason : 'tool-failed',
-        message: typeof candidate?.message === 'string' ? candidate.message : String(error),
-        commandIndex: typeof candidate?.commandIndex === 'number' ? candidate.commandIndex : null,
-        elementId: typeof candidate?.elementId === 'string' ? candidate.elementId : null,
-        slideNumber: typeof candidate?.slideNumber === 'number' ? candidate.slideNumber : null,
+    content: [
+      {
+        type: 'text' as const,
+        text: JSON.stringify({
+          ok: false,
+          error: {
+            reason: typeof candidate?.reason === 'string' ? candidate.reason : 'tool-failed',
+            message: typeof candidate?.message === 'string' ? candidate.message : String(error),
+            commandIndex: typeof candidate?.commandIndex === 'number' ? candidate.commandIndex : null,
+            elementId: typeof candidate?.elementId === 'string' ? candidate.elementId : null,
+            slideNumber: typeof candidate?.slideNumber === 'number' ? candidate.slideNumber : null,
+          },
+        }),
       },
-    }) }],
+    ],
   };
 }
 

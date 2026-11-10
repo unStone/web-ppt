@@ -47,31 +47,57 @@ export function createEditorInspector(
   if (lifetime?.aborted) controller.abort();
   const appearanceButtons: HTMLButtonElement[] = [];
   let closeAppearance: (() => void) | undefined;
-  let generation = 0, bulletRead = 0;
-  const reset = () => { generation++; bulletRead++; closeAppearance?.(); closeAppearance = undefined; };
-  signal.addEventListener('abort', () => {
-    reset(); for (const button of appearanceButtons) button.remove();
-  }, { once: true });
+  let generation = 0,
+    bulletRead = 0;
+  const reset = () => {
+    generation++;
+    bulletRead++;
+    closeAppearance?.();
+    closeAppearance = undefined;
+  };
+  signal.addEventListener(
+    'abort',
+    () => {
+      reset();
+      for (const button of appearanceButtons) button.remove();
+    },
+    { once: true },
+  );
   const textSection = $<HTMLElement>(element, '#textInspector');
   const shapeSection = $<HTMLElement>(element, '#shapeInspector');
   const imageSection = $<HTMLElement>(element, '#imageInspector');
-  for (const [section, title] of [[shapeSection, '立体效果'], [imageSection, '图片效果']] as const) {
-    const button = document.createElement('button'); button.type = 'button'; button.className = 'button';
+  for (const [section, title] of [
+    [shapeSection, '立体效果'],
+    [imageSection, '图片效果'],
+  ] as const) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'button';
     appearanceButtons.push(button);
-    button.dataset.appearanceTools = ''; setText(button, title); section.append(button);
-    button.addEventListener('click', async () => {
-      const attempt = generation;
-      const { session, writable } = context(); if (!session || !writable) return;
-      const selection = session.editor.selection;
-      const id = selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null;
-      if (!id) return;
-      try {
-        const { showAppearanceTools } = await import('./editor-appearance-tools');
-        if (!signal.aborted && attempt === generation && context().session === session) {
-          closeAppearance = showAppearanceTools(session, id, () => context().session) ?? closeAppearance;
+    button.dataset.appearanceTools = '';
+    setText(button, title);
+    section.append(button);
+    button.addEventListener(
+      'click',
+      async () => {
+        const attempt = generation;
+        const { session, writable } = context();
+        if (!session || !writable) return;
+        const selection = session.editor.selection;
+        const id = selection.kind === 'elements' && selection.ids.length === 1 ? selection.ids[0] : null;
+        if (!id) return;
+        try {
+          const { showAppearanceTools } = await import('./editor-appearance-tools');
+          if (!signal.aborted && attempt === generation && context().session === session) {
+            closeAppearance = showAppearanceTools(session, id, () => context().session) ?? closeAppearance;
+          }
+        } catch (error) {
+          if (!signal.aborted && attempt === generation)
+            notice(message('外观修改失败：{detail}', { detail: error instanceof Error ? error.message : String(error) }), 'error');
         }
-      } catch (error) { if (!signal.aborted && attempt === generation) notice(message('外观修改失败：{detail}', { detail: error instanceof Error ? error.message : String(error) }), 'error'); }
-    }, { signal });
+      },
+      { signal },
+    );
   }
   const linkSection = $<HTMLElement>(element, '#linkInspector');
   const empty = $<HTMLElement>(element, '#inspectorEmpty');
@@ -120,7 +146,9 @@ export function createEditorInspector(
   const act = async (action: () => void | Promise<void>): Promise<void> => {
     if (signal.aborted) return;
     const { view: owner, requestSignal } = context();
-    try { await action(); } catch (error) {
+    try {
+      await action();
+    } catch (error) {
       if (signal.aborted || requestSignal?.aborted || context().view !== owner) return;
       notice(message('对象操作失败：{detail}', { detail: error instanceof Error ? error.message : String(error) }), 'error');
     }
@@ -134,7 +162,7 @@ export function createEditorInspector(
   const selectedKind = (): string | null => {
     const { session } = context();
     const id = selectedId();
-    return id && session ? session.editor.doc.elements[id]?.src.kind ?? null : null;
+    return id && session ? (session.editor.doc.elements[id]?.src.kind ?? null) : null;
   };
 
   const syncBulletFields = (): void => {
@@ -152,7 +180,10 @@ export function createEditorInspector(
     textSection.hidden = !run;
     if (!run) return false;
     for (const [button, state] of [
-      [textBold, run.b], [textItalic, run.i], [textUnderline, run.u], [textStrike, run.strike],
+      [textBold, run.b],
+      [textItalic, run.i],
+      [textUnderline, run.u],
+      [textStrike, run.strike],
     ] as const) {
       button.disabled = !writable;
       button.setAttribute('aria-pressed', String(!state.mixed && state.value === true));
@@ -163,28 +194,25 @@ export function createEditorInspector(
     textColor.disabled = !writable;
     textColor.value = colorInputValue(run.color.value ?? undefined);
     textUnderlineStyle.dataset.mixed = String(run.underline.mixed);
-    textUnderlineStyle.value = run.underline.mixed ? '' : run.underline.value ?? 'none';
+    textUnderlineStyle.value = run.underline.mixed ? '' : (run.underline.value ?? 'none');
     textStrikeStyle.dataset.mixed = String(run.strikeType.mixed);
-    textStrikeStyle.value = run.strikeType.mixed ? '' : run.strikeType.value ?? 'noStrike';
+    textStrikeStyle.value = run.strikeType.mixed ? '' : (run.strikeType.value ?? 'noStrike');
     textHighlightEnabled.dataset.mixed = String(run.highlight.mixed);
     textHighlightEnabled.checked = !run.highlight.mixed && run.highlight.value !== null;
     textHighlight.value = colorInputValue(run.highlight.value ?? undefined, '#fff176');
     textSpacing.value = run.spacing.mixed ? '' : String(run.spacing.value ?? 0);
     textCaps.dataset.mixed = String(run.caps.mixed);
-    textCaps.value = run.caps.mixed ? '' : run.caps.value ?? 'none';
+    textCaps.value = run.caps.mixed ? '' : (run.caps.value ?? 'none');
     textBaseline.value = run.baseline.mixed ? '' : String(run.baseline.value ?? 0);
-    for (const control of [
-      textUnderlineStyle, textStrikeStyle, textHighlightEnabled, textSpacing, textCaps, textBaseline,
-      textClearFormat,
-    ]) control.disabled = !writable;
+    for (const control of [textUnderlineStyle, textStrikeStyle, textHighlightEnabled, textSpacing, textCaps, textBaseline, textClearFormat])
+      control.disabled = !writable;
     textHighlight.disabled = !writable || !textHighlightEnabled.checked;
     const paragraph = view?.queryParaProps();
     textAlign.disabled = !writable || !paragraph;
     if (paragraph?.align.value) textAlign.value = paragraph.align.value;
     const bullet = paragraph?.bullet.value;
     bulletKind.dataset.mixed = String(!!paragraph?.bullet.mixed);
-    bulletKind.value = paragraph?.bullet.mixed ? 'mixed'
-      : bullet?.kind === 'blip' ? 'image' : bullet?.kind ?? 'none';
+    bulletKind.value = paragraph?.bullet.mixed ? 'mixed' : bullet?.kind === 'blip' ? 'image' : (bullet?.kind ?? 'none');
     if (bullet?.kind === 'char') bulletChar.value = bullet.char;
     if (bullet?.kind === 'autoNum') {
       if ([...bulletScheme.options].some((option) => option.value === bullet.type)) {
@@ -197,13 +225,19 @@ export function createEditorInspector(
     bulletColorEnabled.checked = !!styled?.color;
     bulletColor.value = colorInputValue(styled?.color ?? undefined);
     bulletSizeKind.value = styled?.size?.kind ?? 'inherit';
-    bulletSize.value = styled?.size
-      ? String(styled.size.kind === 'percent' ? styled.size.value * 100 : styled.size.value)
-      : '100';
+    bulletSize.value = styled?.size ? String(styled.size.kind === 'percent' ? styled.size.value * 100 : styled.size.value) : '100';
     for (const control of [
-      bulletKind, bulletChar, bulletScheme, bulletStart, bulletFont, bulletColorEnabled,
-      bulletSizeKind, bulletSize, bulletImage,
-    ]) control.disabled = !writable || !paragraph;
+      bulletKind,
+      bulletChar,
+      bulletScheme,
+      bulletStart,
+      bulletFont,
+      bulletColorEnabled,
+      bulletSizeKind,
+      bulletSize,
+      bulletImage,
+    ])
+      control.disabled = !writable || !paragraph;
     syncBulletFields();
     return true;
   };
@@ -241,8 +275,7 @@ export function createEditorInspector(
     const { session } = context();
     const selected = selectedId();
     const record = selected ? session?.editor.doc.elements[selected] : undefined;
-    const id = record?.src.kind === 'image' && !record.src.media && record.meta.editable === 'full'
-      ? record.id : null;
+    const id = record?.src.kind === 'image' && !record.src.media && record.meta.editable === 'full' ? record.id : null;
     const image = !!id;
     imageSection.hidden = !image;
     for (const control of imageSection.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button,input')) {
@@ -250,9 +283,10 @@ export function createEditorInspector(
     }
     if (session && id) {
       const crop = queryElementCrop(session.editor.doc, [id]).value;
-      $<HTMLButtonElement>(element, '#cropImageTen').setAttribute('aria-pressed', String(
-        !!crop && [crop.l, crop.t, crop.r, crop.b].every((value) => Math.abs(value - .1) < 1e-6),
-      ));
+      $<HTMLButtonElement>(element, '#cropImageTen').setAttribute(
+        'aria-pressed',
+        String(!!crop && [crop.l, crop.t, crop.r, crop.b].every((value) => Math.abs(value - 0.1) < 1e-6)),
+      );
     }
     return image;
   };
@@ -266,18 +300,20 @@ export function createEditorInspector(
     const { session, view, writable } = context();
     const selection = session?.editor.selection;
     const id = selectedId();
-    let state = selection?.kind === 'text' ? view?.queryRunLink() ?? null : null;
+    let state = selection?.kind === 'text' ? (view?.queryRunLink() ?? null) : null;
     if (!state && session && id && ['shape', 'image', 'group'].includes(selectedKind() ?? '')) {
       state = queryElementLink(session.editor.doc, [id]);
     }
     linkSection.hidden = !state;
     if (!session || !state) return false;
-    linkSlide.replaceChildren(...session.editor.doc.slideOrder.map((slideId, index) => {
-      const option = document.createElement('option');
-      option.value = slideId;
-      setText(option, '第 {index} 页', { index: index + 1 });
-      return option;
-    }));
+    linkSlide.replaceChildren(
+      ...session.editor.doc.slideOrder.map((slideId, index) => {
+        const option = document.createElement('option');
+        option.value = slideId;
+        setText(option, '第 {index} 页', { index: index + 1 });
+        return option;
+      }),
+    );
     const value = state.value;
     linkType.value = value?.kind ?? 'none';
     linkHref.value = value?.kind === 'external' ? value.href : '';
@@ -296,54 +332,110 @@ export function createEditorInspector(
     empty.hidden = contexts.some(Boolean);
   };
 
-  const setRunBoolean = (field: 'b' | 'i' | 'u' | 'strike'): void => void act(() => {
-    const { view } = context();
-    const state = view?.queryRunProps()?.[field];
-    if (state && view?.setRunProps({ [field]: state.mixed || !state.value })) sync();
-  });
+  const setRunBoolean = (field: 'b' | 'i' | 'u' | 'strike'): void =>
+    void act(() => {
+      const { view } = context();
+      const state = view?.queryRunProps()?.[field];
+      if (state && view?.setRunProps({ [field]: state.mixed || !state.value })) sync();
+    });
   textBold.addEventListener('click', () => setRunBoolean('b'), { signal });
   textItalic.addEventListener('click', () => setRunBoolean('i'), { signal });
   textUnderline.addEventListener('click', () => setRunBoolean('u'), { signal });
   textStrike.addEventListener('click', () => setRunBoolean('strike'), { signal });
-  textClearFormat.addEventListener('click', () => void act(() => {
-    if (context().view?.clearFormat()) sync();
-  }), { signal });
-  textSize.addEventListener('change', () => void act(() => {
-    if (context().view?.setRunProps({ size: Number(textSize.value) })) sync();
-  }), { signal });
-  textColor.addEventListener('change', () => void act(() => {
-    if (context().view?.setRunProps({ color: textColor.value })) sync();
-  }), { signal });
-  textUnderlineStyle.addEventListener('change', () => void act(() => {
-    if (context().view?.setRunProps({
-      underline: textUnderlineStyle.value as TextUnderlineStyle,
-    })) sync();
-  }), { signal });
-  textStrikeStyle.addEventListener('change', () => void act(() => {
-    if (context().view?.setRunProps({
-      strikeType: textStrikeStyle.value as TextStrikeStyle,
-    })) sync();
-  }), { signal });
-  const setHighlight = (): void => void act(() => {
-    textHighlight.disabled = !context().writable || !textHighlightEnabled.checked;
-    if (context().view?.setRunProps({
-      highlight: textHighlightEnabled.checked ? textHighlight.value : null,
-    })) sync();
-  });
+  textClearFormat.addEventListener(
+    'click',
+    () =>
+      void act(() => {
+        if (context().view?.clearFormat()) sync();
+      }),
+    { signal },
+  );
+  textSize.addEventListener(
+    'change',
+    () =>
+      void act(() => {
+        if (context().view?.setRunProps({ size: Number(textSize.value) })) sync();
+      }),
+    { signal },
+  );
+  textColor.addEventListener(
+    'change',
+    () =>
+      void act(() => {
+        if (context().view?.setRunProps({ color: textColor.value })) sync();
+      }),
+    { signal },
+  );
+  textUnderlineStyle.addEventListener(
+    'change',
+    () =>
+      void act(() => {
+        if (
+          context().view?.setRunProps({
+            underline: textUnderlineStyle.value as TextUnderlineStyle,
+          })
+        )
+          sync();
+      }),
+    { signal },
+  );
+  textStrikeStyle.addEventListener(
+    'change',
+    () =>
+      void act(() => {
+        if (
+          context().view?.setRunProps({
+            strikeType: textStrikeStyle.value as TextStrikeStyle,
+          })
+        )
+          sync();
+      }),
+    { signal },
+  );
+  const setHighlight = (): void =>
+    void act(() => {
+      textHighlight.disabled = !context().writable || !textHighlightEnabled.checked;
+      if (
+        context().view?.setRunProps({
+          highlight: textHighlightEnabled.checked ? textHighlight.value : null,
+        })
+      )
+        sync();
+    });
   textHighlightEnabled.addEventListener('change', setHighlight, { signal });
   textHighlight.addEventListener('change', setHighlight, { signal });
-  textSpacing.addEventListener('change', () => void act(() => {
-    if (context().view?.setRunProps({ spacing: Number(textSpacing.value) })) sync();
-  }), { signal });
-  textCaps.addEventListener('change', () => void act(() => {
-    if (context().view?.setRunProps({ caps: textCaps.value as TextCapsStyle })) sync();
-  }), { signal });
-  textBaseline.addEventListener('change', () => void act(() => {
-    if (context().view?.setRunProps({ baseline: Number(textBaseline.value) })) sync();
-  }), { signal });
-  textAlign.addEventListener('change', () => void act(() => {
-    if (context().view?.setParaProps({ align: textAlign.value as 'left' | 'center' | 'right' | 'justify' })) sync();
-  }), { signal });
+  textSpacing.addEventListener(
+    'change',
+    () =>
+      void act(() => {
+        if (context().view?.setRunProps({ spacing: Number(textSpacing.value) })) sync();
+      }),
+    { signal },
+  );
+  textCaps.addEventListener(
+    'change',
+    () =>
+      void act(() => {
+        if (context().view?.setRunProps({ caps: textCaps.value as TextCapsStyle })) sync();
+      }),
+    { signal },
+  );
+  textBaseline.addEventListener(
+    'change',
+    () =>
+      void act(() => {
+        if (context().view?.setRunProps({ baseline: Number(textBaseline.value) })) sync();
+      }),
+    { signal },
+  );
+  textAlign.addEventListener(
+    'change',
+    () =>
+      void act(() => {
+        if (context().view?.setParaProps({ align: textAlign.value as 'left' | 'center' | 'right' | 'justify' })) sync();
+      }),
+    { signal },
+  );
 
   const bulletStyle = (): Pick<AutoNumberBullet, 'font' | 'color' | 'size'> => ({
     ...(bulletFont.value.trim() ? { font: bulletFont.value.trim() } : {}),
@@ -351,165 +443,269 @@ export function createEditorInspector(
     ...(bulletSizeKind.value === 'percent'
       ? { size: { kind: 'percent', value: Number(bulletSize.value) / 100 } as const }
       : bulletSizeKind.value === 'points'
-        ? { size: { kind: 'points', value: Number(bulletSize.value) } as const } : {}),
+        ? { size: { kind: 'points', value: Number(bulletSize.value) } as const }
+        : {}),
   });
-  const setBullet = (): void => void act(() => {
-    const { view } = context();
-    if (!view || bulletKind.value === 'mixed') return;
-    let bullet: ParagraphPropertyInput['bullet'];
-    if (bulletKind.value === 'inherit') bullet = null;
-    else if (bulletKind.value === 'none') bullet = { kind: 'none' };
-    else if (bulletKind.value === 'char') {
-      const char = Array.from(bulletChar.value);
-      if (char.length !== 1) { notice(message('项目符号必须是一个字符'), 'error'); return; }
-      bullet = { kind: 'char', char: char[0], ...bulletStyle() };
-    } else if (bulletKind.value === 'image') {
-      const current = view.queryParaProps()?.bullet.value;
-      if (current?.kind !== 'blip') return;
-      bullet = { kind: 'blip', image: current.image, ...bulletStyle() };
-    } else bullet = {
-      kind: 'autoNum', type: bulletScheme.value as AutoNumberBullet['type'],
-      startAt: Number(bulletStart.value), ...bulletStyle(),
-    };
-    if (view.setParaProps({ bullet })) { sync(); notice(message('项目符号已更新'), 'success'); }
-  });
-  for (const control of [
-    bulletKind, bulletChar, bulletScheme, bulletStart, bulletFont,
-    bulletColorEnabled, bulletColor, bulletSizeKind, bulletSize,
-  ]) control.addEventListener('change', () => {
-    syncBulletFields();
-    setBullet();
-  }, { signal });
-  bulletImage.addEventListener('change', () => void act(async () => {
-    const generation = ++bulletRead;
-    const file = bulletImage.files?.[0]; const { view, session } = context();
-    if (!file || !view) return;
-    if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) {
-      notice(message('图片项目符号仅支持 PNG、JPEG、GIF 或 WebP'), 'error'); return;
-    }
-    const selected = (): string => JSON.stringify(session?.editor.selection);
-    const selection = selected(), style = bulletStyle();
-    const ownsInput = (): boolean => !signal.aborted && generation === bulletRead && context().view === view
-      && bulletImage.files?.[0] === file;
-    let bytes: Uint8Array;
-    try { bytes = new Uint8Array(await file.arrayBuffer()); } catch (error) {
-      if (ownsInput() && selected() === selection) throw error;
-      return;
-    }
-    if (!ownsInput()) return;
-    // 文件读取不拥有后续选区；宁可让用户重新选择，也不能把旧图片写到新的段落或单元格。
-    if (!context().writable || selected() !== selection) {
-      // 已确认仍归本任务所有，清空才允许原生选择器再次选择同一个文件。
-      bulletImage.value = '';
-      notice(message('编辑状态已变化，请重新选择图片项目符号')); return;
-    }
-    const image = { bytes, mime: file.type as 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' };
-    if (view.setParaProps({ bullet: { kind: 'blip', image, ...style } })) {
-      sync(); notice(message('项目符号已更新'), 'success');
-    }
-    if (ownsInput()) bulletImage.value = '';
-  }), { signal });
-
-  const setFill = (): void => void act(() => {
-    const { session } = context(); const id = selectedId();
-    if (!session || !id || fillType.value === 'preserve') return;
-    session.editor.exec({
-      type: 'SetFill', id,
-      fill: fillType.value === 'none' ? { type: 'none' } : { type: 'solid', color: fillColor.value },
+  const setBullet = (): void =>
+    void act(() => {
+      const { view } = context();
+      if (!view || bulletKind.value === 'mixed') return;
+      let bullet: ParagraphPropertyInput['bullet'];
+      if (bulletKind.value === 'inherit') bullet = null;
+      else if (bulletKind.value === 'none') bullet = { kind: 'none' };
+      else if (bulletKind.value === 'char') {
+        const char = Array.from(bulletChar.value);
+        if (char.length !== 1) {
+          notice(message('项目符号必须是一个字符'), 'error');
+          return;
+        }
+        bullet = { kind: 'char', char: char[0], ...bulletStyle() };
+      } else if (bulletKind.value === 'image') {
+        const current = view.queryParaProps()?.bullet.value;
+        if (current?.kind !== 'blip') return;
+        bullet = { kind: 'blip', image: current.image, ...bulletStyle() };
+      } else
+        bullet = {
+          kind: 'autoNum',
+          type: bulletScheme.value as AutoNumberBullet['type'],
+          startAt: Number(bulletStart.value),
+          ...bulletStyle(),
+        };
+      if (view.setParaProps({ bullet })) {
+        sync();
+        notice(message('项目符号已更新'), 'success');
+      }
     });
-    sync(); notice(message('已更新形状填充'), 'success');
-  });
+  for (const control of [
+    bulletKind,
+    bulletChar,
+    bulletScheme,
+    bulletStart,
+    bulletFont,
+    bulletColorEnabled,
+    bulletColor,
+    bulletSizeKind,
+    bulletSize,
+  ])
+    control.addEventListener(
+      'change',
+      () => {
+        syncBulletFields();
+        setBullet();
+      },
+      { signal },
+    );
+  bulletImage.addEventListener(
+    'change',
+    () =>
+      void act(async () => {
+        const generation = ++bulletRead;
+        const file = bulletImage.files?.[0];
+        const { view, session } = context();
+        if (!file || !view) return;
+        if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type)) {
+          notice(message('图片项目符号仅支持 PNG、JPEG、GIF 或 WebP'), 'error');
+          return;
+        }
+        const selected = (): string => JSON.stringify(session?.editor.selection);
+        const selection = selected(),
+          style = bulletStyle();
+        const ownsInput = (): boolean =>
+          !signal.aborted && generation === bulletRead && context().view === view && bulletImage.files?.[0] === file;
+        let bytes: Uint8Array;
+        try {
+          bytes = new Uint8Array(await file.arrayBuffer());
+        } catch (error) {
+          if (ownsInput() && selected() === selection) throw error;
+          return;
+        }
+        if (!ownsInput()) return;
+        // 文件读取不拥有后续选区；宁可让用户重新选择，也不能把旧图片写到新的段落或单元格。
+        if (!context().writable || selected() !== selection) {
+          // 已确认仍归本任务所有，清空才允许原生选择器再次选择同一个文件。
+          bulletImage.value = '';
+          notice(message('编辑状态已变化，请重新选择图片项目符号'));
+          return;
+        }
+        const image = { bytes, mime: file.type as 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' };
+        if (view.setParaProps({ bullet: { kind: 'blip', image, ...style } })) {
+          sync();
+          notice(message('项目符号已更新'), 'success');
+        }
+        if (ownsInput()) bulletImage.value = '';
+      }),
+    { signal },
+  );
+
+  const setFill = (): void =>
+    void act(() => {
+      const { session } = context();
+      const id = selectedId();
+      if (!session || !id || fillType.value === 'preserve') return;
+      session.editor.exec({
+        type: 'SetFill',
+        id,
+        fill: fillType.value === 'none' ? { type: 'none' } : { type: 'solid', color: fillColor.value },
+      });
+      sync();
+      notice(message('已更新形状填充'), 'success');
+    });
   fillType.addEventListener('change', setFill, { signal });
   fillColor.addEventListener('change', setFill, { signal });
 
-  shapePreset.addEventListener('change', () => void act(() => {
-    const { adjustments } = context();
-    if (!adjustments?.setPreset(shapePreset.value)) return;
-    sync(); notice(message('已切换形状类型；原有文字和格式保持不变'), 'success');
-  }), { signal });
-  startShapeAdjustments.addEventListener('click', () => void act(() => {
-    const { adjustments } = context();
-    const id = selectedId();
-    if (!adjustments || !id || !adjustments.start(id)) {
-      notice(message('当前形状没有可用的预设调节柄'), 'error'); return;
-    }
-    notice(message(adjustments.handles.length
-      ? '拖动形状上的橙色圆点来调整外观'
-      : '当前形状没有可调参数'));
-  }), { signal });
+  shapePreset.addEventListener(
+    'change',
+    () =>
+      void act(() => {
+        const { adjustments } = context();
+        if (!adjustments?.setPreset(shapePreset.value)) return;
+        sync();
+        notice(message('已切换形状类型；原有文字和格式保持不变'), 'success');
+      }),
+    { signal },
+  );
+  startShapeAdjustments.addEventListener(
+    'click',
+    () =>
+      void act(() => {
+        const { adjustments } = context();
+        const id = selectedId();
+        if (!adjustments || !id || !adjustments.start(id)) {
+          notice(message('当前形状没有可用的预设调节柄'), 'error');
+          return;
+        }
+        notice(message(adjustments.handles.length ? '拖动形状上的橙色圆点来调整外观' : '当前形状没有可调参数'));
+      }),
+    { signal },
+  );
 
-  const setStroke = (): void => void act(() => {
-    const { session } = context(); const id = selectedId();
-    if (!session || !id) return;
-    const current = queryElementStroke(session.editor.doc, [id]).value;
-    session.editor.exec({
-      type: 'SetStroke', id,
-      stroke: strokeType.value === 'none' ? { type: 'none' } : {
-        ...(current ?? { dash: null }), color: strokeColor.value, width: Number(strokeWidth.value),
-      },
+  const setStroke = (): void =>
+    void act(() => {
+      const { session } = context();
+      const id = selectedId();
+      if (!session || !id) return;
+      const current = queryElementStroke(session.editor.doc, [id]).value;
+      session.editor.exec({
+        type: 'SetStroke',
+        id,
+        stroke:
+          strokeType.value === 'none'
+            ? { type: 'none' }
+            : {
+                ...(current ?? { dash: null }),
+                color: strokeColor.value,
+                width: Number(strokeWidth.value),
+              },
+      });
+      sync();
+      notice(message('已更新形状描边'), 'success');
     });
-    sync(); notice(message('已更新形状描边'), 'success');
-  });
   strokeType.addEventListener('change', setStroke, { signal });
   strokeColor.addEventListener('change', setStroke, { signal });
   strokeWidth.addEventListener('change', setStroke, { signal });
 
-  const setEffects = (): void => void act(() => {
-    const { session } = context(); const id = selectedId();
-    if (!session || !id) return;
-    const current = queryElementEffects(session.editor.doc, [id]).value;
-    const effects = { ...current };
-    if (shadow.checked) effects.shadow ??= {
-      dx: 4, dy: 4, blur: 6, color: 'rgba(0,0,0,0.35)', inner: false,
-    };
-    else delete effects.shadow;
-    if (glow.checked) effects.glow ??= { radius: 5, color: '#2563eb' };
-    else delete effects.glow;
-    if (Number(softEdge.value) > 0) effects.softEdge = Number(softEdge.value);
-    else delete effects.softEdge;
-    session.editor.exec({ type: 'SetEffects', id, effects });
-    sync(); notice(message('已更新形状效果'), 'success');
-  });
+  const setEffects = (): void =>
+    void act(() => {
+      const { session } = context();
+      const id = selectedId();
+      if (!session || !id) return;
+      const current = queryElementEffects(session.editor.doc, [id]).value;
+      const effects = { ...current };
+      if (shadow.checked)
+        effects.shadow ??= {
+          dx: 4,
+          dy: 4,
+          blur: 6,
+          color: 'rgba(0,0,0,0.35)',
+          inner: false,
+        };
+      else delete effects.shadow;
+      if (glow.checked) effects.glow ??= { radius: 5, color: '#2563eb' };
+      else delete effects.glow;
+      if (Number(softEdge.value) > 0) effects.softEdge = Number(softEdge.value);
+      else delete effects.softEdge;
+      session.editor.exec({ type: 'SetEffects', id, effects });
+      sync();
+      notice(message('已更新形状效果'), 'success');
+    });
   shadow.addEventListener('change', setEffects, { signal });
   glow.addEventListener('change', setEffects, { signal });
   softEdge.addEventListener('change', setEffects, { signal });
 
-  replaceImage.addEventListener('change', () => void act(async () => {
-    const file = replaceImage.files?.[0];
-    const view = context().view;
-    if (!file || !view) return;
-    await view.replaceImage(file, { signal: context().requestSignal ?? signal });
-    // 读取期间可打开另一份文稿，旧任务不得覆盖新视图的提示或清除新文件选择。
-    if (signal.aborted || context().view !== view) return;
-    if (replaceImage.files?.[0] === file) replaceImage.value = '';
-    notice(message('图片已替换'), 'success');
-  }), { signal });
-  $<HTMLButtonElement>(element, '#startImageCrop').addEventListener('click', () => {
-    if (context().view?.startImageCrop()) notice(message('拖动图片内的裁剪框，完成后点击“完成裁剪”'));
-  }, { signal });
+  replaceImage.addEventListener(
+    'change',
+    () =>
+      void act(async () => {
+        const file = replaceImage.files?.[0];
+        const view = context().view;
+        if (!file || !view) return;
+        await view.replaceImage(file, { signal: context().requestSignal ?? signal });
+        // 读取期间可打开另一份文稿，旧任务不得覆盖新视图的提示或清除新文件选择。
+        if (signal.aborted || context().view !== view) return;
+        if (replaceImage.files?.[0] === file) replaceImage.value = '';
+        notice(message('图片已替换'), 'success');
+      }),
+    { signal },
+  );
+  $<HTMLButtonElement>(element, '#startImageCrop').addEventListener(
+    'click',
+    () => {
+      if (context().view?.startImageCrop()) notice(message('拖动图片内的裁剪框，完成后点击“完成裁剪”'));
+    },
+    { signal },
+  );
   $<HTMLButtonElement>(element, '#finishImageCrop').addEventListener('click', () => context().view?.endImageCrop(), { signal });
-  $<HTMLButtonElement>(element, '#cropImageTen').addEventListener('click', () => void act(() => {
-    const { session } = context(); const id = selectedId();
-    if (session && id) session.editor.exec({ type: 'SetCrop', id, crop: { l: .1, t: .1, r: .1, b: .1 } });
-  }), { signal });
-  $<HTMLButtonElement>(element, '#resetImageCrop').addEventListener('click', () => void act(() => {
-    const { session } = context(); const id = selectedId();
-    if (session && id) session.editor.exec({ type: 'SetCrop', id, crop: null });
-  }), { signal });
+  $<HTMLButtonElement>(element, '#cropImageTen').addEventListener(
+    'click',
+    () =>
+      void act(() => {
+        const { session } = context();
+        const id = selectedId();
+        if (session && id) session.editor.exec({ type: 'SetCrop', id, crop: { l: 0.1, t: 0.1, r: 0.1, b: 0.1 } });
+      }),
+    { signal },
+  );
+  $<HTMLButtonElement>(element, '#resetImageCrop').addEventListener(
+    'click',
+    () =>
+      void act(() => {
+        const { session } = context();
+        const id = selectedId();
+        if (session && id) session.editor.exec({ type: 'SetCrop', id, crop: null });
+      }),
+    { signal },
+  );
 
   linkType.addEventListener('change', syncLinkFields, { signal });
-  $<HTMLButtonElement>(element, '#applyLink').addEventListener('click', () => void act(() => {
-    const { session, view } = context(); const id = selectedId();
-    if (!session || !view) return;
-    const target: LinkTarget | { kind: 'none' } = linkType.value === 'external'
-      ? { kind: 'external', href: linkHref.value }
-      : linkType.value === 'slide' ? { kind: 'slide', slideId: linkSlide.value } : { kind: 'none' };
-    if (session.editor.selection.kind === 'text') view.setRunProps({ link: target });
-    else if (id) session.editor.exec({ type: 'SetLink', id, target });
-    sync(); notice(message('超链接已更新'), 'success');
-  }), { signal });
+  $<HTMLButtonElement>(element, '#applyLink').addEventListener(
+    'click',
+    () =>
+      void act(() => {
+        const { session, view } = context();
+        const id = selectedId();
+        if (!session || !view) return;
+        const target: LinkTarget | { kind: 'none' } =
+          linkType.value === 'external'
+            ? { kind: 'external', href: linkHref.value }
+            : linkType.value === 'slide'
+              ? { kind: 'slide', slideId: linkSlide.value }
+              : { kind: 'none' };
+        if (session.editor.selection.kind === 'text') view.setRunProps({ link: target });
+        else if (id) session.editor.exec({ type: 'SetLink', id, target });
+        sync();
+        notice(message('超链接已更新'), 'success');
+      }),
+    { signal },
+  );
   $<HTMLButtonElement>(element, '#followLink').addEventListener('click', () => context().view?.followLink(), { signal });
 
   sync();
-  return { element, sync, reset, destroy() { controller.abort(); } };
+  return {
+    element,
+    sync,
+    reset,
+    destroy() {
+      controller.abort();
+    },
+  };
 }

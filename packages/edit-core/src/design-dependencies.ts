@@ -13,13 +13,16 @@ const indexes = new WeakMap<EditDoc, DesignDependencyIndex>();
 
 function themeOfSlide(doc: EditDoc, slideId: SlideId): string | null {
   const layoutId = doc.slides[slideId]?.layoutId;
-  return layoutId ? doc.layouts[layoutId]?.themeId ?? null : null;
+  return layoutId ? (doc.layouts[layoutId]?.themeId ?? null) : null;
 }
 
 function build(doc: EditDoc): DesignDependencyIndex {
   const index: DesignDependencyIndex = {
-    slidesByTheme: new Map(), slidesByLayout: new Map(),
-    slidesByMaster: new Map(), themeBySlide: new Map(), layoutBySlide: new Map(),
+    slidesByTheme: new Map(),
+    slidesByLayout: new Map(),
+    slidesByMaster: new Map(),
+    themeBySlide: new Map(),
+    layoutBySlide: new Map(),
     masterBySlide: new Map(),
   };
   for (const slideId of doc.slideOrder) add(index, doc, slideId);
@@ -32,13 +35,13 @@ function add(index: DesignDependencyIndex, doc: EditDoc, slideId: SlideId): void
   if (layoutId) {
     index.layoutBySlide.set(slideId, layoutId);
     let layoutSlides = index.slidesByLayout.get(layoutId);
-    if (!layoutSlides) index.slidesByLayout.set(layoutId, layoutSlides = new Set());
+    if (!layoutSlides) index.slidesByLayout.set(layoutId, (layoutSlides = new Set()));
     layoutSlides.add(slideId);
     const masterId = doc.layouts[layoutId]?.origin.masterPart;
     if (masterId) {
       index.masterBySlide.set(slideId, masterId);
       let masterSlides = index.slidesByMaster.get(masterId);
-      if (!masterSlides) index.slidesByMaster.set(masterId, masterSlides = new Set());
+      if (!masterSlides) index.slidesByMaster.set(masterId, (masterSlides = new Set()));
       masterSlides.add(slideId);
     }
   }
@@ -46,7 +49,7 @@ function add(index: DesignDependencyIndex, doc: EditDoc, slideId: SlideId): void
   if (!themeId) return;
   index.themeBySlide.set(slideId, themeId);
   let slides = index.slidesByTheme.get(themeId);
-  if (!slides) index.slidesByTheme.set(themeId, slides = new Set());
+  if (!slides) index.slidesByTheme.set(themeId, (slides = new Set()));
   slides.add(slideId);
 }
 

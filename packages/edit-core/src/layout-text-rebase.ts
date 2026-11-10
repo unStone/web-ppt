@@ -1,16 +1,8 @@
-import {
-  PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_BODY_PROPERTY_BITS, TEXT_RUN_DIRECT_BITS, textRunFontStack,
-} from '@web-ppt/core';
-import type {
-  Paragraph, TextBody, TextRun, TextRunDirectFlags,
-} from '@web-ppt/core';
+import { PARAGRAPH_LAYOUT_DIRECT_BITS, TEXT_BODY_PROPERTY_BITS, TEXT_RUN_DIRECT_BITS, textRunFontStack } from '@web-ppt/core';
+import type { Paragraph, TextBody, TextRun, TextRunDirectFlags } from '@web-ppt/core';
 import { FONT_DIRECT_BITS, LAYOUT_RUN_DIRECT_FIELDS } from './run-property-fields';
 
-function rebasedRun(
-  source: TextRun,
-  target: TextRun,
-  paragraphDirect: TextRunDirectFlags | 0,
-): TextRun {
+function rebasedRun(source: TextRun, target: TextRun, paragraphDirect: TextRunDirectFlags | 0): TextRun {
   const direct = (source.editInfo?.direct ?? 0) | paragraphDirect;
   const out = { ...source } as TextRun;
   const values = out as unknown as Record<string, unknown>;
@@ -19,12 +11,9 @@ function rebasedRun(
   if (sourceSlots && targetSlots) {
     const allDirect = !!(direct & TEXT_RUN_DIRECT_BITS.fonts);
     const fontSlots = {
-      latin: allDirect || direct & TEXT_RUN_DIRECT_BITS.fontLatin
-        ? sourceSlots.latin : targetSlots.latin,
-      eastAsian: allDirect || direct & TEXT_RUN_DIRECT_BITS.fontEastAsian
-        ? sourceSlots.eastAsian : targetSlots.eastAsian,
-      complexScript: allDirect || direct & TEXT_RUN_DIRECT_BITS.fontComplexScript
-        ? sourceSlots.complexScript : targetSlots.complexScript,
+      latin: allDirect || direct & TEXT_RUN_DIRECT_BITS.fontLatin ? sourceSlots.latin : targetSlots.latin,
+      eastAsian: allDirect || direct & TEXT_RUN_DIRECT_BITS.fontEastAsian ? sourceSlots.eastAsian : targetSlots.eastAsian,
+      complexScript: allDirect || direct & TEXT_RUN_DIRECT_BITS.fontComplexScript ? sourceSlots.complexScript : targetSlots.complexScript,
     };
     out.fonts = textRunFontStack(fontSlots, source.text);
     out.editInfo = { ...source.editInfo!, fontSlots };
@@ -41,9 +30,7 @@ function rebasedRun(
     out.editInfo = {
       ...(out.editInfo ?? source.editInfo),
       inheritedRunProps: structuredClone(target.editInfo.inheritedRunProps),
-      inheritedFontSlots: structuredClone(
-        target.editInfo.inheritedFontSlots ?? target.editInfo.fontSlots,
-      ),
+      inheritedFontSlots: structuredClone(target.editInfo.inheritedFontSlots ?? target.editInfo.fontSlots),
     };
   }
   return out;
@@ -65,10 +52,7 @@ function rebasedParagraph(source: Paragraph, target: Paragraph): Paragraph {
   assign('marL', 'marginLeft');
   assign('indent', 'indent');
   const directLayout = source.editInfo?.directLayout ?? 0;
-  const assignLayout = <K extends 'bulletColor' | 'bulletFont' | 'bulletSize' | 'rtl'>(
-    field: K,
-    bit: number,
-  ): void => {
+  const assignLayout = <K extends 'bulletColor' | 'bulletFont' | 'bulletSize' | 'rtl'>(field: K, bit: number): void => {
     if (directLayout & bit) return;
     const value = target[field];
     if (value === undefined) delete out[field];
@@ -83,10 +67,9 @@ function rebasedParagraph(source: Paragraph, target: Paragraph): Paragraph {
   assignLayout('bulletFont', PARAGRAPH_LAYOUT_DIRECT_BITS.bulletFont);
   assignLayout('bulletSize', PARAGRAPH_LAYOUT_DIRECT_BITS.bulletSize);
   assignLayout('rtl', PARAGRAPH_LAYOUT_DIRECT_BITS.rtl);
-  out.runs = source.runs.map((run, index) => rebasedRun(
-    run, target.runs[index] ?? target.runs[target.runs.length - 1] ?? run,
-    source.editInfo?.directRun ?? 0,
-  ));
+  out.runs = source.runs.map((run, index) =>
+    rebasedRun(run, target.runs[index] ?? target.runs[target.runs.length - 1] ?? run, source.editInfo?.directRun ?? 0),
+  );
   if (source.editInfo && target.editInfo) {
     out.editInfo = {
       ...source.editInfo,
@@ -100,9 +83,7 @@ function rebasedParagraph(source: Paragraph, target: Paragraph): Paragraph {
 export function rebaseLayoutText(source: TextBody | null, target: TextBody | null): TextBody | null {
   if (!source || !target || !target.paragraphs.length) return source;
   const out: TextBody = { ...source };
-  const bodyFields = [
-    'anchor', 'insets', 'wrap', 'vert', 'anchorCtr', 'columns', 'columnGap',
-  ] as const;
+  const bodyFields = ['anchor', 'insets', 'wrap', 'vert', 'anchorCtr', 'columns', 'columnGap'] as const;
   const direct = source.editInfo?.direct ?? 0;
   for (const field of bodyFields) {
     if (direct & TEXT_BODY_PROPERTY_BITS[field]) continue;
@@ -111,24 +92,20 @@ export function rebaseLayoutText(source: TextBody | null, target: TextBody | nul
     else out[field] = structuredClone(value) as never;
   }
   if (!(direct & TEXT_BODY_PROPERTY_BITS.autoFit)) {
-    for (const field of [
-      'autoFitShape', 'autoFitNormal', 'autoFitCompute', 'fontScale', 'lnSpcReduction',
-    ] as const) {
+    for (const field of ['autoFitShape', 'autoFitNormal', 'autoFitCompute', 'fontScale', 'lnSpcReduction'] as const) {
       const value = target[field];
       if (value === undefined) delete out[field];
       else out[field] = value as never;
     }
   }
   out.paragraphs = source.paragraphs.map((paragraph) => {
-    const template = target.paragraphs.find((candidate) => candidate.lvl === paragraph.lvl)
-      ?? target.paragraphs[0];
+    const template = target.paragraphs.find((candidate) => candidate.lvl === paragraph.lvl) ?? target.paragraphs[0];
     return rebasedParagraph(paragraph, template);
   });
   if (source.editInfo && target.editInfo) {
     out.editInfo = {
       ...source.editInfo,
-      ...(target.editInfo.inherited
-        ? { inherited: structuredClone(target.editInfo.inherited) } : {}),
+      ...(target.editInfo.inherited ? { inherited: structuredClone(target.editInfo.inherited) } : {}),
     };
   }
   return out;

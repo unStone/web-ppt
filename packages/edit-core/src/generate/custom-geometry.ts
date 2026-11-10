@@ -15,8 +15,7 @@ function point(tokens: readonly string[], index: number, label: string): Point {
   return [x, y];
 }
 
-const pt = ([x, y]: Point, label: string): string =>
-  `<a:pt x="${emu(x, `${label}.x`)}" y="${emu(y, `${label}.y`)}"/>`;
+const pt = ([x, y]: Point, label: string): string => `<a:pt x="${emu(x, `${label}.x`)}" y="${emu(y, `${label}.y`)}"/>`;
 
 function angle(value: number, label: string): string {
   const result = Math.round((value * 180 * 60000) / Math.PI);
@@ -24,11 +23,7 @@ function angle(value: number, label: string): string {
   return String(result);
 }
 
-function arcMarkup(
-  tokens: readonly string[],
-  index: number,
-  current: Point | null,
-): { markup: string; target: Point } {
+function arcMarkup(tokens: readonly string[], index: number, current: Point | null): { markup: string; target: Point } {
   if (!current) throw new Error('生成保存的自定义圆弧缺少起点');
   let rx = Math.abs(Number(tokens[index]));
   let ry = Math.abs(Number(tokens[index + 1]));
@@ -36,8 +31,7 @@ function arcMarkup(
   const largeArc = Number(tokens[index + 3]);
   const sweep = Number(tokens[index + 4]);
   const target = point(tokens, index + 5, 'A');
-  if (![rx, ry, rotation, largeArc, sweep].every(Number.isFinite)
-      || (largeArc !== 0 && largeArc !== 1) || (sweep !== 0 && sweep !== 1)) {
+  if (![rx, ry, rotation, largeArc, sweep].every(Number.isFinite) || (largeArc !== 0 && largeArc !== 1) || (sweep !== 0 && sweep !== 1)) {
     throw new Error('自定义几何 A 参数无效');
   }
   // DrawingML arcTo 只能表达轴对齐椭圆；core 的 custGeom 投影固定生成 rotation=0。
@@ -77,12 +71,7 @@ function arcMarkup(
 }
 
 /** core 的无损路径是绝对 M/L/C/Q/A/Z；这里反向写成等比例 DrawingML custGeom。 */
-export function customGeometryMarkup(
-  path: string,
-  width: number,
-  height: number,
-  open: boolean,
-): string {
+export function customGeometryMarkup(path: string, width: number, height: number, open: boolean): string {
   const tokens = path.match(TOKEN) ?? [];
   const commands: string[] = [];
   let index = 0;
@@ -105,8 +94,7 @@ export function customGeometryMarkup(
       continue;
     }
     if (command === 'C') {
-      const points = [point(tokens, index, 'C1'), point(tokens, index + 2, 'C2'),
-        point(tokens, index + 4, 'C3')];
+      const points = [point(tokens, index, 'C1'), point(tokens, index + 2, 'C2'), point(tokens, index + 4, 'C3')];
       index += 6;
       commands.push(`<a:cubicBezTo>${points.map((value, i) => pt(value, `C${i + 1}`)).join('')}</a:cubicBezTo>`);
       current = points[2];

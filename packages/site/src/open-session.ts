@@ -13,10 +13,18 @@ export function createOpenGeneration(): {
 } {
   let generation = 0;
   return {
-    begin(): number { return ++generation; },
-    tryIdleBegin(): number | null { return generation === 0 ? ++generation : null; },
-    current(): number { return generation; },
-    isCurrent(token: number): boolean { return token === generation; },
+    begin(): number {
+      return ++generation;
+    },
+    tryIdleBegin(): number | null {
+      return generation === 0 ? ++generation : null;
+    },
+    current(): number {
+      return generation;
+    },
+    isCurrent(token: number): boolean {
+      return token === generation;
+    },
   };
 }
 
@@ -24,7 +32,12 @@ export function createOpenGeneration(): {
 export function nextOpenPaint(): Promise<void> {
   return new Promise((resolve) => {
     let done = false;
-    const go = (): void => { if (!done) { done = true; resolve(); } };
+    const go = (): void => {
+      if (!done) {
+        done = true;
+        resolve();
+      }
+    };
     requestAnimationFrame(go);
     setTimeout(go, 50);
   });

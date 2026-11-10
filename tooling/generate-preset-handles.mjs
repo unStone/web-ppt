@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = process.argv[2];
 const SOURCE_COMMIT = '6d94ace657249b487959dd654ca9d9b1c6014e4e';
-const SOURCE_URL = `https://raw.githubusercontent.com/apache/poi/${SOURCE_COMMIT}`
+const SOURCE_URL =
+  `https://raw.githubusercontent.com/apache/poi/${SOURCE_COMMIT}`
   + '/poi/src/main/resources/org/apache/poi/sl/draw/geom/presetShapeDefinitions.xml';
 const SOURCE_SHA256 = '4a762444d8d85876881c02a5b1dedf6f73006fcd8acb7b4e393435615b37c780';
 
@@ -16,28 +17,43 @@ const xml = readFileSync(sourcePath, 'utf8');
 const hash = createHash('sha256').update(xml).digest('hex');
 if (hash !== SOURCE_SHA256) throw new Error(`预设定义 SHA-256 不匹配：${hash}`);
 
-const attrs = (source) => Object.fromEntries(
-  [...source.matchAll(/([A-Za-z][\w:]*)="([^"]*)"/g)].map((match) => [match[1], match[2]]),
-);
-const section = (body, name) =>
-  body.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`))?.[1] ?? '';
-const guides = (body) => [...body.matchAll(/<gd\s+([^>]*?)\s*\/>/g)].map((match) => {
-  const value = attrs(match[1]);
-  if (!value.name || !value.fmla) throw new Error('预设定义包含无名或无公式 guide');
-  return [value.name, value.fmla];
-});
-const handles = (body) => [...body.matchAll(
-  /<(ahXY|ahPolar)\s*([^>]*)>\s*<pos\s*([^>]*)\/>\s*<\/\1>/g,
-)].map((match) => {
-  const value = attrs(match[2]);
-  const pos = attrs(match[3]);
-  if (!pos.x || !pos.y) throw new Error('预设句柄缺少位置');
-  return match[1] === 'ahXY'
-    ? ['xy', value.gdRefX ?? null, value.minX ?? null, value.maxX ?? null,
-      value.gdRefY ?? null, value.minY ?? null, value.maxY ?? null, pos.x, pos.y]
-    : ['polar', value.gdRefR ?? null, value.minR ?? null, value.maxR ?? null,
-      value.gdRefAng ?? null, value.minAng ?? null, value.maxAng ?? null, pos.x, pos.y];
-});
+const attrs = (source) => Object.fromEntries([...source.matchAll(/([A-Za-z][\w:]*)="([^"]*)"/g)].map((match) => [match[1], match[2]]));
+const section = (body, name) => body.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`))?.[1] ?? '';
+const guides = (body) =>
+  [...body.matchAll(/<gd\s+([^>]*?)\s*\/>/g)].map((match) => {
+    const value = attrs(match[1]);
+    if (!value.name || !value.fmla) throw new Error('预设定义包含无名或无公式 guide');
+    return [value.name, value.fmla];
+  });
+const handles = (body) =>
+  [...body.matchAll(/<(ahXY|ahPolar)\s*([^>]*)>\s*<pos\s*([^>]*)\/>\s*<\/\1>/g)].map((match) => {
+    const value = attrs(match[2]);
+    const pos = attrs(match[3]);
+    if (!pos.x || !pos.y) throw new Error('预设句柄缺少位置');
+    return match[1] === 'ahXY'
+      ? [
+          'xy',
+          value.gdRefX ?? null,
+          value.minX ?? null,
+          value.maxX ?? null,
+          value.gdRefY ?? null,
+          value.minY ?? null,
+          value.maxY ?? null,
+          pos.x,
+          pos.y,
+        ]
+      : [
+          'polar',
+          value.gdRefR ?? null,
+          value.minR ?? null,
+          value.maxR ?? null,
+          value.gdRefAng ?? null,
+          value.minAng ?? null,
+          value.maxAng ?? null,
+          pos.x,
+          pos.y,
+        ];
+  });
 
 const definitions = [];
 for (const match of xml.matchAll(/^  <([A-Za-z0-9]+)>\s*$([\s\S]*?)^  <\/\1>\s*$/gm)) {
@@ -54,10 +70,11 @@ if (definitions.length !== 187 || new Set(definitions.map(({ name }) => name)).s
 }
 
 const names = definitions.map(({ name }) => name);
-const withHandles = Object.fromEntries(definitions
-  .filter((definition) => definition.handles.length)
-  .map(({ name, defaults, guides: guideList, handles: handleList }) =>
-    [name, [defaults, guideList, handleList]]));
+const withHandles = Object.fromEntries(
+  definitions
+    .filter((definition) => definition.handles.length)
+    .map(({ name, defaults, guides: guideList, handles: handleList }) => [name, [defaults, guideList, handleList]]),
+);
 const namesSource = names.map((name) => `  ${JSON.stringify(name)},`).join('\n');
 const handlesSource = Object.entries(withHandles)
   .map(([name, definition]) => `  ${JSON.stringify(name)}: ${JSON.stringify(definition)},`)

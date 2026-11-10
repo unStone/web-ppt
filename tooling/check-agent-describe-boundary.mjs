@@ -18,11 +18,16 @@ const describe = moduleClosure(join(root, 'packages/edit-core/dist/describe.js')
 assert(describe.source.includes('describePresentation'));
 assert(!/\b(?:ajv|ts-json-schema-generator|node:fs|document\.|window\.)\b/.test(describe.source), '新入口不能携带开发依赖或 DOM');
 assert(!Object.keys(manifest.dependencies).some((name) => /ajv|schema/.test(name)));
-assert.equal(createRequire(import.meta.url).resolve('@web-ppt/edit-core/describe/schema.json'), join(root, 'packages/edit-core/schemas/describe.schema.json'));
+assert.equal(
+  createRequire(import.meta.url).resolve('@web-ppt/edit-core/describe/schema.json'),
+  join(root, 'packages/edit-core/schemas/describe.schema.json'),
+);
 const directory = join(root, 'out/agent-describe');
 mkdirSync(directory, { recursive: true });
 const consumer = join(directory, 'consumer.ts');
-writeFileSync(consumer, `import { describePresentation, DescribeError, type PresentationDescription } from '@web-ppt/edit-core/describe';
+writeFileSync(
+  consumer,
+  `import { describePresentation, DescribeError, type PresentationDescription } from '@web-ppt/edit-core/describe';
 import { createEmptyDoc, type ElementId } from '@web-ppt/edit-core';
 const doc = createEmptyDoc({ width: 100, height: 100 });
 const result: PresentationDescription = describePresentation(doc, { maxChars: 1000 });
@@ -33,13 +38,35 @@ describePresentation(doc, { maxChars: '1000' });
 // @ts-expect-error 只读输出不能被调用方改写
 result.version = 1;
 void error;
-`);
-execFileSync(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), consumer,
-  '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'ESNext', '--moduleResolution', 'bundler'], { cwd: root, stdio: 'inherit' });
-const packed = JSON.parse(execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--cache', join(root, 'out/npm-cache')], {
-  cwd: join(root, 'packages/edit-core'), encoding: 'utf8',
-}))[0];
+`,
+);
+execFileSync(
+  process.execPath,
+  [
+    join(root, 'node_modules/typescript/bin/tsc'),
+    consumer,
+    '--noEmit',
+    '--strict',
+    '--skipLibCheck',
+    '--target',
+    'ES2020',
+    '--module',
+    'ESNext',
+    '--moduleResolution',
+    'bundler',
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
+const packed = JSON.parse(
+  execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--cache', join(root, 'out/npm-cache')], {
+    cwd: join(root, 'packages/edit-core'),
+    encoding: 'utf8',
+  }),
+)[0];
 for (const name of ['dist/describe.js', 'dist/describe/index.d.ts', 'dist/describe/types.d.ts', 'schemas/describe.schema.json']) {
-  assert(packed.files.some((file) => file.path === name), `npm 包必须包含 ${name}`);
+  assert(
+    packed.files.some((file) => file.path === name),
+    `npm 包必须包含 ${name}`,
+  );
 }
 console.log(`describe 按需边界通过：${describe.gzip}B gzip；基础入口未引入新实现`);

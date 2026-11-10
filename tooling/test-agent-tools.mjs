@@ -9,14 +9,21 @@ const out = join(root, 'out/agent-tools');
 mkdirSync(out, { recursive: true });
 const dist = process.argv.includes('--dist');
 const entry = join(out, 'entry.mjs');
-writeFileSync(entry, `export * as core from ${JSON.stringify(join(root, 'packages/core/src/index.ts'))};
+writeFileSync(
+  entry,
+  `export * as core from ${JSON.stringify(join(root, 'packages/core/src/index.ts'))};
 export * as nodeRender from ${JSON.stringify(join(root, 'packages/core/src/node-export.ts'))};
 export * as edit from ${JSON.stringify(join(root, 'packages/edit-core/src/index.ts'))};
-export * as agent from ${JSON.stringify(join(root, 'packages/edit-core/src/agent/index.ts'))};`);
-const api = dist ? {
-  core: await import('@web-ppt/core'), nodeRender: await import('@web-ppt/core/node'),
-  edit: await import('@web-ppt/edit-core'), agent: await import('@web-ppt/edit-core/agent'),
-} : await bundleBrowser({ root, entry, output: join(out, 'contract.mjs') });
+export * as agent from ${JSON.stringify(join(root, 'packages/edit-core/src/agent/index.ts'))};`,
+);
+const api = dist
+  ? {
+      core: await import('@web-ppt/core'),
+      nodeRender: await import('@web-ppt/core/node'),
+      edit: await import('@web-ppt/edit-core'),
+      agent: await import('@web-ppt/edit-core/agent'),
+    }
+  : await bundleBrowser({ root, entry, output: join(out, 'contract.mjs') });
 const { core, edit, agent } = api;
 const input = readFileSync(join(root, 'fixtures/sample-agent-tools.pptx'));
 const session = await agent.openAgentSession(input, { idPrefix: 'agent-tools-' });
@@ -26,7 +33,10 @@ assert(description.ok && description.value.version === 1);
 const title = description.value.slides[0].elements.find((element) => element.name === '页面标题');
 assert(title);
 const tools = agent.listAgentTools();
-assert.deepEqual(tools.map((tool) => tool.name), ['describe', 'element', 'lint', 'render', 'edit', 'undo', 'redo', 'save']);
+assert.deepEqual(
+  tools.map((tool) => tool.name),
+  ['describe', 'element', 'lint', 'render', 'edit', 'undo', 'redo', 'save'],
+);
 assert(tools.every((tool) => tool.inputSchema.$ref));
 
 const schema = agent.agentToolSchema;
@@ -58,30 +68,59 @@ for (const target of [
   assert(queried.ok);
   assert.deepEqual(queried.value.value.value, target?.kind === 'none' ? null : target);
 }
-for (const target of [{ kind: 'layout', id: 'missing-layout' }, { kind: 'master', id: 'missing-master' }]) {
+for (const target of [
+  { kind: 'layout', id: 'missing-layout' },
+  { kind: 'master', id: 'missing-master' },
+]) {
   const before = JSON.stringify({ doc: linkDoc, history: linkSession.editor.history.undoEntries });
-  const result = await linkSession.call('edit', { commands: [{
-    type: 'AddShape', target, preset: 'rect', rect: { x: 1, y: 2, w: 30, h: 40 },
-  }] });
+  const result = await linkSession.call('edit', {
+    commands: [
+      {
+        type: 'AddShape',
+        target,
+        preset: 'rect',
+        rect: { x: 1, y: 2, w: 30, h: 40 },
+      },
+    ],
+  });
   assert(!result.ok && result.error.reason === 'target-not-found' && result.error.elementId === target.id);
   assert.equal(JSON.stringify({ doc: linkDoc, history: linkSession.editor.history.undoEntries }), before);
 }
 const missingLinkBefore = JSON.stringify({ doc: linkDoc, history: linkSession.editor.history.undoEntries });
-const missingLink = await linkSession.call('edit', { commands: [{
-  type: 'SetLink', id: linkTitle, target: { kind: 'slide', slideId: 'missing-slide' },
-}] });
+const missingLink = await linkSession.call('edit', {
+  commands: [
+    {
+      type: 'SetLink',
+      id: linkTitle,
+      target: { kind: 'slide', slideId: 'missing-slide' },
+    },
+  ],
+});
 assert(!missingLink.ok && missingLink.error.reason === 'target-not-found' && missingLink.error.elementId === 'missing-slide');
 assert.equal(JSON.stringify({ doc: linkDoc, history: linkSession.editor.history.undoEntries }), missingLinkBefore);
 const layoutId = Object.keys(linkDoc.layouts)[0];
-const addedDesignShape = await linkSession.call('edit', { commands: [{
-  type: 'AddShape', target: { kind: 'layout', id: layoutId }, preset: 'rect', rect: { x: 1, y: 2, w: 30, h: 40 },
-}] });
+const addedDesignShape = await linkSession.call('edit', {
+  commands: [
+    {
+      type: 'AddShape',
+      target: { kind: 'layout', id: layoutId },
+      preset: 'rect',
+      rect: { x: 1, y: 2, w: 30, h: 40 },
+    },
+  ],
+});
 assert(addedDesignShape.ok, JSON.stringify(addedDesignShape));
 const designShapeId = addedDesignShape.value.affectedElements.find((id) => linkDoc.elements[id]?.parent === layoutId);
 assert(designShapeId);
-const designLink = await linkSession.call('edit', { commands: [{
-  type: 'SetLink', id: designShapeId, target: { kind: 'external', href: 'https://example.com/layout' },
-}] });
+const designLink = await linkSession.call('edit', {
+  commands: [
+    {
+      type: 'SetLink',
+      id: designShapeId,
+      target: { kind: 'external', href: 'https://example.com/layout' },
+    },
+  ],
+});
 assert(designLink.ok, JSON.stringify(designLink));
 const designLinkValue = await linkSession.call('element', { id: designShapeId, query: 'link' });
 assert(designLinkValue.ok && designLinkValue.value.value.value.href === 'https://example.com/layout');
@@ -95,9 +134,36 @@ for (const test of [
   { input: { commands: [{ type: 'SetName', id: title.id, name: 'x', extra: true }] }, reason: 'invalid-input' },
   { input: { commands: [{ type: 'SetName', id: 'missing-element', name: 'x' }] }, reason: 'target-not-found' },
   { input: { commands: [{ type: 'SetXfrm', id: title.id, w: -1 }] }, reason: 'command-rejected' },
-  { input: { commands: [{ type: 'SetName', id: title.id, name: 'x' }, { type: 'SetXfrm', id: title.id, w: -2 }] }, reason: 'command-rejected', index: 1 },
-  { input: { commands: [{ type: 'AddShape', slideId: doc.slideOrder[0], preset: 'rect', rect: { x: 1, y: 2, w: 30, h: 40 } }, { type: 'SetXfrm', id: title.id, w: -3 }] }, reason: 'command-rejected', index: 1 },
-  { input: { commands: [{ type: 'SetZ', id: title.id, to: 'front' }, { type: 'SetZ', id: description.value.slides[1].elements[0].id, to: 'front' }] }, reason: 'command-rejected', index: 1 },
+  {
+    input: {
+      commands: [
+        { type: 'SetName', id: title.id, name: 'x' },
+        { type: 'SetXfrm', id: title.id, w: -2 },
+      ],
+    },
+    reason: 'command-rejected',
+    index: 1,
+  },
+  {
+    input: {
+      commands: [
+        { type: 'AddShape', slideId: doc.slideOrder[0], preset: 'rect', rect: { x: 1, y: 2, w: 30, h: 40 } },
+        { type: 'SetXfrm', id: title.id, w: -3 },
+      ],
+    },
+    reason: 'command-rejected',
+    index: 1,
+  },
+  {
+    input: {
+      commands: [
+        { type: 'SetZ', id: title.id, to: 'front' },
+        { type: 'SetZ', id: description.value.slides[1].elements[0].id, to: 'front' },
+      ],
+    },
+    reason: 'command-rejected',
+    index: 1,
+  },
   { input: { commands: [{ type: 'ReplaceImage', id: title.id, bytes: 'not base64!', mime: 'image/png' }] }, reason: 'invalid-base64' },
 ]) {
   const before = snapshot();
@@ -111,10 +177,13 @@ assert(!emptyBatch.ok && emptyBatch.error.reason === 'invalid-input');
 
 const originalName = doc.elements[title.id].src.name;
 const originalText = description.value.slides[0].elements.find((element) => element.id === title.id).paragraphs[0].text;
-const edited = await session.call('edit', { commands: [
-  { type: 'SetName', id: title.id, name: 'Agent 批量标题' },
-  { type: 'EditText', id: title.id, ops: [{ type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: '批量' }] },
-], lint: { checks: ['off-canvas'] } });
+const edited = await session.call('edit', {
+  commands: [
+    { type: 'SetName', id: title.id, name: 'Agent 批量标题' },
+    { type: 'EditText', id: title.id, ops: [{ type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 }, text: '批量' }] },
+  ],
+  lint: { checks: ['off-canvas'] },
+});
 assert(edited.ok, JSON.stringify(edited));
 assert(edited.value.affectedElements.includes(title.id));
 assert.deepEqual(edited.value.affectedSlides, [doc.slideOrder[0]]);
@@ -161,7 +230,8 @@ const renderMissing = await session.call('render', { slideNumber: 1, format: 'sv
 assert(!renderMissing.ok && renderMissing.error.reason === 'node-measure-required');
 session.dispose();
 
-const measureText = (text, run, scale) => [...text].reduce((width, char) => width + (char.codePointAt(0) > 255 ? 1 : .55) * run.size * scale, 0);
+const measureText = (text, run, scale) =>
+  [...text].reduce((width, char) => width + (char.codePointAt(0) > 255 ? 1 : 0.55) * run.size * scale, 0);
 const renderedSession = await agent.openAgentSession(input, { idPrefix: 'agent-tools-render-', measureText });
 const rendered = await renderedSession.call('render', { slideNumber: 1, format: 'svg' });
 assert(rendered.ok && rendered.value.data.includes('<svg') && !rendered.value.data.includes('foreignObject'));

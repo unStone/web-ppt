@@ -12,14 +12,20 @@ const clonePosition = (position: TextPosition): TextPosition => ({ ...position }
 
 export function cloneSelection(selection: Selection): Selection {
   switch (selection.kind) {
-    case 'none': return { kind: 'none' };
-    case 'elements': return { kind: 'elements', ids: [...selection.ids], enteredGroup: selection.enteredGroup };
-    case 'text': return {
-      kind: 'text', id: selection.id,
-      ...(selection.cell !== undefined ? { cell: { ...selection.cell } } : {}),
-      anchor: clonePosition(selection.anchor), focus: clonePosition(selection.focus),
-    };
-    case 'table': return { kind: 'table', id: selection.id, cells: selection.cells.map((cell) => ({ ...cell })) };
+    case 'none':
+      return { kind: 'none' };
+    case 'elements':
+      return { kind: 'elements', ids: [...selection.ids], enteredGroup: selection.enteredGroup };
+    case 'text':
+      return {
+        kind: 'text',
+        id: selection.id,
+        ...(selection.cell !== undefined ? { cell: { ...selection.cell } } : {}),
+        anchor: clonePosition(selection.anchor),
+        focus: clonePosition(selection.focus),
+      };
+    case 'table':
+      return { kind: 'table', id: selection.id, cells: selection.cells.map((cell) => ({ ...cell })) };
   }
 }
 
@@ -68,7 +74,8 @@ export function outermostSelectedElementIds(doc: EditDoc, ids: readonly ElementI
 
 export function normalizeSelection(doc: EditDoc, selection: Selection): Selection {
   switch (selection.kind) {
-    case 'none': return { kind: 'none' };
+    case 'none':
+      return { kind: 'none' };
     case 'elements': {
       if (!selection.ids.length) return { kind: 'none' };
       if (new Set(selection.ids).size !== selection.ids.length) throw new Error('元素选区不能包含重复 id');
@@ -105,7 +112,7 @@ export function normalizeSelection(doc: EditDoc, selection: Selection): Selectio
         if (record.src.kind !== 'shape' || (!record.src.text && !record.meta.textTemplate)) {
           throw new Error('文本选区必须指向文本形状');
         }
-        text = element.kind === 'shape' ? element.text ?? record.meta.textTemplate ?? null : null;
+        text = element.kind === 'shape' ? (element.text ?? record.meta.textTemplate ?? null) : null;
       }
       if (!text) throw new Error('文本选区必须指向有效文本体');
       validateTextPosition(text, selection.anchor, '文本选区 anchor');
@@ -117,8 +124,15 @@ export function normalizeSelection(doc: EditDoc, selection: Selection): Selectio
       if (!record || record.src.kind !== 'table') throw new Error('表格选区必须指向表格元素');
       const table = effectiveElement(doc, selection.id);
       for (const cell of selection.cells) {
-        if (!Number.isInteger(cell.r) || !Number.isInteger(cell.c) || cell.r < 0 || cell.c < 0
-          || table.kind !== 'table' || cell.r >= table.rows.length || cell.c >= table.colWidths.length) {
+        if (
+          !Number.isInteger(cell.r)
+          || !Number.isInteger(cell.c)
+          || cell.r < 0
+          || cell.c < 0
+          || table.kind !== 'table'
+          || cell.r >= table.rows.length
+          || cell.c >= table.colWidths.length
+        ) {
           throw new Error(`表格选区单元格越界：${cell.r},${cell.c}`);
         }
       }
@@ -135,9 +149,12 @@ export function selectionAfterStructure(doc: EditDoc, selection: Selection): Sel
   }
   const ids = selection.ids.filter((id) => !!doc.elements[id]);
   if (!ids.length) return { kind: 'none' };
-  const enteredGroup = selection.enteredGroup && doc.elements[selection.enteredGroup]?.src.kind === 'group'
+  const enteredGroup =
+    selection.enteredGroup
+    && doc.elements[selection.enteredGroup]?.src.kind === 'group'
     && ids.every((id) => isElementDescendantOf(doc, id, selection.enteredGroup!))
-    ? selection.enteredGroup : null;
+      ? selection.enteredGroup
+      : null;
   return normalizeSelection(doc, { kind: 'elements', ids, enteredGroup });
 }
 
@@ -145,8 +162,7 @@ function elementHiddenBySelfOrAncestor(doc: EditDoc, id: ElementId): boolean {
   return elementOrAncestorMatches(doc, id, (record) => record.meta.hiddenByUser === true);
 }
 
-const interactive = (doc: EditDoc, id: ElementId): boolean =>
-  !elementHasLockedAncestor(doc, id) && !elementHiddenBySelfOrAncestor(doc, id);
+const interactive = (doc: EditDoc, id: ElementId): boolean => !elementHasLockedAncestor(doc, id) && !elementHiddenBySelfOrAncestor(doc, id);
 
 /** 会话锁定/隐藏不删除模型，只过滤因此失效的活动选区。 */
 export function selectionAfterInteractionState(doc: EditDoc, selection: Selection): Selection {
@@ -156,8 +172,11 @@ export function selectionAfterInteractionState(doc: EditDoc, selection: Selectio
   }
   const ids = selection.ids.filter((id) => interactive(doc, id));
   if (!ids.length) return { kind: 'none' };
-  const enteredGroup = selection.enteredGroup && interactive(doc, selection.enteredGroup)
+  const enteredGroup =
+    selection.enteredGroup
+    && interactive(doc, selection.enteredGroup)
     && ids.every((id) => isElementDescendantOf(doc, id, selection.enteredGroup!))
-    ? selection.enteredGroup : null;
+      ? selection.enteredGroup
+      : null;
   return normalizeSelection(doc, { kind: 'elements', ids, enteredGroup });
 }

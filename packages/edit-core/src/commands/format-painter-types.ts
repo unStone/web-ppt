@@ -2,19 +2,17 @@ import type { ElementId, TableCellAddress } from '../types';
 import type { TextRange } from './types';
 import { assertDataArray } from '../data-validation';
 
-export const FORMAT_MASK_FIELDS = Object.freeze([
-  'fill', 'stroke', 'effects', 'run', 'paragraph', 'body',
-] as const);
-export type FormatMaskField = typeof FORMAT_MASK_FIELDS[number];
+export const FORMAT_MASK_FIELDS = Object.freeze(['fill', 'stroke', 'effects', 'run', 'paragraph', 'body'] as const);
+export type FormatMaskField = (typeof FORMAT_MASK_FIELDS)[number];
 const formatMaskFields = new Set<string>(FORMAT_MASK_FIELDS);
 
-export function assertFormatMask(
-  value: unknown,
-  label = '格式刷 mask',
-): asserts value is readonly FormatMaskField[] {
+export function assertFormatMask(value: unknown, label = '格式刷 mask'): asserts value is readonly FormatMaskField[] {
   assertDataArray(value, label);
-  if (!value.length || value.some((field) => typeof field !== 'string'
-    || !formatMaskFields.has(field)) || new Set(value).size !== value.length) {
+  if (
+    !value.length
+    || value.some((field) => typeof field !== 'string' || !formatMaskFields.has(field))
+    || new Set(value).size !== value.length
+  ) {
     throw new Error(`${label} 必须是非空、无重复的已知格式掩码`);
   }
 }

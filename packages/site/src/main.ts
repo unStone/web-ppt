@@ -87,9 +87,16 @@ const present = bindPresentMode({
       numbers.clear();
       grid?.close();
     }
-    sync(); speaker.sync(); grid?.syncChrome();
+    sync();
+    speaker.sync();
+    grid?.syncChrome();
   },
-  onEnter: () => { linkToast.hidden = true; numbers.clear(); blank.clear(); blank.attach(); },
+  onEnter: () => {
+    linkToast.hidden = true;
+    numbers.clear();
+    blank.clear();
+    blank.attach();
+  },
 });
 const demoKeysActive = (): boolean => {
   if (grid?.showing()) return false;
@@ -104,14 +111,22 @@ const numbers = bindSlideNumber({
   presenting: () => present.presenting(),
   keysActive: demoKeysActive,
   viewer: () => viewer,
-  onJump: () => { blank.clear(); sync(); speaker.sync(); },
+  onJump: () => {
+    blank.clear();
+    sync();
+    speaker.sync();
+  },
 });
 // 必须排在黑屏之前：遮罩会把 Home / End 收成「只恢复」，首尾页就跳不过去。
 bindSlideEnds({
   presenting: () => present.presenting(),
   keysActive: demoKeysActive,
   viewer: () => viewer,
-  onJump: () => { blank.clear(); sync(); speaker.sync(); },
+  onJump: () => {
+    blank.clear();
+    sync();
+    speaker.sync();
+  },
 });
 const blank = bindBlankScreen({
   stage,
@@ -137,13 +152,20 @@ grid = bindSlideGrid({
   },
   browseButtons: [$<HTMLButtonElement>('#gridBtn')],
   presentButtons: [$<HTMLButtonElement>('#pGrid')],
-  onJump: () => { blank.clear(); sync(); speaker.sync(); },
+  onJump: () => {
+    blank.clear();
+    sync();
+    speaker.sync();
+  },
 });
 bindSwipeNav({
   host: stageWrap,
   viewer: () => viewer,
   isAdvanceTarget: isPresentAdvanceTarget,
-  afterChange: () => { sync(); speaker.sync(); },
+  afterChange: () => {
+    sync();
+    speaker.sync();
+  },
 });
 
 /* ── 载入并渲染 ───────────────────────────────── */
@@ -183,7 +205,9 @@ function detachOpen(): void {
  */
 function armDownload(bytes: ArrayBuffer, name: string): void {
   if (currentUrl) URL.revokeObjectURL(currentUrl);
-  currentUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }));
+  currentUrl = URL.createObjectURL(
+    new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }),
+  );
   downloadLink.href = currentUrl;
   downloadLink.download = /\.pptx?$/i.test(name) ? name : `${name}.pptx`;
 }
@@ -216,8 +240,11 @@ async function show(bytes: ArrayBuffer, label: string, netMs: number | undefined
   try {
     await Promise.all([prepareModernCharts(bytes), prepareAdvancedRendering(bytes)]);
     if (!opens.isCurrent(token)) return;
-    const opened = await openWithPresentationPassword(label, (password) =>
-      parse(bytes, password === undefined ? undefined : { password }), passwordCopy);
+    const opened = await openWithPresentationPassword(
+      label,
+      (password) => parse(bytes, password === undefined ? undefined : { password }),
+      passwordCopy,
+    );
     if (!opens.isCurrent(token)) {
       abandonPresentation(opened);
       return;
@@ -265,7 +292,11 @@ async function show(bytes: ArrayBuffer, label: string, netMs: number | undefined
   blank.attach();
   blank.clear();
   // 每翻一页补一次字体：已经下过的切片是免费的，没下过的才是这一页真需要的
-  viewer.onChange = () => { sync(); speaker.sync(); void ensureFonts(pres); };
+  viewer.onChange = () => {
+    sync();
+    speaker.sync();
+    void ensureFonts(pres);
+  };
   // 演示时超链接照常打开；嵌在页面里时不行——第 5 页那种整页链接的封面
   // 会让任何一次点击都把人带走（orcid-ooxml-strict 就是这样）。
   viewer.onLinkClick = (href) => {
@@ -287,12 +318,18 @@ async function show(bytes: ArrayBuffer, label: string, netMs: number | undefined
 
   const kb = Math.round(bytes.byteLength / 1024);
   setText(meta, '{name} · {kb}KB · {pages} 页 · {network}解析 {parse}ms · 首屏 {paint}ms', {
-    name: label, kb, pages: pres.slides.length,
+    name: label,
+    kb,
+    pages: pres.slides.length,
     // 秒级用 s、毫秒级用 ms，避免同源小文件显示成「0.0s」。
-    network: netMs === undefined ? '' : message('下载 {time} · ', {
-      time: netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`,
-    }),
-    parse: parseMs.toFixed(0), paint: (performance.now() - renderT0 + parseMs).toFixed(0),
+    network:
+      netMs === undefined
+        ? ''
+        : message('下载 {time} · ', {
+            time: netMs >= 1000 ? `${(netMs / 1000).toFixed(1)}s` : `${netMs.toFixed(0)}ms`,
+          }),
+    parse: parseMs.toFixed(0),
+    paint: (performance.now() - renderT0 + parseMs).toFixed(0),
   });
 }
 
@@ -380,16 +417,19 @@ function scrollThumbsTo(index: number): void {
  */
 function buildThumbs(pres: Presentation): void {
   thumbs.innerHTML = '';
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      const el = e.target as HTMLElement;
-      io.unobserve(el);
-      const i = Number(el.dataset.i);
-      // 不走 slideSvg 的缓存：缩略图与主视图同时在页面上，defs id 会撞
-      el.innerHTML = viewer!.renderSlide(i);
-    }
-  }, { root: thumbs, rootMargin: '300px 0px' });
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        const el = e.target as HTMLElement;
+        io.unobserve(el);
+        const i = Number(el.dataset.i);
+        // 不走 slideSvg 的缓存：缩略图与主视图同时在页面上，defs id 会撞
+        el.innerHTML = viewer!.renderSlide(i);
+      }
+    },
+    { root: thumbs, rootMargin: '300px 0px' },
+  );
 
   for (let i = 0; i < pres.slides.length; i++) {
     const el = document.createElement('div');
@@ -419,10 +459,7 @@ async function loadUrl(src: string, label: string): Promise<void> {
     if (!opens.isCurrent(token)) return;
     // 样本取不到是网络或样本库的事，跟引擎无关。指一条还走得通的路：
     // 本地文件的解析压根不需要网络。
-    setStatus(
-      message('示例载入失败（{reason}）\n把自己的 .pptx / .ppt 拖进来试试，解析不依赖网络。', { reason: whyFailed(e) }),
-      'err',
-    );
+    setStatus(message('示例载入失败（{reason}）\n把自己的 .pptx / .ppt 拖进来试试，解析不依赖网络。', { reason: whyFailed(e) }), 'err');
     setMessage(meta, '');
   }
 }
@@ -476,7 +513,9 @@ function showLinkToast(href: string): void {
   linkToast.append(a);
   linkToast.hidden = false;
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { linkToast.hidden = true; }, 6000);
+  toastTimer = setTimeout(() => {
+    linkToast.hidden = true;
+  }, 6000);
 }
 
 /* ── 演示 ─────────────────────────────────────── */
@@ -509,9 +548,17 @@ if (pick.files?.length) void openFile(pick.files[0]);
 
 // 整块 demo 都是拖放目标
 let dragDepth = 0;
-demo.addEventListener('dragenter', (e) => { e.preventDefault(); if (++dragDepth === 1) demo.classList.add('dragging'); });
+demo.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  if (++dragDepth === 1) demo.classList.add('dragging');
+});
 demo.addEventListener('dragover', (e) => e.preventDefault());
-demo.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; demo.classList.remove('dragging'); } });
+demo.addEventListener('dragleave', () => {
+  if (--dragDepth <= 0) {
+    dragDepth = 0;
+    demo.classList.remove('dragging');
+  }
+});
 demo.addEventListener('drop', (e) => {
   e.preventDefault();
   dragDepth = 0;
@@ -535,13 +582,15 @@ addEventListener('keydown', (e) => {
   // Mac 上标着 delete 的退格也是 Backspace。Ctrl / ⌘+P 是打印，不能在这里退批次。
   if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
   const vertical = present.presenting() ? presentVerticalStep(e) : null;
-  const forward = e.key === 'ArrowRight' || e.key === 'PageDown'
-    || (present.presenting() && (e.key === ' ' || e.key === 'Enter'))
-    || vertical === 'next';
-  if (forward) { viewer.next(); e.preventDefault(); }
-  if (e.key === 'ArrowLeft' || e.key === 'PageUp' || vertical === 'prev'
-    || (present.presenting() && presentRewindKey(e))) {
-    viewer.prev(); e.preventDefault();
+  const forward =
+    e.key === 'ArrowRight' || e.key === 'PageDown' || (present.presenting() && (e.key === ' ' || e.key === 'Enter')) || vertical === 'next';
+  if (forward) {
+    viewer.next();
+    e.preventDefault();
+  }
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp' || vertical === 'prev' || (present.presenting() && presentRewindKey(e))) {
+    viewer.prev();
+    e.preventDefault();
   }
 });
 
@@ -554,7 +603,6 @@ document.querySelectorAll<HTMLButtonElement>('.copy').forEach((btn) => {
 drawArch();
 initializeHardCases();
 
-
 /**
  * 地址里带的文件名与页码。
  *
@@ -564,17 +612,18 @@ initializeHardCases();
 // 参数读完就把地址还原成干净的主页。首页不写地址，留着这串参数只会在换了
 // 样本之后变成一个会撒谎的地址——指着 A 却显示着 B。
 const cleanUrl = new URL(location.href);
-cleanUrl.searchParams.delete('sample'); cleanUrl.searchParams.delete('p');
+cleanUrl.searchParams.delete('sample');
+cleanUrl.searchParams.delete('p');
 history.replaceState(history.state, '', cleanUrl);
 refreshSiteLinks();
 
 const builtinChip = requested
-  ? [...document.querySelectorAll<HTMLElement>('.samples .chip[data-src]')]
-    .find((c) => shareName(c.dataset.src!) === requested)
+  ? [...document.querySelectorAll<HTMLElement>('.samples .chip[data-src]')].find((c) => shareName(c.dataset.src!) === requested)
   : undefined;
 
 if (builtinChip) selectChip(builtinChip, true);
-else if (requested) setStatus('', 'spin'); // 等远程清单到了再说，省一次下载和一次闪烁
+else if (requested)
+  setStatus('', 'spin'); // 等远程清单到了再说，省一次下载和一次闪烁
 else void loadUrl('demo/showcase.pptx', 'showcase.pptx');
 
 /* ── 远程样本库 ───────────────────────────────── */

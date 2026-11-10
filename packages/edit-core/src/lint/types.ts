@@ -37,8 +37,14 @@ export interface LayoutLintOptions {
 }
 export type ContrastSamples = readonly { foreground: string; background: string }[] | { readonly visible: false };
 export class LayoutLintError extends Error {
-  constructor(readonly reason: string, message: string, readonly slideNumber: number | null = null, readonly elementId: string | null = null) {
-    super(message); this.name = 'LayoutLintError';
+  constructor(
+    readonly reason: string,
+    message: string,
+    readonly slideNumber: number | null = null,
+    readonly elementId: string | null = null,
+  ) {
+    super(message);
+    this.name = 'LayoutLintError';
   }
 }
 export function active(signal?: AbortSignal): void {
@@ -49,9 +55,14 @@ export async function waitFor<T>(value: T | Promise<T>, signal?: AbortSignal): P
   if (!signal) return value;
   let abort: () => void = () => {};
   try {
-    return await Promise.race([Promise.resolve(value), new Promise<never>((_, reject) => {
-      abort = () => reject(new LayoutLintError('aborted', '布局检查已取消'));
-      signal.addEventListener('abort', abort, { once: true });
-    })]);
-  } finally { signal.removeEventListener('abort', abort); }
+    return await Promise.race([
+      Promise.resolve(value),
+      new Promise<never>((_, reject) => {
+        abort = () => reject(new LayoutLintError('aborted', '布局检查已取消'));
+        signal.addEventListener('abort', abort, { once: true });
+      }),
+    ]);
+  } finally {
+    signal.removeEventListener('abort', abort);
+  }
 }

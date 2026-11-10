@@ -18,13 +18,14 @@ const api = await bundleBrowser({
 
 const { identifyOpenBytes, mapOpenError, OPEN_KIND, OpenKindError, rejectIfNotPresentation } = api;
 
-const zipOffice = (contentType, extra = {}) => zipSync({
-  '[Content_Types].xml': new TextEncoder().encode(
-    `<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">`
-    + `<Override PartName="/doc.xml" ContentType="${contentType}"/></Types>`,
-  ),
-  ...extra,
-});
+const zipOffice = (contentType, extra = {}) =>
+  zipSync({
+    '[Content_Types].xml': new TextEncoder().encode(
+      `<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">`
+        + `<Override PartName="/doc.xml" ContentType="${contentType}"/></Types>`,
+    ),
+    ...extra,
+  });
 
 assert.equal(identifyOpenBytes(new Uint8Array()).message, OPEN_KIND.empty);
 assert.equal(identifyOpenBytes(new TextEncoder().encode('%PDF-1.4\ntrailer\n%%EOF')).message, OPEN_KIND.pdf);
@@ -62,9 +63,11 @@ assert.equal(mapOpenError(new Error('无效的 .ppt：找不到 PowerPoint Docum
 assert.equal(mapOpenError(new Error('密码错误')), null);
 
 const pdfReject = new TextEncoder().encode('%PDF-1.4\n%%EOF');
-assert.throws(() => rejectIfNotPresentation(pdfReject), (error) => (
-  error instanceof OpenKindError && error.openMessage === OPEN_KIND.pdf
-), 'PDF 必须在认文件处拒绝');
+assert.throws(
+  () => rejectIfNotPresentation(pdfReject),
+  (error) => error instanceof OpenKindError && error.openMessage === OPEN_KIND.pdf,
+  'PDF 必须在认文件处拒绝',
+);
 assert.doesNotThrow(() => rejectIfNotPresentation(showcase), '真演示文稿不能被认文件拒绝');
 
 record();

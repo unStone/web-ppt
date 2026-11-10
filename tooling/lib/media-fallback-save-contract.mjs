@@ -24,8 +24,10 @@ export async function runMediaFallbackSaveContract({ core, edit, assert, fallbac
       const slide = strFromU8(parts['ppt/slides/slide1.xml']);
       const rels = strFromU8(parts['ppt/slides/_rels/slide1.xml.rels']);
       if (generated) {
-        assert.ok(slide.includes('<a:audioFile r:link="rIdMedia10"/>')
-          && slide.includes('<p14:media r:embed="rIdMediaCompat10"/>'), `${label}：经典与 p14 引用都写回`);
+        assert.ok(
+          slide.includes('<a:audioFile r:link="rIdMedia10"/>') && slide.includes('<p14:media r:embed="rIdMediaCompat10"/>'),
+          `${label}：经典与 p14 引用都写回`,
+        );
         const target = (rid) => new RegExp(`Id="${rid}"[^>]*Target="\\.\\./media/([^"]+)"`).exec(rels)?.[1];
         assert.equal(target('rIdMedia10'), target('rIdMediaCompat10'), `${label}：两条关系指向同一部件`);
         assert.deepEqual(parts[`ppt/media/${target('rIdMedia10')}`], wav, `${label}：回退字节写入新部件`);
@@ -39,9 +41,14 @@ export async function runMediaFallbackSaveContract({ core, edit, assert, fallbac
       const bytes = (spid) => reopened.package.assets[bySpid.get(spid)?.src]?.bytes;
       for (const spid of [10, 13]) assert.deepEqual(bytes(spid), wav, `${label}：重开后 ${spid} 仍是内嵌 WAV`);
       for (const spid of [11, 12, 16]) assert.deepEqual(bytes(spid), mp4, `${label}：重开后 ${spid} 仍是内嵌 MP4`);
-      assert.deepEqual([14, 15].map((spid) => [bySpid.get(spid).src, bySpid.get(spid).external]), [
-        ['https://example.com/media/promo.mp4', true], ['https://example.com/media/voice.mp3', true],
-      ], `${label}：外链保持外链`);
+      assert.deepEqual(
+        [14, 15].map((spid) => [bySpid.get(spid).src, bySpid.get(spid).external]),
+        [
+          ['https://example.com/media/promo.mp4', true],
+          ['https://example.com/media/voice.mp3', true],
+        ],
+        `${label}：外链保持外链`,
+      );
       assert.equal(bySpid.get(17).src, null, `${label}：两路都不可用的媒体仍为空源`);
     } finally {
       reopened?.dispose();

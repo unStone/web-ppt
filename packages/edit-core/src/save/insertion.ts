@@ -15,8 +15,7 @@ import { isCanvasRoot } from '../design-target';
 
 const OFFICE_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
-const escapeAttribute = (value: string): string => value
-  .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const escapeAttribute = (value: string): string => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 function collectRecords(doc: EditDoc, roots: readonly string[]): ElementRecord[] {
   const records: ElementRecord[] = [];
@@ -37,8 +36,7 @@ function pruneInactiveInsertionHosts(
   records: readonly ElementRecord[],
   part: string,
 ): void {
-  const activeSpids = new Set(records.flatMap((record) =>
-    record.meta.origin?.part === part ? [record.meta.origin.spid] : []));
+  const activeSpids = new Set(records.flatMap((record) => (record.meta.origin?.part === part ? [record.meta.origin.spid] : [])));
   for (const spid of source?.unmodeledSpids ?? []) activeSpids.add(spid);
   const inactive = Object.values(source!.spids).filter((spid) => !activeSpids.has(spid));
   if (!inactive.length) return;
@@ -46,8 +44,7 @@ function pruneInactiveInsertionHosts(
     id: `inactive-${spid}`,
     meta: { editable: 'full' as const, origin: { part, spid } },
   }));
-  const inactiveHosts = new Set([...locateElementHosts(document, probes).values()]
-    .map((location) => location.host));
+  const inactiveHosts = new Set([...locateElementHosts(document, probes).values()].map((location) => location.host));
   const prune = (parent: XmlElement): void => {
     for (const child of [...xmlElementChildren(parent)]) {
       if (inactiveHosts.has(child)) removeXmlChild(parent, child);
@@ -87,14 +84,16 @@ export function materializeElementRoots(
   sourceOnly = false,
 ): XmlDocument {
   const document = parseXmlTree(source);
-  const records = collectRecords(doc, roots.map((record) => record.id));
+  const records = collectRecords(
+    doc,
+    roots.map((record) => record.id),
+  );
   const scope = new Set(records.map((record) => record.id));
   const part = roots[0]?.meta.origin?.part;
   if (!part || roots.some((record) => record.meta.origin?.part !== part)) {
     throw new Error('复制元素树缺少统一的 OOXML 来源 part');
   }
-  const removals = Object.values(doc.removedElements).filter((record) =>
-    record.meta.origin?.part === part && scope.has(record.parent));
+  const removals = Object.values(doc.removedElements).filter((record) => record.meta.origin?.part === part && scope.has(record.parent));
   materializeElementTreeState(document, doc, part, records, removals, { scope, sourceOnly });
   // 剪贴板复制的是逻辑对象：把备用分支的别名收敛到模型身份，粘贴时一起分配新 spid。
   for (const record of records) {
@@ -109,7 +108,8 @@ export function materializeElementRoots(
 export function materializeInsertionFragment(doc: EditDoc, record: ElementRecord, sourceOnly = false): XmlDocument {
   const source = record.meta.insertion!;
   const declarations = Object.entries(source.namespaces)
-    .map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`).join('');
+    .map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`)
+    .join('');
   const wrapper = parseXmlTree(`<clipboard${declarations}>${source.markup}</clipboard>`);
   const host = xmlElementChildren(wrapper.root)[0];
   if (!host || xmlElementChildren(wrapper.root).length !== 1) {
@@ -117,8 +117,7 @@ export function materializeInsertionFragment(doc: EditDoc, record: ElementRecord
   }
   const spids = new Map(Object.entries(source.spids));
   const pending = new Set(spids.keys());
-  const relationships = new Map((source.relationships ?? [])
-    .map((relationship) => [relationship.sourceId, relationship.targetId]));
+  const relationships = new Map((source.relationships ?? []).map((relationship) => [relationship.sourceId, relationship.targetId]));
   const visit = (element: XmlElement): void => {
     if (element.localName === 'cNvPr') {
       const id = findXmlAttribute(element, { localName: 'id', namespaceUri: null });
@@ -142,11 +141,13 @@ export function materializeInsertionFragment(doc: EditDoc, record: ElementRecord
   const scope = new Set(records.map((current) => current.id));
   const part = record.meta.origin!.part;
   pruneInactiveInsertionHosts(wrapper, source, records, part);
-  const removals = Object.values(doc.removedElements).filter((removed) =>
-    removed.meta.origin?.part === part && scope.has(removed.parent));
+  const removals = Object.values(doc.removedElements).filter((removed) => removed.meta.origin?.part === part && scope.has(removed.parent));
   const roots = new Set([record.id]);
   materializeElementTreeState(wrapper, doc, part, records, removals, {
-    skipInsertions: roots, skipReparents: roots, scope, sourceOnly,
+    skipInsertions: roots,
+    skipReparents: roots,
+    scope,
+    sourceOnly,
   });
   return wrapper;
 }
@@ -179,9 +180,7 @@ export function patchInsertedElements(
   sourceOnly = false,
 ): Set<string> {
   const materialized = new Set<string>();
-  const candidates = new Set(records
-    .filter((record) => record.meta.insertion && !skip.has(record.id))
-    .map((record) => record.id));
+  const candidates = new Set(records.filter((record) => record.meta.insertion && !skip.has(record.id)).map((record) => record.id));
   const depth = (record: ElementRecord): number => {
     let value = 0;
     let parent = record.parent;
@@ -234,9 +233,12 @@ export function patchReparentedElements(
   skip?: ReadonlySet<string>,
 ): void {
   // 粘贴片段里的可编辑孩子没有独立插入来源，仍须按当前父链移动；只读兼容投影不拆壳。
-  const moved = records.filter((record) => !skip?.has(record.id)
-    && (record.meta.sourceParent !== undefined
-      || (record.meta.created && !record.meta.insertion && record.meta.origin && record.meta.editable !== 'none')));
+  const moved = records.filter(
+    (record) =>
+      !skip?.has(record.id)
+      && (record.meta.sourceParent !== undefined
+        || (record.meta.created && !record.meta.insertion && record.meta.origin && record.meta.editable !== 'none')),
+  );
   if (!moved.length) return;
   const located = locateElementHosts(document, moved);
   for (const record of moved) {

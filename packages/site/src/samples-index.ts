@@ -31,8 +31,8 @@ export interface Sample {
  * 数组顺序即展示顺序。
  */
 export const FEATURED = [
-  'swiss-grid-systems.pptx',      // 瑞士网格
-  'glassmorphism-saas.pptx',      // 玻璃拟态
+  'swiss-grid-systems.pptx', // 瑞士网格
+  'glassmorphism-saas.pptx', // 玻璃拟态
 ];
 
 /**
@@ -76,7 +76,11 @@ export async function fetchSamples(): Promise<Sample[]> {
     if (typeof s.file !== 'string' || typeof s.title !== 'string') continue;
 
     let url: URL;
-    try { url = new URL(s.file, base); } catch { continue; }
+    try {
+      url = new URL(s.file, base);
+    } catch {
+      continue;
+    }
     if (!SAMPLE_ORIGINS.includes(url.origin)) continue;
 
     out.push({

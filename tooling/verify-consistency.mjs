@@ -30,23 +30,27 @@ const counts = readCounts();
 const failures = [];
 let pass = 0;
 let group = '';
-const section = (name) => { group = name; console.log(`\n\x1b[36m▸ ${name}\x1b[0m`); };
+const section = (name) => {
+  group = name;
+  console.log(`\n\x1b[36m▸ ${name}\x1b[0m`);
+};
 const check = (name, ok, detail = '') => {
-  if (ok) { pass++; return; }
+  if (ok) {
+    pass++;
+    return;
+  }
   failures.push(`${group} · ${name}${detail ? `：${detail}` : ''}`);
   console.log(`  \x1b[31m✗ ${name}\x1b[0m${detail ? ` — ${detail}` : ''}`);
 };
 
 /** packages/ 下真正的包目录（挡掉 .DS_Store 这类杂物） */
-const packageDirs = readdirSync(join(root, 'packages')).sort()
-  .filter((name) => statSync(join(root, 'packages', name)).isDirectory()
-    && existsSync(join(root, 'packages', name, 'package.json')));
+const packageDirs = readdirSync(join(root, 'packages'))
+  .sort()
+  .filter((name) => statSync(join(root, 'packages', name)).isDirectory() && existsSync(join(root, 'packages', name, 'package.json')));
 /** 仓库里所有 package.json 的路径，顺序稳定 */
 const packageFiles = ['package.json', ...packageDirs.map((name) => `packages/${name}/package.json`)];
 /** 会发到 npm 上的包（private 的不发） */
-const published = packageFiles
-  .map((file) => ({ file, ...json(file) }))
-  .filter((p) => !p.private);
+const published = packageFiles.map((file) => ({ file, ...json(file) })).filter((p) => !p.private);
 
 // ---------------- 许可证 ----------------
 // LICENSE 正文是唯一事实来源，其余全是它的复述。复述点显式登记：新增一处要来这里加，
@@ -54,7 +58,8 @@ const published = packageFiles
 section('许可证声明');
 
 const LICENSE_HEAD = /^(MIT|Apache|BSD|GPL|MPL|ISC)[^\n]*/;
-const licenseKind = (LICENSE_HEAD.exec(read('LICENSE'))?.[0] ?? '').startsWith('MIT') ? 'MIT'
+const licenseKind = (LICENSE_HEAD.exec(read('LICENSE'))?.[0] ?? '').startsWith('MIT')
+  ? 'MIT'
   : (LICENSE_HEAD.exec(read('LICENSE'))?.[1] ?? '未知');
 
 /** 每个声明点抽出它自称的许可证名 */
@@ -73,19 +78,17 @@ const licenseClaims = [
       where: `packages/${name}/README.md`,
       value: /^(MIT|Apache-2\.0|BSD-[\w.-]+|GPL-[\w.-]+|ISC)\.?$/m.exec(read(`packages/${name}/README.md`))?.[1],
     })),
-  ...SITE_PAGES.filter((page) => existsSync(join(root, 'packages/site', page)))
-    .flatMap((page) => {
-      const text = read(`packages/site/${page}`);
-      return [
-        { where: `site/${page} 页脚`, value: /Web-PPT · ([\w.-]+)</.exec(text)?.[1] },
-        { where: `site/${page} JSON-LD`, value: /opensource\.org\/licenses\/([\w.-]+)/.exec(text)?.[1] },
-      ];
-    }),
+  ...SITE_PAGES.filter((page) => existsSync(join(root, 'packages/site', page))).flatMap((page) => {
+    const text = read(`packages/site/${page}`);
+    return [
+      { where: `site/${page} 页脚`, value: /Web-PPT · ([\w.-]+)</.exec(text)?.[1] },
+      { where: `site/${page} JSON-LD`, value: /opensource\.org\/licenses\/([\w.-]+)/.exec(text)?.[1] },
+    ];
+  }),
 ].filter((claim) => claim.value !== undefined);
 
 for (const claim of licenseClaims) {
-  check(`${claim.where} 声明 ${claim.value}`, claim.value === licenseKind,
-    `LICENSE 正文是 ${licenseKind}`);
+  check(`${claim.where} 声明 ${claim.value}`, claim.value === licenseKind, `LICENSE 正文是 ${licenseKind}`);
 }
 console.log(`  ${licenseClaims.length} 处声明与 LICENSE 正文（${licenseKind}）比对完毕`);
 
@@ -94,8 +97,11 @@ console.log(`  ${licenseClaims.length} 处声明与 LICENSE 正文（${licenseKi
 section('发布包版本');
 const versions = new Map();
 for (const p of published) versions.set(p.version, [...(versions.get(p.version) ?? []), p.name]);
-check(`${published.length} 个发布包版本一致`, versions.size === 1,
-  versions.size === 1 ? '' : [...versions].map(([v, names]) => `${v}: ${names.join(' ')}`).join(' | '));
+check(
+  `${published.length} 个发布包版本一致`,
+  versions.size === 1,
+  versions.size === 1 ? '' : [...versions].map(([v, names]) => `${v}: ${names.join(' ')}`).join(' | '),
+);
 if (versions.size === 1) console.log(`  全部为 ${[...versions.keys()][0]}`);
 
 // 九包必须同版本：包之间的依赖若写范围，npm 会放行混装的不同修订版，问题拖到运行时才暴露。
@@ -115,10 +121,12 @@ for (const p of published) {
 section('文档链接');
 
 /** 仓库内准备进入版本控制的 markdown（含新增未跟踪文件，不含 ignored 产物与外部语料） */
-const markdownFiles = execFileSync('git',
-  ['ls-files', '--cached', '--others', '--exclude-standard', '--', '*.md'],
-  { cwd: root, encoding: 'utf8' })
-  .split('\n').filter(Boolean);
+const markdownFiles = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '--', '*.md'], {
+  cwd: root,
+  encoding: 'utf8',
+})
+  .split('\n')
+  .filter(Boolean);
 
 let relativeLinks = 0;
 for (const file of markdownFiles) {
@@ -142,11 +150,9 @@ const ownNames = new Set(published.map((p) => p.name));
 let npmLinks = 0;
 for (const file of [...markdownFiles, ...SITE_PAGES.map((p) => `packages/site/${p}`)]) {
   if (!existsSync(join(root, file))) continue;
-  for (const m of readFileSync(join(root, file), 'utf8')
-    .matchAll(/npmjs\.com\/package\/(@?[\w.-]+(?:\/[\w.-]+)?)/g)) {
+  for (const m of readFileSync(join(root, file), 'utf8').matchAll(/npmjs\.com\/package\/(@?[\w.-]+(?:\/[\w.-]+)?)/g)) {
     npmLinks++;
-    check(`${file} → npm ${m[1]}`, ownNames.has(m[1]) || THIRD_PARTY_NPM.has(m[1]),
-      '既不是本仓库发布的包，也不在第三方白名单里');
+    check(`${file} → npm ${m[1]}`, ownNames.has(m[1]) || THIRD_PARTY_NPM.has(m[1]), '既不是本仓库发布的包，也不在第三方白名单里');
   }
 }
 console.log(`  ${npmLinks} 条 npm 包链接`);
@@ -168,8 +174,7 @@ if (process.argv.includes('--net')) {
   const visit = async (url) => {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const response = await fetch(url, { method: 'GET', redirect: 'follow',
-          signal: AbortSignal.timeout(15_000) });
+        const response = await fetch(url, { method: 'GET', redirect: 'follow', signal: AbortSignal.timeout(15_000) });
         return { url, ok: response.status !== 404 && response.status !== 410, status: response.status };
       } catch (error) {
         if (attempt) return { url, ok: false, status: String(error.name ?? error) };
@@ -211,8 +216,11 @@ for (const [file, pattern] of SNAPSHOT_CLAIMS) {
 console.log(`  ${snapshotClaims} 处快照数声明，实测 ${snapshotCount} 个`);
 
 // 快照按「fixture × 页 × 两条文本路径」展开，文档里同时写着参与的 fixture 数
-const snapshotFixtures = new Set(readdirSync(join(root, 'test/snapshots'))
-  .map((f) => /^(.+)-p\d+-(?:html|svg)\.svg$/.exec(f)?.[1]).filter(Boolean)).size;
+const snapshotFixtures = new Set(
+  readdirSync(join(root, 'test/snapshots'))
+    .map((f) => /^(.+)-p\d+-(?:html|svg)\.svg$/.exec(f)?.[1])
+    .filter(Boolean),
+).size;
 for (const [file, pattern] of [
   ['README.md', /(\d+) 个测试文件 × 全部页 × 两条文本路径/],
   ['docs/engineering/testing.md', /(\d+) 个测试文件 × 全部页 × 两条文本路径/],
@@ -220,19 +228,16 @@ for (const [file, pattern] of [
 ]) {
   const m = pattern.exec(read(file));
   if (m) {
-    check(`${file} 称 ${m[1]} 个快照 fixture`, Number(m[1]) === snapshotFixtures,
-      `实测 ${snapshotFixtures} 个`);
+    check(`${file} 称 ${m[1]} 个快照 fixture`, Number(m[1]) === snapshotFixtures, `实测 ${snapshotFixtures} 个`);
   }
 }
-
 
 // 官网：版本号与首屏那几个大字最容易被忘掉，JSON-LD 的 softwareVersion 已经修过一次。
 const siteHtml = read('packages/site/index.html');
 // 稳定版与 beta 条目标题统一带日期；prerelease 后缀（-beta.N）不匹配 \d 组，天然不会当最新稳定版。
 const latestStable = /^## (\d+\.\d+\.\d+)(?: - .*)?$/m.exec(read('CHANGELOG.md'))?.[1] ?? '';
 const declaredVersion = /"softwareVersion":\s*"([^"]+)"/.exec(siteHtml)?.[1];
-check(`官网 JSON-LD 声明版本 ${declaredVersion}`, declaredVersion === latestStable,
-  `CHANGELOG 最新稳定版是 ${latestStable}`);
+check(`官网 JSON-LD 声明版本 ${declaredVersion}`, declaredVersion === latestStable, `CHANGELOG 最新稳定版是 ${latestStable}`);
 
 const siteStat = /<b>(\d+)<\/b><span>断言 \+ (\d+) 快照<\/span>/.exec(siteHtml);
 if (!siteStat) {
@@ -240,16 +245,83 @@ if (!siteStat) {
 } else if (counts) {
   // 官网那个大数是全部套件之和；缺任何一个套件的实测就不比，免得拿半截数字去判错。
   const suites = [
-    'core', 'edit', 'save', 'chartData', 'chartexFallback', 'templates', 'designJourney', 'powerpoint', 'editor', 'adapters', 'collab',
-    'metafile', 'metafileFixture', 'media', 'chartexNative', 'comments', 'expanded', 'portableRichText', 'chartHierarchy', 'chartShared',
-    'fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout', 'agentNodeRender', 'agentNodeParity', 'oleLibreOffice', 'zipSecurity',
+    'core',
+    'edit',
+    'save',
+    'chartData',
+    'chartexFallback',
+    'templates',
+    'designJourney',
+    'powerpoint',
+    'editor',
+    'adapters',
+    'collab',
+    'metafile',
+    'metafileFixture',
+    'media',
+    'chartexNative',
+    'comments',
+    'expanded',
+    'portableRichText',
+    'chartHierarchy',
+    'chartShared',
+    'fontGlyphs',
+    'fontWorker',
+    'fontDocument',
+    'fontLayout',
+    'agentNodeRender',
+    'agentNodeParity',
+    'oleLibreOffice',
+    'zipSecurity',
     'ooxmlValidation',
   ];
-  const measured = suites.every((key) => typeof counts[key] === 'number')
-    ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
+  const measured = suites.every((key) => typeof counts[key] === 'number') ? suites.reduce((sum, key) => sum + counts[key], 0) : null;
   if (measured === null) console.log('  \x1b[33m跳过官网断言总数：counts.json 不全\x1b[0m');
   else check(`官网称 ${siteStat[1]} 项断言`, Number(siteStat[1]) === measured, `实测合计 ${measured}`);
   check(`官网称 ${siteStat[2]} 个快照`, Number(siteStat[2]) === snapshotCount, `实测 ${snapshotCount} 个`);
+}
+
+/**
+ * 当前实测体积该核对的发布记录。
+ *
+ * 已发布版本的记录（docs/releases/<主.次.修订>.md，预发布版并入同一版本线）是打 tag 那一刻产物的历史证据，
+ * 不能拿今天的构建改写。「已发布」以 tag `v<版本>` 判定：发版 checklist 先写 CHANGELOG 版本条目与发布记录、
+ * 跑门禁，最后才打 tag（docs/engineering/releasing.md §2）。CHANGELOG 的版本日期在门禁之前就已写入，
+ * 拿它判定会让发版当次的记录逃过核对。
+ *
+ * | tag 状态 | 场景 | 核对对象 |
+ * |---|---|---|
+ * | 不存在 | 发版准备中（版本已改、尚未打 tag） | 该版本线的发布记录，缺失即失败 |
+ * | 指向 HEAD | 发布流水线自身 | 该版本线的发布记录，缺失即失败 |
+ * | 指向更早的提交 | 发布后的日常开发 | CHANGELOG「未发布」；没有声明时跳过并说明原因 |
+ */
+function nextReleaseSizeRecord() {
+  if (versions.size !== 1) {
+    throw new Error(`发布包版本不一致（${[...versions.keys()].join('、')}），无法判定体积口径该核对哪份发布记录`);
+  }
+  const [version] = versions.keys();
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  // 浅克隆默认不带 tag：一个 v* tag 都看不到时无法区分「未发布」与「没取 tag」，不能猜
+  if (git('tag', '--list', 'v*') === '') {
+    throw new Error('本地没有任何 v* tag，无法判定当前版本是否已发布；CI 检出后需显式 git fetch v* tag，本地先 git fetch --tags');
+  }
+  const tag = `v${version}`;
+  const tagged = git('tag', '--list', tag) !== '';
+  if (!tagged || git('rev-parse', `${tag}^{commit}`) === git('rev-parse', 'HEAD')) {
+    const where = `docs/releases/${version.replace(/-.*$/, '')}.md`;
+    return { where, text: existsSync(join(root, where)) ? read(where) : '', required: true };
+  }
+  const where = 'CHANGELOG.md「未发布」';
+  const unreleased = /^## 未发布\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(read('CHANGELOG.md'));
+  if (!unreleased) {
+    return { where, text: '', required: false, skipReason: `${tag} 已发布，其记录是历史；CHANGELOG 没有「未发布」条目可核对` };
+  }
+  return {
+    where,
+    text: unreleased[1],
+    required: false,
+    skipReason: `${tag} 已发布，其记录是历史；CHANGELOG「未发布」尚未声明 collab 双体积口径`,
+  };
 }
 
 // 体积：dist 在才查，让 `npm run verify` 不必先构建也能跑完前面几组。
@@ -285,8 +357,11 @@ if (!existsSync(join(root, 'packages/core/dist'))) {
       return;
     }
     const drift = Math.abs(actual - Number(claimed)) / actual;
-    check(`${where} 称 ${name} 为 ${claimed}KB`, drift <= TOLERANCE,
-      `实测 ${actual.toFixed(2)}KB gzip，含相对静态分块、不含 peer（偏差 ${(drift * 100).toFixed(1)}%）`);
+    check(
+      `${where} 称 ${name} 为 ${claimed}KB`,
+      drift <= TOLERANCE,
+      `实测 ${actual.toFixed(2)}KB gzip，含相对静态分块、不含 peer（偏差 ${(drift * 100).toFixed(1)}%）`,
+    );
     if (drift > NUDGE && drift <= TOLERANCE) {
       console.log(`  \x1b[33m~ ${where} 的 ${name} 已漂 ${(drift * 100).toFixed(1)}%（实测 ${actual.toFixed(precision)}KB）\x1b[0m`);
     }
@@ -294,14 +369,12 @@ if (!existsSync(join(root, 'packages/core/dist'))) {
   // 中文表 `| 90.08KB |`，英文表 `| 90.08 KB |`，两份 README 必须同时跟着实测走——
   // 只查一份的话，另一份会独自漂到没人发现。
   for (const file of ['README.md', 'README.en.md']) {
-    for (const [, name, claimed] of read(file)
-      .matchAll(/\[`(@web-ppt\/[\w-]+)`\]\([^)]+\)[^\n|]*(?:\|[^\n|]*){2}\|\s*([\d.]+)\s*KB/g)) {
+    for (const [, name, claimed] of read(file).matchAll(/\[`(@web-ppt\/[\w-]+)`\]\([^)]+\)[^\n|]*(?:\|[^\n|]*){2}\|\s*([\d.]+)\s*KB/g)) {
       compareEntrySize(file, name, claimed);
     }
   }
   // 官网包表写的是一位小数，同一套实测值、同一条容差
-  for (const [, name, claimed] of siteHtml
-    .matchAll(/<code>(@web-ppt\/[\w-]+)<\/code><\/td>(?:<td>.*?<\/td>){2}<td>([\d.]+)KB gzip/g)) {
+  for (const [, name, claimed] of siteHtml.matchAll(/<code>(@web-ppt\/[\w-]+)<\/code><\/td>(?:<td>.*?<\/td>){2}<td>([\d.]+)KB gzip/g)) {
     compareEntrySize('packages/site/index.html', name, claimed, 1);
   }
 
@@ -309,30 +382,37 @@ if (!existsSync(join(root, 'packages/core/dist'))) {
   for (const [file, listed] of sizeTablePackages) {
     const missing = [...ownNames].filter((name) => !listed.has(name));
     const extra = [...listed].filter((name) => !ownNames.has(name));
-    check(`${file} 的发布包体积表完整`, missing.length === 0 && extra.length === 0,
-      [missing.length ? `漏列 ${missing.join('、')}` : '', extra.length ? `多列 ${extra.join('、')}` : '']
-        .filter(Boolean).join('；'));
+    check(
+      `${file} 的发布包体积表完整`,
+      missing.length === 0 && extra.length === 0,
+      [missing.length ? `漏列 ${missing.join('、')}` : '', extra.length ? `多列 ${extra.join('、')}` : ''].filter(Boolean).join('；'),
+    );
   }
 
-  // 发布记录按「主.次.修订」版本线归档（预发布版并入同一版本线），只核对当前包版本所属的记录；
-  // 旧记录的数字是历史证据，不能拿今天的构建覆盖。
-  const currentVersion = versions.size === 1 ? [...versions.keys()][0] : '';
-  const releaseLine = currentVersion.replace(/-.*$/, '');
-  const releaseRecord = `docs/releases/${releaseLine}.md`;
-  const currentRelease = releaseLine && existsSync(join(root, releaseRecord)) ? read(releaseRecord) : '';
-  const collabSizes = /`@web-ppt\/collab`[\s\S]{0,700}?发布入口为 ([\d.]+)KB gzip；[\s\S]{0,120}?([\d,]+)B gzip/
-    .exec(currentRelease);
-  check(`${releaseRecord} 能定位 collab 两种体积口径`, collabSizes !== null,
-    '当前版本线的发布记录需存在，并同时声明发布入口与排除 peer 的测试薄包');
+  // collab 的双体积口径（发布入口 KB gzip + 排除 peer 的测试薄包 B gzip）只拿当前实测核对「下一次发布」的记录。
+  const record = nextReleaseSizeRecord();
+  const collabSizes = /`@web-ppt\/collab`[\s\S]{0,700}?发布入口为 ([\d.]+)KB gzip；[\s\S]{0,120}?([\d,]+)B gzip/.exec(record.text);
+  if (record.required) {
+    check(
+      `${record.where} 能定位 collab 两种体积口径`,
+      collabSizes !== null,
+      '待发布版本线的发布记录需存在，并同时声明发布入口与排除 peer 的测试薄包',
+    );
+  } else if (!collabSizes) {
+    console.log(`  \x1b[33m跳过 collab 双体积口径：${record.skipReason}\x1b[0m`);
+  }
   if (collabSizes) {
-    compareEntrySize(releaseRecord, '@web-ppt/collab', collabSizes[1]);
+    compareEntrySize(record.where, '@web-ppt/collab', collabSizes[1]);
     if (typeof counts?.collabThinGzip !== 'number') {
-      console.log('  \x1b[33m跳过 CHANGELOG collab 薄包体积：先 npm run test:collab\x1b[0m');
+      console.log(`  \x1b[33m跳过 ${record.where} 的 collab 薄包体积：先 npm run test:collab\x1b[0m`);
     } else {
       sizeClaims++;
       const claimedThin = Number(collabSizes[2].replace(/,/g, ''));
-      check(`CHANGELOG 称 collab 测试薄包为 ${claimedThin}B`, claimedThin === counts.collabThinGzip,
-        `实测 ${counts.collabThinGzip}B gzip`);
+      check(
+        `${record.where} 称 collab 测试薄包为 ${claimedThin}B`,
+        claimedThin === counts.collabThinGzip,
+        `实测 ${counts.collabThinGzip}B gzip`,
+      );
     }
   }
   console.log(`  ${sizeClaims} 处 gzip 体积声明`);
@@ -347,11 +427,15 @@ if (!counts) {
 } else {
   const COUNT_CLAIMS = [
     // 分套件断言数的唯一明细表在测试规范 §8；README 只留快照总数与入口链接，AGENTS 只引用 §8
-    ['docs/engineering/testing.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
+    [
+      'docs/engineering/testing.md',
+      /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/,
+      ['fontGlyphs', 'fontWorker', 'fontDocument', 'fontLayout'],
+    ],
     ['docs/engineering/testing.md', /Agent 命令工具面 ([\d,]+) 项断言/, ['agentTools']],
     ['docs/engineering/testing.md', /本机 MCP ([\d,]+) 项断言/, ['agentMcp']],
     ['docs/engineering/testing.md', /官网 WebMCP ([\d,]+) 项浏览器断言/, ['siteWebMcp']],
-    ['docs/engineering/testing.md', /模板填充 ([\d,]+) 项 \+ 浏览器 ([\d,]+) 项断言/, ['templateFill','templateFillBrowser']],
+    ['docs/engineering/testing.md', /模板填充 ([\d,]+) 项 \+ 浏览器 ([\d,]+) 项断言/, ['templateFill', 'templateFillBrowser']],
     ['docs/engineering/testing.md', /图元固件确定性 ([\d,]+) 项断言/, ['metafileFixture']],
     ['docs/engineering/testing.md', /ZIP 安全 ([\d,]+) 项断言/, ['zipSecurity']],
     ['docs/engineering/testing.md', /Agent Node 渲染 ([\d,]+) 项断言/, ['agentNodeRender']],
@@ -364,8 +448,11 @@ if (!counts) {
     ['docs/engineering/testing.md', /高级文本流转 ([\d,]+) 项断言/, ['portableRichText']],
     ['docs/engineering/testing.md', /字段级协同 ([\d,]+) 项断言/, ['collab']],
     ['docs/engineering/testing.md', /核心解析 \/ 渲染，([\d,]+) 项断言/, ['core']],
-    ['docs/engineering/testing.md', /编辑模型 ([\d,]+) 项 \+ 保存 ([\d,]+) 项 \+ PowerPoint 证据 ([\d,]+) 项 \+ ([\d,]+) 份固件、([\d,]+) 对独立进程 SVG 指纹/,
-      ['edit', 'save', 'powerpoint', 'fixtures', 'equivalence']],
+    [
+      'docs/engineering/testing.md',
+      /编辑模型 ([\d,]+) 项 \+ 保存 ([\d,]+) 项 \+ PowerPoint 证据 ([\d,]+) 项 \+ ([\d,]+) 份固件、([\d,]+) 对独立进程 SVG 指纹/,
+      ['edit', 'save', 'powerpoint', 'fixtures', 'equivalence'],
+    ],
     ['docs/engineering/testing.md', /内置模板 ([\d,]+) 项断言/, ['templates']],
     ['docs/engineering/testing.md', /设计旅程 ([\d,]+) 项断言/, ['designJourney']],
     ['docs/engineering/testing.md', /经典图表数据编辑 ([\d,]+) 项断言/, ['chartData']],
@@ -381,10 +468,16 @@ if (!counts) {
   const skipped = new Set();
   for (const [file, pattern, keys] of COUNT_CLAIMS) {
     const m = pattern.exec(read(file));
-    if (!m) { check(`${file} 能定位 ${keys.join('/')} 声明`, false, '正则没匹配到，文案改了就来这里同步'); continue; }
+    if (!m) {
+      check(`${file} 能定位 ${keys.join('/')} 声明`, false, '正则没匹配到，文案改了就来这里同步');
+      continue;
+    }
     keys.forEach((key, index) => {
       // 没跑到的套件跳过而不判错：counts.json 是尽力而为的产物，缺一项不等于文档写错了
-      if (typeof counts[key] !== 'number') { skipped.add(key); return; }
+      if (typeof counts[key] !== 'number') {
+        skipped.add(key);
+        return;
+      }
       countClaims++;
       const claimed = Number(m[index + 1].replace(/,/g, ''));
       check(`${file} 称 ${key} 为 ${claimed}`, claimed === counts[key], `实测 ${counts[key]}`);
@@ -402,11 +495,19 @@ for (const [file, pattern] of [
   ['README.md', /构建[^\n（]{0,8}发布包（([^）]+)）/],
   ['README.en.md', /Build all [^\n(]{0,20}publishable packages \(([^)]+)\)/],
 ]) {
-  const listed = pattern.exec(read(file))?.[1].split('/').map((n) => n.trim()).filter(Boolean) ?? [];
+  const listed =
+    pattern
+      .exec(read(file))?.[1]
+      .split('/')
+      .map((n) => n.trim())
+      .filter(Boolean) ?? [];
   const missing = [...publishedShort].filter((n) => !listed.includes(n));
   const extra = listed.filter((n) => !publishedShort.has(n));
-  check(`${file} 的发布包清单完整`, missing.length === 0 && extra.length === 0,
-    [missing.length ? `漏列 ${missing.join('、')}` : '', extra.length ? `多列 ${extra.join('、')}` : ''].filter(Boolean).join('；'));
+  check(
+    `${file} 的发布包清单完整`,
+    missing.length === 0 && extra.length === 0,
+    [missing.length ? `漏列 ${missing.join('、')}` : '', extra.length ? `多列 ${extra.join('、')}` : ''].filter(Boolean).join('；'),
+  );
 }
 console.log(`  实际 ${publishedShort.size} 个发布包`);
 

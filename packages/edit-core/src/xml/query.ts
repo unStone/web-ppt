@@ -6,12 +6,9 @@ export interface XmlNameSelector {
   namespaceUri?: string | null;
 }
 
-const matches = (
-  node: { localName: string; namespaceUri: string | null },
-  selector: XmlNameSelector,
-): boolean => node.localName === selector.localName
-  && (!Object.prototype.hasOwnProperty.call(selector, 'namespaceUri')
-    || node.namespaceUri === selector.namespaceUri);
+const matches = (node: { localName: string; namespaceUri: string | null }, selector: XmlNameSelector): boolean =>
+  node.localName === selector.localName
+  && (!Object.prototype.hasOwnProperty.call(selector, 'namespaceUri') || node.namespaceUri === selector.namespaceUri);
 
 export function xmlElementChildren(parent: XmlElement, selector?: XmlNameSelector): XmlElement[] {
   const children = parent.children.filter((node): node is XmlElement => node.type === 'element');

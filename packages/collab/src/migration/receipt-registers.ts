@@ -9,12 +9,14 @@ export function recordReceiptWinners(doc: EditDoc, registers: Map<string, Regist
   for (const patch of patches.filter(isExtensionMigrationPatch)) {
     const receipt = readExtensionMigration(patch.op === 'set' ? patch.value : undefined);
     const inputs = canonicalExtensionMigrationInputs(doc, receipt);
-    for (const input of [...receipt.inputs, ...receipt.winners.map(index => inputs[index])]) {
-      const key = JSON.stringify(input.path), previous = registers.get(key);
-      if (!input.stamp || previous && compareStamp(input.stamp, previous.stamp) < 0) continue;
+    for (const input of [...receipt.inputs, ...receipt.winners.map((index) => inputs[index])]) {
+      const key = JSON.stringify(input.path),
+        previous = registers.get(key);
+      if (!input.stamp || (previous && compareStamp(input.stamp, previous.stamp) < 0)) continue;
       const register: Register = { stamp: input.stamp, kind: 'field' };
       const operation = input.op === 'del' ? { op: 'del' as const } : { op: 'set' as const, value: input.value! };
-      registers.set(key, register); evidence.set(register, operation);
+      registers.set(key, register);
+      evidence.set(register, operation);
     }
   }
 }

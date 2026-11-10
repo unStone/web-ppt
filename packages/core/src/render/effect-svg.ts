@@ -6,7 +6,6 @@ interface EffectContext {
   readonly nextId: (prefix: string) => string;
 }
 
-
 export function effectFilter(effects: Effects | undefined, ctx: EffectContext): string {
   if (!effects) return '';
   const parts: string[] = [];
@@ -18,30 +17,34 @@ export function effectFilter(effects: Effects | undefined, ctx: EffectContext): 
     last = out;
   };
   if (effects.glow) {
-    step(`<feDropShadow in="__IN__" dx="0" dy="0" stdDeviation="${round(effects.glow.radius / 2)}" `
-      + `flood-color="${effects.glow.color}" flood-opacity="1" result="__OUT__"/>`);
+    step(
+      `<feDropShadow in="__IN__" dx="0" dy="0" stdDeviation="${round(effects.glow.radius / 2)}" `
+        + `flood-color="${effects.glow.color}" flood-opacity="1" result="__OUT__"/>`,
+    );
   }
   const shadow = effects.shadow;
   if (shadow && !shadow.inner) {
-    step(`<feDropShadow in="__IN__" dx="${round(shadow.dx)}" dy="${round(shadow.dy)}" `
-      + `stdDeviation="${round(shadow.blur / 2)}" flood-color="${shadow.color}" result="__OUT__"/>`);
+    step(
+      `<feDropShadow in="__IN__" dx="${round(shadow.dx)}" dy="${round(shadow.dy)}" `
+        + `stdDeviation="${round(shadow.blur / 2)}" flood-color="${shadow.color}" result="__OUT__"/>`,
+    );
   }
   if (shadow?.inner) {
     const prefix = `is${sequence}`;
     parts.push(
       `<feComponentTransfer in="SourceAlpha" result="${prefix}a"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer>`
-      + `<feGaussianBlur in="${prefix}a" stdDeviation="${round(shadow.blur / 2)}" result="${prefix}b"/>`
-      + `<feOffset in="${prefix}b" dx="${round(shadow.dx)}" dy="${round(shadow.dy)}" result="${prefix}c"/>`
-      + `<feComposite in="${prefix}c" in2="SourceAlpha" operator="in" result="${prefix}d"/>`
-      + `<feFlood flood-color="${shadow.color}" result="${prefix}e"/>`
-      + `<feComposite in="${prefix}e" in2="${prefix}d" operator="in" result="${prefix}f"/>`,
+        + `<feGaussianBlur in="${prefix}a" stdDeviation="${round(shadow.blur / 2)}" result="${prefix}b"/>`
+        + `<feOffset in="${prefix}b" dx="${round(shadow.dx)}" dy="${round(shadow.dy)}" result="${prefix}c"/>`
+        + `<feComposite in="${prefix}c" in2="SourceAlpha" operator="in" result="${prefix}d"/>`
+        + `<feFlood flood-color="${shadow.color}" result="${prefix}e"/>`
+        + `<feComposite in="${prefix}e" in2="${prefix}d" operator="in" result="${prefix}f"/>`,
     );
     step(`<feComposite in="${prefix}f" in2="__IN__" operator="over" result="__OUT__"/>`);
   }
   if (effects.softEdge) {
     parts.push(
       `<feGaussianBlur in="SourceAlpha" stdDeviation="${round(effects.softEdge / 2)}" result="se"/>`
-      + '<feComponentTransfer in="se" result="seMask"><feFuncA type="linear" slope="2.2" intercept="-0.6"/></feComponentTransfer>',
+        + '<feComponentTransfer in="se" result="seMask"><feFuncA type="linear" slope="2.2" intercept="-0.6"/></feComponentTransfer>',
     );
     step('<feComposite in="__IN__" in2="seMask" operator="in" result="__OUT__"/>');
   }
@@ -65,14 +68,16 @@ export function reflectionLayer(el: ElementBase, refId: string, ctx: EffectConte
   const maskId = ctx.nextId('rm');
   ctx.defs.push(
     `<linearGradient id="${gradientId}" gradientUnits="userSpaceOnUse" x1="0" y1="${round(top)}" `
-    + `x2="0" y2="${round(top + band)}"><stop offset="0" stop-color="#fff" stop-opacity="${round(alpha)}"/>`
-    + '<stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>',
+      + `x2="0" y2="${round(top + band)}"><stop offset="0" stop-color="#fff" stop-opacity="${round(alpha)}"/>`
+      + '<stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>',
   );
   ctx.defs.push(
     `<mask id="${maskId}" maskUnits="userSpaceOnUse" x="${round(x)}" y="${round(top)}" `
-    + `width="${round(width)}" height="${round(band)}"><rect x="${round(x)}" y="${round(top)}" `
-    + `width="${round(width)}" height="${round(band)}" fill="url(#${gradientId})"/></mask>`,
+      + `width="${round(width)}" height="${round(band)}"><rect x="${round(x)}" y="${round(top)}" `
+      + `width="${round(width)}" height="${round(band)}" fill="url(#${gradientId})"/></mask>`,
   );
-  return `<g mask="url(#${maskId})" aria-hidden="true"><use href="#${refId}" xlink:href="#${refId}" `
-    + `transform="translate(0 ${round(2 * el.h + distance)}) scale(1 -1)"/></g>`;
+  return (
+    `<g mask="url(#${maskId})" aria-hidden="true"><use href="#${refId}" xlink:href="#${refId}" `
+    + `transform="translate(0 ${round(2 * el.h + distance)}) scale(1 -1)"/></g>`
+  );
 }

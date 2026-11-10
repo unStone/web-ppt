@@ -21,9 +21,10 @@ if (!bundle || !file || (mode !== 'readonly' && mode !== 'edit')) {
 const { blobs } = installDomEnv();
 const lib = await import(`${pathToFileURL(bundle).href}?run=${process.pid}`);
 const bytes = new Uint8Array(readFileSync(file));
-const parseOptions = mode === 'edit'
-  ? { edit: true, keepPackage: true, lazy: false, ...(password ? { password } : {}) }
-  : { ...(password ? { password } : {}) };
+const parseOptions =
+  mode === 'edit'
+    ? { edit: true, keepPackage: true, lazy: false, ...(password ? { password } : {}) }
+    : { ...(password ? { password } : {}) };
 const pres = await lib.parse(bytes, parseOptions);
 const doc = mode === 'edit' ? lib.createDoc(pres, { idPrefix: 'fingerprint-doc-' }) : null;
 const hash = (value) => createHash('sha256').update(value).digest('hex');

@@ -34,7 +34,12 @@ export function isPresentAdvanceTarget(target: EventTarget | null): boolean {
 function nextPaint(): Promise<void> {
   return new Promise((res) => {
     let done = false;
-    const go = (): void => { if (!done) { done = true; res(); } };
+    const go = (): void => {
+      if (!done) {
+        done = true;
+        res();
+      }
+    };
     requestAnimationFrame(() => requestAnimationFrame(go));
     setTimeout(go, 60);
   });
@@ -155,8 +160,7 @@ export function bindPresentMode(options: {
       exit();
       return;
     }
-    const typing = event.target instanceof Element
-      && !!event.target.closest('input,select,textarea,[contenteditable]');
+    const typing = event.target instanceof Element && !!event.target.closest('input,select,textarea,[contenteditable]');
     if (typing) return;
     if (event.key === 't' || event.key === 'T') {
       // 官方 Web：T 是控制条开关，不是只唤出。

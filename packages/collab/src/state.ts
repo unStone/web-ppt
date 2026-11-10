@@ -41,49 +41,44 @@ export interface CollaborationSession {
 }
 
 export const elementLifecycle = (patch: Patch): { id: string; state: Lifecycle['state'] } | null =>
-  patch.path.length === 2 && patch.path[0] === 'elements'
-    && (patch.op === 'insert' || patch.op === 'remove')
+  patch.path.length === 2 && patch.path[0] === 'elements' && (patch.op === 'insert' || patch.op === 'remove')
     ? { id: patch.path[1], state: patch.op === 'insert' ? 'present' : 'removed' }
     : null;
 
 export const slideLifecycle = (patch: Patch): { id: string; state: Lifecycle['state'] } | null =>
-  patch.path.length === 2 && patch.path[0] === 'slides'
-    && (patch.op === 'insert' || patch.op === 'remove')
+  patch.path.length === 2 && patch.path[0] === 'slides' && (patch.op === 'insert' || patch.op === 'remove')
     ? { id: patch.path[1], state: patch.op === 'insert' ? 'present' : 'removed' }
     : null;
 
 export const slideMove = (patch: Patch): { id: string; after: string | null } | null => {
   if (patch.op !== 'move' || patch.path.length !== 2 || patch.path[0] !== 'slideOrder') return null;
   const after = (patch as { value?: { after?: unknown } }).value?.after;
-  return after === null || typeof after === 'string' && after
-    ? { id: patch.path[1], after } : null;
+  return after === null || (typeof after === 'string' && after) ? { id: patch.path[1], after } : null;
 };
 
 export const sectionMove = (patch: Patch): { id: string; after: string | null } | null => {
-  if (patch.op !== 'set' || patch.path.length !== 4
-    || patch.path[0] !== 'document' || patch.path[1] !== 'sections'
-    || !['state', 'order'].includes(patch.path[3])) return null;
+  if (
+    patch.op !== 'set'
+    || patch.path.length !== 4
+    || patch.path[0] !== 'document'
+    || patch.path[1] !== 'sections'
+    || !['state', 'order'].includes(patch.path[3])
+  )
+    return null;
   const id = patch.path[2];
   const value = (patch as { value?: { order?: unknown; records?: unknown } }).value;
-  if (!value?.records || typeof value.records !== 'object' || !Array.isArray(value.order)
-    || !(id in value.records)) return null;
+  if (!value?.records || typeof value.records !== 'object' || !Array.isArray(value.order) || !(id in value.records)) return null;
   const index = value.order.indexOf(id);
   if (index < 0) return null;
   const after = value.order[index - 1] ?? null;
-  return after === null || typeof after === 'string' && after ? { id, after } : null;
+  return after === null || (typeof after === 'string' && after) ? { id, after } : null;
 };
 
-export const elementHierarchy = (patch: Patch): Readonly<Record<string, unknown>> | null =>
-  hierarchyRecords(patch);
+export const elementHierarchy = (patch: Patch): Readonly<Record<string, unknown>> | null => hierarchyRecords(patch);
 
-export const newer = (stamp: CollabStamp, current?: { stamp: CollabStamp }): boolean =>
-  !current || compareStamp(stamp, current.stamp) > 0;
+export const newer = (stamp: CollabStamp, current?: { stamp: CollabStamp }): boolean => !current || compareStamp(stamp, current.stamp) > 0;
 
-export function patchNewer(
-  session: CollaborationSession,
-  patch: Patch,
-  stamp: CollabStamp,
-): boolean {
+export function patchNewer(session: CollaborationSession, patch: Patch, stamp: CollabStamp): boolean {
   const element = elementLifecycle(patch);
   if (element) return newer(stamp, session.elementLifecycles.get(element.id));
   const slide = slideLifecycle(patch);
@@ -99,11 +94,7 @@ export function patchNewer(
 }
 
 /** 同一原子消息共用 stamp；先按 ordinal 折叠末次意图，再与先前消息做严格 LWW。 */
-export function recordPatches(
-  session: CollaborationSession,
-  patches: readonly Patch[],
-  stamp: CollabStamp,
-): void {
+export function recordPatches(session: CollaborationSession, patches: readonly Patch[], stamp: CollabStamp): void {
   const registers = new Map<string, Register['kind']>();
   const elements = new Map<string, Lifecycle['state']>();
   const slides = new Map<string, Lifecycle['state']>();
@@ -114,9 +105,11 @@ export function recordPatches(
     const hierarchy = elementHierarchy(patch);
     if (hierarchy) {
       const root = patch.path[1];
-      const state = (patch as {
-        value: { affected: readonly string[]; records: Readonly<Record<string, unknown>> };
-      }).value;
+      const state = (
+        patch as {
+          value: { affected: readonly string[]; records: Readonly<Record<string, unknown>> };
+        }
+      ).value;
       for (const id of state.affected) registers.set(hierarchyKey(id), 'hierarchy');
       for (const [id, record] of Object.entries(hierarchy)) {
         elements.set(id, record === null ? 'removed' : 'present');
@@ -149,11 +142,11 @@ export function recordPatches(
         elements.set(id, slide.state);
         registers.set(hierarchyKey(id), 'hierarchy');
       }
-      if (slide.state === 'present') moves.set(slide.id, {
-        after: patch.op === 'insert'
-          ? (patch.value as { readonly after: string | null }).after : null,
-        ordinal,
-      });
+      if (slide.state === 'present')
+        moves.set(slide.id, {
+          after: patch.op === 'insert' ? (patch.value as { readonly after: string | null }).after : null,
+          ordinal,
+        });
     }
     const move = slideMove(patch);
     if (move) moves.set(move.id, { after: move.after, ordinal });
@@ -168,8 +161,7 @@ export function recordPatches(
   for (const [id, state] of elements) {
     const current = session.elementLifecycles.get(id);
     // 外部副本的显式树删除压过并发结构意图；同副本更晚的撤销插入仍可恢复该身份。
-    if (state === 'removed' && current?.stamp.replicaId !== stamp.replicaId
-      || newer(stamp, current)) {
+    if ((state === 'removed' && current?.stamp.replicaId !== stamp.replicaId) || newer(stamp, current)) {
       session.elementLifecycles.set(id, { stamp, state });
     }
   }

@@ -15,28 +15,40 @@ import type { SharedSeriesGrowth } from './shared-added-plan';
 import { sharedCategoryForXY } from './shared-family';
 import { jointPointCommand } from './shared-joint-command';
 
-export function sharedXYCommand(doc: EditDoc, shared: SharedGroup, id: string, local: CommandPatches,
-  origin: string, resource: XYResource & SharedSeriesGrowth, baseline: ReadonlyMap<string, WorkbookCellValue>): CommandPatches | undefined {
-  const pointPatch = local.forward.find(patch => patch.path[5] === 'series' && patch.path[7] === 'points');
+export function sharedXYCommand(
+  doc: EditDoc,
+  shared: SharedGroup,
+  id: string,
+  local: CommandPatches,
+  origin: string,
+  resource: XYResource & SharedSeriesGrowth,
+  baseline: ReadonlyMap<string, WorkbookCellValue>,
+): CommandPatches | undefined {
+  const pointPatch = local.forward.find((patch) => patch.path[5] === 'series' && patch.path[7] === 'points');
   if (!pointPatch) return;
-  const source = shared.charts.find(chart => chart.id === id)!.state;
-  const seriesId = pointPatch.path[6] as ChartSeriesId, pointId = pointPatch.path[8] as ChartPointId, series = source.series[seriesId];
-  if (!series || series.plotKind !== 'scatter' && series.plotKind !== 'bubble') return;
+  const source = shared.charts.find((chart) => chart.id === id)!.state;
+  const seriesId = pointPatch.path[6] as ChartSeriesId,
+    pointId = pointPatch.path[8] as ChartPointId,
+    series = source.series[seriesId];
+  if (!series || (series.plotKind !== 'scatter' && series.plotKind !== 'bubble')) return;
   const removing = pointPatch.path[9] === 'removed';
   if (series.points[pointId] && !removing) return;
   const joint = sharedCategoryForXY(shared, id, seriesId);
   if (joint) return jointPointCommand(doc, shared, joint, id, seriesId, pointId, local, origin, resource, baseline);
-  const family = sharedXYFamily(shared, id, seriesId), owner = family.owners.find(owner => owner.chart.id === id && owner.seriesId === seriesId)!;
-  const record = resource.xyRecords?.[family.key] ?? {}, layout = xyRecordLayout(family, record);
+  const family = sharedXYFamily(shared, id, seriesId),
+    owner = family.owners.find((owner) => owner.chart.id === id && owner.seriesId === seriesId)!;
+  const record = resource.xyRecords?.[family.key] ?? {},
+    layout = xyRecordLayout(family, record);
   const prefix = ['document', 'extensions', 'chart-shared', shared.workbook, 'xyRecords', family.key] as const;
-  const forward: DocumentExtensionPatch[] = [], inverse: DocumentExtensionPatch[] = [];
+  const forward: DocumentExtensionPatch[] = [],
+    inverse: DocumentExtensionPatch[] = [];
   const add = (tail: readonly string[], value: unknown, previous: unknown) => {
     const path: DocumentExtensionPatch['path'] = [...prefix, ...tail];
     forward.push({ op: 'set', path, value, origin });
     inverse.unshift(previous === undefined ? { op: 'del', path, origin } : { op: 'set', path, value: previous, origin });
   };
-  const row = layout.records.find(row => row.id === pointId);
-  const created = local.forward.some(patch => patch.path[9] === 'id');
+  const row = layout.records.find((row) => row.id === pointId);
+  const created = local.forward.some((patch) => patch.path[9] === 'id');
   if (removing && series.points[pointId]) {
     const axis = String(owner.positions.get(pointId)!);
     add(['removed', axis], true, record.removed?.[axis]);
@@ -44,10 +56,11 @@ export function sharedXYCommand(doc: EditDoc, shared: SharedGroup, id: string, l
     if (!row && !created) throw new Error('共享 XY 新增点缺少稳定记录');
     if (created) {
       const current = currentChartDatasetState(doc, id).series[seriesId];
-      const points = orderedChartRecords(Object.values(current.points).filter(point => !point.removed)), last = points[points.length - 1];
-      const prior = layout.records.find(row => row.id === last?.id);
+      const points = orderedChartRecords(Object.values(current.points).filter((point) => !point.removed)),
+        last = points[points.length - 1];
+      const prior = layout.records.find((row) => row.id === last?.id);
       const anchor = prior?.anchor ?? (last ? owner.positions.get(last.id) : undefined) ?? owner.end;
-      const siblings = layout.records.filter(row => row.anchor === anchor);
+      const siblings = layout.records.filter((row) => row.anchor === anchor);
       add(['insertions', pointId, 'id'], pointId, undefined);
       add(['insertions', pointId, 'anchor'], anchor, undefined);
       add(['insertions', pointId, 'order'], fractionalIndexBetween(siblings[siblings.length - 1]?.order ?? null, null), undefined);
@@ -68,6 +81,10 @@ export function sharedXYCommand(doc: EditDoc, shared: SharedGroup, id: string, l
     }
   }
   const next = { ...resource, xyRecords: stageSharedRecords(resource.xyRecords, forward) as SharedXYRecords };
-  validateXYRecords(shared, next.xyRecords); planAddedSeries(shared, next, baseline);
-  return { forward, inverse: created ? [{ op: 'set', path: [...prefix, 'insertions', pointId, 'removed'], value: true, origin }] : inverse };
+  validateXYRecords(shared, next.xyRecords);
+  planAddedSeries(shared, next, baseline);
+  return {
+    forward,
+    inverse: created ? [{ op: 'set', path: [...prefix, 'insertions', pointId, 'removed'], value: true, origin }] : inverse,
+  };
 }

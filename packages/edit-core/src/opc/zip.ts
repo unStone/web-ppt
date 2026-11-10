@@ -13,10 +13,32 @@ const ZIP64_EXTRA_ID = 0x0001;
 const decoder = new TextDecoder('utf-8', { fatal: true });
 const encoder = new TextEncoder();
 const ALREADY_COMPRESSED = new Set([
-  '7z', 'aac', 'avi', 'eot', 'gif', 'gz', 'jpeg', 'jpg', 'm4a', 'm4v', 'mov', 'mp3', 'mp4',
-  'mpeg', 'mpg', 'ogg', 'otf', 'png', 'ttf', 'webm', 'webp', 'woff', 'woff2', 'zip',
+  '7z',
+  'aac',
+  'avi',
+  'eot',
+  'gif',
+  'gz',
+  'jpeg',
+  'jpg',
+  'm4a',
+  'm4v',
+  'mov',
+  'mp3',
+  'mp4',
+  'mpeg',
+  'mpg',
+  'ogg',
+  'otf',
+  'png',
+  'ttf',
+  'webm',
+  'webp',
+  'woff',
+  'woff2',
+  'zip',
 ]);
-const compareNames = (left: string, right: string): number => left < right ? -1 : left > right ? 1 : 0;
+const compareNames = (left: string, right: string): number => (left < right ? -1 : left > right ? 1 : 0);
 
 export interface ZipEntry {
   readonly name: string;
@@ -40,18 +62,19 @@ export interface RewrittenZip {
 }
 
 export class ZipPassthroughUnsupported extends Error {
-  constructor(readonly reason: OpcFallbackReason, message: string) {
+  constructor(
+    readonly reason: OpcFallbackReason,
+    message: string,
+  ) {
     super(message);
     this.name = 'ZipPassthroughUnsupported';
   }
 }
 
-const viewOf = (bytes: Uint8Array): DataView =>
-  new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+const viewOf = (bytes: Uint8Array): DataView => new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
 function ensureRange(bytes: Uint8Array, start: number, length: number, label: string): void {
-  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(length) || start < 0 || length < 0
-    || start + length > bytes.length) {
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(length) || start < 0 || length < 0 || start + length > bytes.length) {
     throw new Error(`ZIP ${label} 超出文件边界`);
   }
 }
@@ -79,13 +102,7 @@ function decodeName(bytes: Uint8Array, flags: number): string {
   }
 }
 
-function hasExtraField(
-  bytes: Uint8Array,
-  start: number,
-  length: number,
-  wantedId: number,
-  label: string,
-): boolean {
+function hasExtraField(bytes: Uint8Array, start: number, length: number, wantedId: number, label: string): boolean {
   ensureRange(bytes, start, length, label);
   const view = viewOf(bytes);
   const end = start + length;
@@ -143,8 +160,7 @@ export function parseZipArchive(bytes: Uint8Array): ZipArchive {
     const localOffset = view.getUint32(cursor + 42, true);
     const centralLength = 46 + nameLength + extraLength + entryCommentLength;
     ensureRange(bytes, cursor, centralLength, '中央目录条目');
-    if (compressedSize === 0xffffffff || uncompressedSize === 0xffffffff
-      || localOffset === 0xffffffff || entryDisk === 0xffff) {
+    if (compressedSize === 0xffffffff || uncompressedSize === 0xffffffff || localOffset === 0xffffffff || entryDisk === 0xffff) {
       throw new ZipPassthroughUnsupported('zip64', 'ZIP64 条目不支持直通');
     }
     if (entryDisk) throw new ZipPassthroughUnsupported('multi-disk', '跨磁盘 ZIP 条目不支持直通');
@@ -156,8 +172,7 @@ export function parseZipArchive(bytes: Uint8Array): ZipArchive {
       throw new ZipPassthroughUnsupported('unsupported-compression', `ZIP 压缩方法 ${method} 不支持直通`);
     }
     const centralName = bytes.subarray(cursor + 46, cursor + 46 + nameLength);
-    if (hasExtraField(bytes, cursor + 46 + nameLength, extraLength, ZIP64_EXTRA_ID,
-      `中央目录 extra ${index + 1}`)) {
+    if (hasExtraField(bytes, cursor + 46 + nameLength, extraLength, ZIP64_EXTRA_ID, `中央目录 extra ${index + 1}`)) {
       throw new ZipPassthroughUnsupported('zip64', 'ZIP64 中央目录 extra 不支持直通');
     }
     const name = decodeName(centralName, flags);
@@ -175,19 +190,20 @@ export function parseZipArchive(bytes: Uint8Array): ZipArchive {
       throw new ZipPassthroughUnsupported('data-descriptor', 'ZIP 本地头使用数据描述符，不支持直通');
     }
     if (localMethod !== 0 && localMethod !== 8) {
-      throw new ZipPassthroughUnsupported('unsupported-compression',
-        `ZIP 本地头压缩方法 ${localMethod} 不支持直通`);
+      throw new ZipPassthroughUnsupported('unsupported-compression', `ZIP 本地头压缩方法 ${localMethod} 不支持直通`);
     }
-    if (localFlags !== flags || localMethod !== method
+    if (
+      localFlags !== flags
+      || localMethod !== method
       || view.getUint32(localOffset + 14, true) !== view.getUint32(cursor + 16, true)
       || view.getUint32(localOffset + 18, true) !== compressedSize
-      || view.getUint32(localOffset + 22, true) !== uncompressedSize) {
+      || view.getUint32(localOffset + 22, true) !== uncompressedSize
+    ) {
       throw new Error(`ZIP 本地头与中央目录元数据不一致：${name}`);
     }
     const localNameLength = view.getUint16(localOffset + 26, true);
     const localExtraLength = view.getUint16(localOffset + 28, true);
-    if (hasExtraField(bytes, localOffset + 30 + localNameLength, localExtraLength, ZIP64_EXTRA_ID,
-      `本地头 extra ${name}`)) {
+    if (hasExtraField(bytes, localOffset + 30 + localNameLength, localExtraLength, ZIP64_EXTRA_ID, `本地头 extra ${name}`)) {
       throw new ZipPassthroughUnsupported('zip64', 'ZIP64 本地头 extra 不支持直通');
     }
     const localLength = 30 + localNameLength + localExtraLength + compressedSize;
@@ -251,11 +267,7 @@ function rewriteLocal(entry: ZipEntry, data: Uint8Array): DirtyLocal {
   return { bytes: output, checksum, compressedSize: payload.length, uncompressedSize: data.length };
 }
 
-function rewriteCentral(
-  entry: ZipEntry,
-  dirty: DirtyLocal | null,
-  localOffset: number,
-): Uint8Array {
+function rewriteCentral(entry: ZipEntry, dirty: DirtyLocal | null, localOffset: number): Uint8Array {
   // Buffer.slice() 共享原包内存；中央目录必须拥有独立字节才能改写偏移与校验和。
   const output = new Uint8Array(entry.centralRaw);
   const view = viewOf(output);
@@ -268,10 +280,7 @@ function rewriteCentral(
   return output;
 }
 
-export function rewriteZipArchive(
-  archive: ZipArchive,
-  changes: ReadonlyMap<string, Uint8Array | null>,
-): RewrittenZip {
+export function rewriteZipArchive(archive: ZipArchive, changes: ReadonlyMap<string, Uint8Array | null>): RewrittenZip {
   const locals: Uint8Array[] = [];
   const centrals: Uint8Array[] = [];
   let offset = 0;
@@ -320,17 +329,16 @@ export function rewriteZipArchive(
 }
 
 /** 不支持直通时从已解压 part 确定性重建；不复用任何可能含不兼容语义的 ZIP 元数据。 */
-export function repackZipParts(
-  parts: Readonly<Record<string, Uint8Array>>,
-  changes: ReadonlyMap<string, Uint8Array | null>,
-): RewrittenZip {
+export function repackZipParts(parts: Readonly<Record<string, Uint8Array>>, changes: ReadonlyMap<string, Uint8Array | null>): RewrittenZip {
   const sourceNames = Object.keys(parts);
   const sourceSet = new Set(sourceNames);
   const names = sourceNames.filter((name) => changes.get(name) !== null);
-  names.push(...[...changes]
-    .filter(([name, data]) => !sourceSet.has(name) && data !== null)
-    .map(([name]) => name)
-    .sort(compareNames));
+  names.push(
+    ...[...changes]
+      .filter(([name, data]) => !sourceSet.has(name) && data !== null)
+      .map(([name]) => name)
+      .sort(compareNames),
+  );
   if (names.length > 0xffff) throw new Error('重压结果需要 ZIP64 条目计数，当前不支持');
   const locals: Uint8Array[] = [];
   const centrals: Uint8Array[] = [];
@@ -359,7 +367,11 @@ export function repackZipParts(
   };
 }
 
-function createEntry(name: string, data: Uint8Array, localOffset: number): {
+function createEntry(
+  name: string,
+  data: Uint8Array,
+  localOffset: number,
+): {
   local: Uint8Array;
   central: Uint8Array;
 } {

@@ -3,11 +3,7 @@ import { normalizeSlideAnimations } from '../slide-animation';
 import type { EditDoc } from '../types';
 import type { CommandPatches, SetAnimationsCommand, SlideAnimationsPatch } from './types';
 
-export function setAnimationsPatches(
-  doc: EditDoc,
-  command: SetAnimationsCommand,
-  origin: string,
-): CommandPatches {
+export function setAnimationsPatches(doc: EditDoc, command: SetAnimationsCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改元素动画');
   const record = doc.slides[command.slideId];
   if (!record) throw new Error(`找不到幻灯片：${String(command.slideId)}`);
@@ -17,9 +13,14 @@ export function setAnimationsPatches(
     if (!hadOverride) return { forward: [], inverse: [] };
     return {
       forward: [{ op: 'del', path, origin }],
-      inverse: [{
-        op: 'set', path, value: structuredClone(record.ovr.animations!), origin,
-      }],
+      inverse: [
+        {
+          op: 'set',
+          path,
+          value: structuredClone(record.ovr.animations!),
+          origin,
+        },
+      ],
     };
   }
   const value = normalizeSlideAnimations(doc, command.slideId, command.steps, 'SetAnimations.steps');
@@ -27,7 +28,10 @@ export function setAnimationsPatches(
     return { forward: [], inverse: [] };
   }
   const forward: SlideAnimationsPatch = {
-    op: 'set', path, value: structuredClone(value), origin,
+    op: 'set',
+    path,
+    value: structuredClone(value),
+    origin,
   };
   const inverse: SlideAnimationsPatch = hadOverride
     ? { op: 'set', path, value: structuredClone(record.ovr.animations!), origin }

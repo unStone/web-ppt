@@ -15,7 +15,10 @@ export class Svg {
   private cache = new Map<string, string>();
   count = 0;
 
-  add(el: string): void { this.els.push(el); this.count++; }
+  add(el: string): void {
+    this.els.push(el);
+    this.count++;
+  }
 
   /** 按 key 去重的 <defs> 条目，返回引用 id */
   def(key: string, prefix: string, make: (id: string) => string): string {
@@ -32,10 +35,12 @@ export class Svg {
     const vh = Math.max(1, vb.b - vb.t);
     const defs = this.defs.length ? `<defs>${this.defs.join('')}</defs>` : '';
     return (
-      `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ` +
-      `width="${n(w)}" height="${n(h)}" viewBox="${n(vb.l)} ${n(vb.t)} ${n(vw)} ${n(vh)}" ` +
-      `preserveAspectRatio="xMidYMid meet">` +
-      defs + this.els.join('') + '</svg>'
+      `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" `
+      + `width="${n(w)}" height="${n(h)}" viewBox="${n(vb.l)} ${n(vb.t)} ${n(vw)} ${n(vh)}" `
+      + `preserveAspectRatio="xMidYMid meet">`
+      + defs
+      + this.els.join('')
+      + '</svg>'
     );
   }
 }
@@ -46,9 +51,16 @@ export class Path {
   private d: string[] = [];
   private started = false;
 
-  get empty(): boolean { return this.d.length === 0; }
-  get data(): string { return this.d.join(''); }
-  clear(): void { this.d = []; this.started = false; }
+  get empty(): boolean {
+    return this.d.length === 0;
+  }
+  get data(): string {
+    return this.d.join('');
+  }
+  clear(): void {
+    this.d = [];
+    this.started = false;
+  }
 
   move(p: Pt): void {
     if (!ok(p)) return;
@@ -65,7 +77,9 @@ export class Path {
     if (!this.started) this.move(a);
     this.d.push(`C${n(a.x)} ${n(a.y)} ${n(b.x)} ${n(b.y)} ${n(c.x)} ${n(c.y)}`);
   }
-  close(): void { if (this.started) this.d.push('Z'); }
+  close(): void {
+    if (this.started) this.d.push('Z');
+  }
 }
 
 export const ok = (p: Pt): boolean => Number.isFinite(p.x) && Number.isFinite(p.y);
@@ -83,11 +97,14 @@ export function arcSegs(cx: number, cy: number, rx: number, ry: number, a0: numb
   const total = a1 - a0;
   const steps = Math.max(1, Math.ceil(Math.abs(total) / (Math.PI / 2)));
   const step = total / steps;
-  const k = (K * Math.abs(step)) / (Math.PI / 2) * Math.sign(step);
+  const k = ((K * Math.abs(step)) / (Math.PI / 2)) * Math.sign(step);
   let t = a0;
   for (let i = 0; i < steps; i++) {
     const t1 = t + step;
-    const c0 = Math.cos(t), s0 = Math.sin(t), c1 = Math.cos(t1), s1 = Math.sin(t1);
+    const c0 = Math.cos(t),
+      s0 = Math.sin(t),
+      c1 = Math.cos(t1),
+      s1 = Math.sin(t1);
     const p1 = { x: cx + rx * (c0 - k * s0), y: cy + ry * (s0 + k * c0) };
     const p2 = { x: cx + rx * (c1 + k * s1), y: cy + ry * (s1 - k * c1) };
     const p3 = { x: cx + rx * c1, y: cy + ry * s1 };
@@ -113,28 +130,35 @@ export function radialAngle(cx: number, cy: number, rx: number, ry: number, x: n
 export function dashArray(style: number, w: number): string {
   const u = Math.max(w, 1);
   switch (style) {
-    case PS_DASH: return `${n(u * 6)} ${n(u * 3)}`;
-    case PS_DOT: return `${n(u)} ${n(u * 3)}`;
-    case PS_DASHDOT: return `${n(u * 6)} ${n(u * 3)} ${n(u)} ${n(u * 3)}`;
-    case PS_DASHDOTDOT: return `${n(u * 6)} ${n(u * 3)} ${n(u)} ${n(u * 3)} ${n(u)} ${n(u * 3)}`;
-    default: return '';
+    case PS_DASH:
+      return `${n(u * 6)} ${n(u * 3)}`;
+    case PS_DOT:
+      return `${n(u)} ${n(u * 3)}`;
+    case PS_DASHDOT:
+      return `${n(u * 6)} ${n(u * 3)} ${n(u)} ${n(u * 3)}`;
+    case PS_DASHDOTDOT:
+      return `${n(u * 6)} ${n(u * 3)} ${n(u)} ${n(u * 3)} ${n(u)} ${n(u * 3)}`;
+    default:
+      return '';
   }
 }
 
 // ---------------- 阴影线画刷 ----------------
 
 const HATCH_D: Record<number, string> = {
-  0: 'M0 4H8',                      // HS_HORIZONTAL
-  1: 'M4 0V8',                      // HS_VERTICAL
-  2: 'M0 0L8 8',                    // HS_FDIAGONAL
-  3: 'M0 8L8 0',                    // HS_BDIAGONAL
-  4: 'M0 4H8M4 0V8',                // HS_CROSS
-  5: 'M0 0L8 8M0 8L8 0',            // HS_DIAGCROSS
+  0: 'M0 4H8', // HS_HORIZONTAL
+  1: 'M4 0V8', // HS_VERTICAL
+  2: 'M0 0L8 8', // HS_FDIAGONAL
+  3: 'M0 8L8 0', // HS_BDIAGONAL
+  4: 'M0 4H8M4 0V8', // HS_CROSS
+  5: 'M0 0L8 8M0 8L8 0', // HS_DIAGCROSS
 };
 
 export function hatchPattern(id: string, hatch: number, color: string, bg: string): string {
   const d = HATCH_D[hatch] ?? HATCH_D[0];
   const back = bg === 'none' ? '' : `<rect width="8" height="8" fill="${bg}"/>`;
-  return `<pattern id="${id}" width="8" height="8" patternUnits="userSpaceOnUse">` +
-    `${back}<path d="${d}" stroke="${color}" stroke-width="1" fill="none"/></pattern>`;
+  return (
+    `<pattern id="${id}" width="8" height="8" patternUnits="userSpaceOnUse">`
+    + `${back}<path d="${d}" stroke="${color}" stroke-width="1" fill="none"/></pattern>`
+  );
 }

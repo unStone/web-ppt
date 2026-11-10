@@ -1,7 +1,5 @@
 import type { OpenEditorOptions } from './session';
-import type {
-  RecoveryCandidate, RecoveryDecisionHandler,
-} from './recovery-store';
+import type { RecoveryCandidate, RecoveryDecisionHandler } from './recovery-store';
 
 interface AdapterRecoveryHooks {
   active(): boolean;
@@ -48,7 +46,11 @@ export function bindAdapterRecovery(
         if (!hooks.errorActive()) return;
         const handler = hooks.errorHandler();
         if (configured.onError && configured.onError !== handler) {
-          try { configured.onError(error); } catch { /* 统一事件仍必须送达。 */ }
+          try {
+            configured.onError(error);
+          } catch {
+            /* 统一事件仍必须送达。 */
+          }
         }
         hooks.error(error);
       },

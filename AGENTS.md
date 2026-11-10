@@ -31,7 +31,7 @@
 
 | 命令 | 说明 |
 |---|---|
-| `npm run check` | 全仓类型检查与 Biome 静态检查（走源码，**不需要先构建**）；规则只收能指向真实缺陷的项，取舍写在 `biome.jsonc` |
+| `npm run check` | 全仓类型检查与 Biome 静态检查、格式检查（走源码，**不需要先构建**）；规则只收能指向真实缺陷的项，取舍写在 `biome.jsonc`；格式不符用 `npm run format` 重排 |
 | `npm test` | 全部功能测试与编辑器性能采样。分套件命令与断言数只登记在[测试规范 §8](docs/engineering/testing.md#8-测试套件)，由 `verify` 与实测比对，这里不另抄一份 |
 | `npm run fixtures` | 重新生成全部测试文件 |
 | `npm run build` | 构建九个发布包 |

@@ -11,8 +11,11 @@ const root = resolve('.');
 const out = join(root, 'out/advanced-rendering');
 mkdirSync(out, { recursive: true });
 const entry = join(out, 'entry.mjs');
-writeFileSync(entry, `export { prepareAdvancedRendering } from '${root}/packages/core/src/advanced-rendering.ts';
-export * as core from '${root}/packages/core/src/index.ts';`);
+writeFileSync(
+  entry,
+  `export { prepareAdvancedRendering } from '${root}/packages/core/src/advanced-rendering.ts';
+export * as core from '${root}/packages/core/src/index.ts';`,
+);
 const bundled = await bundleBrowser({
   root,
   entry,
@@ -20,14 +23,15 @@ const bundled = await bundleBrowser({
   aliases: [['@web-ppt/core', join(root, 'packages/core/src/index.ts')]],
 });
 const dist = process.argv.includes('--dist');
-const { prepareAdvancedRendering } = dist
-  ? await import('@web-ppt/core/advanced-rendering')
-  : bundled;
+const { prepareAdvancedRendering } = dist ? await import('@web-ppt/core/advanced-rendering') : bundled;
 const core = dist ? await import('@web-ppt/core') : bundled.core;
 const emfFile = readFileSync(join(root, 'fixtures/sample-emf-plus.pptx'));
 
 let count = 0;
-const check = (condition, label) => { assert(condition, label); count++; };
+const check = (condition, label) => {
+  assert(condition, label);
+  count++;
+};
 const slideSvg = async (bytes) => {
   const presentation = await core.parse(bytes, { lazy: false });
   const svg = core.renderSlideToSvg(presentation, presentation.slides[0], { textMode: 'svg' });
@@ -36,9 +40,19 @@ const slideSvg = async (bytes) => {
 };
 
 const scene = `<a:scene3d><a:camera prst="orthographicFront"/><a:lightRig rig="threePt" dir="t"/></a:scene3d><a:sp3d extrusionH="${px(50)}"/>`;
-const box = (effect = '') => slideXml(sp({
-  x: 80, y: 90, w: 240, h: 150, name: 'box', prst: 'rect', fill: solid('4472C4'), effect,
-}));
+const box = (effect = '') =>
+  slideXml(
+    sp({
+      x: 80,
+      y: 90,
+      w: 240,
+      h: 150,
+      name: 'box',
+      prst: 'rect',
+      fill: solid('4472C4'),
+      effect,
+    }),
+  );
 const plain = deck({ slides: [box()], width: 1280, height: 720, name: 'Plain' });
 const spatial = deck({ slides: [box(scene)], width: 1280, height: 720, name: 'Spatial' });
 const trap = deck({
@@ -90,11 +104,16 @@ raw.set([0xd0, 0xcf, 0x11, 0xe0]);
 raw.set([0x45, 0x4d, 0x46, 0x2b, 1, 0x40], 8);
 await prepareAdvancedRendering(raw);
 const rawSvg = await slideSvg(emfFile);
-check((rawSvg.includes('linearGradient') || decodeURIComponent(rawSvg).includes('linearGradient'))
-  && !rawSvg.includes('SENTINEL'), '非 PK 仍按字节识别 EMF+');
+check(
+  (rawSvg.includes('linearGradient') || decodeURIComponent(rawSvg).includes('linearGradient')) && !rawSvg.includes('SENTINEL'),
+  '非 PK 仍按字节识别 EMF+',
+);
 
 let chartHits = 0;
-core.setChartExParser(() => { chartHits += 1; return []; });
+core.setChartExParser(() => {
+  chartHits += 1;
+  return [];
+});
 await prepareAdvancedRendering(broken);
 check(chartHits === 0, '本入口不得调用 ChartEx parser');
 const spatialSvg = await slideSvg(spatial);

@@ -97,8 +97,18 @@ export function starFn(points: number, defaultInner: number): PathFn {
 
 /** 四角处理，顺序 左上,右上,右下,左下；kind: 'r' 圆角 / 's' 切角 / 'n' 直角 */
 export function shapedRect(w: number, h: number, radii: number[], kinds: string[]): string {
-  const corners: Pt[] = [[0, 0], [w, 0], [w, h], [0, h]];
-  const outDir: Pt[] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  const corners: Pt[] = [
+    [0, 0],
+    [w, 0],
+    [w, h],
+    [0, h],
+  ];
+  const outDir: Pt[] = [
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+    [0, -1],
+  ];
   const seg: string[] = [];
   for (let i = 0; i < 4; i++) {
     const [cx, cy] = corners[i];
@@ -115,7 +125,8 @@ export function shapedRect(w: number, h: number, radii: number[], kinds: string[
   return seg.join(' ') + ' Z';
 }
 
-export const rectFamily = (kinds: string[], keys: (string | null)[], dflts: number[]): PathFn =>
+export const rectFamily =
+  (kinds: string[], keys: (string | null)[], dflts: number[]): PathFn =>
   (w, h, a) => {
     const radii = keys.map((k, i) => (k ? Math.min(w, h) * Math.min(av(a, k, dflts[i]), 0.5) : 0));
     return shapedRect(w, h, radii, kinds);
@@ -139,8 +150,13 @@ export function arrow(dir: 'r' | 'l' | 'u' | 'd'): PathFn {
     const head = Math.min(len, across * av(a, 'adj2', 50000));
     const c = across / 2;
     const pts: Pt[] = [
-      [0, c - shaft], [len - head, c - shaft], [len - head, 0],
-      [len, c], [len - head, across], [len - head, c + shaft], [0, c + shaft],
+      [0, c - shaft],
+      [len - head, c - shaft],
+      [len - head, 0],
+      [len, c],
+      [len - head, across],
+      [len - head, c + shaft],
+      [0, c + shaft],
     ];
     return poly(pts.map((p) => remap[dir](p, w, h)));
   };
@@ -156,8 +172,17 @@ export function arrowCallout(dir: 'r' | 'l' | 'u' | 'd'): PathFn {
     const boxEdge = Math.max(0, len - Math.max(head, len * (1 - av(a, 'adj4', 66667))));
     const c = across / 2;
     const pts: Pt[] = [
-      [0, 0], [boxEdge, 0], [boxEdge, c - shaft], [len - head, c - shaft], [len - head, 0],
-      [len, c], [len - head, across], [len - head, c + shaft], [boxEdge, c + shaft], [boxEdge, across], [0, across],
+      [0, 0],
+      [boxEdge, 0],
+      [boxEdge, c - shaft],
+      [len - head, c - shaft],
+      [len - head, 0],
+      [len, c],
+      [len - head, across],
+      [len - head, c + shaft],
+      [boxEdge, c + shaft],
+      [boxEdge, across],
+      [0, across],
     ];
     return poly(pts.map((p) => remap[dir](p, w, h)));
   };
@@ -175,18 +200,32 @@ export function wedgeTail(w: number, h: number, a: Adj): Pt {
  * 或 7/12–10/12，取靠近尾尖的一段。不出尾巴的三条边上，尖端退化成边上的点。
  * 底座固定画在下边时，尾尖朝上会穿过整个框，只剩一条细线。
  */
-export function wedgeEdges(w: number, h: number, a: Adj): {
-  x1: number; x2: number; y1: number; y2: number; top: Pt; right: Pt; bottom: Pt; left: Pt;
+export function wedgeEdges(
+  w: number,
+  h: number,
+  a: Adj,
+): {
+  x1: number;
+  x2: number;
+  y1: number;
+  y2: number;
+  top: Pt;
+  right: Pt;
+  bottom: Pt;
+  left: Pt;
 } {
   const tip = wedgeTail(w, h, a);
   const dxPos = tip[0] - w / 2;
   const dyPos = tip[1] - h / 2;
-  const dq = w === 0 ? 0 : dxPos * h / w;
+  const dq = w === 0 ? 0 : (dxPos * h) / w;
   const vertical = Math.abs(dyPos) - Math.abs(dq) > 0;
-  const x1 = w * (dxPos > 0 ? 7 : 2) / 12;
-  const y1 = h * (dyPos > 0 ? 7 : 2) / 12;
+  const x1 = (w * (dxPos > 0 ? 7 : 2)) / 12;
+  const y1 = (h * (dyPos > 0 ? 7 : 2)) / 12;
   return {
-    x1, x2: w * (dxPos > 0 ? 10 : 5) / 12, y1, y2: h * (dyPos > 0 ? 10 : 5) / 12,
+    x1,
+    x2: (w * (dxPos > 0 ? 10 : 5)) / 12,
+    y1,
+    y2: (h * (dyPos > 0 ? 10 : 5)) / 12,
     top: vertical && dyPos <= 0 ? tip : [x1, 0],
     right: !vertical && dxPos > 0 ? tip : [w, y1],
     bottom: vertical && dyPos > 0 ? tip : [x1, h],
@@ -218,9 +257,20 @@ function calloutLeader(w: number, h: number, a: Adj, segs: number): string {
 /** 标注：文本框 + 引线，accent 时在左边缘补一条重音竖线（规范里它就压在框的左边） */
 export function callout(segs: number, accent: boolean): PathFn {
   return (w, h, a) =>
-    poly([[0, 0], [w, 0], [w, h], [0, h]]) +
-    (accent ? ' ' + seg([[0, 0], [0, h]]) : '') +
-    calloutLeader(w, h, a, segs);
+    poly([
+      [0, 0],
+      [w, 0],
+      [w, h],
+      [0, h],
+    ])
+    + (accent
+      ? ' '
+        + seg([
+          [0, 0],
+          [0, h],
+        ])
+      : '')
+    + calloutLeader(w, h, a, segs);
 }
 
 /** 四角装饰片：每个角一片，kind 决定圆角朝向（'q' 凸 / 'c' 凹 / 's' 方） */
@@ -231,15 +281,18 @@ export function tabs(kind: 'q' | 'c' | 's'): PathFn {
     const corner = (cx: number, cy: number, sx: number, sy: number): string => {
       const [ax, ay] = [cx + sx * d, cy];
       const [bx, by] = [cx, cy + sy * d];
-      if (kind === 's') return poly([[cx, cy], [ax, ay], [ax, by], [bx, by]]);
+      if (kind === 's')
+        return poly([
+          [cx, cy],
+          [ax, ay],
+          [ax, by],
+          [bx, by],
+        ]);
       // 凸（cornerTabs）弧心在角点，凹（plaqueTabs）弧心在对角
-      const sweep = kind === 'q' ? (sx * sy > 0 ? 1 : 0) : (sx * sy > 0 ? 0 : 1);
+      const sweep = kind === 'q' ? (sx * sy > 0 ? 1 : 0) : sx * sy > 0 ? 0 : 1;
       return `M ${n(cx)} ${n(cy)} L ${n(ax)} ${n(ay)} A ${n(d)} ${n(d)} 0 0 ${sweep} ${n(bx)} ${n(by)} Z`;
     };
-    return [
-      corner(0, 0, 1, 1), corner(w, 0, -1, 1),
-      corner(w, h, -1, -1), corner(0, h, 1, -1),
-    ].join(' ');
+    return [corner(0, 0, 1, 1), corner(w, 0, -1, 1), corner(w, h, -1, -1), corner(0, h, 1, -1)].join(' ');
   };
 }
 
@@ -257,8 +310,15 @@ export function waveEdge(y: number, w: number, amp: number, reverse: boolean): s
  * 否则短弧上两个箭头会啃到一起。
  */
 export function curvedArrow(
-  cx: number, cy: number, rx: number, ry: number,
-  t: number, head: number, startAng: number, endAng: number, both = false,
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  t: number,
+  head: number,
+  startAng: number,
+  endAng: number,
+  both = false,
 ): string {
   const sign = endAng >= startAng ? 1 : -1;
   // 箭头不能吃穿环带内侧，否则路径自交
@@ -284,14 +344,15 @@ export function curvedArrow(
   }
 
   return (
-    `M ${n(ox)} ${n(oy)} ${arcSeg(cx, cy, rx, ry, startBase, sweepOuter)} ` +
-    `L ${n(aOutX)} ${n(aOutY)} L ${n(tipX)} ${n(tipY)} L ${n(aInX)} ${n(aInY)} ` +
-    `L ${n(inX)} ${n(inY)} ${arcSeg(cx, cy, rx - t, ry - t, baseAng, -sweepOuter)} ${tail}Z`
+    `M ${n(ox)} ${n(oy)} ${arcSeg(cx, cy, rx, ry, startBase, sweepOuter)} `
+    + `L ${n(aOutX)} ${n(aOutY)} L ${n(tipX)} ${n(tipY)} L ${n(aInX)} ${n(aInY)} `
+    + `L ${n(inX)} ${n(inY)} ${arcSeg(cx, cy, rx - t, ry - t, baseAng, -sweepOuter)} ${tail}Z`
   );
 }
 
 export function gear(w: number, h: number, teeth: number): string {
-  const cx = w / 2, cy = h / 2;
+  const cx = w / 2,
+    cy = h / 2;
   const outer = Math.min(w, h) / 2;
   const inner = outer * 0.78;
   const step = 360 / teeth;
@@ -307,8 +368,22 @@ export function gear(w: number, h: number, teeth: number): string {
 }
 
 export function bevelFrame(w: number, h: number, t: number): string {
-  return poly([[0, 0], [w, 0], [w, h], [0, h]]) +
-    ' ' + seg([[t, t], [w - t, t], [w - t, h - t], [t, h - t], [t, t]]);
+  return (
+    poly([
+      [0, 0],
+      [w, 0],
+      [w, h],
+      [0, h],
+    ])
+    + ' '
+    + seg([
+      [t, t],
+      [w - t, t],
+      [w - t, h - t],
+      [t, h - t],
+      [t, t],
+    ])
+  );
 }
 
 export function actionButton(w: number, h: number, sym: (s: number, cx: number, cy: number) => string): string {

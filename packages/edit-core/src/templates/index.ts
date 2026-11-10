@@ -2,32 +2,32 @@ import { createOpcPackage, disposeOpcPackage } from '../opc/patch';
 import { assertSlideSize } from '../slide-size';
 import { generatedDesignedTemplateParts } from '../generate/template';
 import { BUILTIN_TEMPLATE_RECIPES } from './recipes';
-import type {
-  BuiltinTemplateCatalogItem, BuiltinTemplateId, CreatePptxFromTemplateOptions,
-} from './types';
+import type { BuiltinTemplateCatalogItem, BuiltinTemplateId, CreatePptxFromTemplateOptions } from './types';
 
 export type {
-  BuiltinTemplateCatalogItem, BuiltinTemplateId, BuiltinTemplatePreviewToken,
+  BuiltinTemplateCatalogItem,
+  BuiltinTemplateId,
+  BuiltinTemplatePreviewToken,
   CreatePptxFromTemplateOptions,
 } from './types';
 
 const CATALOG: readonly BuiltinTemplateCatalogItem[] = Object.freeze(
-  Object.values(BUILTIN_TEMPLATE_RECIPES).map(({ id, name, description, preview }) => Object.freeze({
-    id, name, description, preview: Object.freeze({ ...preview }),
-  })),
+  Object.values(BUILTIN_TEMPLATE_RECIPES).map(({ id, name, description, preview }) =>
+    Object.freeze({
+      id,
+      name,
+      description,
+      preview: Object.freeze({ ...preview }),
+    }),
+  ),
 );
 
 export function listBuiltinTemplates(): readonly BuiltinTemplateCatalogItem[] {
   return CATALOG;
 }
 
-export function createPptxFromTemplate(
-  id: BuiltinTemplateId,
-  options: CreatePptxFromTemplateOptions = {},
-): Uint8Array {
-  const recipe = Object.prototype.hasOwnProperty.call(BUILTIN_TEMPLATE_RECIPES, id)
-    ? BUILTIN_TEMPLATE_RECIPES[id]
-    : undefined;
+export function createPptxFromTemplate(id: BuiltinTemplateId, options: CreatePptxFromTemplateOptions = {}): Uint8Array {
+  const recipe = Object.prototype.hasOwnProperty.call(BUILTIN_TEMPLATE_RECIPES, id) ? BUILTIN_TEMPLATE_RECIPES[id] : undefined;
   if (!recipe) throw new Error(`未知内置模板：${id}`);
   const width = options.width ?? 1280;
   const height = options.height ?? 720;

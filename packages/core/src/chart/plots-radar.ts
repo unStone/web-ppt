@@ -65,18 +65,28 @@ export function renderRadarGrid(
     const align: 'left' | 'center' | 'right' = sin > 0.2 ? 'left' : sin < -0.2 ? 'right' : 'center';
     const boxW = Math.max(env.size * 6, 30);
     const x = align === 'left' ? px : align === 'right' ? px - boxW : px - boxW / 2;
-    out.push(textEl(x, py - lh / 2, boxW, lh, env.cats[i], {
-      size: env.size, color: env.color, align, fonts: env.fonts,
-    }));
+    out.push(
+      textEl(x, py - lh / 2, boxW, lh, env.cats[i], {
+        size: env.size,
+        color: env.color,
+        align,
+        fonts: env.fonts,
+      }),
+    );
   }
 
   // 数值刻度沿正上方那条辐条标注
   for (const t of ticks) {
     if (t === 0) continue;
     const [tx, ty] = radarPt(f, 0, t);
-    out.push(textEl(tx + 2, ty - lh / 2, env.size * 5, lh, labelFmt(t), {
-      size: env.size * 0.9, color: env.color, align: 'left', fonts: env.fonts,
-    }));
+    out.push(
+      textEl(tx + 2, ty - lh / 2, env.size * 5, lh, labelFmt(t), {
+        size: env.size * 0.9,
+        color: env.color,
+        align: 'left',
+        fonts: env.fonts,
+      }),
+    );
   }
   return out;
 }
@@ -99,9 +109,7 @@ export function renderRadar(g: PlotGroup, f: RadarFrame, env: PlotEnv): SlideEle
     if (pts.length < 2) return;
 
     const stroke: Stroke = strokeFrom(s.ln, color, 2) ?? { color, width: 2, dash: null };
-    const area = filled
-      ? (fill.type === 'solid' ? { type: 'solid' as const, color: withAlpha(fill.color, 0.45) } : fill)
-      : null;
+    const area = filled ? (fill.type === 'solid' ? { type: 'solid' as const, color: withAlpha(fill.color, 0.45) } : fill) : null;
     const el = polyEl([pts], area, stroke, true);
     if (el) out.push(el);
 

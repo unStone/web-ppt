@@ -21,4 +21,6 @@ try {
     }
   }
   console.log('媒体产物严格 DOM XML 解析通过');
-} finally { dom.window.close(); }
+} finally {
+  dom.window.close();
+}

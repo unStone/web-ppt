@@ -1,58 +1,135 @@
 import type { CellBorders, Effects, Fill, Stroke, TableCell } from '@web-ppt/core';
 import type {
-  DesignTarget, EditIdentity, ElementId, ElementImageReplacement, ElementInsertionResource, ElementRecord, ImageCrop, LinkOverride, LinkTarget, ParagraphPropertyInput, ProjectionInvalidation,
-  RunPropertyOverrides, SlideId, TextFragment, TextOverride,
-  SlideRecord, TableCellAddress, TextBodyPropertyOverrides, TableRowId, TableColumnId, TableCellRef,
-  TableRowInsertion, TableColumnInsertion, TableMergeRegion, TableCellOverrides, TableCellRowRef, TableCellColumnRef, SectionId,
+  DesignTarget,
+  EditIdentity,
+  ElementId,
+  ElementImageReplacement,
+  ElementInsertionResource,
+  ElementRecord,
+  ImageCrop,
+  LinkOverride,
+  LinkTarget,
+  ParagraphPropertyInput,
+  ProjectionInvalidation,
+  RunPropertyOverrides,
+  SlideId,
+  TextFragment,
+  TextOverride,
+  SlideRecord,
+  TableCellAddress,
+  TextBodyPropertyOverrides,
+  TableRowId,
+  TableColumnId,
+  TableCellRef,
+  TableRowInsertion,
+  TableColumnInsertion,
+  TableMergeRegion,
+  TableCellOverrides,
+  TableCellRowRef,
+  TableCellColumnRef,
+  SectionId,
 } from '../types';
 import type { ElementClipboardPayload } from './clipboard-types';
 import type { ElementHierarchyPatch, GroupCommand, UngroupCommand } from './group-types';
 import type {
-  ConvertToCustomGeometryCommand, ElementGeometryPatch, ElementPresetGeometryPatch,
-  SetAdjCommand, SetGeometryCommand, SetPresetCommand,
+  ConvertToCustomGeometryCommand,
+  ElementGeometryPatch,
+  ElementPresetGeometryPatch,
+  SetAdjCommand,
+  SetGeometryCommand,
+  SetPresetCommand,
 } from './geometry-types';
 import type {
-  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
-  SetAnimationsCommand, SetTransitionCommand,
-  SetLayoutCommand, SetNotesCommand, LayoutPropertyPatch, MasterBackgroundPatch, SlideLayoutPatch,
-  SlideNotesPatch, SlidePropertyPatch,
+  SetBackgroundCommand,
+  SetBackgroundCropCommand,
+  SetBackgroundImageCommand,
+  SetHiddenCommand,
+  SetAnimationsCommand,
+  SetTransitionCommand,
+  SetLayoutCommand,
+  SetNotesCommand,
+  LayoutPropertyPatch,
+  MasterBackgroundPatch,
+  SlideLayoutPatch,
+  SlideNotesPatch,
+  SlidePropertyPatch,
 } from './slide-property-types';
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
 import type { ElementTableStylePatch, SetTableStyleCommand } from './table-style-types';
 import type {
-  AddSectionCommand, DistributeElementsCommand, DocumentSizePatch, ElementAltTextPatch,
-  MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, SectionStatePatch,
-  SetAltTextCommand, SetSlideSizeCommand,
+  AddSectionCommand,
+  DistributeElementsCommand,
+  DocumentSizePatch,
+  ElementAltTextPatch,
+  MoveSectionCommand,
+  RemoveSectionCommand,
+  RenameSectionCommand,
+  SectionStatePatch,
+  SetAltTextCommand,
+  SetSlideSizeCommand,
 } from './common-object-slide-types';
 import type { SetThemeCommand, ThemePatch } from './theme-types';
 import type { MasterTextStylePatch, SetMasterTextStyleCommand } from './master-text-style-types';
 
 export type {
-  ClipboardElementRecord, ClipboardPortableLink, ClipboardRelationship, ClipboardResource,
-  ClipboardTextLink, ClipboardXmlRoot, ElementClipboardPayload, ElementClipboardRecordMeta,
+  ClipboardElementRecord,
+  ClipboardPortableLink,
+  ClipboardRelationship,
+  ClipboardResource,
+  ClipboardTextLink,
+  ClipboardXmlRoot,
+  ElementClipboardPayload,
+  ElementClipboardRecordMeta,
 } from './clipboard-types';
 export type {
-  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetHiddenCommand,
-  SetAnimationsCommand, SetTransitionCommand, SetLayoutCommand, SlideAnimationsPatch, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
-  SlideTransitionPatch, LayoutBackgroundPatch, LayoutTransitionPatch, LayoutPropertyPatch,
+  SetBackgroundCommand,
+  SetBackgroundCropCommand,
+  SetBackgroundImageCommand,
+  SetHiddenCommand,
+  SetAnimationsCommand,
+  SetTransitionCommand,
+  SetLayoutCommand,
+  SlideAnimationsPatch,
+  SlideBackgroundImagePatch,
+  SlideBackgroundPatch,
+  SlideHiddenPatch,
+  SlideTransitionPatch,
+  LayoutBackgroundPatch,
+  LayoutTransitionPatch,
+  LayoutPropertyPatch,
   MasterBackgroundPatch,
-  SetNotesCommand, SlideLayoutPatch, SlideNotesPatch, SlidePropertyPatch,
+  SetNotesCommand,
+  SlideLayoutPatch,
+  SlideNotesPatch,
+  SlidePropertyPatch,
 } from './slide-property-types';
 export type { ApplyFormatCommand, FormatMaskField } from './format-painter-types';
 export type {
-  ElementHierarchyPatch, ElementHierarchyState, GroupCommand, UngroupCommand,
+  ElementHierarchyPatch,
+  ElementHierarchyState,
+  GroupCommand,
+  UngroupCommand,
 } from './group-types';
 export type { ReplaceTextCommand, ReplaceTextScope } from '../text-search-types';
 export type { ElementTableStylePatch, SetTableStyleCommand } from './table-style-types';
 export type {
-  AddSectionCommand, DistributeElementsCommand, DocumentSizePatch, ElementAltTextPatch,
-  MoveSectionCommand, RemoveSectionCommand, RenameSectionCommand, SectionStatePatch,
-  SetAltTextCommand, SetSlideSizeCommand,
+  AddSectionCommand,
+  DistributeElementsCommand,
+  DocumentSizePatch,
+  ElementAltTextPatch,
+  MoveSectionCommand,
+  RemoveSectionCommand,
+  RenameSectionCommand,
+  SectionStatePatch,
+  SetAltTextCommand,
+  SetSlideSizeCommand,
 } from './common-object-slide-types';
 export type { SetThemeCommand, ThemeColorPatch, ThemeFontPatch, ThemePatch } from './theme-types';
 export type {
-  MasterParagraphTextStylePatch, MasterRunTextStylePatch, MasterTextStylePatch,
+  MasterParagraphTextStylePatch,
+  MasterRunTextStylePatch,
+  MasterTextStylePatch,
   SetMasterTextStyleCommand,
 } from './master-text-style-types';
 
@@ -68,8 +145,7 @@ export interface XfrmValueByField {
   flipH: boolean;
   flipV: boolean;
 }
-export type ElementXfrmPath<F extends XfrmField = XfrmField> =
-  readonly ['elements', ElementId, 'ovr', F];
+export type ElementXfrmPath<F extends XfrmField = XfrmField> = readonly ['elements', ElementId, 'ovr', F];
 
 export interface SetXfrmCommand {
   readonly type: 'SetXfrm';
@@ -140,13 +216,17 @@ interface AddShapeFields {
   readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
 }
 
-export type AddShapeCommand = AddShapeFields & ({
-  readonly slideId: SlideId;
-  readonly target?: never;
-} | {
-  readonly target: DesignTarget;
-  readonly slideId?: never;
-});
+export type AddShapeCommand = AddShapeFields &
+  (
+    | {
+        readonly slideId: SlideId;
+        readonly target?: never;
+      }
+    | {
+        readonly target: DesignTarget;
+        readonly slideId?: never;
+      }
+  );
 
 interface AddImageFields {
   readonly type: 'AddImage';
@@ -157,13 +237,17 @@ interface AddImageFields {
   readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
 }
 
-export type AddImageCommand = AddImageFields & ({
-  readonly slideId: SlideId;
-  readonly target?: never;
-} | {
-  readonly target: DesignTarget;
-  readonly slideId?: never;
-});
+export type AddImageCommand = AddImageFields &
+  (
+    | {
+        readonly slideId: SlideId;
+        readonly target?: never;
+      }
+    | {
+        readonly target: DesignTarget;
+        readonly slideId?: never;
+      }
+  );
 
 export interface ReplaceImageCommand {
   readonly type: 'ReplaceImage';
@@ -188,13 +272,17 @@ interface AddTableFields {
   readonly placeholderId?: ElementId;
 }
 
-export type AddTableCommand = AddTableFields & ({
-  readonly slideId: SlideId;
-  readonly target?: never;
-} | {
-  readonly target: DesignTarget;
-  readonly slideId?: never;
-});
+export type AddTableCommand = AddTableFields &
+  (
+    | {
+        readonly slideId: SlideId;
+        readonly target?: never;
+      }
+    | {
+        readonly target: DesignTarget;
+        readonly slideId?: never;
+      }
+  );
 
 export interface AddSlideCommand {
   readonly type: 'AddSlide';
@@ -248,23 +336,27 @@ export interface SetLinkCommand {
   readonly target: LinkTarget | { readonly kind: 'none' } | null;
 }
 
-export type TextEditOp = {
-  readonly type: 'replace';
-  readonly from: TextPosition;
-  readonly to: TextPosition;
-  readonly text: string;
-} | {
-  readonly type: 'splitParagraph';
-  readonly at: TextPosition;
-} | {
-  readonly type: 'insertLineBreak';
-  readonly at: TextPosition;
-} | {
-  readonly type: 'replaceFragment';
-  readonly from: TextPosition;
-  readonly to: TextPosition;
-  readonly fragment: TextFragment;
-};
+export type TextEditOp =
+  | {
+      readonly type: 'replace';
+      readonly from: TextPosition;
+      readonly to: TextPosition;
+      readonly text: string;
+    }
+  | {
+      readonly type: 'splitParagraph';
+      readonly at: TextPosition;
+    }
+  | {
+      readonly type: 'insertLineBreak';
+      readonly at: TextPosition;
+    }
+  | {
+      readonly type: 'replaceFragment';
+      readonly from: TextPosition;
+      readonly to: TextPosition;
+      readonly fragment: TextFragment;
+    };
 
 export interface EditTextCommand {
   readonly type: 'EditText';
@@ -388,178 +480,275 @@ export interface SetCellPropsCommand {
   };
 }
 
-export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand | SetAltTextCommand
+export type Command =
+  | SetXfrmCommand
+  | SetFlipCommand
+  | RemoveElementCommand
+  | SetZCommand
+  | SetNameCommand
+  | SetAltTextCommand
   | ExtensionCommand
-  | SetLockedCommand | SetElementHiddenCommand
-  | ApplyFormatCommand | ReplaceTextCommand
-  | AlignElementsCommand | DistributeElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | SetGeometryCommand | ConvertToCustomGeometryCommand | SetPresetCommand | SetAdjCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | ClearFormatCommand | SetParaPropsCommand
-  | AddSectionCommand | RenameSectionCommand | MoveSectionCommand | RemoveSectionCommand
+  | SetLockedCommand
+  | SetElementHiddenCommand
+  | ApplyFormatCommand
+  | ReplaceTextCommand
+  | AlignElementsCommand
+  | DistributeElementsCommand
+  | GroupCommand
+  | UngroupCommand
+  | PasteElementsCommand
+  | AddShapeCommand
+  | AddImageCommand
+  | ReplaceImageCommand
+  | SetCropCommand
+  | SetGeometryCommand
+  | ConvertToCustomGeometryCommand
+  | SetPresetCommand
+  | SetAdjCommand
+  | AddTableCommand
+  | AddSlideCommand
+  | MoveSlideCommand
+  | RemoveSlideCommand
+  | DuplicateSlideCommand
+  | EditTextCommand
+  | SetRunPropsCommand
+  | ClearFormatCommand
+  | SetParaPropsCommand
+  | AddSectionCommand
+  | RenameSectionCommand
+  | MoveSectionCommand
+  | RemoveSectionCommand
   | SetSlideSizeCommand
-  | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | InsertColumnCommand
-  | RemoveRowCommand | RemoveColumnCommand | SetRowHeightCommand | SetColumnWidthCommand
-  | MergeCellsCommand | SplitCellCommand | SetCellPropsCommand | SetFillCommand | SetStrokeCommand
-  | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand
+  | FitTextShapeCommand
+  | SetBodyPropsCommand
+  | InsertRowCommand
+  | InsertColumnCommand
+  | RemoveRowCommand
+  | RemoveColumnCommand
+  | SetRowHeightCommand
+  | SetColumnWidthCommand
+  | MergeCellsCommand
+  | SplitCellCommand
+  | SetCellPropsCommand
+  | SetFillCommand
+  | SetStrokeCommand
+  | SetEffectsCommand
+  | SetLinkCommand
+  | SetBackgroundCommand
+  | SetBackgroundCropCommand
   | SetBackgroundImageCommand
-  | SetHiddenCommand | SetTransitionCommand | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand
-  | SetTableStyleCommand | SetThemeCommand | SetMasterTextStyleCommand;
+  | SetHiddenCommand
+  | SetTransitionCommand
+  | SetAnimationsCommand
+  | SetLayoutCommand
+  | SetNotesCommand
+  | SetTableStyleCommand
+  | SetThemeCommand
+  | SetMasterTextStyleCommand;
 
-type PageOnlyCommand = AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand
-  | AddSectionCommand | RenameSectionCommand | MoveSectionCommand | RemoveSectionCommand
-  | SetSlideSizeCommand | SetBackgroundCropCommand | SetBackgroundImageCommand | SetHiddenCommand
-  | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand | SetThemeCommand
-  | AddShapeCommand | AddImageCommand | AddTableCommand | PasteElementsCommand | ReplaceTextCommand;
+type PageOnlyCommand =
+  | AddSlideCommand
+  | MoveSlideCommand
+  | RemoveSlideCommand
+  | DuplicateSlideCommand
+  | AddSectionCommand
+  | RenameSectionCommand
+  | MoveSectionCommand
+  | RemoveSectionCommand
+  | SetSlideSizeCommand
+  | SetBackgroundCropCommand
+  | SetBackgroundImageCommand
+  | SetHiddenCommand
+  | SetAnimationsCommand
+  | SetLayoutCommand
+  | SetNotesCommand
+  | SetThemeCommand
+  | AddShapeCommand
+  | AddImageCommand
+  | AddTableCommand
+  | PasteElementsCommand
+  | ReplaceTextCommand;
 
 /** 版式命令沿用元素命令语言；只有画布属性命令显式携带 DesignTarget。 */
-export type DesignCommand = Exclude<Command, PageOnlyCommand | SetBackgroundCommand | SetTransitionCommand>
+export type DesignCommand =
+  | Exclude<Command, PageOnlyCommand | SetBackgroundCommand | SetTransitionCommand>
   | Extract<SetBackgroundCommand, { readonly target: DesignTarget }>
   | Extract<SetTransitionCommand, { readonly target: DesignTarget }>
   | Extract<AddShapeCommand, { readonly target: DesignTarget }>
   | Extract<AddImageCommand, { readonly target: DesignTarget }>
   | Extract<AddTableCommand, { readonly target: DesignTarget }>;
 
-type SetXfrmPatch = { [F in XfrmField]: {
-  readonly op: 'set';
-  readonly path: ElementXfrmPath<F>;
-  readonly value: XfrmValueByField[F];
-  readonly origin: string;
-} }[XfrmField];
-type DeleteXfrmPatch = { [F in XfrmField]: {
-  readonly op: 'del';
-  readonly path: ElementXfrmPath<F>;
-  readonly origin: string;
-} }[XfrmField];
+type SetXfrmPatch = {
+  [F in XfrmField]: {
+    readonly op: 'set';
+    readonly path: ElementXfrmPath<F>;
+    readonly value: XfrmValueByField[F];
+    readonly origin: string;
+  };
+}[XfrmField];
+type DeleteXfrmPatch = {
+  [F in XfrmField]: {
+    readonly op: 'del';
+    readonly path: ElementXfrmPath<F>;
+    readonly origin: string;
+  };
+}[XfrmField];
 export type ElementTransformPatch = SetXfrmPatch | DeleteXfrmPatch;
 
-export type ElementFillPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'fill'];
-  readonly value: Exclude<Fill, { type: 'image' }>;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'fill'];
-  readonly origin: string;
-};
+export type ElementFillPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'fill'];
+      readonly value: Exclude<Fill, { type: 'image' }>;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'fill'];
+      readonly origin: string;
+    };
 
-export type ElementStrokePatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'stroke'];
-  readonly value: Stroke | null;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'stroke'];
-  readonly origin: string;
-};
+export type ElementStrokePatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'stroke'];
+      readonly value: Stroke | null;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'stroke'];
+      readonly origin: string;
+    };
 
-export type ElementEffectsPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'effects'];
-  readonly value: Effects;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'effects'];
-  readonly origin: string;
-};
+export type ElementEffectsPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'effects'];
+      readonly value: Effects;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'effects'];
+      readonly origin: string;
+    };
 
-export type ElementLinkPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'link'];
-  readonly value: LinkOverride;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'link'];
-  readonly origin: string;
-};
+export type ElementLinkPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'link'];
+      readonly value: LinkOverride;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'link'];
+      readonly origin: string;
+    };
 
-export type ElementCropPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'crop'];
-  readonly value: ImageCrop;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'crop'];
-  readonly origin: string;
-};
+export type ElementCropPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'crop'];
+      readonly value: ImageCrop;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'crop'];
+      readonly origin: string;
+    };
 
-export type ElementImageReplacementPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'meta', 'imageReplacement'];
-  readonly value: ElementImageReplacement;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'meta', 'imageReplacement'];
-  readonly origin: string;
-};
+export type ElementImageReplacementPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'meta', 'imageReplacement'];
+      readonly value: ElementImageReplacement;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'meta', 'imageReplacement'];
+      readonly origin: string;
+    };
 
-export type ImageResourcePatch = {
-  readonly op: 'set';
-  readonly path: readonly ['imageResources', string];
-  readonly value: ElementInsertionResource;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['imageResources', string];
-  readonly origin: string;
-};
+export type ImageResourcePatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['imageResources', string];
+      readonly value: ElementInsertionResource;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['imageResources', string];
+      readonly origin: string;
+    };
 
-export type ElementTextPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'text'];
-  readonly value: TextOverride;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'text'];
-  readonly origin: string;
-} | {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', TableCellRowRef, TableCellColumnRef, 'text'];
-  readonly value: TextOverride;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', TableCellRowRef, TableCellColumnRef, 'text'];
-  readonly origin: string;
-};
+export type ElementTextPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'text'];
+      readonly value: TextOverride;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'text'];
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', TableCellRowRef, TableCellColumnRef, 'text'];
+      readonly value: TextOverride;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', TableCellRowRef, TableCellColumnRef, 'text'];
+      readonly origin: string;
+    };
 
-export type ElementOrderPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'order'];
-  readonly value: string;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'order'];
-  readonly origin: string;
-};
+export type ElementOrderPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'order'];
+      readonly value: string;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'order'];
+      readonly origin: string;
+    };
 
-export type ElementNamePatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'name'];
-  readonly value: string;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'name'];
-  readonly origin: string;
-};
+export type ElementNamePatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'name'];
+      readonly value: string;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'name'];
+      readonly origin: string;
+    };
 
 export type ElementInteractionField = 'locked' | 'hiddenByUser';
-export type ElementInteractionPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'meta', ElementInteractionField];
-  readonly value: true;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'meta', ElementInteractionField];
-  readonly origin: string;
-};
+export type ElementInteractionPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'meta', ElementInteractionField];
+      readonly value: true;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'meta', ElementInteractionField];
+      readonly origin: string;
+    };
 
 export interface ElementTreeSnapshot {
   readonly root: ElementId;
@@ -618,63 +807,103 @@ export type TableColumnPatch = {
 
 export type TableGridEntryPatch = {
   readonly op: 'set' | 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr',
-    'tableRemovedRows' | 'tableRemovedColumns' | 'tableRowHeights' | 'tableColumnWidths', string];
+  readonly path: readonly [
+    'elements',
+    ElementId,
+    'ovr',
+    'tableRemovedRows' | 'tableRemovedColumns' | 'tableRowHeights' | 'tableColumnWidths',
+    string,
+  ];
   readonly value?: true | number;
   readonly origin: string;
 };
 
-export type TableMergePatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableMerges'];
-  readonly value: readonly TableMergeRegion[];
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableMerges'];
-  readonly origin: string;
-};
+export type TableMergePatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'tableMerges'];
+      readonly value: readonly TableMergeRegion[];
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'tableMerges'];
+      readonly origin: string;
+    };
 
 export type TableCellPropsPatch = {
   readonly op: 'set' | 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', string,
-    'fill' | 'borders' | 'margins' | 'vAlign' | 'vert'];
+  readonly path: readonly ['elements', ElementId, 'ovr', 'tableCells', string, 'fill' | 'borders' | 'margins' | 'vAlign' | 'vert'];
   readonly value?: TableCellOverrides[keyof Omit<TableCellOverrides, 'text'>];
   readonly origin: string;
 };
 
-export type ExtensionPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements' | 'slides', ElementId, 'ovr', 'extensions', string, ...string[]];
-  readonly value: unknown;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements' | 'slides', ElementId, 'ovr', 'extensions', string, ...string[]];
-  readonly origin: string;
-};
+export type ExtensionPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements' | 'slides', ElementId, 'ovr', 'extensions', string, ...string[]];
+      readonly value: unknown;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements' | 'slides', ElementId, 'ovr', 'extensions', string, ...string[]];
+      readonly origin: string;
+    };
 
-export type DocumentExtensionPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['document', 'extensions', string, ...string[]];
-  readonly value: unknown;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['document', 'extensions', string, ...string[]];
-  readonly origin: string;
-};
+export type DocumentExtensionPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['document', 'extensions', string, ...string[]];
+      readonly value: unknown;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['document', 'extensions', string, ...string[]];
+      readonly origin: string;
+    };
 
 /** 单个事务必须能作为一条协同消息原子传输。 */
 export const MAX_PATCHES_PER_TRANSACTION = 10_000;
 
-export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch
+export type Patch =
+  | ElementTransformPatch
+  | ElementFillPatch
+  | ElementStrokePatch
+  | ElementEffectsPatch
+  | ElementLinkPatch
+  | ElementCropPatch
+  | ElementGeometryPatch
+  | ElementPresetGeometryPatch
+  | ElementImageReplacementPatch
+  | ImageResourcePatch
+  | ElementTextPatch
+  | ElementOrderPatch
+  | ElementNamePatch
+  | ElementAltTextPatch
+  | ElementInteractionPatch
   | ExtensionPatch
   | DocumentExtensionPatch
-  | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch
-  | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch
-  | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch
-  | MasterBackgroundPatch | MasterTextStylePatch;
+  | ElementTreePatch
+  | ElementHierarchyPatch
+  | SlideTreePatch
+  | SlideOrderPatch
+  | SectionStatePatch
+  | DocumentSizePatch
+  | SlidePropertyPatch
+  | SlideLayoutPatch
+  | SlideNotesPatch
+  | TableRowPatch
+  | TableColumnPatch
+  | TableGridEntryPatch
+  | TableMergePatch
+  | TableCellPropsPatch
+  | ElementTableStylePatch
+  | ThemePatch
+  | LayoutPropertyPatch
+  | MasterBackgroundPatch
+  | MasterTextStylePatch;
 
 export interface CommandPatches {
   readonly forward: Patch[];
@@ -691,7 +920,13 @@ export interface TextPosition {
 export type Selection =
   | { readonly kind: 'none' }
   | { readonly kind: 'elements'; readonly ids: readonly ElementId[]; readonly enteredGroup: ElementId | null }
-  | { readonly kind: 'text'; readonly id: ElementId; readonly cell?: TableCellAddress; readonly anchor: TextPosition; readonly focus: TextPosition }
+  | {
+      readonly kind: 'text';
+      readonly id: ElementId;
+      readonly cell?: TableCellAddress;
+      readonly anchor: TextPosition;
+      readonly focus: TextPosition;
+    }
   | { readonly kind: 'table'; readonly id: ElementId; readonly cells: readonly { r: number; c: number }[] };
 
 export interface HistoryEntry extends CommandPatches {

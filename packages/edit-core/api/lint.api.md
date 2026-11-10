@@ -68,7 +68,7 @@ export type ContrastSamples = readonly {
 export const LAYOUT_CHECKS: readonly ["text-overflow", "element-overlap", "off-canvas", "low-contrast", "missing-font", "placeholder-prompt-left", "image-distorted"];
 
 // @public (undocumented)
-export type LayoutCheck = typeof LAYOUT_CHECKS[number];
+export type LayoutCheck = (typeof LAYOUT_CHECKS)[number];
 
 // @public (undocumented)
 export interface LayoutIssue {

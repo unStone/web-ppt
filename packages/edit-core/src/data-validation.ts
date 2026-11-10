@@ -1,19 +1,16 @@
 import type { TextPosition, TextRange } from './commands/types';
 
-export const own = (object: object, key: PropertyKey): boolean =>
-  Object.prototype.hasOwnProperty.call(object, key);
+export const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 
 export function assertDataObject(
   value: unknown,
   fields: readonly string[] | ReadonlySet<PropertyKey>,
   label: string,
 ): asserts value is object {
-  if (!value || typeof value !== 'object'
-    || (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)) {
+  if (!value || typeof value !== 'object' || (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)) {
     throw new Error(`${label} 必须是纯数据对象`);
   }
-  const allowed: ReadonlySet<PropertyKey> = Array.isArray(fields) ? new Set(fields)
-    : fields as ReadonlySet<PropertyKey>;
+  const allowed: ReadonlySet<PropertyKey> = Array.isArray(fields) ? new Set(fields) : (fields as ReadonlySet<PropertyKey>);
   for (const key of Reflect.ownKeys(value)) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     if (typeof key !== 'string' || !allowed.has(key) || !descriptor?.enumerable || !('value' in descriptor)) {

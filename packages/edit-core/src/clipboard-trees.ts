@@ -11,9 +11,11 @@ import type { XmlDocument, XmlElement } from './xml/types';
 import { clipboardPackage } from './clipboard-package';
 
 function namespaces(document: XmlDocument): Record<string, string> {
-  return Object.fromEntries(document.root.attributes
-    .filter((attribute) => attribute.namespaceUri === XMLNS_NS)
-    .map((attribute) => [attribute.name, attribute.value]));
+  return Object.fromEntries(
+    document.root.attributes
+      .filter((attribute) => attribute.namespaceUri === XMLNS_NS)
+      .map((attribute) => [attribute.name, attribute.value]),
+  );
 }
 
 /** 复制取得有效树；解组只移交来源，覆盖仍由原记录持有，避免追加行等操作被执行两次。 */
@@ -38,7 +40,10 @@ export function elementTreeSources(doc: EditDoc, roots: readonly ElementId[], so
     } else inserted.set(owner, [...(inserted.get(owner) ?? []), id]);
   }
   const locate = (document: XmlDocument, ids: readonly ElementId[]): void => {
-    const located = locateElementHosts(document, ids.map((id) => doc.elements[id]));
+    const located = locateElementHosts(
+      document,
+      ids.map((id) => doc.elements[id]),
+    );
     const declarations = namespaces(document);
     for (const id of ids) hosts.set(id, { host: located.get(id)!.host, namespaces: declarations });
   };
@@ -50,13 +55,15 @@ export function elementTreeSources(doc: EditDoc, roots: readonly ElementId[], so
   const xmlRoots: Record<string, ClipboardXmlRoot> = Object.create(null);
   const resources = new Map<string, ClipboardResource>();
   let effective: ReturnType<typeof clipboardPackage> | undefined;
-  const readEffective = sourceOnly ? undefined : () => effective ??= clipboardPackage(doc);
+  const readEffective = sourceOnly ? undefined : () => (effective ??= clipboardPackage(doc));
   for (const id of roots) {
     const resolved = hosts.get(id)!;
     const closure = clipboardClosure(pkg, sourcePart, resolved.host, insertions, readEffective);
     for (const resource of closure.resources) resources.set(resource.hash, resource);
     xmlRoots[id] = {
-      markup: serializeXmlNode(resolved.host), namespaces: { ...resolved.namespaces }, hostSpids: shapeIds(resolved.host),
+      markup: serializeXmlNode(resolved.host),
+      namespaces: { ...resolved.namespaces },
+      hostSpids: shapeIds(resolved.host),
       ...(closure.relationships.length ? { relationships: closure.relationships } : {}),
     };
   }

@@ -28,9 +28,12 @@ export function inspectTemplateFillChartParts(parts, assert, expected = { series
         const xml = read(target);
         assert.equal(xml.documentElement.localName, 'chartSpace');
         assert.equal(xml.documentElement.namespaceURI, CHART);
-        charts.push({ part: target, series: xml.getElementsByTagNameNS(CHART, 'ser').length,
+        charts.push({
+          part: target,
+          series: xml.getElementsByTagNameNS(CHART, 'ser').length,
           categoryReferences: xml.getElementsByTagNameNS(CHART, 'cat').length,
-          embeddedData: xml.getElementsByTagNameNS(CHART, 'externalData').length });
+          embeddedData: xml.getElementsByTagNameNS(CHART, 'externalData').length,
+        });
       }
     }
     assert.equal(charts.length, 1, '生成大纲的一页图表必须指向一个原生 chart part');
@@ -38,7 +41,9 @@ export function inspectTemplateFillChartParts(parts, assert, expected = { series
     assert.equal(charts[0].categoryReferences, expected.categories, '原生类别引用数量必须与图表类型和系列一致');
     assert.equal(charts[0].embeddedData, 1, '图表必须关联真实嵌入工作簿');
     return charts;
-  } finally { window.close(); }
+  } finally {
+    window.close();
+  }
 }
 
 export function inspectTemplateFillSlideNumbers(parts, assert) {
@@ -48,24 +53,29 @@ export function inspectTemplateFillSlideNumbers(parts, assert) {
   try {
     const presentation = read('ppt/presentation.xml');
     const relationships = read('ppt/_rels/presentation.xml.rels');
-    const slides = new Map([...relationships.getElementsByTagNameNS(REL, 'Relationship')]
-      .filter(relation => relation.getAttribute('Type') === `${OFFICE_REL}/slide`)
-      .map(relation => [relation.getAttribute('Id'), posix.normalize(posix.join('ppt', relation.getAttribute('Target')))]));
+    const slides = new Map(
+      [...relationships.getElementsByTagNameNS(REL, 'Relationship')]
+        .filter((relation) => relation.getAttribute('Type') === `${OFFICE_REL}/slide`)
+        .map((relation) => [relation.getAttribute('Id'), posix.normalize(posix.join('ppt', relation.getAttribute('Target')))]),
+    );
     const fields = [...presentation.getElementsByTagNameNS(PRESENTATION, 'sldId')].map((slide, index) => {
       const id = slide.getAttributeNS(OFFICE_REL, 'id');
       assert(slides.has(id), `第 ${index + 1} 页必须有有效的 slide 关系`);
       const part = slides.get(id);
       const xml = read(part);
       assert.equal(xml.getElementsByTagName('parsererror').length, 0, `${part} 必须是有效 XML`);
-      const placeholders = [...xml.getElementsByTagNameNS(PRESENTATION, 'sp')].filter(shape =>
-        [...shape.getElementsByTagNameNS(PRESENTATION, 'ph')].some(ph => ph.getAttribute('type') === 'sldNum'));
+      const placeholders = [...xml.getElementsByTagNameNS(PRESENTATION, 'sp')].filter((shape) =>
+        [...shape.getElementsByTagNameNS(PRESENTATION, 'ph')].some((ph) => ph.getAttribute('type') === 'sldNum'),
+      );
       assert.equal(placeholders.length, 1, `第 ${index + 1} 页必须保留原生页码占位符`);
       const shape = placeholders[0];
-      const dynamic = [...shape.getElementsByTagNameNS(DRAWING, 'fld')].filter(field => field.getAttribute('type') === 'slidenum');
+      const dynamic = [...shape.getElementsByTagNameNS(DRAWING, 'fld')].filter((field) => field.getAttribute('type') === 'slidenum');
       assert.equal(dynamic.length, 1, `第 ${index + 1} 页必须保留 slidenum 字段`);
       assert.equal(shape.getElementsByTagNameNS(DRAWING, 'normAutofit').length, 1, '字段文字适配必须使用原生 normAutofit');
       return { part, type: dynamic[0].getAttribute('type'), cachedText: dynamic[0].textContent };
     });
     return fields;
-  } finally { window.close(); }
+  } finally {
+    window.close();
+  }
 }

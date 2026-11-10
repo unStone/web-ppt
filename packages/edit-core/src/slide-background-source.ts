@@ -31,11 +31,10 @@ function sourcePackage(doc: EditDoc): OpcPackage | null {
 function relatedPart(pkg: OpcPackage, part: string, relationSuffix: string): string | null {
   const bytes = pkg.parts[relationshipPartFor(part)];
   if (!bytes) return null;
-  const relationship = xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' })
-    .find((node) => findXmlAttribute(node, { localName: 'Type', namespaceUri: null })
-      ?.value.endsWith(relationSuffix));
-  const target = relationship
-    && findXmlAttribute(relationship, { localName: 'Target', namespaceUri: null })?.value;
+  const relationship = xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' }).find((node) =>
+    findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value.endsWith(relationSuffix),
+  );
+  const target = relationship && findXmlAttribute(relationship, { localName: 'Target', namespaceUri: null })?.value;
   return target ? resolveRelationshipTarget(part, target) : null;
 }
 
@@ -46,21 +45,33 @@ function backgroundFromPart(
   const bytes = pkg.parts[part];
   if (!bytes) return { found: false, background: null, rid: null };
   const common = findXmlChild(parseXmlTree(bytes).root, {
-    localName: 'cSld', namespaceUri: PRESENTATIONML_NS,
+    localName: 'cSld',
+    namespaceUri: PRESENTATIONML_NS,
   });
-  const background = common && findXmlChild(common, {
-    localName: 'bg', namespaceUri: PRESENTATIONML_NS,
-  });
+  const background =
+    common
+    && findXmlChild(common, {
+      localName: 'bg',
+      namespaceUri: PRESENTATIONML_NS,
+    });
   if (!background) return { found: false, background: null, rid: null };
   const properties = findXmlChild(background, {
-    localName: 'bgPr', namespaceUri: PRESENTATIONML_NS,
+    localName: 'bgPr',
+    namespaceUri: PRESENTATIONML_NS,
   });
-  const fill = properties && findXmlChild(properties, {
-    localName: 'blipFill', namespaceUri: DRAWINGML_NS,
-  });
+  const fill =
+    properties
+    && findXmlChild(properties, {
+      localName: 'blipFill',
+      namespaceUri: DRAWINGML_NS,
+    });
   const blip = fill && findXmlChild(fill, { localName: 'blip', namespaceUri: DRAWINGML_NS });
-  const rid = blip && (findXmlAttribute(blip, { localName: 'embed', namespaceUri: OFFICE_REL_NS })
-    ?? findXmlAttribute(blip, { localName: 'link', namespaceUri: OFFICE_REL_NS }))?.value;
+  const rid =
+    blip
+    && (
+      findXmlAttribute(blip, { localName: 'embed', namespaceUri: OFFICE_REL_NS })
+      ?? findXmlAttribute(blip, { localName: 'link', namespaceUri: OFFICE_REL_NS })
+    )?.value;
   return { found: true, background: fill && rid ? background : null, rid: rid ?? null };
 }
 
@@ -69,8 +80,7 @@ export function sourceImageBackground(doc: EditDoc, record: SlideRecord): Source
   const pkg = sourcePackage(doc);
   if (!pkg || record.src.background?.type !== 'image') return null;
   // 新建页保存后的目标 part 是用户覆盖，不是 src；副本则必须回到最初不可变页面基线。
-  const slidePart = record.creation?.duplicateSourcePart
-    ?? (record.creation ? null : record.origin?.part ?? null);
+  const slidePart = record.creation?.duplicateSourcePart ?? (record.creation ? null : (record.origin?.part ?? null));
   const master = record.layoutId ? relatedPart(pkg, record.layoutId, '/slideMaster') : null;
   for (const part of [slidePart, record.layoutId ?? null, master]) {
     if (!part) continue;
@@ -79,7 +89,10 @@ export function sourceImageBackground(doc: EditDoc, record: SlideRecord): Source
     if (candidate.found) {
       if (!candidate.background || !candidate.rid) return null;
       return {
-        package: pkg, part, background: candidate.background, imageRelationshipId: candidate.rid,
+        package: pkg,
+        part,
+        background: candidate.background,
+        imageRelationshipId: candidate.rid,
         closure: clipboardClosure(pkg, part, candidate.background),
       };
     }
