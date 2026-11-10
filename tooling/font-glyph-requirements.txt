@@ -1,6 +1,6 @@
-fonttools[woff]==4.61.1
-brotli==1.2.0
+fonttools[woff]==4.68.0
+brotli==1.2.1
 zopfli==0.4.3
 pymupdf==1.26.7
 pypdfium2==5.14.0
-pillow==10.4.0
+pillow==13.0.0
