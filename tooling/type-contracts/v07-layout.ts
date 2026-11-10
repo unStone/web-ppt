@@ -1,8 +1,6 @@
 import type { LayoutDesignState } from '@web-ppt/edit-core';
 import { openEditor } from '@web-ppt/editor';
-import {
-  createDesignEditor, listLayouts, queryLayout,
-} from '@web-ppt/editor/design';
+import { createDesignEditor, listLayouts, queryLayout } from '@web-ppt/editor/design';
 import type { LayoutDesignState as ReactLayoutDesignState } from '@web-ppt/react';
 import type { LayoutDesignState as VueLayoutDesignState } from '@web-ppt/vue';
 
@@ -11,10 +9,15 @@ async function layoutJourney(input: Uint8Array): Promise<void> {
   const target = listLayouts(session.editor.doc)[0].target;
   const state: LayoutDesignState = queryLayout(session.editor.doc, target);
   session.editor.execDesign(target, {
-    type: 'SetBackground', target, fill: { type: 'solid', color: '#112233' },
+    type: 'SetBackground',
+    target,
+    fill: { type: 'solid', color: '#112233' },
   });
   session.editor.execDesign(target, {
-    type: 'AddShape', target, preset: 'rect', rect: { x: 1, y: 2, w: 3, h: 4 },
+    type: 'AddShape',
+    target,
+    preset: 'rect',
+    rect: { x: 1, y: 2, w: 3, h: 4 },
   });
   const design = createDesignEditor(document.body, session, { target });
   design.destroy();

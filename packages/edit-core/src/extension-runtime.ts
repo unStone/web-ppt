@@ -12,8 +12,10 @@ export interface EditExtensionSavePlan {
 }
 
 /** undefined 允许无版本的等值回退；空数组明确否决整组迁移。 */
-export type ExtensionMigrationResolver = (doc: EditDoc, routes: readonly DocumentExtensionPatch[]) =>
-  readonly DocumentExtensionPatch[] | undefined;
+export type ExtensionMigrationResolver = (
+  doc: EditDoc,
+  routes: readonly DocumentExtensionPatch[],
+) => readonly DocumentExtensionPatch[] | undefined;
 
 export interface EditExtensionRuntime {
   readonly migrate?: (doc: EditDoc, pending?: readonly Patch[], resolve?: ExtensionMigrationResolver) => readonly Patch[];
@@ -25,27 +27,27 @@ export interface EditExtensionRuntime {
   readonly generateParts?: (doc: EditDoc, parts: Record<string, Uint8Array>) => void;
   readonly copyParts?: (doc: EditDoc, parts: Record<string, Uint8Array>) => void;
   readonly scope?: 'element' | 'slide';
-  readonly materializePackage?: (doc: EditDoc, baselines: Record<string, Uint8Array>, created: Set<string>, changes: Record<string, Uint8Array | null>) => void;
+  readonly materializePackage?: (
+    doc: EditDoc,
+    baselines: Record<string, Uint8Array>,
+    created: Set<string>,
+    changes: Record<string, Uint8Array | null>,
+  ) => void;
   readonly projectSlide?: (doc: EditDoc, id: SlideId, slide: Slide) => Slide;
   readonly materialize?: (
-    document: import('./xml/types').XmlDocument, record: import('./types').ElementRecord, generated: boolean,
+    document: import('./xml/types').XmlDocument,
+    record: import('./types').ElementRecord,
+    generated: boolean,
     xml: import('./save/extension-elements').EditElementXml,
   ) => void;
   readonly supportsGenerated?: (element: SlideElement) => boolean;
   readonly validateResource?: (resource: ElementInsertionResource, bytes: Uint8Array) => boolean;
-  readonly command: (
-    doc: EditDoc, command: ExtensionCommand, origin: string,
-  ) => CommandPatches;
+  readonly command: (doc: EditDoc, command: ExtensionCommand, origin: string) => CommandPatches;
   readonly validatePatch?: (doc: EditDoc, patch: ExtensionPatch, index: number) => void;
-  readonly validatePatches?: (
-    doc: EditDoc,
-    patches: readonly { readonly patch: ExtensionPatch; readonly index: number }[],
-  ) => void;
+  readonly validatePatches?: (doc: EditDoc, patches: readonly { readonly patch: ExtensionPatch; readonly index: number }[]) => void;
   readonly prune?: (doc: EditDoc, id: ElementId, state: unknown) => boolean;
   readonly project?: (doc: EditDoc, id: ElementId, element: SlideElement) => SlideElement;
-  readonly beforeSave?: (
-    doc: EditDoc,
-  ) => EditExtensionSavePlan | void | Promise<EditExtensionSavePlan | void>;
+  readonly beforeSave?: (doc: EditDoc) => EditExtensionSavePlan | void | Promise<EditExtensionSavePlan | void>;
 }
 
 const KEY = Symbol.for('@web-ppt/edit-core/extensions/v1');
@@ -63,14 +65,20 @@ interface ExtensionListenerStore {
 
 function listenerStore(): ExtensionListenerStore {
   const root = globalThis as typeof globalThis & { [LISTENER_KEY]?: ExtensionListenerStore };
-  return root[LISTENER_KEY] ??= { documents: new WeakMap(), pending: new Map(), active: new Set(), resolvers: new WeakMap() };
+  return (root[LISTENER_KEY] ??= { documents: new WeakMap(), pending: new Map(), active: new Set(), resolvers: new WeakMap() });
 }
 
 /** 版本策略属于可选会话；模型和恢复日志中只保留其产生的纯数据结果。 */
-export function setExtensionMigrationResolver(doc: EditDoc, resolver: ExtensionMigrationResolver,
-  copy?: ExtensionCopyResolver): () => void {
-  const resolvers = listenerStore().resolvers, entries = resolvers.get(doc) ?? [], entry = { resolver, copy };
-  entries.push(entry); resolvers.set(doc, entries);
+export function setExtensionMigrationResolver(
+  doc: EditDoc,
+  resolver: ExtensionMigrationResolver,
+  copy?: ExtensionCopyResolver,
+): () => void {
+  const resolvers = listenerStore().resolvers,
+    entries = resolvers.get(doc) ?? [],
+    entry = { resolver, copy };
+  entries.push(entry);
+  resolvers.set(doc, entries);
   return () => {
     const index = entries.indexOf(entry);
     if (index < 0) return;
@@ -111,7 +119,7 @@ export function assertExtensionLeaf(value: unknown): void {
 
 function runtimes(): Map<string, EditExtensionRuntime> {
   const root = globalThis as typeof globalThis & { [KEY]?: Map<string, EditExtensionRuntime> };
-  return root[KEY] ??= new Map();
+  return (root[KEY] ??= new Map());
 }
 
 export function registerEditExtension(namespace: string, runtime: EditExtensionRuntime): void {
@@ -123,7 +131,11 @@ export function registerEditExtension(namespace: string, runtime: EditExtensionR
   if (runtime.migrate) for (const listener of listenerStore().active) listeners.add(listener);
   listenerStore().pending.delete(namespace);
   for (const listener of listeners ?? []) {
-    try { listener(namespace); } catch (error) { globalThis.reportError?.(error); }
+    try {
+      listener(namespace);
+    } catch (error) {
+      globalThis.reportError?.(error);
+    }
   }
 }
 
@@ -134,10 +146,9 @@ export function editExtensionGeneration(): number {
 const runtime = (namespace: string): EditExtensionRuntime | undefined => runtimes().get(namespace);
 
 /** 迟到的旧地址可能在扩展加载之后首次出现；只为这类字段请求迁移计划。 */
-export function extensionMigrationPatches(doc: EditDoc, patches: readonly Patch[],
-  resolve = migrationResolver(doc)): readonly Patch[] {
+export function extensionMigrationPatches(doc: EditDoc, patches: readonly Patch[], resolve = migrationResolver(doc)): readonly Patch[] {
   if (!patches.some(isExtensionPatch)) return [];
-  return [...runtimes().values()].flatMap(extension => [...extension.migrate?.(doc, patches, resolve) ?? []]);
+  return [...runtimes().values()].flatMap((extension) => [...(extension.migrate?.(doc, patches, resolve) ?? [])]);
 }
 
 function queueRegistrationListener(namespace: string, listener: ExtensionRegistrationListener): void {
@@ -148,7 +159,8 @@ function queueRegistrationListener(namespace: string, listener: ExtensionRegistr
 }
 
 export function observeEditExtensionRegistration(
-  doc: EditDoc, refresh: (elements: Set<ElementId>, slides: Set<SlideId>) => void,
+  doc: EditDoc,
+  refresh: (elements: Set<ElementId>, slides: Set<SlideId>) => void,
   migrate?: (patches: readonly Patch[]) => void,
 ): () => void {
   const listener: ExtensionRegistrationListener = (namespace) => {
@@ -192,28 +204,33 @@ export function observeEditExtensionRegistration(
   };
   try {
     for (const [namespace, extension] of runtimes()) if (extension.migrate) listener(namespace);
-  } catch (error) { unsubscribe(); throw error; }
+  } catch (error) {
+    unsubscribe();
+    throw error;
+  }
   return unsubscribe;
 }
 
-export function extensionCommandPatches(
-  doc: EditDoc, command: ExtensionCommand, origin: string,
-): CommandPatches {
+export function extensionCommandPatches(doc: EditDoc, command: ExtensionCommand, origin: string): CommandPatches {
   const found = runtime(command.namespace);
   if (!found) throw new Error(`编辑扩展尚未加载：${command.namespace}`);
-  if ((found.scope ?? 'element') !== (command.scope === undefined ? 'element' : command.scope)) throw new Error('编辑扩展 scope 与注册不符');
+  if ((found.scope ?? 'element') !== (command.scope === undefined ? 'element' : command.scope))
+    throw new Error('编辑扩展 scope 与注册不符');
   return found.command(doc, command, origin);
 }
 
 export function isExtensionPatch(patch: { path: readonly unknown[] }): patch is ExtensionPatch {
-  return patch.path.length >= 5 && (patch.path[0] === 'elements' || patch.path[0] === 'slides')
-    && typeof patch.path[1] === 'string' && patch.path[2] === 'ovr'
-    && patch.path[3] === 'extensions' && typeof patch.path[4] === 'string';
+  return (
+    patch.path.length >= 5
+    && (patch.path[0] === 'elements' || patch.path[0] === 'slides')
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'extensions'
+    && typeof patch.path[4] === 'string'
+  );
 }
 
-export function validateExtensionPatch(
-  doc: EditDoc, patch: ExtensionPatch, index: number, runtimeAlreadyValidated = false,
-): void {
+export function validateExtensionPatch(doc: EditDoc, patch: ExtensionPatch, index: number, runtimeAlreadyValidated = false): void {
   const record = doc[patch.path[0]][patch.path[1]];
   if (!record) throw new Error(`Patch 指向不存在的元素：${patch.path[1]}`);
   if (patch.op !== 'set' && patch.op !== 'del') throw new Error(`Patch ${index} 的扩展操作无效`);
@@ -221,13 +238,18 @@ export function validateExtensionPatch(
   const found = runtime(patch.path[4]);
   if (found && (found.scope === 'slide' ? 'slides' : 'elements') !== patch.path[0]) throw new Error('扩展补丁 scope 与注册不符');
   const extensionPath = patch.path.slice(5);
-  if (extensionPath.length > 16 || extensionPath.some((key) => typeof key !== 'string' || !key
-    || key.length > 1_024
-    || key === '__proto__' || key === 'prototype' || key === 'constructor')) {
+  if (
+    extensionPath.length > 16
+    || extensionPath.some(
+      (key) => typeof key !== 'string' || !key || key.length > 1_024 || key === '__proto__' || key === 'prototype' || key === 'constructor',
+    )
+  ) {
     throw new Error(`Patch ${index} 的扩展路径无效`);
   }
   if (patch.op === 'set') {
-    try { assertExtensionLeaf(patch.value); } catch (error) {
+    try {
+      assertExtensionLeaf(patch.value);
+    } catch (error) {
       throw new Error(`Patch ${index} 的扩展值无效：${error instanceof Error ? error.message : '不是纯数据'}`);
     }
   }
@@ -309,8 +331,11 @@ export function finalizeExtensionPatch(doc: EditDoc, id: ElementId, namespace: s
   const record = doc[scope][id];
   if (!record?.ovr.extensions) return;
   const next = record.ovr.extensions[namespace];
-  if (next !== undefined && (!Reflect.ownKeys(next as object).length
-    || scope === 'elements' && !isLegacyExtensionReplay(doc, id, namespace) && runtime(namespace)?.prune?.(doc, id, next))) {
+  if (
+    next !== undefined
+    && (!Reflect.ownKeys(next as object).length
+      || (scope === 'elements' && !isLegacyExtensionReplay(doc, id, namespace) && runtime(namespace)?.prune?.(doc, id, next)))
+  ) {
     delete record.ovr.extensions[namespace];
   }
   if (record.ovr.extensions && !Reflect.ownKeys(record.ovr.extensions).length) {
@@ -321,9 +346,7 @@ export function finalizeExtensionPatch(doc: EditDoc, id: ElementId, namespace: s
   }
 }
 
-export function projectEditExtensions(
-  doc: EditDoc, id: ElementId, element: SlideElement,
-): SlideElement {
+export function projectEditExtensions(doc: EditDoc, id: ElementId, element: SlideElement): SlideElement {
   let projected = element;
   for (const extension of runtimes().values()) {
     projected = extension.projectSource?.(doc, id, projected) ?? projected;

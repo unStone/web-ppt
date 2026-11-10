@@ -3,11 +3,24 @@ import { MIGRATION_SHARDS, MIGRATION_SCRIPT } from './migration-shards.mjs';
 
 export const EQUIVALENCE_SHARDS = 4;
 export const SOURCE_GROUPS = Object.freeze([
-  'saving', 'editing', 'integration', 'browser-unit', 'browser', 'agent', 'expanded', 'render', 'charts',
+  'saving',
+  'editing',
+  'integration',
+  'browser-unit',
+  'browser',
+  'agent',
+  'expanded',
+  'render',
+  'charts',
   ...Array.from({ length: MIGRATION_SHARDS }, (_, index) => `migration-${index}`),
   ...Array.from({ length: EQUIVALENCE_SHARDS }, (_, index) => `equivalence-${index}`),
 ]);
-export const DIST_GROUPS = Object.freeze(['base', 'agent', 'expanded', 'render', 'charts',
+export const DIST_GROUPS = Object.freeze([
+  'base',
+  'agent',
+  'expanded',
+  'render',
+  'charts',
   ...Array.from({ length: MIGRATION_SHARDS }, (_, index) => `migration-${index}`),
 ]);
 // office：LibreOffice 真实打开；ooxml：XSD + Open XML SDK 双通道。两者都只读取其他分组落盘的保存产物。
@@ -71,7 +84,11 @@ function groupForLeaf(leaf, phase) {
   if (phase === 'external') return from('test:ci:ooxml') ? 'ooxml' : 'office';
   if (leaf.executable === 'node' && leaf.args.includes(MIGRATION_SCRIPT)) return 'migration';
   if (phase === 'source' && leaf.command === 'node tooling/test-edit-save.mjs') return 'saving';
-  if (phase === 'source' && ['node tooling/test-design-journey.mjs', 'node tooling/collect-chart-media-office-artifacts.mjs'].includes(leaf.command)) return 'integration';
+  if (
+    phase === 'source'
+    && ['node tooling/test-design-journey.mjs', 'node tooling/collect-chart-media-office-artifacts.mjs'].includes(leaf.command)
+  )
+    return 'integration';
   if (phase === 'source' && from('pretest:functional')) return 'agent';
   if (phase === 'dist' && from('postverify')) return 'agent';
   if (phase === 'source' && leaf.args.includes('tooling/test-edit-equivalence.mjs')) return 'equivalence';
@@ -81,8 +98,11 @@ function groupForLeaf(leaf, phase) {
   if (from('test:expanded', 'test:expanded:dist', 'test:portability', 'test:portability:dist')) return 'expanded';
   if (from('test:chart-hierarchy', 'test:chart-hierarchy:dist', 'test:chart-shared', 'test:chart-shared:dist')) return 'charts';
   // 动画统一验收在真实 Chrome 里断言 painted 几何，需要与渲染组相同的中文字体环境
-  if (from('test:fonts', 'test:fonts:dist', 'test:pdf:vector', 'test:pdf:vector:dist', 'test:animation', 'test:animation:dist')
-    || leaf.args.some((arg) => /^tooling\/test-(?:video-audio|video-overlay|agent-node-render|agent-node-render-parity)\.mjs$/.test(arg))) return 'render';
+  if (
+    from('test:fonts', 'test:fonts:dist', 'test:pdf:vector', 'test:pdf:vector:dist', 'test:animation', 'test:animation:dist')
+    || leaf.args.some((arg) => /^tooling\/test-(?:video-audio|video-overlay|agent-node-render|agent-node-render-parity)\.mjs$/.test(arg))
+  )
+    return 'render';
   return phase === 'source' ? 'editing' : 'base';
 }
 
@@ -94,12 +114,14 @@ export function createPlan(scripts, phase) {
     const group = groupForLeaf(leaf, phase);
     const shards = shardCountForLeaf(leaf, phase);
     if (shards === 1) groups[group].push(leaf);
-    else for (let index = 0; index < shards; index++) {
-      groups[`${group}-${index}`].push({
-        ...leaf, shard: { index, total: shards },
-        args: [...leaf.args, '--shard-index', String(index), '--shard-count', String(shards)],
-      });
-    }
+    else
+      for (let index = 0; index < shards; index++) {
+        groups[`${group}-${index}`].push({
+          ...leaf,
+          shard: { index, total: shards },
+          args: [...leaf.args, '--shard-index', String(index), '--shard-count', String(shards)],
+        });
+      }
   }
   return { phase, leaves, groups };
 }

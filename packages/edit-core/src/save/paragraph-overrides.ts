@@ -9,8 +9,7 @@ import type { XmlElement } from '../xml/types';
 import { appendDrawingColor } from './drawing-color';
 import { namespacedElement } from './xml-element';
 
-const own = (object: object, key: PropertyKey): boolean =>
-  Object.prototype.hasOwnProperty.call(object, key);
+const own = (object: object, key: PropertyKey): boolean => Object.prototype.hasOwnProperty.call(object, key);
 const ALIGN = { left: 'l', center: 'ctr', right: 'r', justify: 'just' } as const;
 
 function replaceSpacing(
@@ -49,30 +48,22 @@ function removeParagraphChildren(properties: XmlElement, names: ReadonlySet<stri
   }
 }
 
-function replaceBullet(
-  properties: XmlElement,
-  bullet: ParagraphBullet | null,
-  imageRelationshipId?: string,
-): void {
+function replaceBullet(properties: XmlElement, bullet: ParagraphBullet | null, imageRelationshipId?: string): void {
   removeParagraphChildren(properties, new Set(['buNone', 'buAutoNum', 'buChar', 'buBlip']));
   if (bullet === null) {
-    removeParagraphChildren(properties, new Set([
-      'buClrTx', 'buClr', 'buSzTx', 'buSzPct', 'buSzPts', 'buFontTx', 'buFont',
-    ]));
+    removeParagraphChildren(properties, new Set(['buClrTx', 'buClr', 'buSzTx', 'buSzPct', 'buSzPts', 'buFontTx', 'buFont']));
     return;
   }
   if (bullet.kind !== 'none') {
     if (own(bullet, 'color')) {
       removeParagraphChildren(properties, new Set(['buClrTx', 'buClr']));
-      const color = namespacedElement(properties, DRAWINGML_NS,
-        bullet.color === null ? 'buClrTx' : 'buClr');
+      const color = namespacedElement(properties, DRAWINGML_NS, bullet.color === null ? 'buClrTx' : 'buClr');
       if (bullet.color !== null && bullet.color !== undefined) appendDrawingColor(color, bullet.color);
       insertXmlInOrder(properties, color);
     }
     if (own(bullet, 'font')) {
       removeParagraphChildren(properties, new Set(['buFontTx', 'buFont']));
-      const font = namespacedElement(properties, DRAWINGML_NS,
-        bullet.font === null ? 'buFontTx' : 'buFont');
+      const font = namespacedElement(properties, DRAWINGML_NS, bullet.font === null ? 'buFontTx' : 'buFont');
       if (bullet.font !== null && bullet.font !== undefined) {
         setXmlAttribute(font, 'typeface', bullet.font);
       }
@@ -80,20 +71,22 @@ function replaceBullet(
     }
     if (own(bullet, 'size')) {
       removeParagraphChildren(properties, new Set(['buSzTx', 'buSzPct', 'buSzPts']));
-      const size = namespacedElement(properties, DRAWINGML_NS,
-        bullet.size === null ? 'buSzTx'
-          : bullet.size?.kind === 'points' ? 'buSzPts' : 'buSzPct');
+      const size = namespacedElement(
+        properties,
+        DRAWINGML_NS,
+        bullet.size === null ? 'buSzTx' : bullet.size?.kind === 'points' ? 'buSzPts' : 'buSzPct',
+      );
       if (bullet.size !== null && bullet.size !== undefined) {
-        setXmlAttribute(size, 'val', String(Math.round(bullet.size.value
-          * (bullet.size.kind === 'points' ? 100 : 100000))));
+        setXmlAttribute(size, 'val', String(Math.round(bullet.size.value * (bullet.size.kind === 'points' ? 100 : 100000))));
       }
       insertXmlInOrder(properties, size);
     }
   }
-  const node = namespacedElement(properties, DRAWINGML_NS,
-    bullet.kind === 'none' ? 'buNone'
-      : bullet.kind === 'char' ? 'buChar'
-        : bullet.kind === 'autoNum' ? 'buAutoNum' : 'buBlip');
+  const node = namespacedElement(
+    properties,
+    DRAWINGML_NS,
+    bullet.kind === 'none' ? 'buNone' : bullet.kind === 'char' ? 'buChar' : bullet.kind === 'autoNum' ? 'buAutoNum' : 'buBlip',
+  );
   if (bullet.kind === 'char') setXmlAttribute(node, 'char', bullet.char);
   if (bullet.kind === 'autoNum') {
     setXmlAttribute(node, 'type', bullet.type);
@@ -108,19 +101,12 @@ function replaceBullet(
   }
 }
 
-export function applyParagraphOverrides(
-  properties: XmlElement,
-  paragraph: FlatTextParagraph,
-  lnSpcReduction: number,
-): void {
+export function applyParagraphOverrides(properties: XmlElement, paragraph: FlatTextParagraph, lnSpcReduction: number): void {
   const overrides = paragraph.paragraphOverrides;
   if (!overrides) return;
   if (own(overrides, 'bullet')) {
     if (overrides.bullet === undefined) throw new Error('段落项目符号覆盖无效');
-    replaceBullet(
-      properties, overrides.bullet,
-      paragraph.bulletImageOverride?.relationships[0]?.targetId,
-    );
+    replaceBullet(properties, overrides.bullet, paragraph.bulletImageOverride?.relationships[0]?.targetId);
   }
   if (own(overrides, 'level')) {
     const value = overrides.level;
@@ -134,7 +120,10 @@ export function applyParagraphOverrides(
     if (value === null) removeXmlAttribute(properties, 'algn');
     else setXmlAttribute(properties, 'algn', ALIGN[value]);
   }
-  for (const [field, attribute] of [['marginLeft', 'marL'], ['indent', 'indent']] as const) {
+  for (const [field, attribute] of [
+    ['marginLeft', 'marL'],
+    ['indent', 'indent'],
+  ] as const) {
     if (!own(overrides, field)) continue;
     const value = overrides[field];
     if (value === undefined) throw new Error(`段落格式 ${field} 覆盖无效`);
@@ -144,12 +133,12 @@ export function applyParagraphOverrides(
   if (own(overrides, 'lineHeight')) {
     const value = overrides.lineHeight;
     if (value === undefined) throw new Error('段落行高覆盖无效');
-    const percentage = value === null ? null
-      : (value + lnSpcReduction) / DEFAULT_TEXT_LINE_HEIGHT * 100000;
+    const percentage = value === null ? null : ((value + lnSpcReduction) / DEFAULT_TEXT_LINE_HEIGHT) * 100000;
     replaceSpacing(properties, 'lnSpc', 'spcPct', percentage);
   }
   for (const [field, container] of [
-    ['spaceBefore', 'spcBef'], ['spaceAfter', 'spcAft'],
+    ['spaceBefore', 'spcBef'],
+    ['spaceAfter', 'spcAft'],
   ] as const) {
     if (!own(overrides, field)) continue;
     const value = overrides[field];

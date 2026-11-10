@@ -21,6 +21,10 @@ export function mediaCommandPatches(doc: EditDoc, extension: ExtensionCommand, o
   }
   if (record.meta.locked) throw new Error('已锁定的媒体不能替换海报');
   assertDataObject(command.poster, ['bytes', 'mime'], '媒体海报');
-  return replaceImageResourcePatches(doc, record as typeof record & { src: ImageElement },
-    prepareMediaPoster(command.poster, record.src.media.kind), origin);
+  return replaceImageResourcePatches(
+    doc,
+    record as typeof record & { src: ImageElement },
+    prepareMediaPoster(command.poster, record.src.media.kind),
+    origin,
+  );
 }

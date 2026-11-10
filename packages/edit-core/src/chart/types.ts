@@ -3,8 +3,18 @@ import type { ElementId, FractionalIndex } from '../types';
 export type ChartSeriesId = string & { readonly __chartSeriesId: unique symbol };
 export type ChartPointId = string & { readonly __chartPointId: unique symbol };
 export type ChartPlotKind =
-  | 'bar' | 'line' | 'pie' | 'doughnut' | 'area' | 'scatter' | 'radar'
-  | 'bubble' | 'stock' | 'ofPie' | 'surface' | 'other';
+  | 'bar'
+  | 'line'
+  | 'pie'
+  | 'doughnut'
+  | 'area'
+  | 'scatter'
+  | 'radar'
+  | 'bubble'
+  | 'stock'
+  | 'ofPie'
+  | 'surface'
+  | 'other';
 
 export interface ChartFormulaBinding {
   readonly formula: string | null;
@@ -76,15 +86,21 @@ export interface EditableChart {
 export interface ChartDatasetState {
   kind: ChartDataset['kind'];
   binding: ChartDataBinding;
-  categories: Record<ChartPointId, ChartCategory & {
-    /** 新增类别创建时的前驱；墓碑保留分组，但不能让后来新增的类别复活已删除的组。 */
-    levelParent?: ChartPointId | null;
-    /** 清空组首时接受的前驱；后续删除前驱也不能改变已经选择的分组。 */
-    levelClears?: Readonly<Record<string, ChartPointId | null>>;
-  }>;
-  series: Record<ChartSeriesId, Omit<ChartSeries, 'points'> & {
-    points: Record<ChartPointId, ChartPoint>;
-    /** 仅表示 wppt 持久模板；其公式必须先按未受信来源通过工作簿占用检查。 */
-    sourceTemplate?: true;
-  }>;
+  categories: Record<
+    ChartPointId,
+    ChartCategory & {
+      /** 新增类别创建时的前驱；墓碑保留分组，但不能让后来新增的类别复活已删除的组。 */
+      levelParent?: ChartPointId | null;
+      /** 清空组首时接受的前驱；后续删除前驱也不能改变已经选择的分组。 */
+      levelClears?: Readonly<Record<string, ChartPointId | null>>;
+    }
+  >;
+  series: Record<
+    ChartSeriesId,
+    Omit<ChartSeries, 'points'> & {
+      points: Record<ChartPointId, ChartPoint>;
+      /** 仅表示 wppt 持久模板；其公式必须先按未受信来源通过工作簿占用检查。 */
+      sourceTemplate?: true;
+    }
+  >;
 }

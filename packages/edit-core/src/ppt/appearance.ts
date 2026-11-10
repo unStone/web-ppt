@@ -6,9 +6,15 @@ import { rgba, type Property } from './binary';
  * 读取侧把 lineDashing 乘以线宽还原数组；写入必须先除回单位再匹配，否则 4pt 的 dash 会被当成「自定义」。
  */
 const DASH_PRESETS: ReadonlyArray<{ id: number; pattern: readonly number[] }> = [
-  { id: 1, pattern: [4, 3] }, { id: 2, pattern: [1, 3] }, { id: 3, pattern: [4, 3, 1, 3] },
-  { id: 4, pattern: [4, 3, 1, 3, 1, 3] }, { id: 5, pattern: [8, 3] }, { id: 6, pattern: [8, 3, 1, 3] },
-  { id: 7, pattern: [8, 3, 1, 3, 1, 3] }, { id: 8, pattern: [1, 1] }, { id: 9, pattern: [3, 3] },
+  { id: 1, pattern: [4, 3] },
+  { id: 2, pattern: [1, 3] },
+  { id: 3, pattern: [4, 3, 1, 3] },
+  { id: 4, pattern: [4, 3, 1, 3, 1, 3] },
+  { id: 5, pattern: [8, 3] },
+  { id: 6, pattern: [8, 3, 1, 3] },
+  { id: 7, pattern: [8, 3, 1, 3, 1, 3] },
+  { id: 8, pattern: [1, 1] },
+  { id: 9, pattern: [3, 3] },
   { id: 10, pattern: [3, 3, 1, 3] },
 ];
 
@@ -39,22 +45,28 @@ export function fillProperties(fill: Fill | null): Property[] {
   if (fill.type === 'solid') {
     const c = rgba(fill.color);
     return [
-      { id: 384, value: 0 }, { id: 385, value: c.rgb },
-      { id: 386, value: Math.round(c.alpha * 65536) }, { id: 447, value: 0x100010 },
+      { id: 384, value: 0 },
+      { id: 385, value: c.rgb },
+      { id: 386, value: Math.round(c.alpha * 65536) },
+      { id: 447, value: 0x100010 },
     ];
   }
   if (fill.type === 'gradient') {
     // 旧格式的线性 shade 只有首尾两色；多色标、中间色标位置或径向没有对应的 FOPT，继续原子拒绝。
-    if (fill.radial || fill.stops.length !== 2
-      || fill.stops[0].pos !== 0 || fill.stops[1].pos !== 1) {
+    if (fill.radial || fill.stops.length !== 2 || fill.stops[0].pos !== 0 || fill.stops[1].pos !== 1) {
       throw new Error('PPT 写入暂不支持多色标、非端点色标或径向渐变');
     }
-    const a = rgba(fill.stops[0].color), b = rgba(fill.stops[1].color);
+    const a = rgba(fill.stops[0].color),
+      b = rgba(fill.stops[1].color);
     return [
       // 7 = msofillShadeScale，与 LibreOffice 线性渐变导出一致；两端透明度分别是 fillOpacity / fillBackOpacity。
-      { id: 384, value: 7 }, { id: 385, value: a.rgb }, { id: 387, value: b.rgb },
-      { id: 386, value: Math.round(a.alpha * 65536) }, { id: 388, value: Math.round(b.alpha * 65536) },
-      { id: 395, value: toEscherAngle(fill.angle) }, { id: 447, value: 0x100010 },
+      { id: 384, value: 7 },
+      { id: 385, value: a.rgb },
+      { id: 387, value: b.rgb },
+      { id: 386, value: Math.round(a.alpha * 65536) },
+      { id: 388, value: Math.round(b.alpha * 65536) },
+      { id: 395, value: toEscherAngle(fill.angle) },
+      { id: 447, value: 0x100010 },
     ];
   }
   // 图案填充在 OfficeArt 里是 fillType=1 + fillBlip 指向的图案位图，没有预设名可写，按原子拒绝处理。
@@ -67,13 +79,18 @@ export function strokeProperties(stroke: Stroke | null | undefined): Property[] 
   if (!Number.isFinite(stroke.width) || stroke.width < 0) throw new Error('PPT 线宽无效');
   const c = rgba(stroke.color);
   const p: Property[] = [
-    { id: 448, value: c.rgb }, { id: 449, value: Math.round(c.alpha * 65536) },
-    { id: 459, value: Math.round(stroke.width * 9525) }, { id: 511, value: 0x80008 },
+    { id: 448, value: c.rgb },
+    { id: 449, value: Math.round(c.alpha * 65536) },
+    { id: 459, value: Math.round(stroke.width * 9525) },
+    { id: 511, value: 0x80008 },
   ];
   if (stroke.dash?.length) p.push({ id: 462, value: dashPresetId(stroke.dash, stroke.width) });
   if (stroke.cap) p.push({ id: 471, value: { round: 0, square: 1, butt: 2 }[stroke.cap] });
   if (stroke.join) p.push({ id: 470, value: { round: 1, bevel: 0, miter: 2 }[stroke.join] });
-  for (const [end, id] of [[stroke.head, 464], [stroke.tail, 465]] as const) {
+  for (const [end, id] of [
+    [stroke.head, 464],
+    [stroke.tail, 465],
+  ] as const) {
     if (end && end.type !== 'none') {
       // Escher 箭头宽高枚举只有默认档；非 3 无法无损表达
       if (end.w !== 3 || end.h !== 3) throw new Error('PPT 写入暂不支持自定义箭头尺寸');

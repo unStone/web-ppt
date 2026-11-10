@@ -22,7 +22,10 @@ export async function runTrustedSnapContract({ evaluate, trustedMouseGesture }) 
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   })()`);
   const end = { x: start.x + 70, y: start.y };
-  const result = await trustedMouseGesture(start, end, `(() => {
+  const result = await trustedMouseGesture(
+    start,
+    end,
+    `(() => {
     const state = globalThis.trustedSnapContract;
     const { trustedSnapSession } = globalThis.editorContract;
     const mount = document.querySelector('#mount');
@@ -43,7 +46,8 @@ export async function runTrustedSnapContract({ evaluate, trustedMouseGesture }) 
       svgStable: mount.querySelector('[data-ppt-layer="static"] svg') === state.svg,
       defsStable: mount.querySelector('[data-ppt-layer="static"] defs') === state.defs,
     };
-  })()`, `(() => {
+  })()`,
+    `(() => {
     const state = globalThis.trustedSnapContract;
     const { trustedSnapSession } = globalThis.editorContract;
     const mount = document.querySelector('#mount');
@@ -62,8 +66,8 @@ export async function runTrustedSnapContract({ evaluate, trustedMouseGesture }) 
     trustedSnapSession.dispose();
     delete globalThis.trustedSnapContract;
     return result;
-  })()`);
-  const passed = Object.values(result.during).every(Boolean)
-    && Object.values(result.committed).every(Boolean);
+  })()`,
+  );
+  const passed = Object.values(result.during).every(Boolean) && Object.values(result.committed).every(Boolean);
   if (!passed) throw new Error(`真实 pointer capture 吸附失败：${JSON.stringify(result)}`);
 }

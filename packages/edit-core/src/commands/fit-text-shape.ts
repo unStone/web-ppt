@@ -19,11 +19,7 @@ function quantizeHeight(height: number): number {
 
 const quantizePosition = (position: number): number => Math.round(position * EMU_PER_PX) / EMU_PER_PX;
 
-export function fitTextShapePatches(
-  doc: EditDoc,
-  command: FitTextShapeCommand,
-  origin: string,
-): CommandPatches {
+export function fitTextShapePatches(doc: EditDoc, command: FitTextShapeCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能执行命令');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
@@ -37,18 +33,19 @@ export function fitTextShapePatches(
   const height = quantizeHeight(fitTextShapeHeight(element.text, element.w));
   if (Object.is(height, element.h)) return { forward: [], inverse: [] };
   const fraction = physicalAnchorFraction(element.text.anchor, element.flipV);
-  const anchor = transformSpacePoint(
-    elementFrameToParentMatrix(element),
-    { x: element.w / 2, y: element.h * fraction },
-  );
+  const anchor = transformSpacePoint(elementFrameToParentMatrix(element), { x: element.w / 2, y: element.h * fraction });
   const candidate = { ...element, h: height };
-  const movedAnchor = transformSpacePoint(
-    elementFrameToParentMatrix(candidate),
-    { x: candidate.w / 2, y: candidate.h * fraction },
+  const movedAnchor = transformSpacePoint(elementFrameToParentMatrix(candidate), { x: candidate.w / 2, y: candidate.h * fraction });
+  return elementTransformPatches(
+    doc,
+    command.id,
+    {
+      x: quantizePosition(element.x + anchor.x - movedAnchor.x),
+      y: quantizePosition(element.y + anchor.y - movedAnchor.y),
+      h: height,
+    },
+    ['x', 'y', 'h'],
+    origin,
+    'FitTextShape',
   );
-  return elementTransformPatches(doc, command.id, {
-    x: quantizePosition(element.x + anchor.x - movedAnchor.x),
-    y: quantizePosition(element.y + anchor.y - movedAnchor.y),
-    h: height,
-  }, ['x', 'y', 'h'], origin, 'FitTextShape');
 }

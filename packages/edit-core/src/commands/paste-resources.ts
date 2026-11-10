@@ -1,11 +1,13 @@
 import { base64ToBytes, sha256 } from '../clipboard-binary';
 import {
-  packageContentType, packageContentTypeOverride, relationshipPartFor, relativeTarget,
-  resolvePackageTarget, resolveRelationshipTarget,
+  packageContentType,
+  packageContentTypeOverride,
+  relationshipPartFor,
+  relativeTarget,
+  resolvePackageTarget,
+  resolveRelationshipTarget,
 } from '../clipboard-source';
-import type {
-  EditDoc, ElementInsertionRelationship, ElementInsertionResource, ElementInsertionSource,
-} from '../types';
+import type { EditDoc, ElementInsertionRelationship, ElementInsertionResource, ElementInsertionSource } from '../types';
 import { findXmlAttribute, xmlElementChildren } from '../xml/query';
 import { parseXmlTree } from '../xml/tree';
 import type { ElementClipboardPayload } from './types';
@@ -33,34 +35,47 @@ function packageMedia(doc: EditDoc): Map<string, string> {
   return new Map(result);
 }
 
-export function activeClosures(
-  doc: EditDoc, part?: string,
-): Pick<ElementInsertionSource, 'relationships' | 'resources'>[] {
+export function activeClosures(doc: EditDoc, part?: string): Pick<ElementInsertionSource, 'relationships' | 'resources'>[] {
   const elements = Object.values(doc.elements).flatMap((record) => {
     if (part !== undefined && record.meta.origin?.part !== part) return [];
     const insertion = record.meta.insertion ? [record.meta.insertion] : [];
     const replacement = record.meta.imageReplacement;
     const resource = replacement && doc.imageResources[replacement.resourceHash];
-    const textOverrides = [record.ovr.text,
-      ...Object.values(record.ovr.tableCells ?? {}).map((cell) => cell.text)];
-    const bulletImages = textOverrides.flatMap((text) => text?.kind === 'flat'
-      ? text.paragraphs.flatMap((paragraph) => {
-        const image = paragraph.bulletImageOverride;
-        const imageResource = image && doc.imageResources[image.resourceHash];
-        return image && imageResource ? [{
-          relationships: image.relationships, resources: [imageResource],
-        }] : [];
-      }) : []);
-    return [...insertion, ...(replacement && resource ? [{
-      relationships: replacement.relationships, resources: [resource],
-    }] : []), ...bulletImages];
+    const textOverrides = [record.ovr.text, ...Object.values(record.ovr.tableCells ?? {}).map((cell) => cell.text)];
+    const bulletImages = textOverrides.flatMap((text) =>
+      text?.kind === 'flat'
+        ? text.paragraphs.flatMap((paragraph) => {
+            const image = paragraph.bulletImageOverride;
+            const imageResource = image && doc.imageResources[image.resourceHash];
+            return image && imageResource
+              ? [
+                  {
+                    relationships: image.relationships,
+                    resources: [imageResource],
+                  },
+                ]
+              : [];
+          })
+        : [],
+    );
+    return [
+      ...insertion,
+      ...(replacement && resource
+        ? [
+            {
+              relationships: replacement.relationships,
+              resources: [resource],
+            },
+          ]
+        : []),
+      ...bulletImages,
+    ];
   });
   const backgrounds = Object.values(doc.slides).flatMap((record) => {
     if (part !== undefined && record.origin?.part !== part) return [];
     const image = record.backgroundImage;
     const resources = image?.resourceHashes.map((hash) => doc.imageResources[hash]).filter(Boolean) ?? [];
-    return image && resources.length === image.resourceHashes.length
-      ? [{ relationships: image.relationships, resources }] : [];
+    return image && resources.length === image.resourceHashes.length ? [{ relationships: image.relationships, resources }] : [];
   });
   return [...elements, ...backgrounds];
 }
@@ -77,8 +92,7 @@ function relationshipIds(doc: EditDoc, part: string): Set<string> {
   for (const closure of activeClosures(doc, part)) {
     for (const relationship of closure.relationships ?? []) used.add(relationship.targetId);
   }
-  const createdSlide = Object.values(doc.slides).find((slide) =>
-    slide.origin?.part === part && slide.creation);
+  const createdSlide = Object.values(doc.slides).find((slide) => slide.origin?.part === part && slide.creation);
   if (createdSlide?.creation) used.add(createdSlide.creation.layoutRelationshipId);
   return used;
 }
@@ -113,10 +127,7 @@ function mediaAllocation(doc: EditDoc): {
   targetByHash: Map<string, string>;
   allocateMediaPart: (prefix: string, extension: string) => string;
 } {
-  const resources = [
-    ...activeClosures(doc).flatMap((closure) => closure.resources ?? []),
-    ...Object.values(doc.imageResources),
-  ];
+  const resources = [...activeClosures(doc).flatMap((closure) => closure.resources ?? []), ...Object.values(doc.imageResources)];
   const targetByHash = packageMedia(doc);
   const usedParts = new Set(Object.keys(doc.package!.parts));
   for (const resource of resources) {
@@ -132,15 +143,20 @@ function relationshipIdAllocator(doc: EditDoc, destinationPart: string): () => s
   if (allocation) {
     const key = `relationship:${destinationPart}`;
     if (!allocation.ranges[key]) {
-      const highest = Math.max(0, ...[...used].flatMap((id) => {
-        const match = /^rId(\d+)$/.exec(id);
-        const value = Number(match?.[1]);
-        return Number.isSafeInteger(value) && value > 0 && value <= 0xffff_ffff ? [value] : [];
-      }));
+      const highest = Math.max(
+        0,
+        ...[...used].flatMap((id) => {
+          const match = /^rId(\d+)$/.exec(id);
+          const value = Number(match?.[1]);
+          return Number.isSafeInteger(value) && value > 0 && value <= 0xffff_ffff ? [value] : [];
+        }),
+      );
       const first = allocation.slot + 1;
       const rounds = highest < first ? 0 : Math.floor((highest - first) / allocation.count) + 1;
       allocation.ranges[key] = {
-        base: first, maximum: 0xffff_ffff, next: first + rounds * allocation.count,
+        base: first,
+        maximum: 0xffff_ffff,
+        next: first + rounds * allocation.count,
         end: 0x1_0000_0000,
         step: allocation.count,
       };
@@ -174,8 +190,7 @@ function directMediaTarget(
   if (source.sourcePart) {
     const bytes = pkg.parts[source.sourcePart];
     const extension = source.sourcePart.split('.').pop() ?? source.extension;
-    if (bytes && sha256(bytes) === source.hash
-      && packageContentType(pkg, source.sourcePart, extension) === source.mime) {
+    if (bytes && sha256(bytes) === source.hash && packageContentType(pkg, source.sourcePart, extension) === source.mime) {
       return source.sourcePart;
     }
   }
@@ -189,9 +204,10 @@ function directMediaTarget(
     const bytes = pkg.parts[targetPart];
     if (!bytes) return targetPart;
     try {
-      if (sha256(bytes) === source.hash
-        && packageContentType(pkg, targetPart, source.extension) === source.mime) return targetPart;
-    } catch { /* 同名 part 的类型不可信时换一个确定候选。 */ }
+      if (sha256(bytes) === source.hash && packageContentType(pkg, targetPart, source.extension) === source.mime) return targetPart;
+    } catch {
+      /* 同名 part 的类型不可信时换一个确定候选。 */
+    }
   }
 }
 
@@ -209,10 +225,14 @@ export function prepareMediaResourceClosure(
   const { sourcePart: _sourcePart, ...storedSource } = source;
   const resource = { ...storedSource, targetPart, created: !doc.package.parts[targetPart] };
   return {
-    relationships: [{
-      sourceId, targetId: relationshipIdAllocator(doc, destinationPart)(), type,
-      target: relativeTarget(destinationPart, targetPart),
-    }],
+    relationships: [
+      {
+        sourceId,
+        targetId: relationshipIdAllocator(doc, destinationPart)(),
+        type,
+        target: relativeTarget(destinationPart, targetPart),
+      },
+    ],
     resources: [resource],
   };
 }
@@ -228,11 +248,12 @@ export function prepareTrustedSourceClosure(
   if (!doc.package) throw new Error('继承背景关系需要可写 OPC 包');
   const bytes = pkg.parts[relationshipPartFor(sourcePart)];
   if (!bytes) throw new Error(`继承背景来源缺少关系 part：${sourcePart}`);
-  const nodes = new Map(xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' })
-    .flatMap((node) => {
+  const nodes = new Map(
+    xmlElementChildren(parseXmlTree(bytes).root, { localName: 'Relationship' }).flatMap((node) => {
       const id = findXmlAttribute(node, { localName: 'Id', namespaceUri: null })?.value;
       return id ? [[id, node] as const] : [];
-    }));
+    }),
+  );
   const sourceResources = new Map(source.resources.map((resource) => [resource.hash, resource]));
   const resources = new Map<string, ElementInsertionResource>();
   const allocateRelationshipId = relationshipIdAllocator(doc, destinationPart);
@@ -240,15 +261,13 @@ export function prepareTrustedSourceClosure(
     const node = nodes.get(relationship.sourceId);
     const type = node && findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value;
     const target = node && findXmlAttribute(node, { localName: 'Target', namespaceUri: null })?.value;
-    const targetMode = node
-      && findXmlAttribute(node, { localName: 'TargetMode', namespaceUri: null })?.value;
+    const targetMode = node && findXmlAttribute(node, { localName: 'TargetMode', namespaceUri: null })?.value;
     if (!node || type !== relationship.type || !target) {
       throw new Error(`继承背景来源关系已失配：${relationship.sourceId}`);
     }
     const targetId = allocateRelationshipId();
     if (relationship.targetMode === 'External') {
-      if (targetMode !== 'External' || target !== relationship.target
-        || relationship.resourceHash || relationship.packageTarget) {
+      if (targetMode !== 'External' || target !== relationship.target || relationship.resourceHash || relationship.packageTarget) {
         throw new Error(`继承背景外部关系已失配：${relationship.sourceId}`);
       }
       return { sourceId: relationship.sourceId, targetId, type, target, targetMode: 'External' as const };
@@ -263,14 +282,18 @@ export function prepareTrustedSourceClosure(
       else {
         if (!pkg.parts[targetPart]) throw new Error(`继承背景媒体目标不存在：${targetPart}`);
         resources.set(sourceResource.hash, {
-          ...sourceResource, targetPart, created: false,
+          ...sourceResource,
+          targetPart,
+          created: false,
         });
       }
     } else if (!relationship.packageTarget || !pkg.parts[targetPart]) {
       throw new Error(`继承背景包关系目标不存在：${relationship.sourceId}`);
     }
     return {
-      sourceId: relationship.sourceId, targetId, type,
+      sourceId: relationship.sourceId,
+      targetId,
+      type,
       target: relativeTarget(destinationPart, targetPart),
     };
   });
@@ -278,32 +301,29 @@ export function prepareTrustedSourceClosure(
 }
 
 /** 来源与目标是同一 slide 时复用现有关系，裁剪不应制造未引用的新 rId。 */
-export function prepareExistingSourceClosure(
-  pkg: OpcPackage,
-  source: ClipboardClosure,
-  sourcePart: string,
-): PreparedInsertionClosure {
+export function prepareExistingSourceClosure(pkg: OpcPackage, source: ClipboardClosure, sourcePart: string): PreparedInsertionClosure {
   const relBytes = pkg.parts[relationshipPartFor(sourcePart)];
   if (!relBytes) throw new Error(`来源背景缺少关系 part：${sourcePart}`);
   const nodes = xmlElementChildren(parseXmlTree(relBytes).root, { localName: 'Relationship' });
   const sourceResources = new Map(source.resources.map((resource) => [resource.hash, resource]));
   const resources = new Map<string, ElementInsertionResource>();
   const relationships = source.relationships.map((relationship) => {
-    const node = nodes.find((candidate) =>
-      findXmlAttribute(candidate, { localName: 'Id', namespaceUri: null })?.value === relationship.sourceId);
+    const node = nodes.find(
+      (candidate) => findXmlAttribute(candidate, { localName: 'Id', namespaceUri: null })?.value === relationship.sourceId,
+    );
     const type = node && findXmlAttribute(node, { localName: 'Type', namespaceUri: null })?.value;
     const target = node && findXmlAttribute(node, { localName: 'Target', namespaceUri: null })?.value;
-    const targetMode = node
-      && findXmlAttribute(node, { localName: 'TargetMode', namespaceUri: null })?.value;
-    if (!node || type !== relationship.type || !target
-      || (targetMode !== undefined && targetMode !== 'External')) {
+    const targetMode = node && findXmlAttribute(node, { localName: 'TargetMode', namespaceUri: null })?.value;
+    if (!node || type !== relationship.type || !target || (targetMode !== undefined && targetMode !== 'External')) {
       throw new Error(`来源背景关系已失配：${relationship.sourceId}`);
     }
     if (relationship.resourceHash) {
       const resource = sourceResources.get(relationship.resourceHash);
       if (!resource || targetMode) throw new Error(`来源背景媒体关系无效：${relationship.sourceId}`);
       resources.set(resource.hash, {
-        ...resource, targetPart: resolveRelationshipTarget(sourcePart, target), created: false,
+        ...resource,
+        targetPart: resolveRelationshipTarget(sourcePart, target),
+        created: false,
       });
     }
     return {
@@ -328,20 +348,30 @@ export function prepareInsertionClosures(
   if (!doc.package) throw new Error('粘贴关系资源需要可写 OPC 包');
   const resourceByHash = new Map<string, ElementInsertionResource>();
   for (const resource of payload.resources) {
-    if (!resource || !/^[0-9a-f]{64}$/.test(resource.hash)
-      || typeof resource.mime !== 'string' || !resource.mime
+    if (
+      !resource
+      || !/^[0-9a-f]{64}$/.test(resource.hash)
+      || typeof resource.mime !== 'string'
+      || !resource.mime
       || !/^[a-z0-9]+$/.test(resource.extension)
-      || typeof resource.bytes !== 'string') {
+      || typeof resource.bytes !== 'string'
+    ) {
       throw new Error('剪贴板资源描述无效');
     }
     if (resourceByHash.has(resource.hash)) throw new Error(`剪贴板资源哈希重复：${resource.hash}`);
     if (!options.preverifiedResourceHashes?.has(resource.hash)) {
       let bytes: Uint8Array;
-      try { bytes = base64ToBytes(resource.bytes); } catch { throw new Error('剪贴板资源不是有效 Base64'); }
+      try {
+        bytes = base64ToBytes(resource.bytes);
+      } catch {
+        throw new Error('剪贴板资源不是有效 Base64');
+      }
       if (sha256(bytes) !== resource.hash) throw new Error(`剪贴板资源哈希不匹配：${resource.hash}`);
     }
     resourceByHash.set(resource.hash, {
-      ...resource, targetPart: '', created: false,
+      ...resource,
+      targetPart: '',
+      created: false,
     });
   }
 
@@ -357,35 +387,48 @@ export function prepareInsertionClosures(
     const resources: ElementInsertionResource[] = [];
     const relationships: ElementInsertionRelationship[] = [];
     for (const relationship of sourceRelationships) {
-      if (!relationship || typeof relationship.sourceId !== 'string' || !relationship.sourceId
-        || typeof relationship.type !== 'string' || !relationship.type
-        || seenSourceIds.has(relationship.sourceId)) {
+      if (
+        !relationship
+        || typeof relationship.sourceId !== 'string'
+        || !relationship.sourceId
+        || typeof relationship.type !== 'string'
+        || !relationship.type
+        || seenSourceIds.has(relationship.sourceId)
+      ) {
         throw new Error(`剪贴板根 ${root} 的关系描述无效`);
       }
       seenSourceIds.add(relationship.sourceId);
       const targetId = allocateRelationshipId();
       if (relationship.targetMode === 'External') {
-        if (typeof relationship.target !== 'string' || !relationship.target || relationship.resourceHash
-          || relationship.packageTarget) {
+        if (typeof relationship.target !== 'string' || !relationship.target || relationship.resourceHash || relationship.packageTarget) {
           throw new Error(`剪贴板外部关系无效：${relationship.sourceId}`);
         }
         relationships.push({
-          sourceId: relationship.sourceId, targetId, type: relationship.type,
-          target: relationship.target, targetMode: 'External',
+          sourceId: relationship.sourceId,
+          targetId,
+          type: relationship.type,
+          target: relationship.target,
+          targetMode: 'External',
         });
         continue;
       }
       if (relationship.packageTarget) {
         const packageTarget = relationship.packageTarget;
-        if (relationship.resourceHash || relationship.target || relationship.targetMode
+        if (
+          relationship.resourceHash
+          || relationship.target
+          || relationship.targetMode
           || !/^[0-9a-f]{64}$/.test(packageTarget.rootHash)
-          || !/^[0-9a-f]{64}$/.test(packageTarget.closureHash)) {
+          || !/^[0-9a-f]{64}$/.test(packageTarget.closureHash)
+        ) {
           throw new Error(`剪贴板同包关系无效：${relationship.sourceId}`);
         }
-        const targetPart = resolvePackageTarget(options.sourceOnly ? doc.package : effective ??= clipboardPackage(doc), packageTarget);
+        const targetPart = resolvePackageTarget(options.sourceOnly ? doc.package : (effective ??= clipboardPackage(doc)), packageTarget);
         if (!targetPart) throw new Error(`复杂对象只能粘贴到拥有相同 OPC 闭包的文档：${relationship.sourceId}`);
         relationships.push({
-          sourceId: relationship.sourceId, targetId, type: relationship.type,
+          sourceId: relationship.sourceId,
+          targetId,
+          type: relationship.type,
           target: relativeTarget(destinationPart, targetPart),
         });
         continue;
@@ -404,14 +447,18 @@ export function prepareInsertionClosures(
         targetByHash.set(source.hash, targetPart);
       }
       const prepared = {
-        ...source, targetPart, created: !doc.package.parts[targetPart],
+        ...source,
+        targetPart,
+        created: !doc.package.parts[targetPart],
       };
       if (!includedResourceHashes.has(prepared.hash)) {
         includedResourceHashes.add(prepared.hash);
         resources.push(prepared);
       }
       relationships.push({
-        sourceId: relationship.sourceId, targetId, type: relationship.type,
+        sourceId: relationship.sourceId,
+        targetId,
+        type: relationship.type,
         target: relativeTarget(destinationPart, targetPart),
       });
     }

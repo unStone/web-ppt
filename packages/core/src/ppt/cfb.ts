@@ -115,10 +115,7 @@ export class Cfb {
     const sects = this.chain(entry.start, this.miniFat);
     const out = new Uint8Array(sects.length * this.miniSectorSize);
     sects.forEach((s, i) => {
-      out.set(
-        this.miniStream.subarray(s * this.miniSectorSize, (s + 1) * this.miniSectorSize),
-        i * this.miniSectorSize,
-      );
+      out.set(this.miniStream.subarray(s * this.miniSectorSize, (s + 1) * this.miniSectorSize), i * this.miniSectorSize);
     });
     return out.subarray(0, entry.size);
   }

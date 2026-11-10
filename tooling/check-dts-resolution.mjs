@@ -12,30 +12,32 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const options = { moduleResolution: ts.ModuleResolutionKind.Bundler, module: ts.ModuleKind.ESNext, allowJs: false };
 
-const walk = (dir) => readdirSync(dir, { withFileTypes: true })
-  .flatMap((entry) => (entry.isDirectory() ? walk(join(dir, entry.name))
-    : entry.name.endsWith('.d.ts') ? [join(dir, entry.name)] : []));
+const walk = (dir) =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? walk(join(dir, entry.name)) : entry.name.endsWith('.d.ts') ? [join(dir, entry.name)] : [],
+  );
 
 const specifiers = (file) => {
   const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
   const out = [];
   const visit = (node) => {
-    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node))
-      && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) out.push(node.moduleSpecifier.text);
-    if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)
-      && ts.isStringLiteral(node.argument.literal)) out.push(node.argument.literal.text);
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier))
+      out.push(node.moduleSpecifier.text);
+    if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument) && ts.isStringLiteral(node.argument.literal))
+      out.push(node.argument.literal.text);
     ts.forEachChild(node, visit);
   };
   visit(source);
   return out.filter((spec) => spec.startsWith('.'));
 };
 
-const packages = readdirSync(join(root, 'packages')).sort()
+const packages = readdirSync(join(root, 'packages'))
+  .sort()
   .filter((dir) => existsSync(join(root, 'packages', dir, 'package.json')))
   .filter((dir) => !JSON.parse(readFileSync(join(root, 'packages', dir, 'package.json'), 'utf8')).private);
 

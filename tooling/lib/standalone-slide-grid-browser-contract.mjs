@@ -19,7 +19,7 @@ export async function runStandaloneSlideGridContract({ evaluate, request, waitFo
     "document.querySelector('#fileInfo')?.textContent.includes('showcase.pptx') && document.querySelector('#pageIndicator')?.textContent.startsWith('1 /')",
     '独立查看器 showcase',
   );
-  if (!await evaluate("document.querySelector('#btnGrid')?.hidden")) {
+  if (!(await evaluate("document.querySelector('#btnGrid')?.hidden"))) {
     throw new Error('宽屏查看器仍显示全部按钮');
   }
 
@@ -27,7 +27,10 @@ export async function runStandaloneSlideGridContract({ evaluate, request, waitFo
   try {
     await waitFor("!document.querySelector('#btnGrid').hidden && !document.querySelector('#btnGrid').disabled", '窄屏查看器出现全部');
     await click('#btnGrid');
-    await waitFor("document.querySelector('.slide-grid:not([hidden])') && document.querySelectorAll('.slide-grid-item').length >= 1 && document.querySelectorAll('.slide-grid-item svg').length >= 1", '查看器打开网格且可见格已渲染');
+    await waitFor(
+      "document.querySelector('.slide-grid:not([hidden])') && document.querySelectorAll('.slide-grid-item').length >= 1 && document.querySelectorAll('.slide-grid-item svg').length >= 1",
+      '查看器打开网格且可见格已渲染',
+    );
     await click('.slide-grid-item[data-index="2"]');
     await waitFor(
       "document.querySelector('#pageIndicator').textContent.startsWith('3 /') && !document.querySelector('.slide-grid:not([hidden])')",
@@ -47,10 +50,7 @@ export async function runStandaloneSlideGridContract({ evaluate, request, waitFo
     await click('#pvGrid');
     await waitFor("document.querySelector('.slide-grid:not([hidden])')", '放映侧栏打开网格');
     await press('Escape', 27, 'Escape');
-    await waitFor(
-      "!document.querySelector('#presenter').hidden && !document.querySelector('.slide-grid:not([hidden])')",
-      'Esc 只关网格',
-    );
+    await waitFor("!document.querySelector('#presenter').hidden && !document.querySelector('.slide-grid:not([hidden])')", 'Esc 只关网格');
     await press('Escape', 27, 'Escape');
     await waitFor("document.querySelector('#presenter').hidden", '再 Esc 离开放映');
   } finally {

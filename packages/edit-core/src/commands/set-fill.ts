@@ -3,11 +3,7 @@ import { assertVectorFill, normalizeVectorFill } from '../shape-fill';
 import type { EditDoc } from '../types';
 import type { CommandPatches, ElementFillPatch, SetFillCommand } from './types';
 
-export function setFillPatches(
-  doc: EditDoc,
-  command: SetFillCommand,
-  origin: string,
-): CommandPatches {
+export function setFillPatches(doc: EditDoc, command: SetFillCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改填充');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
@@ -29,7 +25,10 @@ export function setFillPatches(
   const before = hadOverride ? record.ovr.fill : record.src.fill;
   if (JSON.stringify(before) === JSON.stringify(value)) return { forward: [], inverse: [] };
   const forward: ElementFillPatch = {
-    op: 'set', path, value: structuredClone(value!), origin,
+    op: 'set',
+    path,
+    value: structuredClone(value!),
+    origin,
   };
   const inverse: ElementFillPatch = hadOverride
     ? { op: 'set', path, value: structuredClone(record.ovr.fill!), origin }

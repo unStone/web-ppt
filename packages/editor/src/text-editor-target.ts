@@ -5,10 +5,8 @@ import type { ActiveText } from './text-editor-types';
 
 const translation = (x: number, y: number) => ({ a: 1, b: 0, c: 0, d: 1, e: x, f: y });
 
-export const sameTextCell = (
-  left: TableCellAddress | null | undefined,
-  right: TableCellAddress | null | undefined,
-): boolean => left?.r === right?.r && left?.c === right?.c && (!!left === !!right);
+export const sameTextCell = (left: TableCellAddress | null | undefined, right: TableCellAddress | null | undefined): boolean =>
+  left?.r === right?.r && left?.c === right?.c && !!left === !!right;
 
 export function textTargetFields(cell: TableCellAddress | null): { cell?: TableCellAddress } {
   return cell ? { cell: { ...cell } } : {};
@@ -19,32 +17,31 @@ function tableCellFrame(table: TableElement, address: TableCellAddress) {
   const text = cell?.text ?? cell?.editInfo?.textTemplate;
   if (!cell || cell.merged || !text) return null;
   return {
-    cell, text,
+    cell,
+    text,
     x: table.colWidths.slice(0, address.c).reduce((sum, width) => sum + width, 0),
     y: table.rows.slice(0, address.r).reduce((sum, row) => sum + row.height, 0),
-    width: table.colWidths.slice(address.c, address.c + cell.colSpan)
-      .reduce((sum, width) => sum + width, 0) || table.colWidths[address.c] || 0,
-    height: table.rows.slice(address.r, address.r + cell.rowSpan)
-      .reduce((sum, row) => sum + row.height, 0) || table.rows[address.r].height,
+    width:
+      table.colWidths.slice(address.c, address.c + cell.colSpan).reduce((sum, width) => sum + width, 0) || table.colWidths[address.c] || 0,
+    height: table.rows.slice(address.r, address.r + cell.rowSpan).reduce((sum, row) => sum + row.height, 0) || table.rows[address.r].height,
   };
 }
 
-export function resolveActiveText(
-  editor: Editor,
-  id: string,
-  address: TableCellAddress | null,
-): ActiveText | null {
+export function resolveActiveText(editor: Editor, id: string, address: TableCellAddress | null): ActiveText | null {
   const record = editor.doc.elements[id];
   if (!record || record.meta.editable !== 'full') return null;
   // 覆盖层与画面同源：组内文字按折算后的外框排版，字号不随组缩放。
   const element = editor.renderedElement(id);
   if (!address) {
-    const text = element.kind === 'shape' ? element.text ?? record.meta.textTemplate : null;
+    const text = element.kind === 'shape' ? (element.text ?? record.meta.textTemplate) : null;
     return element.kind === 'shape' && text
       ? {
-        id, text, width: element.w, height: element.h,
-        matrix: editor.renderedFrameToSlideMatrix(id),
-      }
+          id,
+          text,
+          width: element.w,
+          height: element.h,
+          matrix: editor.renderedFrameToSlideMatrix(id),
+        }
       : null;
   }
   if (element.kind !== 'table') return null;
@@ -65,15 +62,12 @@ export function resolveActiveText(
 }
 
 export function editableTableCells(table: TableElement): TableCellAddress[] {
-  return table.rows.flatMap((row, r) => row.cells.flatMap((cell, c) =>
-    !cell.merged && (cell.text || cell.editInfo?.textTemplate) ? [{ r, c }] : []));
+  return table.rows.flatMap((row, r) =>
+    row.cells.flatMap((cell, c) => (!cell.merged && (cell.text || cell.editInfo?.textTemplate) ? [{ r, c }] : [])),
+  );
 }
 
-export function nextEditableTableCell(
-  table: TableElement,
-  current: TableCellAddress,
-  reverse: boolean,
-): TableCellAddress | null {
+export function nextEditableTableCell(table: TableElement, current: TableCellAddress, reverse: boolean): TableCellAddress | null {
   const cells = editableTableCells(table);
   const index = cells.findIndex((cell) => cell.r === current.r && cell.c === current.c);
   return cells[index + (reverse ? -1 : 1)] ?? null;

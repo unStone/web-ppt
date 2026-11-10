@@ -1,5 +1,14 @@
-import { parseXmlTree, serializeXmlTreeBytes, xmlElementChildren, createXmlElement, createXmlText,
-  insertXmlChildUnchecked as append, removeXmlChild, setXmlAttribute, removeXmlAttribute } from '@web-ppt/edit-core/xml';
+import {
+  parseXmlTree,
+  serializeXmlTreeBytes,
+  xmlElementChildren,
+  createXmlElement,
+  createXmlText,
+  insertXmlChildUnchecked as append,
+  removeXmlChild,
+  setXmlAttribute,
+  removeXmlAttribute,
+} from '@web-ppt/edit-core/xml';
 import type { XmlElement } from '@web-ppt/edit-core/xml';
 import { attr, child, children, R, relPart, resolvePart } from './container';
 import type { EmbeddedPackage } from './container';
@@ -14,7 +23,11 @@ export interface OleRunFormat {
   /** 六位十六进制，来自 w:color/@w:val */
   color?: string;
 }
-export interface OleRun { index: number; text: string; format: OleRunFormat }
+export interface OleRun {
+  index: number;
+  text: string;
+  format: OleRunFormat;
+}
 export interface OleParagraph {
   index: number;
   text: string;
@@ -44,7 +57,11 @@ export interface OleCell {
   style?: OleCellStyle;
   richText?: OleRichRun[];
 }
-export interface OleSheet { id: string; name: string; cells: OleCell[] }
+export interface OleSheet {
+  id: string;
+  name: string;
+  cells: OleCell[];
+}
 export type OleContent = { kind: 'xlsx'; sheets: OleSheet[] } | { kind: 'docx'; paragraphs: OleParagraph[] };
 export interface OleEdits {
   cells: {
@@ -60,20 +77,29 @@ export interface OleEdits {
 }
 const SS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-const text = (n: XmlElement | undefined): string => n?.children.map((c) => c.type === 'text' || c.type === 'cdata' ? c.value : c.type === 'element' ? text(c) : '').join('') ?? '';
+const text = (n: XmlElement | undefined): string =>
+  n?.children.map((c) => (c.type === 'text' || c.type === 'cdata' ? c.value : c.type === 'element' ? text(c) : '')).join('') ?? '';
 const descendants = (root: XmlElement, name: string, namespace = root.namespaceUri): XmlElement[] => {
-  const result: XmlElement[] = [], pending = [root];
-  while (pending.length) { const n = pending.pop()!; if (n.localName === name && n.namespaceUri === namespace) result.push(n); pending.push(...xmlElementChildren(n).reverse()); }
+  const result: XmlElement[] = [],
+    pending = [root];
+  while (pending.length) {
+    const n = pending.pop()!;
+    if (n.localName === name && n.namespaceUri === namespace) result.push(n);
+    pending.push(...xmlElementChildren(n).reverse());
+  }
   return result;
 };
-const val = (el: XmlElement | undefined, name = 'val'): string | undefined => el ? attr(el, name) ?? undefined : undefined;
+const val = (el: XmlElement | undefined, name = 'val'): string | undefined => (el ? (attr(el, name) ?? undefined) : undefined);
 const hasOn = (pr: XmlElement | undefined, name: string): boolean | undefined => {
-  const n = child(pr, name); if (!n) return undefined;
-  const v = attr(n, 'val'); return v === undefined || v === 'true' || v === '1' || v === 'on';
+  const n = child(pr, name);
+  if (!n) return undefined;
+  const v = attr(n, 'val');
+  return v === undefined || v === 'true' || v === '1' || v === 'on';
 };
 // w:u / u 的 val="none" 是显式关闭下划线，不能只看元素是否存在。
 const underlined = (pr: XmlElement | undefined): boolean => {
-  const n = child(pr, 'u'); return !!n && attr(n, 'val') !== 'none';
+  const n = child(pr, 'u');
+  return !!n && attr(n, 'val') !== 'none';
 };
 /** SpreadsheetML 颜色是 ARGB（rgb="FF1F4E79"），WordprocessingML 是 RGB（w:val="1F4E79"）；统一成 6 位 RGB。 */
 const rgbOf = (el: XmlElement | undefined): string | undefined => {
@@ -83,21 +109,30 @@ const rgbOf = (el: XmlElement | undefined): string | undefined => {
 /** 写回 SpreadsheetML 时补齐不透明 alpha，ST_UnsignedIntHex 要求 4 字节 ARGB。 */
 const argb = (rgb: string): string => `FF${rgb.toUpperCase()}`;
 function sheets(pkg: EmbeddedPackage) {
-  const main = parseXmlTree(pkg.parts[pkg.main]).root, relationships = children(parseXmlTree(pkg.parts[relPart(pkg.main)]).root, 'Relationship');
-  return children(child(main, 'sheets'), 'sheet').map((sheet) => {
-    const rid = sheet.attributes.find((a) => a.localName === 'id' && a.namespaceUri === R)?.value;
-    const relation = relationships.find((r) => attr(r, 'Id') === rid && attr(r, 'Type') === `${R}/worksheet` && attr(r, 'TargetMode') !== 'External');
-    if (!relation) return null;
-    return { id: attr(sheet, 'sheetId')!, name: attr(sheet, 'name')!, part: resolvePart(pkg.main, attr(relation, 'Target')!) };
-  }).filter((value) => value !== null);
+  const main = parseXmlTree(pkg.parts[pkg.main]).root,
+    relationships = children(parseXmlTree(pkg.parts[relPart(pkg.main)]).root, 'Relationship');
+  return children(child(main, 'sheets'), 'sheet')
+    .map((sheet) => {
+      const rid = sheet.attributes.find((a) => a.localName === 'id' && a.namespaceUri === R)?.value;
+      const relation = relationships.find(
+        (r) => attr(r, 'Id') === rid && attr(r, 'Type') === `${R}/worksheet` && attr(r, 'TargetMode') !== 'External',
+      );
+      if (!relation) return null;
+      return { id: attr(sheet, 'sheetId')!, name: attr(sheet, 'name')!, part: resolvePart(pkg.main, attr(relation, 'Target')!) };
+    })
+    .filter((value) => value !== null);
 }
 export function cellPosition(ref: string): [number, number] {
   if (!/^[A-Z]{1,3}[1-9]\d{0,6}$/.test(ref)) throw new Error('单元格地址无效');
   const [, letters, digits] = /^([A-Z]+)(\d+)$/.exec(ref)!;
-  const column = [...letters].reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0), row = Number(digits);
-  if (column > 16384 || row > 1048576) throw new Error('单元格地址越界'); return [row, column];
+  const column = [...letters].reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0),
+    row = Number(digits);
+  if (column > 16384 || row > 1048576) throw new Error('单元格地址越界');
+  return [row, column];
 }
-function contentText(root: XmlElement) { return descendants(root, 't', SS).map(text).join(''); }
+function contentText(root: XmlElement) {
+  return descendants(root, 't', SS).map(text).join('');
+}
 const FORBIDDEN_P = ['fldChar', 'instrText', 'del', 'ins', 'sdt', 'pict', 'drawing', 'object', 'br', 'tab'] as const;
 
 function readRunFormat(rPr: XmlElement | undefined): OleRunFormat {
@@ -106,8 +141,10 @@ function readRunFormat(rPr: XmlElement | undefined): OleRunFormat {
   if (hasOn(rPr, 'b')) format.bold = true;
   if (hasOn(rPr, 'i')) format.italic = true;
   if (underlined(rPr)) format.underline = true;
-  const sz = val(child(rPr, 'sz')); if (sz && Number.isFinite(Number(sz))) format.size = Number(sz);
-  const color = rgbOf(child(rPr, 'color')); if (color) format.color = color;
+  const sz = val(child(rPr, 'sz'));
+  if (sz && Number.isFinite(Number(sz))) format.size = Number(sz);
+  const color = rgbOf(child(rPr, 'color'));
+  if (color) format.color = color;
   return format;
 }
 
@@ -145,11 +182,16 @@ function readSharedItem(si: XmlElement): { text: string; richText?: OleRichRun[]
     if (hasOn(rPr, 'b')) item.bold = true;
     if (hasOn(rPr, 'i')) item.italic = true;
     if (underlined(rPr)) item.underline = true;
-    const sz = val(child(rPr, 'sz')); if (sz && Number.isFinite(Number(sz))) item.size = Number(sz);
-    const color = rgbOf(child(rPr, 'color')); if (color) item.color = color;
+    const sz = val(child(rPr, 'sz'));
+    if (sz && Number.isFinite(Number(sz))) item.size = Number(sz);
+    const color = rgbOf(child(rPr, 'color'));
+    if (color) item.color = color;
     return item;
   });
-  return { text: richText.map((r) => r.text).join(''), richText: richText.length > 1 || richText.some((r) => r.bold || r.italic || r.underline || r.size || r.color) ? richText : undefined };
+  return {
+    text: richText.map((r) => r.text).join(''),
+    richText: richText.length > 1 || richText.some((r) => r.bold || r.italic || r.underline || r.size || r.color) ? richText : undefined,
+  };
 }
 
 interface StyleTables {
@@ -164,11 +206,14 @@ function readStyleTables(bytes: Uint8Array | undefined): StyleTables | null {
   const root = parseXmlTree(bytes).root;
   const fonts = children(child(root, 'fonts'), 'font').map((font) => {
     const out: NonNullable<OleCellStyle['font']> = {};
-    const name = val(child(font, 'name')); if (name) out.name = name;
-    const sz = val(child(font, 'sz')); if (sz && Number.isFinite(Number(sz))) out.size = Number(sz);
+    const name = val(child(font, 'name'));
+    if (name) out.name = name;
+    const sz = val(child(font, 'sz'));
+    if (sz && Number.isFinite(Number(sz))) out.size = Number(sz);
     if (hasOn(font, 'b')) out.bold = true;
     if (hasOn(font, 'i')) out.italic = true;
-    const color = rgbOf(child(font, 'color')); if (color) out.color = color;
+    const color = rgbOf(child(font, 'color'));
+    if (color) out.color = color;
     return out;
   });
   const fills = children(child(root, 'fills'), 'fill').map((fill) => {
@@ -197,9 +242,12 @@ function resolveStyle(tables: StyleTables | null, index: number | undefined): Ol
   if (!tables || index === undefined || !Number.isInteger(index) || index < 0 || index >= tables.xfs.length) return undefined;
   const xf = tables.xfs[index]!;
   const style: OleCellStyle = {};
-  const font = tables.fonts[xf.fontId]; if (font && Object.keys(font).length) style.font = { ...font };
-  const fill = tables.fills[xf.fillId]; if (fill && Object.keys(fill).length) style.fill = { ...fill };
-  const border = tables.borders[xf.borderId]; if (border && Object.keys(border).length) style.border = { ...border };
+  const font = tables.fonts[xf.fontId];
+  if (font && Object.keys(font).length) style.font = { ...font };
+  const fill = tables.fills[xf.fillId];
+  if (fill && Object.keys(fill).length) style.fill = { ...fill };
+  const border = tables.borders[xf.borderId];
+  if (border && Object.keys(border).length) style.border = { ...border };
   return Object.keys(style).length ? style : undefined;
 }
 
@@ -208,18 +256,21 @@ export function readOleContent(pkg: EmbeddedPackage): OleContent {
     const main = parseXmlTree(pkg.parts[pkg.main]).root;
     const body = child(main, 'body') ?? main;
     const inTable = tableCoords(body);
-    return { kind: 'docx', paragraphs: descendants(main, 'p', W).map((p, index) => {
-      const runs = readDocxRuns(p);
-      const table = inTable.get(p);
-      return {
-        index,
-        // 超链接、智能标记里的 run 不是段落的直接子级，段落文字必须按全部 w:t 拼。
-        text: descendants(p, 't', W).map(text).join(''),
-        editable: paragraphEditable(p),
-        runs,
-        ...(table ? { table } : {}),
-      };
-    }) };
+    return {
+      kind: 'docx',
+      paragraphs: descendants(main, 'p', W).map((p, index) => {
+        const runs = readDocxRuns(p);
+        const table = inTable.get(p);
+        return {
+          index,
+          // 超链接、智能标记里的 run 不是段落的直接子级，段落文字必须按全部 w:t 拼。
+          text: descendants(p, 't', W).map(text).join(''),
+          editable: paragraphEditable(p),
+          runs,
+          ...(table ? { table } : {}),
+        };
+      }),
+    };
   }
   const rels = children(parseXmlTree(pkg.parts[relPart(pkg.main)]).root, 'Relationship');
   const sharedRel = rels.find((n) => attr(n, 'Type') === `${R}/sharedStrings` && attr(n, 'TargetMode') !== 'External');
@@ -230,99 +281,158 @@ export function readOleContent(pkg: EmbeddedPackage): OleContent {
   const stylesPart = stylesRel && resolvePart(pkg.main, attr(stylesRel, 'Target')!);
   const styles = readStyleTables(stylesPart ? pkg.parts[stylesPart] : undefined);
   let total = 0;
-  return { kind: 'xlsx', sheets: sheets(pkg).map(({ id, name, part }) => ({ id, name,
-    cells: descendants(parseXmlTree(pkg.parts[part]).root, 'c', SS).map((c) => {
-      if (++total > 100000) throw new Error('嵌入表格单元格超限');
-      const ref = attr(c, 'r')!; cellPosition(ref); const type = attr(c, 't'), raw = text(child(c, 'v')), formula = child(c, 'f');
-      const styleIndex = attr(c, 's') !== undefined ? Number(attr(c, 's')) : undefined;
-      let value: OleCellValue;
-      let richText: OleRichRun[] | undefined;
-      if (type === 'inlineStr') value = contentText(c);
-      else if (type === 's') {
-        const item = sharedItems[Number(raw)];
-        value = item?.text ?? '';
-        richText = item?.richText;
-      } else if (type === 'b') value = raw === '1';
-      else if (type === 'str' || type === 'e') value = raw;
-      else value = raw === '' ? null : Number(raw);
-      const style = resolveStyle(styles, styleIndex);
-      return {
-        ref, value,
-        ...(formula ? { formula: text(formula) } : {}),
-        ...(styleIndex !== undefined && Number.isFinite(styleIndex) ? { styleIndex } : {}),
-        ...(style ? { style } : {}),
-        ...(richText ? { richText } : {}),
-      };
-    }),
-  })) };
+  return {
+    kind: 'xlsx',
+    sheets: sheets(pkg).map(({ id, name, part }) => ({
+      id,
+      name,
+      cells: descendants(parseXmlTree(pkg.parts[part]).root, 'c', SS).map((c) => {
+        if (++total > 100000) throw new Error('嵌入表格单元格超限');
+        const ref = attr(c, 'r')!;
+        cellPosition(ref);
+        const type = attr(c, 't'),
+          raw = text(child(c, 'v')),
+          formula = child(c, 'f');
+        const styleIndex = attr(c, 's') !== undefined ? Number(attr(c, 's')) : undefined;
+        let value: OleCellValue;
+        let richText: OleRichRun[] | undefined;
+        if (type === 'inlineStr') value = contentText(c);
+        else if (type === 's') {
+          const item = sharedItems[Number(raw)];
+          value = item?.text ?? '';
+          richText = item?.richText;
+        } else if (type === 'b') value = raw === '1';
+        else if (type === 'str' || type === 'e') value = raw;
+        else value = raw === '' ? null : Number(raw);
+        const style = resolveStyle(styles, styleIndex);
+        return {
+          ref,
+          value,
+          ...(formula ? { formula: text(formula) } : {}),
+          ...(styleIndex !== undefined && Number.isFinite(styleIndex) ? { styleIndex } : {}),
+          ...(style ? { style } : {}),
+          ...(richText ? { richText } : {}),
+        };
+      }),
+    })),
+  };
 }
 
-const validText = (v: unknown): v is string => typeof v === 'string' && v.length <= 32767 && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/u.test(v);
-const validRich = (runs: unknown): runs is OleRichRun[] => Array.isArray(runs) && runs.length > 0 && runs.length <= 100
-  && runs.every((r) => r && validText(r.text) && (r.bold === undefined || typeof r.bold === 'boolean')
-    && (r.italic === undefined || typeof r.italic === 'boolean') && (r.underline === undefined || typeof r.underline === 'boolean')
-    && (r.size === undefined || typeof r.size === 'number' && Number.isFinite(r.size))
-    && (r.color === undefined || typeof r.color === 'string' && /^[0-9A-Fa-f]{6}$/.test(r.color)));
+const validText = (v: unknown): v is string =>
+  typeof v === 'string' && v.length <= 32767 && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/u.test(v);
+const validRich = (runs: unknown): runs is OleRichRun[] =>
+  Array.isArray(runs)
+  && runs.length > 0
+  && runs.length <= 100
+  && runs.every(
+    (r) =>
+      r
+      && validText(r.text)
+      && (r.bold === undefined || typeof r.bold === 'boolean')
+      && (r.italic === undefined || typeof r.italic === 'boolean')
+      && (r.underline === undefined || typeof r.underline === 'boolean')
+      && (r.size === undefined || (typeof r.size === 'number' && Number.isFinite(r.size)))
+      && (r.color === undefined || (typeof r.color === 'string' && /^[0-9A-Fa-f]{6}$/.test(r.color))),
+  );
 const validStyle = (style: unknown): style is OleCellStyle => {
   if (!style || typeof style !== 'object') return false;
   const s = style as OleCellStyle;
-  const fontOk = !s.font || typeof s.font === 'object' && (s.font.name === undefined || typeof s.font.name === 'string')
-    && (s.font.size === undefined || typeof s.font.size === 'number') && (s.font.bold === undefined || typeof s.font.bold === 'boolean')
-    && (s.font.italic === undefined || typeof s.font.italic === 'boolean')
-    && (s.font.color === undefined || typeof s.font.color === 'string' && /^[0-9A-Fa-f]{6}$/.test(s.font.color));
-  const fillOk = !s.fill || typeof s.fill === 'object' && (s.fill.color === undefined || typeof s.fill.color === 'string' && /^[0-9A-Fa-f]{6}$/.test(s.fill.color));
-  const borderOk = !s.border || typeof s.border === 'object'
-    && (s.border.color === undefined || typeof s.border.color === 'string' && /^[0-9A-Fa-f]{6}$/.test(s.border.color))
-    && (s.border.style === undefined || typeof s.border.style === 'string');
+  const fontOk =
+    !s.font
+    || (typeof s.font === 'object'
+      && (s.font.name === undefined || typeof s.font.name === 'string')
+      && (s.font.size === undefined || typeof s.font.size === 'number')
+      && (s.font.bold === undefined || typeof s.font.bold === 'boolean')
+      && (s.font.italic === undefined || typeof s.font.italic === 'boolean')
+      && (s.font.color === undefined || (typeof s.font.color === 'string' && /^[0-9A-Fa-f]{6}$/.test(s.font.color))));
+  const fillOk =
+    !s.fill
+    || (typeof s.fill === 'object'
+      && (s.fill.color === undefined || (typeof s.fill.color === 'string' && /^[0-9A-Fa-f]{6}$/.test(s.fill.color))));
+  const borderOk =
+    !s.border
+    || (typeof s.border === 'object'
+      && (s.border.color === undefined || (typeof s.border.color === 'string' && /^[0-9A-Fa-f]{6}$/.test(s.border.color)))
+      && (s.border.style === undefined || typeof s.border.style === 'string'));
   return !!(fontOk && fillOk && borderOk && (s.font || s.fill || s.border));
 };
 
 export function normalizeOleEdits(value: unknown): OleEdits {
   if (!value || typeof value !== 'object') throw new Error('OLE 编辑数据无效');
   const state = value as OleEdits;
-  if (!Array.isArray(state.cells) || !Array.isArray(state.paragraphs) || state.cells.length + state.paragraphs.length > 10000) throw new Error('OLE 编辑数据超限');
+  if (!Array.isArray(state.cells) || !Array.isArray(state.paragraphs) || state.cells.length + state.paragraphs.length > 10000)
+    throw new Error('OLE 编辑数据超限');
   const seen = new Set<string>();
-  const cells = state.cells.map((c) => {
-    if (!c || typeof c.sheet !== 'string' || !/^\d+$/.test(c.sheet) || typeof c.ref !== 'string') throw new Error('OLE 单元格无效');
-    cellPosition(c.ref);
-    const hasValue = 'value' in c, hasStyle = 'style' in c, hasRich = 'richText' in c;
-    if (!hasValue && !hasStyle && !hasRich) throw new Error('OLE 单元格缺少变更');
-    if (hasValue && !(c.value === null || typeof c.value === 'boolean' || typeof c.value === 'number' && Number.isFinite(c.value) || validText(c.value))) throw new Error('OLE 单元格值无效');
-    if (hasStyle && c.style !== null && !validStyle(c.style)) throw new Error('OLE 单元格样式无效');
-    if (hasRich && c.richText !== null && !validRich(c.richText)) throw new Error('OLE 富文本无效');
-    const key = c.sheet + ':' + c.ref; if (seen.has(key)) throw new Error('OLE 单元格重复'); seen.add(key);
-    return {
-      sheet: c.sheet, ref: c.ref,
-      ...(hasValue ? { value: c.value as OleCellValue } : {}),
-      ...(hasStyle ? { style: c.style as OleCellStyle | null } : {}),
-      ...(hasRich ? { richText: c.richText as OleRichRun[] | null } : {}),
-    };
-  }).sort((a, b) => a.sheet.localeCompare(b.sheet) || cellPosition(a.ref)[0] - cellPosition(b.ref)[0] || cellPosition(a.ref)[1] - cellPosition(b.ref)[1]);
-  const paragraphs = state.paragraphs.map((p) => {
-    if (!p || !Number.isInteger(p.index) || p.index < 0) throw new Error('OLE 段落无效');
-    const hasText = typeof p.text === 'string', hasRuns = Array.isArray(p.runs);
-    if (!hasText && !hasRuns) throw new Error('OLE 段落缺少变更');
-    if (hasText && !validText(p.text)) throw new Error('OLE 段落无效');
-    if (hasRuns) {
-      if (!p.runs!.length || p.runs!.length > 100) throw new Error('OLE 段落 run 超限');
-      const runSeen = new Set<number>();
-      for (const r of p.runs!) {
-        if (!r || !Number.isInteger(r.index) || r.index < 0 || !validText(r.text)) throw new Error('OLE 段落 run 无效');
-        if (runSeen.has(r.index)) throw new Error('OLE 段落 run 重复'); runSeen.add(r.index);
+  const cells = state.cells
+    .map((c) => {
+      if (!c || typeof c.sheet !== 'string' || !/^\d+$/.test(c.sheet) || typeof c.ref !== 'string') throw new Error('OLE 单元格无效');
+      cellPosition(c.ref);
+      const hasValue = 'value' in c,
+        hasStyle = 'style' in c,
+        hasRich = 'richText' in c;
+      if (!hasValue && !hasStyle && !hasRich) throw new Error('OLE 单元格缺少变更');
+      if (
+        hasValue
+        && !(
+          c.value === null
+          || typeof c.value === 'boolean'
+          || (typeof c.value === 'number' && Number.isFinite(c.value))
+          || validText(c.value)
+        )
+      )
+        throw new Error('OLE 单元格值无效');
+      if (hasStyle && c.style !== null && !validStyle(c.style)) throw new Error('OLE 单元格样式无效');
+      if (hasRich && c.richText !== null && !validRich(c.richText)) throw new Error('OLE 富文本无效');
+      const key = c.sheet + ':' + c.ref;
+      if (seen.has(key)) throw new Error('OLE 单元格重复');
+      seen.add(key);
+      return {
+        sheet: c.sheet,
+        ref: c.ref,
+        ...(hasValue ? { value: c.value as OleCellValue } : {}),
+        ...(hasStyle ? { style: c.style as OleCellStyle | null } : {}),
+        ...(hasRich ? { richText: c.richText as OleRichRun[] | null } : {}),
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.sheet.localeCompare(b.sheet)
+        || cellPosition(a.ref)[0] - cellPosition(b.ref)[0]
+        || cellPosition(a.ref)[1] - cellPosition(b.ref)[1],
+    );
+  const paragraphs = state.paragraphs
+    .map((p) => {
+      if (!p || !Number.isInteger(p.index) || p.index < 0) throw new Error('OLE 段落无效');
+      const hasText = typeof p.text === 'string',
+        hasRuns = Array.isArray(p.runs);
+      if (!hasText && !hasRuns) throw new Error('OLE 段落缺少变更');
+      if (hasText && !validText(p.text)) throw new Error('OLE 段落无效');
+      if (hasRuns) {
+        if (!p.runs!.length || p.runs!.length > 100) throw new Error('OLE 段落 run 超限');
+        const runSeen = new Set<number>();
+        for (const r of p.runs!) {
+          if (!r || !Number.isInteger(r.index) || r.index < 0 || !validText(r.text)) throw new Error('OLE 段落 run 无效');
+          if (runSeen.has(r.index)) throw new Error('OLE 段落 run 重复');
+          runSeen.add(r.index);
+        }
       }
-    }
-    const key = 'p' + p.index; if (seen.has(key)) throw new Error('OLE 段落重复'); seen.add(key);
-    return {
-      index: p.index,
-      ...(hasText ? { text: p.text } : {}),
-      ...(hasRuns ? { runs: [...p.runs!].sort((a, b) => a.index - b.index) } : {}),
-    };
-  }).sort((a, b) => a.index - b.index);
+      const key = 'p' + p.index;
+      if (seen.has(key)) throw new Error('OLE 段落重复');
+      seen.add(key);
+      return {
+        index: p.index,
+        ...(hasText ? { text: p.text } : {}),
+        ...(hasRuns ? { runs: [...p.runs!].sort((a, b) => a.index - b.index) } : {}),
+      };
+    })
+    .sort((a, b) => a.index - b.index);
   return { cells, paragraphs };
 }
 
 function addNs(parent: XmlElement, name: string, ns: string) {
-  const n = createXmlElement(name, { attributes: [['xmlns', ns]] }); append(parent, n); return n;
+  const n = createXmlElement(name, { attributes: [['xmlns', ns]] });
+  append(parent, n);
+  return n;
 }
 function setNodeText(node: XmlElement, value: string) {
   for (const c of [...node.children]) removeXmlChild(node, c);
@@ -335,7 +445,8 @@ function applyDocxParagraph(p: XmlElement, edit: OleEdits['paragraphs'][number])
   if (edit.runs) {
     const runs = children(p, 'r');
     for (const change of edit.runs) {
-      const r = runs[change.index]; if (!r) throw new Error('段落 run 不存在');
+      const r = runs[change.index];
+      if (!r) throw new Error('段落 run 不存在');
       let t = child(r, 't');
       if (!t) t = addNs(r, 't', W);
       setNodeText(t, change.text);
@@ -345,12 +456,17 @@ function applyDocxParagraph(p: XmlElement, edit: OleEdits['paragraphs'][number])
   // 整段替换：多 run 时只改第一个 run 的文字并清空后续 run，保留各自 rPr（相邻粗斜体等不丢）。
   const nodes = descendants(p, 't', W);
   if (!nodes.length) nodes.push(addNs(addNs(p, 'r', W), 't', W));
-  nodes.forEach((node, i) => setNodeText(node, i ? '' : edit.text ?? ''));
+  nodes.forEach((node, i) => setNodeText(node, i ? '' : (edit.text ?? '')));
 }
 
 function sameFont(a: OleCellStyle['font'] | undefined, b: OleCellStyle['font'] | undefined): boolean {
-  return (a?.name ?? '') === (b?.name ?? '') && (a?.size ?? 0) === (b?.size ?? 0) && !!a?.bold === !!b?.bold
-    && !!a?.italic === !!b?.italic && (a?.color ?? '') === (b?.color ?? '');
+  return (
+    (a?.name ?? '') === (b?.name ?? '')
+    && (a?.size ?? 0) === (b?.size ?? 0)
+    && !!a?.bold === !!b?.bold
+    && !!a?.italic === !!b?.italic
+    && (a?.color ?? '') === (b?.color ?? '')
+  );
 }
 function sameFill(a: OleCellStyle['fill'] | undefined, b: OleCellStyle['fill'] | undefined): boolean {
   return (a?.color ?? '') === (b?.color ?? '');
@@ -367,28 +483,49 @@ function freeRelationshipId(rels: XmlElement, base: string): string {
   return id;
 }
 
-function ensureStylesPart(pkg: EmbeddedPackage, changes: Record<string, Uint8Array | null>): { part: string; tree: ReturnType<typeof parseXmlTree> } {
+function ensureStylesPart(
+  pkg: EmbeddedPackage,
+  changes: Record<string, Uint8Array | null>,
+): { part: string; tree: ReturnType<typeof parseXmlTree> } {
   const relsPath = relPart(pkg.main);
   const rels = parseXmlTree(changes[relsPath] ?? pkg.parts[relsPath]);
   const types = parseXmlTree(changes['[Content_Types].xml'] ?? pkg.parts['[Content_Types].xml']);
   let rel = children(rels.root, 'Relationship').find((n) => attr(n, 'Type') === `${R}/styles` && attr(n, 'TargetMode') !== 'External');
   let part = rel ? resolvePart(pkg.main, attr(rel, 'Target')!) : resolvePart(pkg.main, 'styles.xml');
   if (!rel) {
-    rel = createXmlElement('Relationship', { attributes: [['xmlns', 'http://schemas.openxmlformats.org/package/2006/relationships'], ['Id', freeRelationshipId(rels.root, 'styles')], ['Type', `${R}/styles`], ['Target', 'styles.xml']] });
+    rel = createXmlElement('Relationship', {
+      attributes: [
+        ['xmlns', 'http://schemas.openxmlformats.org/package/2006/relationships'],
+        ['Id', freeRelationshipId(rels.root, 'styles')],
+        ['Type', `${R}/styles`],
+        ['Target', 'styles.xml'],
+      ],
+    });
     append(rels.root, rel);
     changes[relsPath] = serializeXmlTreeBytes(rels);
   }
   if (!children(types.root, 'Override').some((n) => attr(n, 'PartName') === '/' + part)) {
-    append(types.root, createXmlElement('Override', { attributes: [['xmlns', 'http://schemas.openxmlformats.org/package/2006/content-types'], ['PartName', '/' + part], ['ContentType', 'application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml']] }));
+    append(
+      types.root,
+      createXmlElement('Override', {
+        attributes: [
+          ['xmlns', 'http://schemas.openxmlformats.org/package/2006/content-types'],
+          ['PartName', '/' + part],
+          ['ContentType', 'application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml'],
+        ],
+      }),
+    );
     changes['[Content_Types].xml'] = serializeXmlTreeBytes(types);
   }
   const bytes = changes[part] ?? pkg.parts[part];
   if (bytes) return { part, tree: parseXmlTree(bytes) };
-  const empty = parseXmlTree(new TextEncoder().encode(
-    `<styleSheet xmlns="${SS}"><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>`
-    + `<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>`
-    + `<borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="1"><xf/></cellXfs></styleSheet>`,
-  ));
+  const empty = parseXmlTree(
+    new TextEncoder().encode(
+      `<styleSheet xmlns="${SS}"><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>`
+        + `<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>`
+        + `<borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="1"><xf/></cellXfs></styleSheet>`,
+    ),
+  );
   return { part, tree: empty };
 }
 
@@ -404,19 +541,30 @@ function ensureStyleIndex(pkg: EmbeddedPackage, changes: Record<string, Uint8Arr
   if (fontId < 0 && style.font) {
     fontId = children(fontsEl, 'font').length;
     const font = addNs(fontsEl, 'font', SS);
-    if (style.font.size !== undefined) { const sz = addNs(font, 'sz', SS); setXmlAttribute(sz, 'val', String(style.font.size)); }
-    if (style.font.name) { const name = addNs(font, 'name', SS); setXmlAttribute(name, 'val', style.font.name); }
+    if (style.font.size !== undefined) {
+      const sz = addNs(font, 'sz', SS);
+      setXmlAttribute(sz, 'val', String(style.font.size));
+    }
+    if (style.font.name) {
+      const name = addNs(font, 'name', SS);
+      setXmlAttribute(name, 'val', style.font.name);
+    }
     if (style.font.bold) addNs(font, 'b', SS);
     if (style.font.italic) addNs(font, 'i', SS);
-    if (style.font.color) { const color = addNs(font, 'color', SS); setXmlAttribute(color, 'rgb', argb(style.font.color)); }
+    if (style.font.color) {
+      const color = addNs(font, 'color', SS);
+      setXmlAttribute(color, 'rgb', argb(style.font.color));
+    }
     setXmlAttribute(fontsEl, 'count', String(fontId + 1));
   } else if (fontId < 0) fontId = 0;
   let fillId = tables.fills.findIndex((f) => sameFill(f, style.fill));
   if (fillId < 0 && style.fill?.color) {
     fillId = children(fillsEl, 'fill').length;
     const fill = addNs(fillsEl, 'fill', SS);
-    const pattern = addNs(fill, 'patternFill', SS); setXmlAttribute(pattern, 'patternType', 'solid');
-    const fg = addNs(pattern, 'fgColor', SS); setXmlAttribute(fg, 'rgb', argb(style.fill.color));
+    const pattern = addNs(fill, 'patternFill', SS);
+    setXmlAttribute(pattern, 'patternType', 'solid');
+    const fg = addNs(pattern, 'fgColor', SS);
+    setXmlAttribute(fg, 'rgb', argb(style.fill.color));
     setXmlAttribute(fillsEl, 'count', String(fillId + 1));
   } else if (fillId < 0) fillId = 0;
   let borderId = tables.borders.findIndex((b) => sameBorder(b, style.border));
@@ -426,36 +574,76 @@ function ensureStyleIndex(pkg: EmbeddedPackage, changes: Record<string, Uint8Arr
     for (const side of ['left', 'right', 'top', 'bottom']) {
       const el = addNs(border, side, SS);
       if (style.border.style) setXmlAttribute(el, 'style', style.border.style);
-      if (style.border.color) { const color = addNs(el, 'color', SS); setXmlAttribute(color, 'rgb', argb(style.border.color)); }
+      if (style.border.color) {
+        const color = addNs(el, 'color', SS);
+        setXmlAttribute(color, 'rgb', argb(style.border.color));
+      }
     }
     setXmlAttribute(bordersEl, 'count', String(borderId + 1));
   } else if (borderId < 0) borderId = 0;
   const existing = tables.xfs.findIndex((xf, i) => {
     if (xf.fontId !== fontId || xf.fillId !== fillId || xf.borderId !== borderId) return false;
-    return sameFont(resolveStyle(tables, i)?.font, style.font) && sameFill(resolveStyle(tables, i)?.fill, style.fill)
-      && sameBorder(resolveStyle(tables, i)?.border, style.border);
+    return (
+      sameFont(resolveStyle(tables, i)?.font, style.font)
+      && sameFill(resolveStyle(tables, i)?.fill, style.fill)
+      && sameBorder(resolveStyle(tables, i)?.border, style.border)
+    );
   });
-  if (existing >= 0) { changes[part] = serializeXmlTreeBytes(tree); return existing; }
-  const xf = createXmlElement('xf', { attributes: [['xmlns', SS], ['fontId', String(fontId)], ['fillId', String(fillId)], ['borderId', String(borderId)],
-    ['applyFont', style.font ? '1' : '0'], ['applyFill', style.fill ? '1' : '0'], ['applyBorder', style.border ? '1' : '0']] });
+  if (existing >= 0) {
+    changes[part] = serializeXmlTreeBytes(tree);
+    return existing;
+  }
+  const xf = createXmlElement('xf', {
+    attributes: [
+      ['xmlns', SS],
+      ['fontId', String(fontId)],
+      ['fillId', String(fillId)],
+      ['borderId', String(borderId)],
+      ['applyFont', style.font ? '1' : '0'],
+      ['applyFill', style.fill ? '1' : '0'],
+      ['applyBorder', style.border ? '1' : '0'],
+    ],
+  });
   append(xfsEl, xf);
   setXmlAttribute(xfsEl, 'count', String(children(xfsEl, 'xf').length));
   changes[part] = serializeXmlTreeBytes(tree);
   return children(xfsEl, 'xf').length - 1;
 }
 
-function ensureSharedPart(pkg: EmbeddedPackage, changes: Record<string, Uint8Array | null>): { part: string; tree: ReturnType<typeof parseXmlTree> } {
+function ensureSharedPart(
+  pkg: EmbeddedPackage,
+  changes: Record<string, Uint8Array | null>,
+): { part: string; tree: ReturnType<typeof parseXmlTree> } {
   const relsPath = relPart(pkg.main);
   const rels = parseXmlTree(changes[relsPath] ?? pkg.parts[relsPath]);
   const types = parseXmlTree(changes['[Content_Types].xml'] ?? pkg.parts['[Content_Types].xml']);
-  let rel = children(rels.root, 'Relationship').find((n) => attr(n, 'Type') === `${R}/sharedStrings` && attr(n, 'TargetMode') !== 'External');
+  let rel = children(rels.root, 'Relationship').find(
+    (n) => attr(n, 'Type') === `${R}/sharedStrings` && attr(n, 'TargetMode') !== 'External',
+  );
   let part = rel ? resolvePart(pkg.main, attr(rel, 'Target')!) : resolvePart(pkg.main, 'sharedStrings.xml');
   if (!rel) {
-    rel = createXmlElement('Relationship', { attributes: [['xmlns', 'http://schemas.openxmlformats.org/package/2006/relationships'], ['Id', freeRelationshipId(rels.root, 'strings')], ['Type', `${R}/sharedStrings`], ['Target', 'sharedStrings.xml']] });
-    append(rels.root, rel); changes[relsPath] = serializeXmlTreeBytes(rels);
+    rel = createXmlElement('Relationship', {
+      attributes: [
+        ['xmlns', 'http://schemas.openxmlformats.org/package/2006/relationships'],
+        ['Id', freeRelationshipId(rels.root, 'strings')],
+        ['Type', `${R}/sharedStrings`],
+        ['Target', 'sharedStrings.xml'],
+      ],
+    });
+    append(rels.root, rel);
+    changes[relsPath] = serializeXmlTreeBytes(rels);
   }
   if (!children(types.root, 'Override').some((n) => attr(n, 'PartName') === '/' + part)) {
-    append(types.root, createXmlElement('Override', { attributes: [['xmlns', 'http://schemas.openxmlformats.org/package/2006/content-types'], ['PartName', '/' + part], ['ContentType', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml']] }));
+    append(
+      types.root,
+      createXmlElement('Override', {
+        attributes: [
+          ['xmlns', 'http://schemas.openxmlformats.org/package/2006/content-types'],
+          ['PartName', '/' + part],
+          ['ContentType', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml'],
+        ],
+      }),
+    );
     changes['[Content_Types].xml'] = serializeXmlTreeBytes(types);
   }
   const bytes = changes[part] ?? pkg.parts[part];
@@ -468,8 +656,9 @@ function cellText(pkg: EmbeddedPackage, changes: Record<string, Uint8Array | nul
   const type = attr(c, 't');
   if (type === 'inlineStr') return contentText(child(c, 'is') ?? c);
   if (type !== 's') return raw;
-  const rel = children(parseXmlTree(changes[relPart(pkg.main)] ?? pkg.parts[relPart(pkg.main)]).root, 'Relationship')
-    .find((n) => attr(n, 'Type') === `${R}/sharedStrings` && attr(n, 'TargetMode') !== 'External');
+  const rel = children(parseXmlTree(changes[relPart(pkg.main)] ?? pkg.parts[relPart(pkg.main)]).root, 'Relationship').find(
+    (n) => attr(n, 'Type') === `${R}/sharedStrings` && attr(n, 'TargetMode') !== 'External',
+  );
   if (!rel) throw new Error('共享字符串单元格缺少 sharedStrings 部件');
   const part = resolvePart(pkg.main, attr(rel, 'Target')!);
   const item = children(parseXmlTree(changes[part] ?? pkg.parts[part]).root, 'si')[Number(raw)];
@@ -487,8 +676,14 @@ function writeRichShared(pkg: EmbeddedPackage, changes: Record<string, Uint8Arra
       if (run.bold) addNs(rPr, 'b', SS);
       if (run.italic) addNs(rPr, 'i', SS);
       if (run.underline) addNs(rPr, 'u', SS);
-      if (run.size !== undefined) { const sz = addNs(rPr, 'sz', SS); setXmlAttribute(sz, 'val', String(run.size)); }
-      if (run.color) { const color = addNs(rPr, 'color', SS); setXmlAttribute(color, 'rgb', argb(run.color)); }
+      if (run.size !== undefined) {
+        const sz = addNs(rPr, 'sz', SS);
+        setXmlAttribute(sz, 'val', String(run.size));
+      }
+      if (run.color) {
+        const color = addNs(rPr, 'color', SS);
+        setXmlAttribute(color, 'rgb', argb(run.color));
+      }
     }
     setNodeText(addNs(r, 't', SS), run.text);
   }
@@ -503,39 +698,58 @@ export function editOleParts(pkg: EmbeddedPackage, edits: OleEdits): Record<stri
   const changes: Record<string, Uint8Array | null> = Object.create(null);
   if (pkg.kind === 'docx') {
     if (edits.cells.length) throw new Error('文档不支持单元格编辑');
-    const main = parseXmlTree(pkg.parts[pkg.main]), paragraphs = descendants(main.root, 'p', W);
+    const main = parseXmlTree(pkg.parts[pkg.main]),
+      paragraphs = descendants(main.root, 'p', W);
     for (const edit of edits.paragraphs) {
-      const p = paragraphs[edit.index]; if (!p) throw new Error('段落不存在');
+      const p = paragraphs[edit.index];
+      if (!p) throw new Error('段落不存在');
       applyDocxParagraph(p, edit);
     }
     if (edits.paragraphs.length) changes[pkg.main] = serializeXmlTreeBytes(main);
     return changes;
   }
   if (edits.paragraphs.length) throw new Error('表格不支持文档段落编辑');
-  const list = sheets(pkg), trees = new Map<string, ReturnType<typeof parseXmlTree>>();
+  const list = sheets(pkg),
+    trees = new Map<string, ReturnType<typeof parseXmlTree>>();
   let touchedCalc = false;
   for (const edit of edits.cells) {
-    const sheet = list.find((s) => s.id === edit.sheet); if (!sheet) throw new Error('工作表不存在');
-    const tree = trees.get(sheet.part) ?? parseXmlTree(pkg.parts[sheet.part]); trees.set(sheet.part, tree);
+    const sheet = list.find((s) => s.id === edit.sheet);
+    if (!sheet) throw new Error('工作表不存在');
+    const tree = trees.get(sheet.part) ?? parseXmlTree(pkg.parts[sheet.part]);
+    trees.set(sheet.part, tree);
     if (child(tree.root, 'sheetProtection')) throw new Error('工作表受保护');
-    const data = child(tree.root, 'sheetData'); if (!data) throw new Error('工作表缺少 sheetData');
+    const data = child(tree.root, 'sheetData');
+    if (!data) throw new Error('工作表缺少 sheetData');
     const [rowNumber, column] = cellPosition(edit.ref);
     let row = children(data, 'row').find((r) => Number(attr(r, 'r')) === rowNumber);
     if (!row) {
-      row = createXmlElement('row', { attributes: [['xmlns', SS], ['r', String(rowNumber)]] });
+      row = createXmlElement('row', {
+        attributes: [
+          ['xmlns', SS],
+          ['r', String(rowNumber)],
+        ],
+      });
       append(data, row, children(data, 'row').find((r) => Number(attr(r, 'r')) > rowNumber) ?? null);
     }
     let c = children(row, 'c').find((n) => attr(n, 'r') === edit.ref);
-    if (c && child(c, 'f') && ['array', 'dataTable', 'shared'].includes(attr(child(c, 'f')!, 't') ?? '')) throw new Error('数组或共享公式不能单独替换');
-    if (!c) { c = createXmlElement('c', { attributes: [['xmlns', SS], ['r', edit.ref]] }); append(row, c, children(row, 'c').find((n) => cellPosition(attr(n, 'r')!)[1] > column) ?? null); }
+    if (c && child(c, 'f') && ['array', 'dataTable', 'shared'].includes(attr(child(c, 'f')!, 't') ?? ''))
+      throw new Error('数组或共享公式不能单独替换');
+    if (!c) {
+      c = createXmlElement('c', {
+        attributes: [
+          ['xmlns', SS],
+          ['r', edit.ref],
+        ],
+      });
+      append(row, c, children(row, 'c').find((n) => cellPosition(attr(n, 'r')!)[1] > column) ?? null);
+    }
     if ('style' in edit) {
       if (edit.style === null) removeXmlAttribute(c, 's');
       else setXmlAttribute(c, 's', String(ensureStyleIndex(pkg, changes, edit.style!)));
     }
     if ('richText' in edit) {
       // 去掉富文本只去格式：文字取本次一起写入的值，否则取单元格现有文字。
-      const plain = edit.richText === null
-        ? typeof edit.value === 'string' ? edit.value : cellText(pkg, changes, c) : '';
+      const plain = edit.richText === null ? (typeof edit.value === 'string' ? edit.value : cellText(pkg, changes, c)) : '';
       for (const node of xmlElementChildren(c)) if (['f', 'v', 'is'].includes(node.localName)) removeXmlChild(c, node);
       removeXmlAttribute(c, 't');
       if (edit.richText === null) {
@@ -553,26 +767,50 @@ export function editOleParts(pkg: EmbeddedPackage, edits: OleEdits): Record<stri
       if (edit.value !== null && edit.value !== undefined) {
         setXmlAttribute(c, 't', typeof edit.value === 'string' ? 'inlineStr' : typeof edit.value === 'boolean' ? 'b' : 'n');
         const n = typeof edit.value === 'string' ? addNs(addNs(c, 'is', SS), 't', SS) : addNs(c, 'v', SS);
-        append(n, createXmlText(typeof edit.value === 'boolean' ? edit.value ? '1' : '0' : String(edit.value)));
+        append(n, createXmlText(typeof edit.value === 'boolean' ? (edit.value ? '1' : '0') : String(edit.value)));
         if (typeof edit.value === 'string') setXmlAttribute(n, 'xml:space', 'preserve');
       }
       touchedCalc = true;
     }
-    const dimension = child(tree.root, 'dimension'); if (dimension) removeXmlChild(tree.root, dimension);
+    const dimension = child(tree.root, 'dimension');
+    if (dimension) removeXmlChild(tree.root, dimension);
     removeXmlAttribute(row, 'spans');
   }
   for (const [part, tree] of trees) changes[part] = serializeXmlTreeBytes(tree);
   if (touchedCalc) {
-    const main = parseXmlTree(changes[pkg.main] ?? pkg.parts[pkg.main]); let calc = child(main.root, 'calcPr');
-    if (!calc) { calc = createXmlElement('calcPr', { attributes: [['xmlns', SS]] }); const order = ['oleSize', 'customWorkbookViews', 'pivotCaches', 'smartTagPr', 'smartTagTypes', 'webPublishing', 'fileRecoveryPr', 'webPublishObjects', 'extLst']; append(main.root, calc, xmlElementChildren(main.root).find((n) => order.includes(n.localName)) ?? null); }
-    setXmlAttribute(calc, 'fullCalcOnLoad', '1'); setXmlAttribute(calc, 'forceFullCalc', '1'); setXmlAttribute(calc, 'calcMode', 'auto');
-    changes[pkg.main] = serializeXmlTreeBytes(main);
-    const rels = parseXmlTree(changes[relPart(pkg.main)] ?? pkg.parts[relPart(pkg.main)]), types = parseXmlTree(changes['[Content_Types].xml'] ?? pkg.parts['[Content_Types].xml']);
-    for (const r of children(rels.root, 'Relationship')) if (attr(r, 'Type') === `${R}/calcChain`) {
-      const part = resolvePart(pkg.main, attr(r, 'Target')!); changes[part] = null; removeXmlChild(rels.root, r);
-      for (const declaration of children(types.root, 'Override')) if (attr(declaration, 'PartName') === '/' + part) removeXmlChild(types.root, declaration);
+    const main = parseXmlTree(changes[pkg.main] ?? pkg.parts[pkg.main]);
+    let calc = child(main.root, 'calcPr');
+    if (!calc) {
+      calc = createXmlElement('calcPr', { attributes: [['xmlns', SS]] });
+      const order = [
+        'oleSize',
+        'customWorkbookViews',
+        'pivotCaches',
+        'smartTagPr',
+        'smartTagTypes',
+        'webPublishing',
+        'fileRecoveryPr',
+        'webPublishObjects',
+        'extLst',
+      ];
+      append(main.root, calc, xmlElementChildren(main.root).find((n) => order.includes(n.localName)) ?? null);
     }
-    changes[relPart(pkg.main)] = serializeXmlTreeBytes(rels); changes['[Content_Types].xml'] = serializeXmlTreeBytes(types);
+    setXmlAttribute(calc, 'fullCalcOnLoad', '1');
+    setXmlAttribute(calc, 'forceFullCalc', '1');
+    setXmlAttribute(calc, 'calcMode', 'auto');
+    changes[pkg.main] = serializeXmlTreeBytes(main);
+    const rels = parseXmlTree(changes[relPart(pkg.main)] ?? pkg.parts[relPart(pkg.main)]),
+      types = parseXmlTree(changes['[Content_Types].xml'] ?? pkg.parts['[Content_Types].xml']);
+    for (const r of children(rels.root, 'Relationship'))
+      if (attr(r, 'Type') === `${R}/calcChain`) {
+        const part = resolvePart(pkg.main, attr(r, 'Target')!);
+        changes[part] = null;
+        removeXmlChild(rels.root, r);
+        for (const declaration of children(types.root, 'Override'))
+          if (attr(declaration, 'PartName') === '/' + part) removeXmlChild(types.root, declaration);
+      }
+    changes[relPart(pkg.main)] = serializeXmlTreeBytes(rels);
+    changes['[Content_Types].xml'] = serializeXmlTreeBytes(types);
   }
   return changes;
 }

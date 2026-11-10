@@ -2,14 +2,9 @@ import type { OpcPackage } from '@web-ppt/core';
 import { equalBytes } from './bytes';
 import { createOwnedPackage, releaseOwnedPackage } from './package-owner';
 import type { OpcPartChanges, OpcPatchResult } from './types';
-import {
-  parseZipArchive, repackZipParts, rewriteZipArchive, ZipPassthroughUnsupported,
-} from './zip';
+import { parseZipArchive, repackZipParts, rewriteZipArchive, ZipPassthroughUnsupported } from './zip';
 
-function effectiveReplacements(
-  source: OpcPackage,
-  changes: OpcPartChanges,
-): Map<string, Uint8Array | null> {
+function effectiveReplacements(source: OpcPackage, changes: OpcPartChanges): Map<string, Uint8Array | null> {
   const replacements = new Map<string, Uint8Array | null>();
   for (const [name, bytes] of Object.entries(changes)) {
     validatePartName(name);
@@ -26,8 +21,13 @@ function effectiveReplacements(
 
 function validatePartName(name: string): void {
   const segments = name.split('/');
-  if (!name || name.startsWith('/') || name.endsWith('/') || name.includes('\\')
-    || segments.some((segment) => !segment || segment === '.' || segment === '..')) {
+  if (
+    !name
+    || name.startsWith('/')
+    || name.endsWith('/')
+    || name.includes('\\')
+    || segments.some((segment) => !segment || segment === '.' || segment === '..')
+  ) {
     throw new Error(`非法 OPC part 路径：${name}`);
   }
 }
@@ -53,11 +53,7 @@ export function createOpcPackage(parts: Readonly<Record<string, Uint8Array>>): O
   };
 }
 
-function nextPackage(
-  source: OpcPackage,
-  bytes: Uint8Array,
-  replacements: ReadonlyMap<string, Uint8Array | null>,
-): OpcPackage {
+function nextPackage(source: OpcPackage, bytes: Uint8Array, replacements: ReadonlyMap<string, Uint8Array | null>): OpcPackage {
   const parts: Record<string, Uint8Array> = Object.create(null);
   for (const [name, part] of Object.entries(source.parts)) {
     if (replacements.get(name) !== null) parts[name] = replacements.get(name) ?? part;
@@ -65,8 +61,13 @@ function nextPackage(
   for (const [name, part] of replacements) if (part !== null) parts[name] = part;
   Object.freeze(parts);
   // replacements 已排除逐字相同的 part；没变的媒体可直接沿用 URL，不再同步扫描大字节。
-  const assets = Object.freeze(Object.fromEntries(Object.entries(source.assets ?? {}).filter(([, asset]) =>
-    !!asset.sourcePart && !!parts[asset.sourcePart] && !replacements.has(asset.sourcePart))));
+  const assets = Object.freeze(
+    Object.fromEntries(
+      Object.entries(source.assets ?? {}).filter(
+        ([, asset]) => !!asset.sourcePart && !!parts[asset.sourcePart] && !replacements.has(asset.sourcePart),
+      ),
+    ),
+  );
   return createOwnedPackage(bytes, parts, assets);
 }
 

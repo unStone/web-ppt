@@ -21,17 +21,18 @@ export function assertImageCrop(value: unknown, label: string): asserts value is
 
 /** srcRect 用十万分数保存；命令入口先收敛，避免保存重开制造脏状态。 */
 export function normalizeImageCrop(crop: ImageCrop): ImageCrop {
-  const normalized = Object.fromEntries(FIELDS.map((field) => [
-    field, Math.round(crop[field] * 100000) / 100000,
-  ])) as unknown as ImageCrop;
+  const normalized = Object.fromEntries(FIELDS.map((field) => [field, Math.round(crop[field] * 100000) / 100000])) as unknown as ImageCrop;
   assertImageCrop(normalized, '量化后的裁剪');
   return normalized;
 }
 
 /** 海报只能改普通媒体宿主的 blip，不能越过兼容分支或开放媒体裁剪。 */
 export function canEditImageContent(record: ElementRecord, poster = false): record is ElementRecord & { src: ImageElement } {
-  return record.src.kind === 'image' && !record.src.editInfo?.requiresOriginal
-    && record.meta.editable === (record.src.media ? (poster ? 'frame' : null) : 'full');
+  return (
+    record.src.kind === 'image'
+    && !record.src.editInfo?.requiresOriginal
+    && record.meta.editable === (record.src.media ? (poster ? 'frame' : null) : 'full')
+  );
 }
 
 export function queryElementCrop(doc: EditDoc, ids: readonly ElementId[]): ElementCropState {

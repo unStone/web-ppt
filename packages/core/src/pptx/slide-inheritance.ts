@@ -79,8 +79,7 @@ function parseTheme(root: Element | null): Theme {
   const format = walk(root, 'themeElements', 'fmtScheme');
   const elements = (name: string): Element[] => {
     const out: Element[] = [];
-    for (let current = kid(format, name)?.firstElementChild ?? null;
-      current; current = current.nextElementSibling) out.push(current);
+    for (let current = kid(format, name)?.firstElementChild ?? null; current; current = current.nextElementSibling) out.push(current);
     return out;
   };
   return {
@@ -124,8 +123,18 @@ export function slideInheritance(
   const masterPath = layoutPath ? relByType(layoutRels, '/slideMaster') : null;
   const masterRoot = masterPath ? pkg.xml(masterPath) : null;
   return buildInheritance(
-    pkg, slideRoot, layoutPath, layoutRoot, masterPath, masterRoot,
-    presentationRoot, tableStyles, slideIdMap, slideNum, edit, sharedDocDefaults,
+    pkg,
+    slideRoot,
+    layoutPath,
+    layoutRoot,
+    masterPath,
+    masterRoot,
+    presentationRoot,
+    tableStyles,
+    slideIdMap,
+    slideNum,
+    edit,
+    sharedDocDefaults,
   );
 }
 
@@ -141,8 +150,18 @@ export function masterInheritance(
   sharedDocDefaults?: SharedDocDefaults,
 ): SlideInheritance {
   return buildInheritance(
-    pkg, null, null, null, masterPath, pkg.xml(masterPath),
-    presentationRoot, tableStyles, slideIdMap, slideNum, edit, sharedDocDefaults,
+    pkg,
+    null,
+    null,
+    null,
+    masterPath,
+    pkg.xml(masterPath),
+    presentationRoot,
+    tableStyles,
+    slideIdMap,
+    slideNum,
+    edit,
+    sharedDocDefaults,
   );
 }
 
@@ -168,14 +187,14 @@ function buildInheritance(
   if (clrMapElement) {
     for (const attribute of Array.from(clrMapElement.attributes)) clrMap[attribute.localName] = attribute.value;
   }
-  const override = walk(slideRoot, 'clrMapOvr', 'overrideClrMapping')
-    ?? walk(layoutRoot, 'clrMapOvr', 'overrideClrMapping');
+  const override = walk(slideRoot, 'clrMapOvr', 'overrideClrMapping') ?? walk(layoutRoot, 'clrMapOvr', 'overrideClrMapping');
   if (override) for (const attribute of Array.from(override.attributes)) clrMap[attribute.localName] = attribute.value;
   const ctx: ColorCtx = { theme: theme.colors, clrMap };
   // defaultTextStyle 可以引用主题字体和方案色；共享已求值结果时必须包含完整颜色映射上下文。
   const defaultsKey = `${themePath ?? ''}\0${Object.entries(clrMap)
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([name, value]) => `${name}=${value}`).join(';')}`;
+    .map(([name, value]) => `${name}=${value}`)
+    .join(';')}`;
   let docDefaults = sharedDocDefaults?.get(defaultsKey);
   if (!docDefaults) {
     docDefaults = { lvls: [] };
@@ -203,9 +222,21 @@ function buildInheritance(
     }
   }
   const envFor = (partPath: string | null, phAware: boolean): Env => ({
-    pkg, ctx, theme, rels: partPath ? pkg.rels(partPath) : {}, partPath: partPath ?? '',
-    docDefaults, masterStyles, layoutPh: phAware ? layoutPh : [], masterPh: phAware ? masterPh : [],
-    slideNum, tableStyles, hiddenPh, slideIdMap, edit, textLevelTemplateCache,
+    pkg,
+    ctx,
+    theme,
+    rels: partPath ? pkg.rels(partPath) : {},
+    partPath: partPath ?? '',
+    docDefaults,
+    masterStyles,
+    layoutPh: phAware ? layoutPh : [],
+    masterPh: phAware ? masterPh : [],
+    slideNum,
+    tableStyles,
+    hiddenPh,
+    slideIdMap,
+    edit,
+    textLevelTemplateCache,
   });
   return { layoutPath, layoutRoot, masterPath, masterRoot, masterTree, layoutTree, envFor };
 }

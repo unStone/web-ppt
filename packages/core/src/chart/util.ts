@@ -53,8 +53,7 @@ export function shapeEl(
   };
 }
 
-export const rectPath = (w: number, h: number): string =>
-  `M 0 0 L ${nf(w)} 0 L ${nf(w)} ${nf(h)} L 0 ${nf(h)} Z`;
+export const rectPath = (w: number, h: number): string => `M 0 0 L ${nf(w)} 0 L ${nf(w)} ${nf(h)} L 0 ${nf(h)} Z`;
 
 export function rectEl(r: Rect, fill: Fill | null, stroke: Stroke | null): ShapeElement {
   return shapeEl(r.x, r.y, r.w, r.h, rectPath(r.w, r.h), fill, stroke);
@@ -65,33 +64,28 @@ export function lineEl(x1: number, y1: number, x2: number, y2: number, stroke: S
   if (![x1, y1, x2, y2].every(Number.isFinite)) return null;
   const x = Math.min(x1, x2);
   const y = Math.min(y1, y2);
-  return shapeEl(x, y, Math.abs(x2 - x1), Math.abs(y2 - y1),
-    `M ${nf(x1 - x)} ${nf(y1 - y)} L ${nf(x2 - x)} ${nf(y2 - y)}`, null, stroke);
+  return shapeEl(x, y, Math.abs(x2 - x1), Math.abs(y2 - y1), `M ${nf(x1 - x)} ${nf(y1 - y)} L ${nf(x2 - x)} ${nf(y2 - y)}`, null, stroke);
 }
 
 export type Pt = [number, number];
 
 /** 多段折线（每段一个 subpath），坐标为图表局部绝对坐标，内部转成相对包围盒的 path */
-export function polyEl(
-  runs: Pt[][],
-  fill: Fill | null,
-  stroke: Stroke | null,
-  close: boolean,
-): ShapeElement | null {
-  const valid = runs
-    .map((r) => r.filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y)))
-    .filter((r) => r.length >= (close ? 3 : 2));
+export function polyEl(runs: Pt[][], fill: Fill | null, stroke: Stroke | null, close: boolean): ShapeElement | null {
+  const valid = runs.map((r) => r.filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y))).filter((r) => r.length >= (close ? 3 : 2));
   if (!valid.length) return null;
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const run of valid) {
     for (const [x, y] of run) {
-      minX = Math.min(minX, x); minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
     }
   }
-  const d = valid
-    .map((run) => 'M ' + run.map(([x, y]) => `${nf(x - minX)} ${nf(y - minY)}`).join(' L ') + (close ? ' Z' : ''))
-    .join(' ');
+  const d = valid.map((run) => 'M ' + run.map(([x, y]) => `${nf(x - minX)} ${nf(y - minY)}`).join(' L ') + (close ? ' Z' : '')).join(' ');
   return shapeEl(minX, minY, maxX - minX, maxY - minY, d, fill, stroke);
 }
 
@@ -200,12 +194,14 @@ export function toRgb(color: string): [number, number, number] {
   const s = color.trim();
   if (s.startsWith('#')) {
     const h = s.slice(1);
-    const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h.padStart(6, '0');
-    return [
-      parseInt(full.slice(0, 2), 16) || 0,
-      parseInt(full.slice(2, 4), 16) || 0,
-      parseInt(full.slice(4, 6), 16) || 0,
-    ];
+    const full =
+      h.length === 3
+        ? h
+            .split('')
+            .map((c) => c + c)
+            .join('')
+        : h.padStart(6, '0');
+    return [parseInt(full.slice(0, 2), 16) || 0, parseInt(full.slice(2, 4), 16) || 0, parseInt(full.slice(4, 6), 16) || 0];
   }
   const m = s.match(/-?[\d.]+/g);
   if (m && m.length >= 3) return [Number(m[0]) || 0, Number(m[1]) || 0, Number(m[2]) || 0];
@@ -262,9 +258,16 @@ export function parseFill(props: Element | null, ctx: ColorCtx): Fill | null {
 }
 
 const DASH: Record<string, number[]> = {
-  dash: [4, 3], dashDot: [4, 3, 1, 3], dot: [1, 3], lgDash: [8, 3],
-  lgDashDot: [8, 3, 1, 3], lgDashDotDot: [8, 3, 1, 3, 1, 3],
-  sysDash: [3, 3], sysDashDot: [3, 3, 1, 3], sysDashDotDot: [3, 3, 1, 3, 1, 3], sysDot: [1, 1],
+  dash: [4, 3],
+  dashDot: [4, 3, 1, 3],
+  dot: [1, 3],
+  lgDash: [8, 3],
+  lgDashDot: [8, 3, 1, 3],
+  lgDashDotDot: [8, 3, 1, 3, 1, 3],
+  sysDash: [3, 3],
+  sysDashDot: [3, 3, 1, 3],
+  sysDashDotDot: [3, 3, 1, 3, 1, 3],
+  sysDot: [1, 1],
 };
 
 export interface LnSpec {
@@ -311,9 +314,21 @@ function splitSections(code: string): string[] {
   let quoted = false;
   for (let i = 0; i < code.length; i++) {
     const ch = code[i];
-    if (ch === '"') { quoted = !quoted; cur += ch; continue; }
-    if (ch === '\\') { cur += ch + (code[i + 1] ?? ''); i++; continue; }
-    if (ch === ';' && !quoted) { out.push(cur); cur = ''; continue; }
+    if (ch === '"') {
+      quoted = !quoted;
+      cur += ch;
+      continue;
+    }
+    if (ch === '\\') {
+      cur += ch + (code[i + 1] ?? '');
+      i++;
+      continue;
+    }
+    if (ch === ';' && !quoted) {
+      out.push(cur);
+      cur = '';
+      continue;
+    }
     cur += ch;
   }
   out.push(cur);
@@ -321,7 +336,11 @@ function splitSections(code: string): string[] {
 }
 
 const literal = (s: string): string =>
-  s.replace(/\\(.)/g, '$1').replace(/"/g, '').replace(/[*_](.)/g, '').replace(/@/g, '');
+  s
+    .replace(/\\(.)/g, '$1')
+    .replace(/"/g, '')
+    .replace(/[*_](.)/g, '')
+    .replace(/@/g, '');
 
 function general(v: number): string {
   if (Number.isInteger(v)) return String(v);
@@ -399,8 +418,14 @@ export function niceScale(lo: number, hi: number, target = 5): Scale {
   let b = Number.isFinite(hi) ? hi : 1;
   if (b < a) [a, b] = [b, a];
   if (a === b) {
-    if (a === 0) { a = 0; b = 1; }
-    else { const d = Math.abs(a) * 0.5; a -= d; b += d; }
+    if (a === 0) {
+      a = 0;
+      b = 1;
+    } else {
+      const d = Math.abs(a) * 0.5;
+      a -= d;
+      b += d;
+    }
   }
   const raw = (b - a) / Math.max(1, target);
   const mag = Math.pow(10, Math.floor(Math.log10(raw)));

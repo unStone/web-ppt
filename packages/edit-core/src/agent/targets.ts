@@ -3,15 +3,23 @@ import type { DesignTarget, EditDoc, ElementId } from '../types';
 import { AgentToolError } from './errors';
 
 const SLIDE_ID_COMMANDS = new Set([
-  'MoveSlide', 'RemoveSlide', 'DuplicateSlide', 'SetBackgroundCrop', 'SetBackgroundImage',
-  'SetHidden', 'SetLayout', 'SetNotes',
+  'MoveSlide',
+  'RemoveSlide',
+  'DuplicateSlide',
+  'SetBackgroundCrop',
+  'SetBackgroundImage',
+  'SetHidden',
+  'SetLayout',
+  'SetNotes',
 ]);
 const SECTION_ID_COMMANDS = new Set(['RenameSection', 'MoveSection', 'RemoveSection']);
 
 function missing(commandIndex: number, id: string, kind: string): never {
   throw new AgentToolError('target-not-found', `命令 ${commandIndex} 找不到${kind}：${id}`, commandIndex, id);
 }
-function exists(value: unknown): value is string { return typeof value === 'string' && !!value; }
+function exists(value: unknown): value is string {
+  return typeof value === 'string' && !!value;
+}
 function sameTarget(left: DesignTarget, right: DesignTarget): boolean {
   return left.kind === right.kind && left.id === right.id;
 }
@@ -96,7 +104,8 @@ export function assertCommandTargets(doc: EditDoc, command: Command, index: numb
 
 export function assertBatchTargets(doc: EditDoc, commands: readonly Command[]): void {
   commands.forEach((command, index) => assertCommandTargets(doc, command, index));
-  const layers = commands.map((command, index) => ({ command, index }))
+  const layers = commands
+    .map((command, index) => ({ command, index }))
     .filter((entry): entry is { command: SetZCommand; index: number } => entry.command.type === 'SetZ');
   if (layers.length < 2) return;
   const first = doc.elements[layers[0].command.id];
@@ -124,9 +133,14 @@ function commandDesignTarget(doc: EditDoc, command: Command): DesignTarget | nul
   const input = command as unknown as Record<string, unknown>;
   const design = explicitDesignTarget(command);
   if (design) return design;
-  const ids: readonly string[] = command.type === 'ApplyFormat' ? [command.from, command.to]
-    : 'ids' in command && Array.isArray(command.ids) ? command.ids
-      : exists(input.id) ? [input.id] : [];
+  const ids: readonly string[] =
+    command.type === 'ApplyFormat'
+      ? [command.from, command.to]
+      : 'ids' in command && Array.isArray(command.ids)
+        ? command.ids
+        : exists(input.id)
+          ? [input.id]
+          : [];
   const targets = ids.map((id) => canvasOfElement(doc, id)).filter((target): target is DesignTarget => !!target);
   return targets[0] ?? null;
 }

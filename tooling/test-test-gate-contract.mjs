@@ -11,17 +11,16 @@ assert.equal(
   'npm run test:functional && npm run test:editor:performance',
   '本地完整测试必须复用唯一功能门禁，并额外执行性能门禁',
 );
-assert.match(
-  scripts['test:functional'],
-  /test-design-journey\.mjs/,
-  '唯一功能门禁必须包含设计旅程行为契约',
-);
+assert.match(scripts['test:functional'], /test-design-journey\.mjs/, '唯一功能门禁必须包含设计旅程行为契约');
 for (const phase of ['source', 'dist']) {
   const plan = createPlan(scripts, phase);
   const assigned = Object.values(plan.groups).flat();
   for (const leaf of plan.leaves) {
-    assert.equal(assigned.filter((command) => command.id === leaf.id).length, shardCountForLeaf(leaf, phase),
-      `${phase} 唯一门禁命令必须完整进入 CI：${leaf.command}`);
+    assert.equal(
+      assigned.filter((command) => command.id === leaf.id).length,
+      shardCountForLeaf(leaf, phase),
+      `${phase} 唯一门禁命令必须完整进入 CI：${leaf.command}`,
+    );
   }
 }
 const ci = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8');
@@ -34,21 +33,17 @@ for (const command of [
   'node tooling/ci/run-group.mjs external office',
   'node tooling/ci/run-group.mjs external ooxml',
 ]) {
-  assert.equal(ci.split(`run: ${command}\n`).length - 1, 1,
-    `CI 必须且只能执行一次外部软件门禁：${command}`);
+  assert.equal(ci.split(`run: ${command}\n`).length - 1, 1, `CI 必须且只能执行一次外部软件门禁：${command}`);
 }
-assert.equal(scripts['test:ci:office'],
+assert.equal(
+  scripts['test:ci:office'],
   'node tooling/test-edit-libreoffice-all.mjs && node tooling/test-ole-edit-libreoffice.mjs',
-  '外部软件门禁必须保留完整模型清单及 OLE 嵌入文档真实打开');
-assert.equal(scripts['test:ci:ooxml'], 'node tooling/test-ooxml-validation.mjs',
-  'CI 的 OOXML 门禁必须与本地 test:ooxml 执行同一脚本');
+  '外部软件门禁必须保留完整模型清单及 OLE 嵌入文档真实打开',
+);
+assert.equal(scripts['test:ci:ooxml'], 'node tooling/test-ooxml-validation.mjs', 'CI 的 OOXML 门禁必须与本地 test:ooxml 执行同一脚本');
 for (const workflow of ['release.yml']) {
   const source = readFileSync(resolve(root, '.github/workflows', workflow), 'utf8');
-  assert.equal(
-    source.match(/run: npm run test:functional/g)?.length,
-    1,
-    `${workflow} 必须且只能执行一次唯一功能门禁`,
-  );
+  assert.equal(source.match(/run: npm run test:functional/g)?.length, 1, `${workflow} 必须且只能执行一次唯一功能门禁`);
   // 托管 runner 的 p95 受宿主负载干扰，性能采样不得混进功能门禁
   assert.doesNotMatch(source, /test:editor:performance|bench:edit/, `${workflow} 不执行性能采样`);
 }
@@ -60,19 +55,20 @@ for (const command of ['npm run test:editor:performance', 'npm run bench:edit'])
 }
 assert.match(performance, /schedule:/, 'performance.yml 必须定时运行');
 const setupAction = readFileSync(resolve(root, '.github/actions/setup/action.yml'), 'utf8');
-assert.ok(setupAction.includes('uses: actions/setup-python@')
-  && setupAction.includes('run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt'),
-'CI 共享环境必须安装固定字体 / PDF 依赖');
+assert.ok(
+  setupAction.includes('uses: actions/setup-python@')
+    && setupAction.includes('run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt'),
+  'CI 共享环境必须安装固定字体 / PDF 依赖',
+);
 // 独立调用完整门禁的流水线仍须自行准备 PDF 读取依赖。
 const workflows = resolve(root, '.github/workflows');
-for (const workflow of readdirSync(workflows).filter(name => name !== 'ci.yml' && /\.ya?ml$/.test(name))) {
+for (const workflow of readdirSync(workflows).filter((name) => name !== 'ci.yml' && /\.ya?ml$/.test(name))) {
   const source = readFileSync(resolve(workflows, workflow), 'utf8');
   const test = source.search(/run:.*(?:npm run (?:test:functional|test:site:i18n|verify)|node tooling\/test-site-i18n-static\.mjs)/);
   if (test < 0) continue;
   const setup = source.indexOf('uses: actions/setup-python@');
   const install = source.indexOf('run: python3 -m pip install --target out/font-glyphs/python -r tooling/font-glyph-requirements.txt');
-  assert.ok(setup >= 0 && install > setup && install < test,
-    `${workflow} 的 PDF 验证必须先准备 Python 和固定字体 / PDF 依赖`);
+  assert.ok(setup >= 0 && install > setup && install < test, `${workflow} 的 PDF 验证必须先准备 Python 和固定字体 / PDF 依赖`);
 }
 execFileSync(process.execPath, [resolve(root, 'tooling/ci/test.mjs')], { cwd: root, stdio: 'inherit' });
 execFileSync(process.execPath, [resolve(root, 'tooling/test-ci-trust.mjs')], { cwd: root, stdio: 'inherit' });

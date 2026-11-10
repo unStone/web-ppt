@@ -5,8 +5,7 @@ export const MIN_SLIDE_SIZE = 96;
 export const MAX_SLIDE_SIZE = 5_376;
 
 export function assertSlideSize(value: unknown, label: string): asserts value is number {
-  if (typeof value !== 'number' || !Number.isFinite(value)
-    || value < MIN_SLIDE_SIZE || value > MAX_SLIDE_SIZE) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < MIN_SLIDE_SIZE || value > MAX_SLIDE_SIZE) {
     throw new Error(`${label} 必须是 ${MIN_SLIDE_SIZE}–${MAX_SLIDE_SIZE} 之间的有限数`);
   }
 }

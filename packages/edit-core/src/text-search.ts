@@ -7,7 +7,10 @@ import type { FindTextRequest, TextSearchMatch, TextSearchScope } from './text-s
 
 const WORD = /[\p{L}\p{M}\p{N}_]/u;
 
-interface MatchOffset { readonly from: number; readonly to: number }
+interface MatchOffset {
+  readonly from: number;
+  readonly to: number;
+}
 
 function assertScope(doc: EditDoc, value: unknown): asserts value is TextSearchScope {
   if ((value as TextSearchScope | null)?.kind === 'document') {
@@ -36,14 +39,16 @@ function assertScope(doc: EditDoc, value: unknown): asserts value is TextSearchS
   throw new Error('FindText.scope.kind 无效');
 }
 
-export function assertFindTextRequest(
-  doc: EditDoc,
-  value: unknown,
-): asserts value is FindTextRequest {
+export function assertFindTextRequest(doc: EditDoc, value: unknown): asserts value is FindTextRequest {
   assertDataObject(value, ['query', 'scope', 'matchCase', 'wholeWord'], 'FindText');
   const request = value as FindTextRequest;
-  if (typeof request.query !== 'string' || !request.query.length
-    || request.query.includes('\r') || request.query.includes('\n') || request.query.includes(TEXT_ATOM)) {
+  if (
+    typeof request.query !== 'string'
+    || !request.query.length
+    || request.query.includes('\r')
+    || request.query.includes('\n')
+    || request.query.includes(TEXT_ATOM)
+  ) {
     throw new Error('FindText.query 必须是不含换行与公式占位符的非空字符串');
   }
   assertScope(doc, request.scope);
@@ -129,8 +134,7 @@ function matchKey(
   from: TextSearchMatch['range']['from'],
   to: TextSearchMatch['range']['to'],
 ): string {
-  return [slideId, id, cell ? `${cell.r}:${cell.c}` : '',
-    `${from.p}:${from.r}:${from.off}`, `${to.p}:${to.r}:${to.off}`].join('\u0000');
+  return [slideId, id, cell ? `${cell.r}:${cell.c}` : '', `${from.p}:${from.r}:${from.off}`, `${to.p}:${to.r}:${to.off}`].join('\u0000');
 }
 
 function bodyMatches(
@@ -144,16 +148,22 @@ function bodyMatches(
   let bodyOffset = 0;
   for (let paragraphIndex = 0; paragraphIndex < body.paragraphs.length; paragraphIndex++) {
     const paragraph = body.paragraphs[paragraphIndex];
-    const text = paragraph.runs.map((run) => run.math?.length ? TEXT_ATOM : run.text).join('');
+    const text = paragraph.runs.map((run) => (run.math?.length ? TEXT_ATOM : run.text)).join('');
     const protectedRanges = protectedIntervals(paragraph.runs);
     for (const offset of literalOffsets(text, request.query, request.matchCase === true)) {
-      if (protectedRanges.some((range) => offset.from < range.to && offset.to > range.from)
-        || (request.wholeWord && !isWholeWord(text, offset.from, offset.to))) continue;
+      if (
+        protectedRanges.some((range) => offset.from < range.to && offset.to > range.from)
+        || (request.wholeWord && !isWholeWord(text, offset.from, offset.to))
+      )
+        continue;
       const from = textPositionAtIndex(body, bodyOffset + offset.from);
       const to = textPositionAtIndex(body, bodyOffset + offset.to);
       matches.push({
-        key: matchKey(slideId, id, cell, from, to), slideId, id,
-        ...(cell ? { cell: { ...cell } } : {}), range: { from, to },
+        key: matchKey(slideId, id, cell, from, to),
+        slideId,
+        id,
+        ...(cell ? { cell: { ...cell } } : {}),
+        range: { from, to },
         text: text.slice(offset.from, offset.to),
         before: text.slice(Math.max(0, offset.from - 24), offset.from),
         after: text.slice(offset.to, offset.to + 24),
@@ -164,42 +174,29 @@ function bodyMatches(
   return matches;
 }
 
-function elementMatches(
-  doc: EditDoc,
-  slideId: SlideId,
-  id: ElementId,
-  request: FindTextRequest,
-): TextSearchMatch[] {
+function elementMatches(doc: EditDoc, slideId: SlideId, id: ElementId, request: FindTextRequest): TextSearchMatch[] {
   const element = effectiveElement(doc, id);
   if (element.kind === 'shape') {
     return element.text ? bodyMatches(slideId, id, element.text, request) : [];
   }
   if (element.kind !== 'table') return [];
-  return element.rows.flatMap((row, r) => row.cells.flatMap((cell, c) =>
-    !cell.merged && cell.text ? bodyMatches(slideId, id, cell.text, request, { r, c }) : []));
+  return element.rows.flatMap((row, r) =>
+    row.cells.flatMap((cell, c) => (!cell.merged && cell.text ? bodyMatches(slideId, id, cell.text, request, { r, c }) : [])),
+  );
 }
 
-function walkMatches(
-  doc: EditDoc,
-  slideId: SlideId,
-  ids: readonly ElementId[],
-  request: FindTextRequest,
-): TextSearchMatch[] {
+function walkMatches(doc: EditDoc, slideId: SlideId, ids: readonly ElementId[], request: FindTextRequest): TextSearchMatch[] {
   return ids.flatMap((id) => {
     const record = doc.elements[id];
     if (!record) throw new Error(`页面 ${slideId} 引用了不存在的元素：${id}`);
     // 隐藏组的后代会继承 visibility:hidden，不能把画布上不可见的文字暴露给搜索。
     if (record.meta.hiddenByUser) return [];
-    return [
-      ...elementMatches(doc, slideId, id, request),
-      ...(record.children ? walkMatches(doc, slideId, record.children, request) : []),
-    ];
+    return [...elementMatches(doc, slideId, id, request), ...(record.children ? walkMatches(doc, slideId, record.children, request) : [])];
   });
 }
 
 /** 无 DOM、无索引副作用；需要增量缓存的宿主可在此公开结果之上按脏页维护。 */
 export function findText(doc: EditDoc, request: FindTextRequest): readonly TextSearchMatch[] {
   assertFindTextRequest(doc, request);
-  return scopedSlides(doc, request.scope).flatMap((slideId) =>
-    walkMatches(doc, slideId, doc.slides[slideId].children, request));
+  return scopedSlides(doc, request.scope).flatMap((slideId) => walkMatches(doc, slideId, doc.slides[slideId].children, request));
 }

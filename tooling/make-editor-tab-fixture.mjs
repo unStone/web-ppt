@@ -6,7 +6,12 @@ import { deck, px, slideXml, solid, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const innerLeaf = sp({
-  x: 10, y: 10, w: 55, h: 40, fill: solid('accent6'), name: 'tab-inner-leaf',
+  x: 10,
+  y: 10,
+  w: 55,
+  h: 40,
+  fill: solid('accent6'),
+  name: 'tab-inner-leaf',
 });
 const inner = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="1101" name="tab-inner-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -26,17 +31,28 @@ ${sp({ x: 230, y: 130, w: 70, h: 50, fill: solid('accent4'), name: 'tab-child-b'
 </p:grpSp>`;
 
 const bytes = deck({
-  name: 'Editor Tab', width: 1000, height: 600,
+  name: 'Editor Tab',
+  width: 1000,
+  height: 600,
   slides: [
-    slideXml([
-      sp({ x: 80, y: 80, w: 100, h: 70, fill: solid('accent1'), name: 'tab-back' }),
-      sp({ x: 210, y: 80, w: 100, h: 70, fill: solid('accent3'), name: 'tab-middle' }),
-      outer,
-      sp({ x: 760, y: 80, w: 100, h: 70, fill: solid('accent5'), name: 'tab-front' }),
-    ].join('')),
-    slideXml(sp({
-      x: 100, y: 100, w: 120, h: 80, fill: solid('accent2'), name: 'tab-second-page',
-    })),
+    slideXml(
+      [
+        sp({ x: 80, y: 80, w: 100, h: 70, fill: solid('accent1'), name: 'tab-back' }),
+        sp({ x: 210, y: 80, w: 100, h: 70, fill: solid('accent3'), name: 'tab-middle' }),
+        outer,
+        sp({ x: 760, y: 80, w: 100, h: 70, fill: solid('accent5'), name: 'tab-front' }),
+      ].join(''),
+    ),
+    slideXml(
+      sp({
+        x: 100,
+        y: 100,
+        w: 120,
+        h: 80,
+        fill: solid('accent2'),
+        name: 'tab-second-page',
+      }),
+    ),
   ],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });

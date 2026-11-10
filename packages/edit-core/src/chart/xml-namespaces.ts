@@ -12,16 +12,10 @@ export const STRICT_PRESENTATION_NS = `${STRICT_ROOT}/presentationml/main`;
 export const STRICT_OFFICE_REL_NS = `${STRICT_ROOT}/officeDocument/relationships`;
 export const STRICT_SPREADSHEET_NS = `${STRICT_ROOT}/spreadsheetml/main`;
 
-const either = (value: string | null, transitional: string, strict: string): boolean =>
-  value === transitional || value === strict;
+const either = (value: string | null, transitional: string, strict: string): boolean => value === transitional || value === strict;
 
-export const isChartNamespace = (value: string | null): boolean =>
-  either(value, CHART_NS, STRICT_CHART_NS);
-export const isDrawingNamespace = (value: string | null): boolean =>
-  either(value, DRAWING_NS, STRICT_DRAWING_NS);
-export const isPresentationNamespace = (value: string | null): boolean =>
-  either(value, PRESENTATION_NS, STRICT_PRESENTATION_NS);
-export const isOfficeRelationshipNamespace = (value: string | null): boolean =>
-  either(value, OFFICE_REL_NS, STRICT_OFFICE_REL_NS);
-export const isSpreadsheetNamespace = (value: string | null): boolean =>
-  either(value, SPREADSHEET_NS, STRICT_SPREADSHEET_NS);
+export const isChartNamespace = (value: string | null): boolean => either(value, CHART_NS, STRICT_CHART_NS);
+export const isDrawingNamespace = (value: string | null): boolean => either(value, DRAWING_NS, STRICT_DRAWING_NS);
+export const isPresentationNamespace = (value: string | null): boolean => either(value, PRESENTATION_NS, STRICT_PRESENTATION_NS);
+export const isOfficeRelationshipNamespace = (value: string | null): boolean => either(value, OFFICE_REL_NS, STRICT_OFFICE_REL_NS);
+export const isSpreadsheetNamespace = (value: string | null): boolean => either(value, SPREADSHEET_NS, STRICT_SPREADSHEET_NS);

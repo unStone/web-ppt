@@ -12,13 +12,7 @@ import { allocateElementSpid } from './spid';
 import { resolveInsertionCanvas } from './insertion-host';
 import { GENERATED_SHAPE_DEFAULTS } from './generated-creation-defaults';
 
-function shapeMarkup(
-  spid: number,
-  name: string,
-  preset: string,
-  rect: AddShapeCommand['rect'],
-  defaults: ShapeCreationDefaults,
-): string {
+function shapeMarkup(spid: number, name: string, preset: string, rect: AddShapeCommand['rect'], defaults: ShapeCreationDefaults): string {
   return `<p:sp>
 <p:nvSpPr><p:cNvPr id="${spid}" name="${name}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${pxToEmu(rect.x)}" y="${pxToEmu(rect.y)}"/><a:ext cx="${pxToEmu(rect.w)}" cy="${pxToEmu(rect.h)}"/></a:xfrm>
@@ -51,9 +45,18 @@ function sourceShape(
 ): ShapeElement {
   const geom = resolveGeomPath({ preset, adj: {} }, rect.w, rect.h);
   return {
-    kind: 'shape', ...(spid === undefined ? {} : { id: spid }), name,
-    x: rect.x, y: rect.y, w: rect.w, h: rect.h, rot: 0, flipH: false, flipV: false,
-    path: geom.d, ...(geom.open ? { openGeom: true } : {}),
+    kind: 'shape',
+    ...(spid === undefined ? {} : { id: spid }),
+    name,
+    x: rect.x,
+    y: rect.y,
+    w: rect.w,
+    h: rect.h,
+    rot: 0,
+    flipH: false,
+    flipV: false,
+    path: geom.d,
+    ...(geom.open ? { openGeom: true } : {}),
     fill: geom.open ? { type: 'none' } : structuredClone(defaults.fill),
     stroke: structuredClone(defaults.stroke),
     effects: structuredClone(defaults.effects),
@@ -64,11 +67,12 @@ function sourceShape(
 function assertCommand(doc: EditDoc, command: AddShapeCommand) {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能新增形状');
   const canvas = resolveInsertionCanvas(doc, command, '新增形状');
-  const defaults = canvas.kind === 'layout'
-    ? resolvedLayoutTemplate(doc, canvas.id)?.defaultShape ?? doc.layouts[canvas.id].defaultShape
-    : canvas.kind === 'master'
-      ? resolvedMasterTemplate(doc, canvas.id)?.defaultShape ?? doc.masters[canvas.id].defaultShape
-    : currentShapeDefaults(doc, canvas.id) ?? (canvas.part ? undefined : GENERATED_SHAPE_DEFAULTS);
+  const defaults =
+    canvas.kind === 'layout'
+      ? (resolvedLayoutTemplate(doc, canvas.id)?.defaultShape ?? doc.layouts[canvas.id].defaultShape)
+      : canvas.kind === 'master'
+        ? (resolvedMasterTemplate(doc, canvas.id)?.defaultShape ?? doc.masters[canvas.id].defaultShape)
+        : (currentShapeDefaults(doc, canvas.id) ?? (canvas.part ? undefined : GENERATED_SHAPE_DEFAULTS));
   const target = { ...canvas, defaults };
   if (!target.defaults) throw new Error(`新增形状目标画布缺少主题默认值：${target.id}`);
   if (typeof command.preset !== 'string' || !isKnownPreset(command.preset)) {
@@ -79,27 +83,30 @@ function assertCommand(doc: EditDoc, command: AddShapeCommand) {
 }
 
 /** 新形状和 OOXML 宿主由同一组默认值构造，再走既有结构 patch 与保存主干。 */
-export function addShapePatches(
-  doc: EditDoc,
-  command: AddShapeCommand,
-  origin: string,
-): CommandPatches {
+export function addShapePatches(doc: EditDoc, command: AddShapeCommand, origin: string): CommandPatches {
   const { id: parent, children: siblings, defaults, part } = assertCommand(doc, command);
   const id = allocateElementId(doc);
   const spid = part ? allocateElementSpid(doc, part) : undefined;
   const name = spid === undefined ? '形状' : `形状 ${spid}`;
   const previous = siblings.length ? elementOrder(doc.elements[siblings[siblings.length - 1]]) : null;
   const record: ElementRecord = {
-    id, parent, z: fractionalIndexBetween(previous, null, id),
-    src: sourceShape(spid, name, command.preset, command.rect, defaults), ovr: {},
+    id,
+    parent,
+    z: fractionalIndexBetween(previous, null, id),
+    src: sourceShape(spid, name, command.preset, command.rect, defaults),
+    ovr: {},
     meta: {
-      editable: 'full', created: true, themeDefaultShape: true,
+      editable: 'full',
+      created: true,
+      themeDefaultShape: true,
       textTemplate: structuredClone(defaults.textTemplate),
       geom: { preset: command.preset, adj: {} },
-      ...(part && spid !== undefined ? {
-        origin: { part, spid },
-        insertion: insertionSource(spid, name, command.preset, command.rect, defaults),
-      } : {}),
+      ...(part && spid !== undefined
+        ? {
+            origin: { part, spid },
+            insertion: insertionSource(spid, name, command.preset, command.rect, defaults),
+          }
+        : {}),
     },
   };
   const value = { root: id, parent, records: { [id]: record } };

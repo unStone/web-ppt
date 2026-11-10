@@ -5,11 +5,11 @@ const fmtMB = (n: number): string => `${(n / 1048576).toFixed(1)}MB`;
 function paintStatus(stage: HTMLElement, phase: 'opening' | 'download' | 'parsing' | 'error', label: string, note = ''): void {
   stage.dataset.openPhase = phase;
   stage.innerHTML =
-    '<div class="open-status">' +
-    '<div class="open-status-label"></div>' +
-    (phase === 'error' ? '' : '<div class="open-status-bar"><i></i></div>') +
-    '<div class="open-status-note"></div>' +
-    '</div>';
+    '<div class="open-status">'
+    + '<div class="open-status-label"></div>'
+    + (phase === 'error' ? '' : '<div class="open-status-bar"><i></i></div>')
+    + '<div class="open-status-note"></div>'
+    + '</div>';
   const title = stage.querySelector('.open-status-label');
   const hint = stage.querySelector('.open-status-note');
   if (title) title.textContent = label;
@@ -53,6 +53,5 @@ export function showOpenCancelled(stage: HTMLElement, name: string): void {
 /** 默认示例不在时回到可拖入，不当成用户指定的失败。 */
 export function restoreOpenDropHint(stage: HTMLElement): void {
   delete stage.dataset.openPhase;
-  stage.innerHTML =
-    '<div id="dropHint">拖入 .pptx / .ppt 文件，或点击右上角「打开文件」<br /><small></small></div>';
+  stage.innerHTML = '<div id="dropHint">拖入 .pptx / .ppt 文件，或点击右上角「打开文件」<br /><small></small></div>';
 }

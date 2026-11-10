@@ -1,6 +1,4 @@
-import type {
-  ElementId, FormatMaskField, TableCellAddress, TextRange,
-} from '@web-ppt/edit-core';
+import type { ElementId, FormatMaskField, TableCellAddress, TextRange } from '@web-ppt/edit-core';
 
 export interface FormatPainterStartOptions {
   /** false/undefined 表示成功一次后自动退出。 */

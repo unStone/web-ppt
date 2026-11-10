@@ -63,13 +63,23 @@ export async function runTrustedClipboardContract({ evaluate, dispatchKey }) {
     delete globalThis.trustedClipboardContract;
     return result;
   })()`);
-  const eventsCorrect = result.events.length === 3
-    && result.events[0].type === 'copy' && result.events[1].type === 'paste'
+  const eventsCorrect =
+    result.events.length === 3
+    && result.events[0].type === 'copy'
+    && result.events[1].type === 'paste'
     && result.events[2].type === 'cut'
     && result.events.every((event) => event.trusted && event.prevented);
-  if (!eventsCorrect || pasted.count !== pasted.sourceCount + 1 || pasted.undo !== 1
-    || pasted.selected !== 1 || result.count !== result.sourceCount || result.undo !== 2
-    || result.selected !== 0 || !result.originalStable || !result.focused) {
+  if (
+    !eventsCorrect
+    || pasted.count !== pasted.sourceCount + 1
+    || pasted.undo !== 1
+    || pasted.selected !== 1
+    || result.count !== result.sourceCount
+    || result.undo !== 2
+    || result.selected !== 0
+    || !result.originalStable
+    || !result.focused
+  ) {
     throw new Error(`真实复制剪切粘贴快捷键失败：${JSON.stringify({ pasted, result })}`);
   }
 }

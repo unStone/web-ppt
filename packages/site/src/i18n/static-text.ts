@@ -19,7 +19,9 @@ export function bindStaticText(document: Document): (lookup: Lookup) => void {
     const encoded = element.getAttribute('data-site-text');
     const texts: Record<string, string> = encoded ? JSON.parse(encoded) : {};
     // 空译文序列化后不再有 Text 节点，仍须保留原槽位才能从英文镜像切回中文。
-    for (const index of Object.keys(texts).map(Number).sort((a, b) => a - b)) {
+    for (const index of Object.keys(texts)
+      .map(Number)
+      .sort((a, b) => a - b)) {
       const node = element.childNodes[index];
       if (!node || node.nodeType !== 3) element.insertBefore(document.createTextNode(''), node ?? null);
     }
@@ -28,8 +30,14 @@ export function bindStaticText(document: Document): (lookup: Lookup) => void {
       const source = texts[index] ?? node.nodeValue ?? '';
       if (!localized.test(source)) return;
       texts[index] = source;
-      bindings.push({ source, read: () => node.nodeValue, write: (value) => { node.nodeValue = value; },
-        previous: node.nodeValue });
+      bindings.push({
+        source,
+        read: () => node.nodeValue,
+        write: (value) => {
+          node.nodeValue = value;
+        },
+        previous: node.nodeValue,
+      });
     });
     if (Object.keys(texts).length) element.setAttribute('data-site-text', JSON.stringify(texts));
     const sourceAttributes: Record<string, string> = JSON.parse(element.getAttribute('data-site-attrs') ?? '{}');
@@ -37,9 +45,12 @@ export function bindStaticText(document: Document): (lookup: Lookup) => void {
       const source = sourceAttributes[name] ?? element.getAttribute(name);
       if (source === null || !localized.test(source)) continue;
       sourceAttributes[name] = source;
-      bindings.push({ source, read: () => element.getAttribute(name),
+      bindings.push({
+        source,
+        read: () => element.getAttribute(name),
         write: (value) => element.setAttribute(name, value),
-        previous: element.getAttribute(name) });
+        previous: element.getAttribute(name),
+      });
     }
     if (Object.keys(sourceAttributes).length) element.setAttribute('data-site-attrs', JSON.stringify(sourceAttributes));
   }

@@ -25,8 +25,11 @@ export function querySelectionPane(doc: EditDoc, slideId: SlideId): SelectionPan
   if (!slide) throw new Error(`找不到幻灯片：${slideId}`);
   const output: SelectionPaneItem[] = [];
   const visit = (
-    ids: readonly ElementId[], parentId: ElementId | null, depth: number,
-    ancestorLocked: boolean, ancestorHidden: boolean,
+    ids: readonly ElementId[],
+    parentId: ElementId | null,
+    depth: number,
+    ancestorLocked: boolean,
+    ancestorHidden: boolean,
   ): void => {
     const ordered = [...ids].sort((left, right) => {
       const leftOrder = elementOrder(doc.elements[left]);
@@ -40,18 +43,21 @@ export function querySelectionPane(doc: EditDoc, slideId: SlideId): SelectionPan
       const ownHidden = record.meta.hiddenByUser === true;
       const children = record.children ?? [];
       output.push({
-        id, parentId, depth, kind: record.src.kind,
-        name: elementName(record), sourceName: record.src.name ?? null,
+        id,
+        parentId,
+        depth,
+        kind: record.src.kind,
+        name: elementName(record),
+        sourceName: record.src.name ?? null,
         direct: Object.prototype.hasOwnProperty.call(record.ovr, 'name'),
         editable: record.meta.editable,
-        locked: ancestorLocked || ownLocked, ownLocked,
-        hidden: ancestorHidden || ownHidden, ownHidden,
+        locked: ancestorLocked || ownLocked,
+        ownLocked,
+        hidden: ancestorHidden || ownHidden,
+        ownHidden,
         hasChildren: children.length > 0,
       });
-      if (children.length) visit(
-        children, id, depth + 1,
-        ancestorLocked || ownLocked, ancestorHidden || ownHidden,
-      );
+      if (children.length) visit(children, id, depth + 1, ancestorLocked || ownLocked, ancestorHidden || ownHidden);
     }
   };
   // 版式切换保留旧来源记录用于撤销/保存，但它们不再属于当前交互树，不能在窗格中形成“幽灵对象”。

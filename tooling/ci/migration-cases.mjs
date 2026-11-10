@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 
 /** 合并阶段从运行时唯一清单取证；不执行迁移脚本，也不让每个 case 加载 TypeScript。 */
 export function readMigrationCaseNames(file) {
@@ -11,10 +11,13 @@ export function readMigrationCaseNames(file) {
   if (source.parseDiagnostics.length) {
     fail(ts.flattenDiagnosticMessageText(source.parseDiagnostics[0].messageText, '\n'));
   }
-  const declarations = source.statements.filter(ts.isVariableStatement).flatMap((statement) =>
-    statement.declarationList.declarations.filter((declaration) =>
-      ts.isIdentifier(declaration.name) && declaration.name.text === 'cases')
-      .map((declaration) => ({ statement, declaration })));
+  const declarations = source.statements
+    .filter(ts.isVariableStatement)
+    .flatMap((statement) =>
+      statement.declarationList.declarations
+        .filter((declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === 'cases')
+        .map((declaration) => ({ statement, declaration })),
+    );
   if (declarations.length !== 1) fail(`要求唯一顶层 const cases，实际找到 ${declarations.length} 个`);
   const { statement, declaration } = declarations[0];
   if (!(statement.declarationList.flags & ts.NodeFlags.Const)) fail('cases 必须使用 const 声明', declaration);

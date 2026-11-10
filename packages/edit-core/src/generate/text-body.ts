@@ -37,27 +37,35 @@ function generatedRunProperties(run: TextRun, paragraph?: Paragraph): string {
 }
 
 export function generatedTextBody(body: TextBody, part: string, spid: number, prefix = 'p', tableStyleAware = false): string {
-  const paragraphs = body.paragraphs.map((paragraph, paragraphIndex) => {
-    const properties = (run: TextRun) => generatedRunProperties(run, tableStyleAware ? paragraph : undefined);
-    const mathProperties = paragraph.runs.filter(run => run.math?.length).map(properties);
-    if (mathProperties.some(properties => properties !== mathProperties[0])) {
-      throw new Error(`段落 ${paragraphIndex + 1} 的公式需要不同字符属性，当前不能共用段落默认值`);
-    }
-    const runs = paragraph.runs.map((run, runIndex) => {
-      const text = esc(run.text);
-      if (run.math?.length) {
-        const omml = `<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">${mathMarkup(run.math)}</m:oMath>`;
-        const content = paragraph.runs.length === 1
-          ? `<m:oMathPara xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">${omml}</m:oMathPara>` : omml;
-        return `<a14:m xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">${content}</a14:m>`;
+  const paragraphs = body.paragraphs
+    .map((paragraph, paragraphIndex) => {
+      const properties = (run: TextRun) => generatedRunProperties(run, tableStyleAware ? paragraph : undefined);
+      const mathProperties = paragraph.runs.filter((run) => run.math?.length).map(properties);
+      if (mathProperties.some((properties) => properties !== mathProperties[0])) {
+        throw new Error(`段落 ${paragraphIndex + 1} 的公式需要不同字符属性，当前不能共用段落默认值`);
       }
-      if (!run.field) return `<a:r>${hasNativeText(run) ? properties(run) : ''}<a:t>${text}</a:t></a:r>`;
-      const id = generatedFieldId(part, spid, paragraphIndex, runIndex);
-      return `<a:fld id="${id}" type="${esc(run.field)}">${properties(run)}<a:t>${text}</a:t></a:fld>`;
-    }).join('');
-    const math = paragraph.runs.find(run => run.math?.length);
-    const defaults = math ? `<a:pPr lvl="${paragraph.lvl}" rtl="${paragraph.rtl ? '1' : '0'}">${properties(math).replace(/a:rPr/g, 'a:defRPr')}</a:pPr>` : '';
-    return `<a:p>${defaults}${runs}<a:endParaRPr/></a:p>`;
-  }).join('');
+      const runs = paragraph.runs
+        .map((run, runIndex) => {
+          const text = esc(run.text);
+          if (run.math?.length) {
+            const omml = `<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">${mathMarkup(run.math)}</m:oMath>`;
+            const content =
+              paragraph.runs.length === 1
+                ? `<m:oMathPara xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">${omml}</m:oMathPara>`
+                : omml;
+            return `<a14:m xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">${content}</a14:m>`;
+          }
+          if (!run.field) return `<a:r>${hasNativeText(run) ? properties(run) : ''}<a:t>${text}</a:t></a:r>`;
+          const id = generatedFieldId(part, spid, paragraphIndex, runIndex);
+          return `<a:fld id="${id}" type="${esc(run.field)}">${properties(run)}<a:t>${text}</a:t></a:fld>`;
+        })
+        .join('');
+      const math = paragraph.runs.find((run) => run.math?.length);
+      const defaults = math
+        ? `<a:pPr lvl="${paragraph.lvl}" rtl="${paragraph.rtl ? '1' : '0'}">${properties(math).replace(/a:rPr/g, 'a:defRPr')}</a:pPr>`
+        : '';
+      return `<a:p>${defaults}${runs}<a:endParaRPr/></a:p>`;
+    })
+    .join('');
   return `<${prefix}:txBody><a:bodyPr>${warpMarkup(body.warp)}</a:bodyPr><a:lstStyle/>${paragraphs}</${prefix}:txBody>`;
 }

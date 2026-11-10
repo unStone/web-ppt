@@ -22,10 +22,18 @@ export async function runTrustedTableCellTextContract({ evaluate, request }) {
     editable.focus({ preventScroll: true });
   })()`);
   await request('Input.dispatchKeyEvent', {
-    type: 'rawKeyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9,
+    type: 'rawKeyDown',
+    key: 'Tab',
+    code: 'Tab',
+    windowsVirtualKeyCode: 9,
+    nativeVirtualKeyCode: 9,
   });
   await request('Input.dispatchKeyEvent', {
-    type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9,
+    type: 'keyUp',
+    key: 'Tab',
+    code: 'Tab',
+    windowsVirtualKeyCode: 9,
+    nativeVirtualKeyCode: 9,
   });
   await request('Input.insertText', { text: '真' });
   await request('Input.imeSetComposition', { text: '中', selectionStart: 1, selectionEnd: 1 });
@@ -54,8 +62,7 @@ export async function runTrustedTableCellTextContract({ evaluate, request }) {
     };
     return output;
   })()`);
-  if (!stable || !stableUpdate || !result.tab || !result.inserted
-    || !result.trustedInput || !result.composition) {
+  if (!stable || !stableUpdate || !result.tab || !result.inserted || !result.trustedInput || !result.composition) {
     throw new Error(`真实单元格 Tab/IME 失败：${JSON.stringify({ stable, stableUpdate, ...result })}`);
   }
   await evaluate(`(() => {
@@ -70,10 +77,18 @@ export async function runTrustedTableCellTextContract({ evaluate, request }) {
     state.mount.querySelector('[data-ppt-text-editor]').focus({ preventScroll: true });
   })()`);
   await request('Input.dispatchKeyEvent', {
-    type: 'rawKeyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9,
+    type: 'rawKeyDown',
+    key: 'Tab',
+    code: 'Tab',
+    windowsVirtualKeyCode: 9,
+    nativeVirtualKeyCode: 9,
   });
   await request('Input.dispatchKeyEvent', {
-    type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9,
+    type: 'keyUp',
+    key: 'Tab',
+    code: 'Tab',
+    windowsVirtualKeyCode: 9,
+    nativeVirtualKeyCode: 9,
   });
   const appended = await evaluate(`(() => {
     const state = globalThis.editorContract.tableCellTextResult;

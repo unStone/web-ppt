@@ -54,9 +54,14 @@ export class TextAutofitThrottle {
   }
 
   settle(active: ActiveText, expectedTarget: TextAutofitTarget): boolean {
-    if (!active.text.autoFitCompute || active.text.autoFitShape
+    if (
+      !active.text.autoFitCompute
+      || active.text.autoFitShape
       || !sameTarget(targetOf(active), expectedTarget)
-      || !this.current || !sameTarget(this.current.target, expectedTarget)) return false;
+      || !this.current
+      || !sameTarget(this.current.target, expectedTarget)
+    )
+      return false;
     const scale = resolvedScale(active);
     if (scale === this.current.scale) return false;
     this.current = { target: targetOf(active), scale };

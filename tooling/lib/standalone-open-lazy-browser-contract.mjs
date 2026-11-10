@@ -1,6 +1,8 @@
 export async function runStandaloneOpenLazyContract({ evaluate, request, waitFor, click }) {
-  const standalone = (query = '') => evaluate(`new URL(${JSON.stringify(query ? `/standalone.html?${query}` : '/standalone.html')}, location.href).href`);
-  const openLocal = (bytes, name) => evaluate(`(() => {
+  const standalone = (query = '') =>
+    evaluate(`new URL(${JSON.stringify(query ? `/standalone.html?${query}` : '/standalone.html')}, location.href).href`);
+  const openLocal = (bytes, name) =>
+    evaluate(`(() => {
     const file = new File([Uint8Array.from(${JSON.stringify([...bytes])})], ${JSON.stringify(name)});
     const input = document.querySelector('#fileInput');
     const transfer = new DataTransfer();
@@ -23,13 +25,17 @@ export async function runStandaloneOpenLazyContract({ evaluate, request, waitFor
   }
 
   await click('#btnNotes');
-  await waitFor("document.querySelector('#notesPanel')?.hidden === false && (document.querySelector('#notesBody')?.textContent ?? '').length > 0", '本页备注仍可打开');
+  await waitFor(
+    "document.querySelector('#notesPanel')?.hidden === false && (document.querySelector('#notesBody')?.textContent ?? '').length > 0",
+    '本页备注仍可打开',
+  );
 
   await evaluate("document.querySelector('#searchInput').value = '形状库'");
   await evaluate("document.querySelector('#searchInput').dispatchEvent(new Event('input', { bubbles: true }))");
   await waitFor("document.querySelector('#searchHits')?.textContent.includes('页')", '用户打字后才查找');
 
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const bytes = await fetch('/demo/showcase.pptx').then((r) => r.arrayBuffer());
     const file = new File([bytes], 'after-search.pptx');
     const input = document.querySelector('#fileInput');
@@ -37,7 +43,9 @@ export async function runStandaloneOpenLazyContract({ evaluate, request, waitFor
     transfer.items.add(file);
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+    true,
+  );
   await waitFor(
     "document.querySelector('#fileInfo')?.textContent.includes('after-search.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'",
     '换文件打开成功',
@@ -51,8 +59,15 @@ export async function runStandaloneOpenLazyContract({ evaluate, request, waitFor
   const pdf = new TextEncoder().encode('%PDF-1.4\ntrailer\n%%EOF');
   await evaluate("document.querySelector('#searchInput').value = '残留'");
   await openLocal(pdf, 'not-a-deck.pdf');
-  await waitFor("document.querySelector('#fileInfo')?.textContent === '未打开文件' && document.querySelector('#stage')?.dataset.openPhase === 'error'", '认错后回到未打开');
-  if (await evaluate("document.querySelector('#searchInput')?.value !== '' || document.querySelector('#searchHits')?.textContent !== '' || !document.querySelector('#searchInput')?.disabled")) {
+  await waitFor(
+    "document.querySelector('#fileInfo')?.textContent === '未打开文件' && document.querySelector('#stage')?.dataset.openPhase === 'error'",
+    '认错后回到未打开',
+  );
+  if (
+    await evaluate(
+      "document.querySelector('#searchInput')?.value !== '' || document.querySelector('#searchHits')?.textContent !== '' || !document.querySelector('#searchInput')?.disabled",
+    )
+  ) {
     throw new Error('打开失败没有清空并禁用搜索');
   }
 

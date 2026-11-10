@@ -90,9 +90,14 @@ function sourceAnchors(
   upper: FractionalIndex | null,
   targets: ReadonlySet<ElementId>,
 ): Set<ElementId> {
-  const candidates = ids.map((id) => doc.elements[id]).filter((record) =>
-    !!record && (lower === null || lower < record.z) && (upper === null || record.z < upper));
-  interface State { index: number; length: number; score: number }
+  const candidates = ids
+    .map((id) => doc.elements[id])
+    .filter((record) => !!record && (lower === null || lower < record.z) && (upper === null || record.z < upper));
+  interface State {
+    index: number;
+    length: number;
+    score: number;
+  }
   const better = (left: State | null, right: State | null): State | null => {
     if (!left) return right;
     if (!right) return left;
@@ -100,7 +105,7 @@ function sourceAnchors(
     if (left.score !== right.score) return left.score > right.score ? left : right;
     return left.index < right.index ? left : right;
   };
-  const ranks = [...candidates].sort((left, right) => left.z < right.z ? -1 : 1);
+  const ranks = [...candidates].sort((left, right) => (left.z < right.z ? -1 : 1));
   const rank = new Map(ranks.map((record, index) => [record.id, index]));
   const tree: Array<State | null> = Array(ranks.length + 1).fill(null);
   const previous = candidates.map(() => -1);
@@ -112,12 +117,10 @@ function sourceAnchors(
     const state = {
       index,
       length: (before?.length ?? 0) + 1,
-      score: (before?.score ?? 0)
-        + (own(candidates[index], 'order') ? 0 : 2) + (targets.has(candidates[index].id) ? 0 : 1),
+      score: (before?.score ?? 0) + (own(candidates[index], 'order') ? 0 : 2) + (targets.has(candidates[index].id) ? 0 : 1),
     };
     previous[index] = before?.index ?? -1;
-    for (let position = rank.get(candidates[index].id)! + 1;
-      position < tree.length; position += position & -position) {
+    for (let position = rank.get(candidates[index].id)! + 1; position < tree.length; position += position & -position) {
       tree[position] = better(tree[position], state);
     }
   }
@@ -191,21 +194,13 @@ function orderPatches(
     const hadOrder = own(record, 'order');
     if (value === null ? !hadOrder : hadOrder && record.order === value) continue;
     const path = ['elements', id, 'order'] as const;
-    forward.push(value === null
-      ? { op: 'del', path, origin }
-      : { op: 'set', path, value, origin });
-    inverse.push(hadOrder
-      ? { op: 'set', path, value: record.order!, origin }
-      : { op: 'del', path, origin });
+    forward.push(value === null ? { op: 'del', path, origin } : { op: 'set', path, value, origin });
+    inverse.push(hadOrder ? { op: 'set', path, value: record.order!, origin } : { op: 'del', path, origin });
   }
   return { forward, inverse };
 }
 
-export function setZBatchPatches(
-  doc: EditDoc,
-  commands: readonly SetZCommand[],
-  origin: string,
-): CommandPatches {
+export function setZBatchPatches(doc: EditDoc, commands: readonly SetZCommand[], origin: string): CommandPatches {
   if (!commands.length) return { forward: [], inverse: [] };
   const records = commands.map((command) => assertSetZCommand(doc, command));
   const parent = records[0].parent;
@@ -218,7 +213,7 @@ export function setZBatchPatches(
   const planned = planLayerOrder(layerOrder, commands);
   const layer = new Set(layerOrder);
   let plannedIndex = 0;
-  const desired = source.map((id) => layer.has(id) ? planned[plannedIndex++] : id);
+  const desired = source.map((id) => (layer.has(id) ? planned[plannedIndex++] : id));
   if (desired.every((id, index) => id === source[index])) return { forward: [], inverse: [] };
   return orderPatches(doc, desired, layer, new Set(commands.map((command) => command.id)), origin);
 }

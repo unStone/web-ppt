@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 
 /** 源码分组按执行文件中的声明推导计数，避免漏传报告后 verify 静默跳过。 */
 export function expectedCountKeys(root, leaves) {
@@ -21,8 +21,11 @@ export function expectedCountKeys(root, leaves) {
       throw new Error(`无法读取 ${entry} 的计数声明：${ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`);
     }
     function visit(node) {
-      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)
-        && ['recordCount', 'countedAssert'].includes(node.expression.text)) {
+      if (
+        ts.isCallExpression(node)
+        && ts.isIdentifier(node.expression)
+        && ['recordCount', 'countedAssert'].includes(node.expression.text)
+      ) {
         const argument = node.arguments[0];
         if (!argument || !ts.isStringLiteralLike(argument) || !argument.text) {
           const position = source.getLineAndCharacterOfPosition(node.getStart(source));

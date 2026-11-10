@@ -1,8 +1,17 @@
 import type { TableRow } from '@web-ppt/core';
 import { initialFractionalIndex } from './fractional-index';
 import type {
-  EditDoc, ElementId, ElementRecord, TableCellColumnRef, TableCellRowRef, TableColumnId,
-  TableCellRef, TableColumnInsertion, TableMergeRegion, TableRowId, TableRowInsertion,
+  EditDoc,
+  ElementId,
+  ElementRecord,
+  TableCellColumnRef,
+  TableCellRowRef,
+  TableColumnId,
+  TableCellRef,
+  TableColumnInsertion,
+  TableMergeRegion,
+  TableRowId,
+  TableRowInsertion,
 } from './types';
 
 export interface TableGridRow {
@@ -40,23 +49,25 @@ export interface OrderedTableRow extends TableRowInsertion {
   readonly source: number | null;
 }
 
-export function sourceTableRowId(index: number): TableRowId { return `#r${index}`; }
-export function sourceTableColumnId(index: number): string { return `#c${index}`; }
-export function isReservedTableRowId(id: string): boolean { return /^#r\d+$/.test(id); }
-export function isReservedTableColumnId(id: string): boolean { return /^#c\d+$/.test(id); }
+export function sourceTableRowId(index: number): TableRowId {
+  return `#r${index}`;
+}
+export function sourceTableColumnId(index: number): string {
+  return `#c${index}`;
+}
+export function isReservedTableRowId(id: string): boolean {
+  return /^#r\d+$/.test(id);
+}
+export function isReservedTableColumnId(id: string): boolean {
+  return /^#c\d+$/.test(id);
+}
 
 export function tableGridIdentities(doc: EditDoc, id: ElementId): TableGridIdentities {
   const record = doc.elements[id];
   if (!record || record.src.kind !== 'table') throw new Error(`找不到表格：${id}`);
   return {
-    rows: [
-      ...record.src.rows.map((_, index) => sourceTableRowId(index)),
-      ...Object.keys(record.ovr.tableRows ?? {}),
-    ],
-    columns: [
-      ...record.src.colWidths.map((_, index) => sourceTableColumnId(index)),
-      ...Object.keys(record.ovr.tableColumns ?? {}),
-    ],
+    rows: [...record.src.rows.map((_, index) => sourceTableRowId(index)), ...Object.keys(record.ovr.tableRows ?? {})],
+    columns: [...record.src.colWidths.map((_, index) => sourceTableColumnId(index)), ...Object.keys(record.ovr.tableColumns ?? {})],
   };
 }
 
@@ -64,30 +75,40 @@ export function orderedTableRows(record: ElementRecord): OrderedTableRow[] {
   if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 不是表格`);
   return [
     ...record.src.rows.map((_, source) => ({
-      id: sourceTableRowId(source), rowRef: source, source,
+      id: sourceTableRowId(source),
+      rowRef: source,
+      source,
       order: initialFractionalIndex(source),
     })),
     ...Object.entries(record.ovr.tableRows ?? {}).map(([id, insertion]) => ({
-      id, rowRef: id, source: null, ...insertion,
+      id,
+      rowRef: id,
+      source: null,
+      ...insertion,
     })),
-  ].filter((row) => !record.ovr.tableRemovedRows?.[row.id])
-    .sort((left, right) => left.order < right.order ? -1 : left.order > right.order ? 1
-      : left.id < right.id ? -1 : 1);
+  ]
+    .filter((row) => !record.ovr.tableRemovedRows?.[row.id])
+    .sort((left, right) => (left.order < right.order ? -1 : left.order > right.order ? 1 : left.id < right.id ? -1 : 1));
 }
 
 export function orderedTableColumns(record: ElementRecord): OrderedTableColumn[] {
   if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 不是表格`);
   return [
     ...record.src.colWidths.map((_, source) => ({
-      id: sourceTableColumnId(source), columnRef: source, source,
+      id: sourceTableColumnId(source),
+      columnRef: source,
+      source,
       order: initialFractionalIndex(source),
     })),
     ...Object.entries(record.ovr.tableColumns ?? {}).map(([id, insertion]) => ({
-      id, columnRef: id, source: null, ...insertion,
+      id,
+      columnRef: id,
+      source: null,
+      ...insertion,
     })),
-  ].filter((column) => !record.ovr.tableRemovedColumns?.[column.id])
-    .sort((left, right) => left.order < right.order ? -1 : left.order > right.order ? 1
-      : left.id < right.id ? -1 : 1);
+  ]
+    .filter((column) => !record.ovr.tableRemovedColumns?.[column.id])
+    .sort((left, right) => (left.order < right.order ? -1 : left.order > right.order ? 1 : left.id < right.id ? -1 : 1));
 }
 
 export function tableRowById(record: ElementRecord, id: TableRowId): OrderedTableRow | null {
@@ -101,16 +122,18 @@ export function tableColumnById(record: ElementRecord, id: TableColumnId): Order
 export function sourceTableMerges(record: ElementRecord): TableMergeRegion[] {
   if (record.src.kind !== 'table') throw new Error(`元素 ${record.id} 不是表格`);
   const merges: TableMergeRegion[] = [];
-  record.src.rows.forEach((row, r) => row.cells.forEach((cell, c) => {
-    if (cell.merged || (cell.rowSpan <= 1 && cell.colSpan <= 1)) return;
-    merges.push({
-      from: { row: sourceTableRowId(r), column: sourceTableColumnId(c) },
-      to: {
-        row: sourceTableRowId(r + cell.rowSpan - 1),
-        column: sourceTableColumnId(c + cell.colSpan - 1),
-      },
-    });
-  }));
+  record.src.rows.forEach((row, r) =>
+    row.cells.forEach((cell, c) => {
+      if (cell.merged || (cell.rowSpan <= 1 && cell.colSpan <= 1)) return;
+      merges.push({
+        from: { row: sourceTableRowId(r), column: sourceTableColumnId(c) },
+        to: {
+          row: sourceTableRowId(r + cell.rowSpan - 1),
+          column: sourceTableColumnId(c + cell.colSpan - 1),
+        },
+      });
+    }),
+  );
   return merges;
 }
 
@@ -118,9 +141,7 @@ export function effectiveTableMerges(record: ElementRecord): readonly TableMerge
   return record.ovr.tableMerges ?? sourceTableMerges(record);
 }
 
-export function tableCellMergeRole(
-  record: ElementRecord, cell: TableCellRef,
-): 'anchor' | 'placeholder' | null {
+export function tableCellMergeRole(record: ElementRecord, cell: TableCellRef): 'anchor' | 'placeholder' | null {
   if (record.src.kind !== 'table') return null;
   const complete = {
     ...record,
@@ -142,8 +163,10 @@ export function tableCellMergeRole(
     ];
     if (endpoints.some((index) => index < 0)) continue;
     const [r1, c1, r2, c2] = [
-      Math.min(endpoints[0], endpoints[2]), Math.min(endpoints[1], endpoints[3]),
-      Math.max(endpoints[0], endpoints[2]), Math.max(endpoints[1], endpoints[3]),
+      Math.min(endpoints[0], endpoints[2]),
+      Math.min(endpoints[1], endpoints[3]),
+      Math.max(endpoints[0], endpoints[2]),
+      Math.max(endpoints[1], endpoints[3]),
     ];
     if (point.r < r1 || point.r > r2 || point.c < c1 || point.c > c2) continue;
     return point.r === r1 && point.c === c1 ? 'anchor' : 'placeholder';
@@ -152,7 +175,9 @@ export function tableCellMergeRole(
 }
 
 function visibleTableMerges(
-  record: ElementRecord, rows: readonly { id: string }[], columns: readonly { id: string }[],
+  record: ElementRecord,
+  rows: readonly { id: string }[],
+  columns: readonly { id: string }[],
 ): TableMergeRegion[] {
   const unrestricted = {
     ...record,
@@ -168,18 +193,18 @@ function visibleTableMerges(
     const c1 = allColumns.findIndex((column) => column.id === merge.from.column);
     const c2 = allColumns.findIndex((column) => column.id === merge.to.column);
     if ([r1, r2, c1, c2].some((index) => index < 0)) return [];
-    const remainingRows = allRows.slice(Math.min(r1, r2), Math.max(r1, r2) + 1)
-      .filter((row) => visibleRows.has(row.id));
-    const remainingColumns = allColumns.slice(Math.min(c1, c2), Math.max(c1, c2) + 1)
-      .filter((column) => visibleColumns.has(column.id));
+    const remainingRows = allRows.slice(Math.min(r1, r2), Math.max(r1, r2) + 1).filter((row) => visibleRows.has(row.id));
+    const remainingColumns = allColumns.slice(Math.min(c1, c2), Math.max(c1, c2) + 1).filter((column) => visibleColumns.has(column.id));
     if (remainingRows.length * remainingColumns.length <= 1) return [];
-    return [{
-      from: { row: remainingRows[0].id, column: remainingColumns[0].id },
-      to: {
-        row: remainingRows[remainingRows.length - 1].id,
-        column: remainingColumns[remainingColumns.length - 1].id,
+    return [
+      {
+        from: { row: remainingRows[0].id, column: remainingColumns[0].id },
+        to: {
+          row: remainingRows[remainingRows.length - 1].id,
+          column: remainingColumns[remainingColumns.length - 1].id,
+        },
       },
-    }];
+    ];
   });
 }
 
@@ -190,19 +215,18 @@ export function queryTableGrid(doc: EditDoc, id: ElementId): TableGridState {
   const rows = orderedTableRows(record).map((entry) => ({
     id: entry.id,
     source: entry.source,
-    height: record.ovr.tableRowHeights?.[entry.id] ?? (entry.source === null
-      ? source.rows[entry.template ?? source.rows.length - 1]?.height ?? 0
-      : source.rows[entry.source].height),
+    height:
+      record.ovr.tableRowHeights?.[entry.id]
+      ?? (entry.source === null ? (source.rows[entry.template ?? source.rows.length - 1]?.height ?? 0) : source.rows[entry.source].height),
   }));
   const columns = orderedTableColumns(record).map((entry) => ({
     id: entry.id,
     source: entry.source,
-    width: record.ovr.tableColumnWidths?.[entry.id] ?? (entry.source === null
-      ? source.colWidths[entry.template ?? source.colWidths.length - 1] ?? 0
-      : source.colWidths[entry.source]),
+    width:
+      record.ovr.tableColumnWidths?.[entry.id]
+      ?? (entry.source === null ? (source.colWidths[entry.template ?? source.colWidths.length - 1] ?? 0) : source.colWidths[entry.source]),
   }));
-  const merges = visibleTableMerges(record, rows, columns)
-    .map((merge) => ({ from: { ...merge.from }, to: { ...merge.to } }));
+  const merges = visibleTableMerges(record, rows, columns).map((merge) => ({ from: { ...merge.from }, to: { ...merge.to } }));
   return { rows, columns, merges };
 }
 

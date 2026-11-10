@@ -37,5 +37,5 @@ export function builtInTableStyleCatalog(): readonly BuiltInTableStyleMarkup[] {
 }
 
 export function builtInTableStyleMarkup(styleId: string | null): string | null {
-  return styleId ? BUILTIN_TABLE_STYLES[styleId.toUpperCase()] ?? null : null;
+  return styleId ? (BUILTIN_TABLE_STYLES[styleId.toUpperCase()] ?? null) : null;
 }

@@ -5,8 +5,13 @@ import type { VideoOptions } from './timing';
 /** 叠加画法所需的元素级信息：坐标为页面（或经 placeGroupChild 折算后的组局部）坐标 */
 interface OverlayElement {
   el: HTMLVideoElement;
-  x: number; y: number; w: number; h: number;
-  rot: number; flipH: boolean; flipV: boolean;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rot: number;
+  flipH: boolean;
+  flipV: boolean;
   crop: { l: number; t: number; r: number; b: number } | null;
   alpha?: number;
   clipPath?: string | null;
@@ -29,30 +34,44 @@ const SEEK_TIMEOUT_MS = 500;
  * 等到首帧可画（HAVE_CURRENT_DATA）。只到元数据时 drawImage 按规范什么都不画，
  * 首帧会无声地停在海报上，所以就绪条件取 loadeddata 而非 loadedmetadata。
  */
-const firstFrame = (video: HTMLVideoElement): Promise<boolean> => new Promise(resolve => {
-  const settle = (ok: boolean) => {
-    clearTimeout(timer); video.removeEventListener('loadeddata', loaded); video.removeEventListener('error', failed);
-    resolve(ok && Number.isFinite(video.duration) && video.duration > 0);
-  };
-  const loaded = () => settle(true), failed = () => settle(false);
-  const timer = setTimeout(failed, LOAD_TIMEOUT_MS);
-  video.addEventListener('loadeddata', loaded); video.addEventListener('error', failed);
-  if (video.readyState >= 2) settle(true);
-});
+const firstFrame = (video: HTMLVideoElement): Promise<boolean> =>
+  new Promise((resolve) => {
+    const settle = (ok: boolean) => {
+      clearTimeout(timer);
+      video.removeEventListener('loadeddata', loaded);
+      video.removeEventListener('error', failed);
+      resolve(ok && Number.isFinite(video.duration) && video.duration > 0);
+    };
+    const loaded = () => settle(true),
+      failed = () => settle(false);
+    const timer = setTimeout(failed, LOAD_TIMEOUT_MS);
+    video.addEventListener('loadeddata', loaded);
+    video.addEventListener('error', failed);
+    if (video.readyState >= 2) settle(true);
+  });
 
-const seek = (video: HTMLVideoElement, time: number): Promise<boolean> => new Promise(resolve => {
-  const settle = (ok: boolean) => { clearTimeout(timer); video.removeEventListener('seeked', done); resolve(ok); };
-  const done = () => settle(true);
-  const timer = setTimeout(() => settle(false), SEEK_TIMEOUT_MS);
-  video.addEventListener('seeked', done);
-  video.currentTime = time;
-});
+const seek = (video: HTMLVideoElement, time: number): Promise<boolean> =>
+  new Promise((resolve) => {
+    const settle = (ok: boolean) => {
+      clearTimeout(timer);
+      video.removeEventListener('seeked', done);
+      resolve(ok);
+    };
+    const done = () => settle(true);
+    const timer = setTimeout(() => settle(false), SEEK_TIMEOUT_MS);
+    video.addEventListener('seeked', done);
+    video.currentTime = time;
+  });
 
-const release = (video: HTMLVideoElement): void => { video.removeAttribute('src'); video.load(); };
+const release = (video: HTMLVideoElement): void => {
+  video.removeAttribute('src');
+  video.load();
+};
 
 /** SVG baseTransform 的矩阵等价：绕元素中心 rotate 后平移到元素原点（变换列表从左到右右乘） */
 const baseMatrix = (el: { x: number; y: number; w: number; h: number; rot: number }): DOMMatrix => {
-  const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+  const cx = el.x + el.w / 2,
+    cy = el.y + el.h / 2;
   const matrix = new DOMMatrix().translateSelf(cx, cy);
   if (el.rot) matrix.rotateSelf(el.rot);
   return matrix.translateSelf(-cx, -cy).translateSelf(el.x, el.y);
@@ -61,7 +80,9 @@ const baseMatrix = (el: { x: number; y: number; w: number; h: number; rot: numbe
 /** SVG flipTransform 的矩阵等价：绕自身宽高中心翻转 */
 const flipMatrix = (el: { w: number; h: number; flipH: boolean; flipV: boolean }): DOMMatrix => {
   if (!el.flipH && !el.flipV) return new DOMMatrix();
-  return new DOMMatrix().translateSelf(el.w / 2, el.h / 2).scaleSelf(el.flipH ? -1 : 1, el.flipV ? -1 : 1)
+  return new DOMMatrix()
+    .translateSelf(el.w / 2, el.h / 2)
+    .scaleSelf(el.flipH ? -1 : 1, el.flipV ? -1 : 1)
     .translateSelf(-el.w / 2, -el.h / 2);
 };
 
@@ -102,27 +123,47 @@ export class MediaOverlay {
         } else if (el.kind === 'image' && el.media && el.media.kind === 'video' && el.media.src) {
           const playback = el.media.playback;
           if (!playback) continue; // 无 timing 播放语义的媒体不响（与幻灯片触发一致）
-          const startMs = groupStarts.length
-            ? groupStarts[Math.min(playback.clickGroup, groupStarts.length - 1)]
-            : 0;
+          const startMs = groupStarts.length ? groupStarts[Math.min(playback.clickGroup, groupStarts.length - 1)] : 0;
           const video = document.createElement('video');
-          video.muted = true; video.preload = 'auto'; video.playsInline = true;
+          video.muted = true;
+          video.preload = 'auto';
+          video.playsInline = true;
           video.src = el.media.src;
           list.push({
-            el: video, x: el.x, y: el.y, w: el.w, h: el.h, rot: el.rot, flipH: el.flipH, flipV: el.flipV,
-            crop: el.crop, alpha: el.alpha, clipPath: el.clipPath, filter: el.filter,
-            chain, startMs, durationS: Number.isFinite(video.duration) ? video.duration : 0,
-            loop: playback.loop, name: el.name ?? '', frameWarned: false,
+            el: video,
+            x: el.x,
+            y: el.y,
+            w: el.w,
+            h: el.h,
+            rot: el.rot,
+            flipH: el.flipH,
+            flipV: el.flipV,
+            crop: el.crop,
+            alpha: el.alpha,
+            clipPath: el.clipPath,
+            filter: el.filter,
+            chain,
+            startMs,
+            durationS: Number.isFinite(video.duration) ? video.duration : 0,
+            loop: playback.loop,
+            name: el.name ?? '',
+            frameWarned: false,
           });
         }
       }
     };
     walk(slide.elements, []);
     if (!list.length) return;
-    const ready = await Promise.all(list.map(v => firstFrame(v.el)));
-    if (this.disposed) { for (const v of list) release(v.el); return; }
+    const ready = await Promise.all(list.map((v) => firstFrame(v.el)));
+    if (this.disposed) {
+      for (const v of list) release(v.el);
+      return;
+    }
     const usable = list.filter((v, i) => {
-      if (ready[i]) { v.durationS = v.el.duration; return true; }
+      if (ready[i]) {
+        v.durationS = v.el.duration;
+        return true;
+      }
       release(v.el);
       this.warn?.('video-overlay-unavailable', { slideNumber, elementName: v.name });
       return false;
@@ -140,11 +181,9 @@ export class MediaOverlay {
     for (const video of list) {
       const elapsed = (timelineMs - video.startMs) / 1000;
       if (elapsed < 0) continue; // 尚未开始
-      const target = video.loop
-        ? video.durationS > 0 ? elapsed % video.durationS : 0
-        : Math.min(elapsed, video.durationS);
+      const target = video.loop ? (video.durationS > 0 ? elapsed % video.durationS : 0) : Math.min(elapsed, video.durationS);
       // 仅在目标时间与当前时间差 > 1/30s 时才跳（避免同帧重复 seek）
-      const seeked = Math.abs(video.el.currentTime - target) <= 1 / 30 || await seek(video.el, target);
+      const seeked = Math.abs(video.el.currentTime - target) <= 1 / 30 || (await seek(video.el, target));
       if (!seeked || video.el.readyState < 2) {
         if (!video.frameWarned) {
           video.frameWarned = true;
@@ -156,7 +195,12 @@ export class MediaOverlay {
       context.save();
       context.setTransform(new DOMMatrix().scaleSelf(scaleX, scaleY));
       for (const matrix of video.chain) context.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
-      context.transform(...(() => { const m = baseMatrix(video); return [m.a, m.b, m.c, m.d, m.e, m.f] as const; })());
+      context.transform(
+        ...(() => {
+          const m = baseMatrix(video);
+          return [m.a, m.b, m.c, m.d, m.e, m.f] as const;
+        })(),
+      );
       const flip = flipMatrix(video);
       context.transform(flip.a, flip.b, flip.c, flip.d, flip.e, flip.f);
       if (video.clipPath) context.clip(new Path2D(video.clipPath));
@@ -164,11 +208,19 @@ export class MediaOverlay {
       if (video.filter) context.filter = video.filter;
       const source = video.el;
       if (video.crop && (video.crop.l || video.crop.t || video.crop.r || video.crop.b)) {
-        const vw = source.videoWidth, vh = source.videoHeight;
-        context.drawImage(source,
-          video.crop.l * vw, video.crop.t * vh,
-          Math.max(1, (1 - video.crop.l - video.crop.r) * vw), Math.max(1, (1 - video.crop.t - video.crop.b) * vh),
-          0, 0, video.w, video.h);
+        const vw = source.videoWidth,
+          vh = source.videoHeight;
+        context.drawImage(
+          source,
+          video.crop.l * vw,
+          video.crop.t * vh,
+          Math.max(1, (1 - video.crop.l - video.crop.r) * vw),
+          Math.max(1, (1 - video.crop.t - video.crop.b) * vh),
+          0,
+          0,
+          video.w,
+          video.h,
+        );
       } else {
         context.drawImage(source, 0, 0, video.w, video.h);
       }

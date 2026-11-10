@@ -15,58 +15,145 @@ const root = resolve('.');
 const out = join(root, 'out/video-overlay');
 mkdirSync(out, { recursive: true });
 let ffmpeg = null;
-try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); ffmpeg = 'ffmpeg'; }
-catch { console.log('  ffmpeg 不在本机：提帧断言降级跳过'); }
+try {
+  execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' });
+  ffmpeg = 'ffmpeg';
+} catch {
+  console.log('  ffmpeg 不在本机：提帧断言降级跳过');
+}
 
 // 0.6s 12fps 的红→蓝切换 MP4（CFR，H.264 yuv420p）；fMP4 版供 MSE 缺口样本
 // （MSE 只接受 fragmented 流，default_base_moof 是 MSE 规范要求的寻址方式）
 if (ffmpeg) {
   const encode = ['-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-profile:v', 'baseline'];
-  execFileSync(ffmpeg, ['-y', '-v', 'error',
-    '-f', 'lavfi', '-i', 'color=c=red:size=320x240:rate=12:duration=0.3',
-    '-f', 'lavfi', '-i', 'color=c=blue:size=320x240:rate=12:duration=0.3',
-    '-filter_complex', '[0:v][1:v]concat=n=2:v=1', ...encode, join(out, 'colors.mp4')]);
-  execFileSync(ffmpeg, ['-y', '-v', 'error',
-    '-f', 'lavfi', '-i', 'color=c=red:size=320x240:rate=12:duration=0.3',
-    '-f', 'lavfi', '-i', 'color=c=blue:size=320x240:rate=12:duration=0.3',
-    '-filter_complex', '[0:v][1:v]concat=n=2:v=1', ...encode,
-    '-movflags', '+frag_keyframe+empty_moov+default_base_moof', join(out, 'colors-fmp4.mp4')]);
+  execFileSync(ffmpeg, [
+    '-y',
+    '-v',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'color=c=red:size=320x240:rate=12:duration=0.3',
+    '-f',
+    'lavfi',
+    '-i',
+    'color=c=blue:size=320x240:rate=12:duration=0.3',
+    '-filter_complex',
+    '[0:v][1:v]concat=n=2:v=1',
+    ...encode,
+    join(out, 'colors.mp4'),
+  ]);
+  execFileSync(ffmpeg, [
+    '-y',
+    '-v',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'color=c=red:size=320x240:rate=12:duration=0.3',
+    '-f',
+    'lavfi',
+    '-i',
+    'color=c=blue:size=320x240:rate=12:duration=0.3',
+    '-filter_complex',
+    '[0:v][1:v]concat=n=2:v=1',
+    ...encode,
+    '-movflags',
+    '+frag_keyframe+empty_moov+default_base_moof',
+    join(out, 'colors-fmp4.mp4'),
+  ]);
   // 可变帧率样本：先 CFR 红绿（绿取 0x00FF00——ffmpeg 的颜色名 green 是 #008000，
   // 亮度与红几乎相同无法区分），再 setpts 拉伸时间戳制造不均匀帧间隔（真 VFR）；
   // concat filter 会统一输入帧率，混合帧率必须两步生成
   {
     const cfr = join(out, 'vfr-cfr.mp4');
-    execFileSync(ffmpeg, ['-y', '-v', 'error',
-      '-f', 'lavfi', '-i', 'color=c=red:size=320x240:rate=12:duration=0.25',
-      '-f', 'lavfi', '-i', 'color=c=0x00FF00:size=320x240:rate=12:duration=0.5',
-      '-filter_complex', '[0:v][1:v]concat=n=2:v=1', ...encode, cfr]);
-    execFileSync(ffmpeg, ['-y', '-v', 'error', '-i', cfr, '-vf', 'setpts=PTS*1.6',
-      ...encode, '-movflags', '+frag_keyframe+empty_moov+default_base_moof', '-vsync', 'vfr', join(out, 'vfr.mp4')]);
+    execFileSync(ffmpeg, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'color=c=red:size=320x240:rate=12:duration=0.25',
+      '-f',
+      'lavfi',
+      '-i',
+      'color=c=0x00FF00:size=320x240:rate=12:duration=0.5',
+      '-filter_complex',
+      '[0:v][1:v]concat=n=2:v=1',
+      ...encode,
+      cfr,
+    ]);
+    execFileSync(ffmpeg, [
+      '-y',
+      '-v',
+      'error',
+      '-i',
+      cfr,
+      '-vf',
+      'setpts=PTS*1.6',
+      ...encode,
+      '-movflags',
+      '+frag_keyframe+empty_moov+default_base_moof',
+      '-vsync',
+      'vfr',
+      join(out, 'vfr.mp4'),
+    ]);
   }
 }
 
 const entry = join(out, 'entry.mjs');
-writeFileSync(entry, `export { parse } from '${root}/packages/core/src/index.ts';
-export { presentationToVideo } from '${root}/packages/viewer-core/src/video.ts';`);
-await bundleBrowser({ root, entry, output: join(out, 'contract.mjs'), aliases: process.argv.includes('--dist') ? [] : [
-  ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
-  ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
-] });
+writeFileSync(
+  entry,
+  `export { parse } from '${root}/packages/core/src/index.ts';
+export { presentationToVideo } from '${root}/packages/viewer-core/src/video.ts';`,
+);
+await bundleBrowser({
+  root,
+  entry,
+  output: join(out, 'contract.mjs'),
+  aliases: process.argv.includes('--dist')
+    ? []
+    : [
+        ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
+        ['@web-ppt/viewer-core', join(root, 'packages/viewer-core/src/index.ts')],
+      ],
+});
 
 let failures = 0;
 // 本套件断言依赖 ffmpeg 与真实浏览器时序，计数会随环境漂移——与 test-video.mjs
 // 同一口径：不写入 counts.json，verify 不对这些环境条件断言做规模核对。
-const check = (label, ok, detail = '') => { console.log(`  ${ok ? '✓' : '✗'} ${label}${ok || !detail ? '' : ` — ${detail}`}`); if (!ok) failures++; };
+const check = (label, ok, detail = '') => {
+  console.log(`  ${ok ? '✓' : '✗'} ${label}${ok || !detail ? '' : ` — ${detail}`}`);
+  if (!ok) failures++;
+};
 
 /** ffmpeg 提取 WebM 指定时刻帧的平均亮度；给定页面坐标区域时只统计该区域（导出画布与页面 1:1） */
 function regionAverage(webm, atSeconds, area) {
   const crop = area ? `crop=${area[2]}:${area[3]}:${area[0]}:${area[1]},` : '';
-  const stats = spawnSync('ffmpeg', ['-v', 'info', '-ss', String(atSeconds), '-i', webm, '-frames:v', '1',
-    '-vf', `${crop}signalstats,metadata=print:key=lavfi.signalstats.YAVG`, '-f', 'null', '-'], { encoding: 'utf8' });
+  const stats = spawnSync(
+    'ffmpeg',
+    [
+      '-v',
+      'info',
+      '-ss',
+      String(atSeconds),
+      '-i',
+      webm,
+      '-frames:v',
+      '1',
+      '-vf',
+      `${crop}signalstats,metadata=print:key=lavfi.signalstats.YAVG`,
+      '-f',
+      'null',
+      '-',
+    ],
+    { encoding: 'utf8' },
+  );
   return Number(/YAVG=([\d.]+)/.exec(stats.stderr ?? '')?.[1] ?? NaN);
 }
 
-await withChartBrowser(root, async browser => {
+await withChartBrowser(root, async (browser) => {
   if (!ffmpeg) {
     console.log('  ffmpeg 缺失：保真 / 循环 / 画面选择断言跳过（frame-unavailable 与长视频不依赖 ffmpeg）');
   } else {
@@ -104,17 +191,27 @@ await withChartBrowser(root, async browser => {
       const basic = [60, 60, 160, 120];
       const red = regionAverage(webm, 0.15, basic);
       const blue = regionAverage(webm, 0.45, basic);
-      check('画面选择：0.15s 红帧与 0.45s 蓝帧区域亮度可分', Number.isFinite(red) && Number.isFinite(blue) && red > blue + 20,
-        `red=${red} blue=${blue}`);
+      check(
+        '画面选择：0.15s 红帧与 0.45s 蓝帧区域亮度可分',
+        Number.isFinite(red) && Number.isFinite(blue) && red > blue + 20,
+        `red=${red} blue=${blue}`,
+      );
       // 循环元素（260,240–420,360，片长 0.6s）：0.75s 回到 0.15s 位置 → 红；对照 0.45s 的蓝
       const loopArea = [260, 240, 160, 120];
       const loopRed = regionAverage(webm, 0.75, loopArea);
       const loopBlue = regionAverage(webm, 0.45, loopArea);
-      check('循环取模：0.75s 回到红帧时段', Number.isFinite(loopRed) && Number.isFinite(loopBlue) && loopRed > loopBlue + 20,
-        `loop@0.75=${loopRed} loop@0.45=${loopBlue}`);
+      check(
+        '循环取模：0.75s 回到红帧时段',
+        Number.isFinite(loopRed) && Number.isFinite(loopBlue) && loopRed > loopBlue + 20,
+        `loop@0.75=${loopRed} loop@0.45=${loopBlue}`,
+      );
       // 旋转 / 翻转 / 裁剪 / 半透明元素同刻（0.45s 蓝）在各自区域产生显著非白信号（与白底可分）
-      for (const [name, area] of [['旋转', [260, 60, 160, 120]], ['翻转', [460, 60, 160, 120]],
-        ['裁剪', [660, 60, 160, 120]], ['半透明', [60, 240, 160, 120]]]) {
+      for (const [name, area] of [
+        ['旋转', [260, 60, 160, 120]],
+        ['翻转', [460, 60, 160, 120]],
+        ['裁剪', [660, 60, 160, 120]],
+        ['半透明', [60, 240, 160, 120]],
+      ]) {
         const value = regionAverage(webm, 0.45, area);
         check(`${name}元素区域呈现视频内容（与白底可分）`, Number.isFinite(value) && value < 240, `YAVG=${value}`);
       }
@@ -148,10 +245,12 @@ await withChartBrowser(root, async browser => {
   // 缺口媒体在快机上到达 loadeddata 后 seek 超时 → frame-unavailable；
   // CI 慢机上首帧就绪可能超 5s → unavailable。两个都是稳定 reason、每元素一次、
   // 不阻断导出——票据验收的核心语义，具体哪个取决于机器时序
-  check('MSE 缺口媒体报稳定 reason（一次）',
+  check(
+    'MSE 缺口媒体报稳定 reason（一次）',
     JSON.stringify(frameWarning.warnings) === JSON.stringify([['video-overlay-frame-unavailable', '缺口视频']])
       || JSON.stringify(frameWarning.warnings) === JSON.stringify([['video-overlay-unavailable', '缺口视频']]),
-    JSON.stringify(frameWarning.warnings));
+    JSON.stringify(frameWarning.warnings),
+  );
   check('帧不可用不阻断导出', frameWarning.size > 1000, String(frameWarning.size));
 
   // 可变帧率 + 跨页策略：VFR 流按时间戳取帧（0.5s 应取绿帧而非按帧号外推）；
@@ -187,8 +286,20 @@ await withChartBrowser(root, async browser => {
   // 导出时长与页时长线性相关而与媒体时长无关（这里断言完成 + 尺寸合理即可，堆数据在注释登记）
   if (ffmpeg) {
     const long = join(out, 'long.mp4');
-    execFileSync(ffmpeg, ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=green:size=320x240:rate=12:duration=60',
-      '-pix_fmt', 'yuv420p', '-c:v', 'libx264', long]);
+    execFileSync(ffmpeg, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'color=c=green:size=320x240:rate=12:duration=60',
+      '-pix_fmt',
+      'yuv420p',
+      '-c:v',
+      'libx264',
+      long,
+    ]);
     const longResult = await browser.evaluate(`(async()=>{
       const { parse, presentationToVideo } = await import('/out/video-overlay/contract.mjs');
       const pres = await parse(new Uint8Array(await (await fetch('/fixtures/sample-media.pptx')).arrayBuffer()), { lazy: false });
@@ -209,13 +320,19 @@ await withChartBrowser(root, async browser => {
     check('60s 长视频导出完成（按需 seek）', longResult.size > 1000, `size=${longResult.size}`);
     // performance.memory 是 Chromium 专有 API：不可用时如实说明，不能让「增长 0」假充通过
     if (longResult.heapMeasured) {
-      check('长视频导出内存有界（堆增长 <60MB）', longResult.heapGrowth < 60 * 1024 * 1024,
-        `heap+${Math.round(longResult.heapGrowth / 1024 / 1024)}MB`);
+      check(
+        '长视频导出内存有界（堆增长 <60MB）',
+        longResult.heapGrowth < 60 * 1024 * 1024,
+        `heap+${Math.round(longResult.heapGrowth / 1024 / 1024)}MB`,
+      );
     } else {
       console.log('  performance.memory 不可用：内存有界断言未执行（非 Chromium 环境）');
     }
   }
 });
 
-if (failures) { console.error(`\x1b[31m✗ 内嵌视频合成专项失败（${failures} 项）\x1b[0m`); process.exit(1); }
+if (failures) {
+  console.error(`\x1b[31m✗ 内嵌视频合成专项失败（${failures} 项）\x1b[0m`);
+  process.exit(1);
+}
 console.log(`内嵌视频合成专项通过（票据 007${ffmpeg ? '' : '，ffmpeg 类断言降级'}）`);

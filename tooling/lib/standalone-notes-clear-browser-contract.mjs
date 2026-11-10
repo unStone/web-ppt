@@ -1,6 +1,8 @@
 export async function runStandaloneNotesClearContract({ evaluate, request, waitFor, click }) {
-  const standalone = (query = '') => evaluate(`new URL(${JSON.stringify(query ? `/standalone.html?${query}` : '/standalone.html')}, location.href).href`);
-  const openLocal = (bytes, name) => evaluate(`(() => {
+  const standalone = (query = '') =>
+    evaluate(`new URL(${JSON.stringify(query ? `/standalone.html?${query}` : '/standalone.html')}, location.href).href`);
+  const openLocal = (bytes, name) =>
+    evaluate(`(() => {
     const file = new File([Uint8Array.from(${JSON.stringify([...bytes])})], ${JSON.stringify(name)});
     const input = document.querySelector('#fileInput');
     const transfer = new DataTransfer();
@@ -13,7 +15,8 @@ export async function runStandaloneNotesClearContract({ evaluate, request, waitF
     await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...key });
     await request('Input.dispatchKeyEvent', { type: 'keyUp', ...key });
   };
-  const notesClosed = () => evaluate(`document.querySelector('#notesPanel')?.hidden === true
+  const notesClosed = () =>
+    evaluate(`document.querySelector('#notesPanel')?.hidden === true
     && (document.querySelector('#notesBody')?.textContent ?? '') === ''
     && document.querySelector('#btnNotes')?.disabled === true`);
 
@@ -26,20 +29,27 @@ export async function runStandaloneNotesClearContract({ evaluate, request, waitF
     throw new Error('打开成功后备注按钮仍不可用');
   }
   await click('#btnNotes');
-  await waitFor("document.querySelector('#notesPanel')?.hidden === false && (document.querySelector('#notesBody')?.textContent ?? '').length > 0", '本页备注可打开');
+  await waitFor(
+    "document.querySelector('#notesPanel')?.hidden === false && (document.querySelector('#notesBody')?.textContent ?? '').length > 0",
+    '本页备注可打开',
+  );
   const openedNotes = String(await evaluate("document.querySelector('#notesBody')?.textContent ?? ''"));
 
   const pdf = new TextEncoder().encode('%PDF-1.4\ntrailer\n%%EOF');
   await openLocal(pdf, 'not-a-deck.pdf');
-  await waitFor("document.querySelector('#fileInfo')?.textContent === '未打开文件' && document.querySelector('#stage')?.dataset.openPhase === 'error'", '认错后回到未打开');
-  if (!await notesClosed()) throw new Error('打开失败后仍留着上一份备注');
+  await waitFor(
+    "document.querySelector('#fileInfo')?.textContent === '未打开文件' && document.querySelector('#stage')?.dataset.openPhase === 'error'",
+    '认错后回到未打开',
+  );
+  if (!(await notesClosed())) throw new Error('打开失败后仍留着上一份备注');
 
   await press('n', 78, 'KeyN');
-  if (!await notesClosed()) throw new Error('失败后按 N 又打开了上一份备注');
+  if (!(await notesClosed())) throw new Error('失败后按 N 又打开了上一份备注');
   await evaluate("document.querySelector('#btnNotes').click()");
-  if (!await notesClosed()) throw new Error('失败后点按钮又打开了上一份备注');
+  if (!(await notesClosed())) throw new Error('失败后点按钮又打开了上一份备注');
 
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const bytes = await fetch('/demo/showcase.pptx').then((r) => r.arrayBuffer());
     const file = new File([bytes], 'after-fail.pptx');
     const input = document.querySelector('#fileInput');
@@ -47,7 +57,9 @@ export async function runStandaloneNotesClearContract({ evaluate, request, waitF
     transfer.items.add(file);
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+    true,
+  );
   await waitFor(
     "document.querySelector('#fileInfo')?.textContent.includes('after-fail.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'",
     '失败后再打开成功',
@@ -56,7 +68,10 @@ export async function runStandaloneNotesClearContract({ evaluate, request, waitF
     throw new Error('再打开成功后备注没有保持收起或按钮仍禁用');
   }
   await click('#btnNotes');
-  await waitFor("document.querySelector('#notesPanel')?.hidden === false && (document.querySelector('#notesBody')?.textContent ?? '').length > 0", '新稿本页备注可再开');
+  await waitFor(
+    "document.querySelector('#notesPanel')?.hidden === false && (document.querySelector('#notesBody')?.textContent ?? '').length > 0",
+    '新稿本页备注可再开',
+  );
   if (String(await evaluate("document.querySelector('#notesBody')?.textContent ?? ''")) !== openedNotes) {
     throw new Error('再打开后本页备注不是这份稿的正文');
   }

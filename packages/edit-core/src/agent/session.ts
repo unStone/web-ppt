@@ -3,9 +3,7 @@ import type { Presentation, TextMeasure } from '@web-ppt/core';
 import { renderSlidePngInNode, renderSlideSvgInNode } from '@web-ppt/core/node';
 import type { NodeRasterizer } from '@web-ppt/core/node';
 import { createDoc, disposeDoc, Editor } from '@web-ppt/edit-core';
-import type {
-  Command, DesignCommand, EditDoc, EditorChange, Patch, TransactionResult,
-} from '@web-ppt/edit-core';
+import type { Command, DesignCommand, EditDoc, EditorChange, Patch, TransactionResult } from '@web-ppt/edit-core';
 import { describePresentation } from '../describe/index';
 import { lintPresentation } from '../lint/index';
 import type { LayoutLintOptions } from '../lint/types';
@@ -17,8 +15,15 @@ import { queryElement } from './query';
 import { assertBatchTargets, commonDesignTarget } from './targets';
 import { assertToolInput } from './validation';
 import type {
-  AgentEditInput, AgentLintInput, AgentMutationResult, AgentRenderInput, AgentSaveResult,
-  AgentToolInput, AgentToolName, AgentToolOutputMap, AgentToolResult,
+  AgentEditInput,
+  AgentLintInput,
+  AgentMutationResult,
+  AgentRenderInput,
+  AgentSaveResult,
+  AgentToolInput,
+  AgentToolName,
+  AgentToolOutputMap,
+  AgentToolResult,
 } from './types';
 
 export interface AgentSessionOptions {
@@ -46,7 +51,9 @@ export class AgentSession {
     private readonly ownsDoc = false,
   ) {}
 
-  get doc(): EditDoc { return this.editor.doc; }
+  get doc(): EditDoc {
+    return this.editor.doc;
+  }
 
   async call<T extends AgentToolName>(name: T, input: AgentToolInput<T>): Promise<AgentToolResult<T>> {
     try {
@@ -66,18 +73,24 @@ export class AgentSession {
     if (this.ownsDoc) disposeDoc(this.doc);
   }
 
-  private async dispatch<T extends AgentToolName>(
-    name: T, input: AgentToolInput<T>,
-  ): Promise<AgentToolOutputMap[AgentToolName]> {
+  private async dispatch<T extends AgentToolName>(name: T, input: AgentToolInput<T>): Promise<AgentToolOutputMap[AgentToolName]> {
     switch (name) {
-      case 'describe': return describePresentation(this.doc, input as AgentToolInput<'describe'>);
-      case 'element': return queryElement(this.doc, input as AgentToolInput<'element'>);
-      case 'lint': return lintPresentation(this.doc, this.lintOptions(input as AgentLintInput));
-      case 'render': return this.render(input as AgentRenderInput);
-      case 'edit': return this.edit(input as AgentEditInput);
-      case 'undo': return this.replay('undo');
-      case 'redo': return this.replay('redo');
-      case 'save': return this.save();
+      case 'describe':
+        return describePresentation(this.doc, input as AgentToolInput<'describe'>);
+      case 'element':
+        return queryElement(this.doc, input as AgentToolInput<'element'>);
+      case 'lint':
+        return lintPresentation(this.doc, this.lintOptions(input as AgentLintInput));
+      case 'render':
+        return this.render(input as AgentRenderInput);
+      case 'edit':
+        return this.edit(input as AgentEditInput);
+      case 'undo':
+        return this.replay('undo');
+      case 'redo':
+        return this.replay('redo');
+      case 'save':
+        return this.save();
     }
   }
 
@@ -99,9 +112,7 @@ export class AgentSession {
     const design = commonDesignTarget(this.doc, commands);
     let result: TransactionResult;
     try {
-      result = design
-        ? this.editor.execDesign(design, ...commands as DesignCommand[])
-        : this.editor.exec(...commands);
+      result = design ? this.editor.execDesign(design, ...(commands as DesignCommand[])) : this.editor.exec(...commands);
     } catch (error) {
       throw commandFailure(error);
     }
@@ -115,18 +126,20 @@ export class AgentSession {
   }
 
   private async mutation(
-    change: TransactionResult | EditorChange, lint?: AgentLintInput, forward: readonly Patch[] = [],
+    change: TransactionResult | EditorChange,
+    lint?: AgentLintInput,
+    forward: readonly Patch[] = [],
   ): Promise<AgentMutationResult> {
     const elements = new Set(change.dirtyElements);
     for (const patch of forward) if (patch.path[0] === 'elements') elements.add(patch.path[1]);
     const slides = new Set([
-      ...change.dirtySlides, ...change.createdSlides, ...change.removedSlides,
-      ...change.movedSlides, ...change.notesSlides,
+      ...change.dirtySlides,
+      ...change.createdSlides,
+      ...change.removedSlides,
+      ...change.movedSlides,
+      ...change.notesSlides,
     ]);
-    const affectedSlides = [
-      ...this.doc.slideOrder.filter((id) => slides.has(id)),
-      ...[...slides].filter((id) => !this.doc.slides[id]),
-    ];
+    const affectedSlides = [...this.doc.slideOrder.filter((id) => slides.has(id)), ...[...slides].filter((id) => !this.doc.slides[id])];
     const slideNumbers = affectedSlides.flatMap((id) => {
       const index = this.doc.slideOrder.indexOf(id);
       return index < 0 ? [] : [index + 1];
@@ -146,18 +159,21 @@ export class AgentSession {
       const pages = new Set(slideNumbers);
       const description = describePresentation(this.doc);
       return {
-        status: 'ok', slideNumbers,
+        status: 'ok',
+        slideNumbers,
         report: {
           ...full,
           totalSlides: slideNumbers.length,
-          totalElements: description.slides.filter((slide) => pages.has(slide.number))
+          totalElements: description.slides
+            .filter((slide) => pages.has(slide.number))
             .reduce((count, slide) => count + slide.elements.length, 0),
           issues: full.issues.filter((issue) => pages.has(issue.slideNumber)),
         },
       };
     } catch (error) {
       return {
-        status: 'failed', slideNumbers,
+        status: 'failed',
+        slideNumbers,
         reason: typeof (error as { reason?: unknown }).reason === 'string' ? (error as { reason: string }).reason : 'lint-failed',
         message: error instanceof Error ? error.message : String(error),
       };
@@ -166,7 +182,9 @@ export class AgentSession {
 
   private lintOptions(input: AgentLintInput = {}): LayoutLintOptions {
     return {
-      ...DEFAULT_LINT, ...this.options.lint, ...input,
+      ...DEFAULT_LINT,
+      ...this.options.lint,
+      ...input,
       measureText: this.options.lint?.measureText ?? this.options.measureText,
     };
   }
@@ -178,7 +196,10 @@ export class AgentSession {
     const slides = this.doc.slideOrder.map((id) => this.editor.toSlide(id));
     const presentation: Presentation = {
       ...this.options.presentation,
-      width: this.doc.meta.width, height: this.doc.meta.height, source: this.doc.meta.source, slides,
+      width: this.doc.meta.width,
+      height: this.doc.meta.height,
+      source: this.doc.meta.source,
+      slides,
     };
     const slide = slides[input.slideNumber - 1];
     const options = { measureText: this.options.measureText! };
@@ -186,7 +207,9 @@ export class AgentSession {
       return { slideNumber: input.slideNumber, format: 'svg', data: renderSlideSvgInNode(presentation, slide, options) };
     }
     const bytes = await renderSlidePngInNode(presentation, slide, {
-      ...options, rasterize: this.options.rasterize!, scale: input.scale,
+      ...options,
+      rasterize: this.options.rasterize!,
+      scale: input.scale,
     });
     return { slideNumber: input.slideNumber, format: 'png', data: encodeBase64(bytes) };
   }
@@ -195,8 +218,11 @@ export class AgentSession {
     const saveMode = this.doc.package && !this.doc.package.disposed ? 'patch' : 'generated';
     const result = await this.editor.saveDetailed();
     return {
-      bytes: encodeBase64(result.bytes), saveMode, packageMode: result.mode,
-      fallbackReason: result.fallbackReason, preservedEntries: result.preservedEntries,
+      bytes: encodeBase64(result.bytes),
+      saveMode,
+      packageMode: result.mode,
+      fallbackReason: result.fallbackReason,
+      preservedEntries: result.preservedEntries,
       rewrittenEntries: result.rewrittenEntries,
     };
   }

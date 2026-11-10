@@ -2,10 +2,19 @@ import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
 const center = (rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
 const distance = (left, right) => Math.hypot(left.x - right.x, left.y - right.y);
-const pointer = (type, point, pointerId) => new PointerEvent(type, {
-  bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', pointerId, isPrimary: true,
-  button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: point.x, clientY: point.y,
-});
+const pointer = (type, point, pointerId) =>
+  new PointerEvent(type, {
+    bubbles: true,
+    composed: true,
+    cancelable: true,
+    pointerType: 'mouse',
+    pointerId,
+    isPrimary: true,
+    button: 0,
+    buttons: type === 'pointerup' ? 0 : 1,
+    clientX: point.x,
+    clientY: point.y,
+  });
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
 function contractMount() {
@@ -22,7 +31,7 @@ function handle(mount, index = 0) {
 }
 
 function tangent(record, length) {
-  const angle = (record.src.rot ?? 0) * Math.PI / 180;
+  const angle = ((record.src.rot ?? 0) * Math.PI) / 180;
   return { x: length * Math.cos(angle), y: length * Math.sin(angle) };
 }
 
@@ -54,7 +63,7 @@ function measureFrames(mount, view, record) {
     view.element.dispatchEvent(pointer('pointermove', end, 743));
     samples.push(flush());
     for (let index = 0; index < 80; index++) {
-      const offset = 12 + index % 14;
+      const offset = 12 + (index % 14);
       end = { x: start.x + direction.x * offset, y: start.y + direction.y * offset };
       view.element.dispatchEvent(pointer('pointermove', end, 743));
       samples.push(flush());
@@ -68,16 +77,13 @@ function measureFrames(mount, view, record) {
   return samples[Math.floor(samples.length * 0.95)];
 }
 
-export async function runEditorPresetAdjustmentBrowserContract({
-  openEditor, createPresetAdjustmentEditor, load,
-}) {
+export async function runEditorPresetAdjustmentBrowserContract({ openEditor, createPresetAdjustmentEditor, load }) {
   const mount = contractMount();
   const bytes = await load('sample-editor-preset-shape.pptx');
   const session = await openEditor(bytes, { idPrefix: 'browser-preset-adjustment-' });
   try {
     const view = session.mount(mount, { mode: 'edit', textMode: 'svg' });
-    const record = Object.values(session.editor.doc.elements)
-      .find((candidate) => candidate.src.name === 'preset-source');
+    const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === 'preset-source');
     if (!record || Object.keys(session.editor.doc.elements).length < 60) {
       throw new Error('预设调节柄固件缺少 60 元素负载或目标形状');
     }
@@ -97,36 +103,41 @@ export async function runEditorPresetAdjustmentBrowserContract({
     const originalCapture = view.element.setPointerCapture.bind(view.element);
     view.element.setPointerCapture = (pointerId) => {
       captureCalls++;
-      try { originalCapture(pointerId); } catch { /* 合成事件只验证 capture 路径。 */ }
+      try {
+        originalCapture(pointerId);
+      } catch {
+        /* 合成事件只验证 capture 路径。 */
+      }
     };
     handle(mount).dispatchEvent(pointer('pointerdown', start, 742));
     view.element.dispatchEvent(pointer('pointermove', end, 742));
     await nextFrame();
     const preview = center(handle(mount).getBoundingClientRect());
-    if (distance(preview, end) > 0.5 || extension.geometry.adj.adj !== sourceValue
-      || captureCalls !== 1 || mount.querySelector(`[data-edit-id="${record.id}"]`) !== targetNode
+    if (
+      distance(preview, end) > 0.5
+      || extension.geometry.adj.adj !== sourceValue
+      || captureCalls !== 1
+      || mount.querySelector(`[data-edit-id="${record.id}"]`) !== targetNode
       || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg
-      || !interaction.querySelector('[data-ppt-preset-adjustments]')) {
+      || !interaction.querySelector('[data-ppt-preset-adjustments]')
+    ) {
       throw new Error('预设调节柄拖动重建静态层、提前写模型或没有精确跟随指针');
     }
     view.element.dispatchEvent(pointer('pointerup', end, 742));
     const committed = extension.geometry.adj.adj;
-    if (committed === sourceValue || session.editor.history.undoCount !== 1
-      || view.element.dataset.pptPresetDragging !== undefined) {
+    if (committed === sourceValue || session.editor.history.undoCount !== 1 || view.element.dataset.pptPresetDragging !== undefined) {
       throw new Error('预设调节柄没有形成单一历史提交或清理手势状态');
     }
     const saved = await session.editor.save();
     const reopened = await openEditor(saved, { idPrefix: 'browser-preset-reopen-' });
-    const reopenedRecord = Object.values(reopened.editor.doc.elements)
-      .find((candidate) => candidate.src.name === 'preset-source');
+    const reopenedRecord = Object.values(reopened.editor.doc.elements).find((candidate) => candidate.src.name === 'preset-source');
     if (reopenedRecord.meta.geom?.adj.adj !== committed) {
       throw new Error('真实 Chrome 拖动保存重开后调节值不一致');
     }
     reopened.dispose();
     session.editor.undo();
     const p95 = measureFrames(mount, view, record);
-    if (session.editor.history.undoCount !== 1
-      || mount.querySelector('[data-ppt-preset-adjustments]')?.parentElement !== interaction) {
+    if (session.editor.history.undoCount !== 1 || mount.querySelector('[data-ppt-preset-adjustments]')?.parentElement !== interaction) {
       throw new Error('60 元素预设调节柄性能手势没有提交到交互层');
     }
     recordPerformanceBudget('60 元素预设调节柄拖动帧 p95', p95, 8);

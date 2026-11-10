@@ -18,10 +18,7 @@ export function removedSlidePartNames(
   knownCreatedParts: ReadonlySet<string> = new Set(doc.saveState.createdParts),
 ): Set<string> {
   const activeSlides = new Set(doc.slideOrder.flatMap((id) => doc.slides[id].origin?.part ?? []));
-  const candidates = new Set([
-    ...doc.saveState.sourceSlideParts,
-    ...[...knownCreatedParts].filter((part) => SLIDE_PART.test(part)),
-  ]);
+  const candidates = new Set([...doc.saveState.sourceSlideParts, ...[...knownCreatedParts].filter((part) => SLIDE_PART.test(part))]);
   return new Set([...candidates].filter((part) => !activeSlides.has(part)));
 }
 
@@ -39,7 +36,11 @@ function notesTargets(doc: EditDoc, slidePart: string): Set<string> {
     const mode = findXmlAttribute(node, { localName: 'TargetMode', namespaceUri: null })?.value;
     const target = findXmlAttribute(node, { localName: 'Target', namespaceUri: null })?.value;
     if (type !== NOTES_SLIDE_REL || mode === 'External' || !target) continue;
-    try { targets.add(resolveRelationshipTarget(slidePart, target)); } catch { /* 越界目标不能安全删除。 */ }
+    try {
+      targets.add(resolveRelationshipTarget(slidePart, target));
+    } catch {
+      /* 越界目标不能安全删除。 */
+    }
   }
   return targets;
 }
@@ -61,10 +62,7 @@ export function detachedSlideBaselineParts(doc: EditDoc): Set<string> {
 }
 
 /** 只清理页面拥有的 OPC 身份；关系目标默认保留，notes 仅在没有活动页引用时删除。 */
-export function removedSlidePackageParts(
-  doc: EditDoc,
-  knownCreatedParts: ReadonlySet<string>,
-): RemovedSlidePackageParts {
+export function removedSlidePackageParts(doc: EditDoc, knownCreatedParts: ReadonlySet<string>): RemovedSlidePackageParts {
   const activeSlides = new Set(doc.slideOrder.flatMap((id) => doc.slides[id].origin?.part ?? []));
   const slideParts = removedSlidePartNames(doc, knownCreatedParts);
   const activeNotes = new Set<string>();

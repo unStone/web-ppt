@@ -2,11 +2,7 @@ import type { Paragraph, TextBody, TextRun } from '../types';
 import { squeezePlan, squeezeTotal } from './cjk-punct';
 import { fontSize, mathOf, measureTextWidth } from './text-measure';
 import type { TextMeasure } from './text-measure';
-import type {
-  TextLayout,
-  TextLayoutLine,
-  TextLayoutOptions,
-} from './text-layout-types';
+import type { TextLayout, TextLayoutLine, TextLayoutOptions } from './text-layout-types';
 import { publicSegments } from './text-layout-carets';
 import { warpSupported } from './text-warp-presets';
 import { bulletTextRun } from './text-decoration';
@@ -53,7 +49,7 @@ function displayWithSource(run: TextRun): { text: string; starts: number[]; ends
   let text = '';
   const starts: number[] = [0];
   const ends: number[] = [0];
-  for (let from = 0; from < run.text.length;) {
+  for (let from = 0; from < run.text.length; ) {
     const cp = run.text.codePointAt(from)!;
     const source = String.fromCodePoint(cp);
     const to = from + source.length;
@@ -75,8 +71,19 @@ function tokenize(runs: IndexedRun[], scale: number, measurer?: TextMeasure): To
     const { run, runIndex, bullet } = source;
     if (run.math?.length) {
       // 公式整体不可断行
-      out.push({ text: run.text, run, runIndex, from: 0, to: run.text.length, bullet, atomic: true,
-        width: measureTextWidth(run.text, run, scale, measurer), br: false, space: false, squeeze: 0 });
+      out.push({
+        text: run.text,
+        run,
+        runIndex,
+        from: 0,
+        to: run.text.length,
+        bullet,
+        atomic: true,
+        width: measureTextWidth(run.text, run, scale, measurer),
+        br: false,
+        space: false,
+        squeeze: 0,
+      });
       continue;
     }
     const display = displayWithSource(run);
@@ -131,8 +138,7 @@ export interface Line {
 }
 
 /** 行的实际占位宽度。挤压过的行要按挤压后算，否则居中 / 右对齐会偏 */
-const lineWidth = (line: Line): number =>
-  line.squeezed ? line.width - line.squeeze : line.width - line.baseSqueeze;
+const lineWidth = (line: Line): number => (line.squeezed ? line.width - line.squeeze : line.width - line.baseSqueeze);
 
 /**
  * 行闭合时算无条件挤压：行首行尾与连续标点是跨 run 的整行性质，拼起来判定。
@@ -162,9 +168,17 @@ function pushSeg(line: Line, token: Token): void {
     last.atomic ||= token.atomic;
     last.tokens!.push(token);
   } else {
-    line.segs.push({ text: token.text, run: token.run, runIndex: token.runIndex,
-      from: token.from, to: token.to, bullet: token.bullet, atomic: token.atomic,
-      tokens: [token], width: token.width });
+    line.segs.push({
+      text: token.text,
+      run: token.run,
+      runIndex: token.runIndex,
+      from: token.from,
+      to: token.to,
+      bullet: token.bullet,
+      atomic: token.atomic,
+      tokens: [token],
+      width: token.width,
+    });
   }
   line.width += token.width;
   line.squeeze += token.squeeze;
@@ -229,7 +243,10 @@ interface LaidPara {
 }
 
 const ANCHOR: Record<Paragraph['align'], string> = {
-  left: 'start', center: 'middle', right: 'end', justify: 'start',
+  left: 'start',
+  center: 'middle',
+  right: 'end',
+  justify: 'start',
 };
 
 interface RenderItem {
@@ -246,12 +263,15 @@ interface RenderItem {
 function layoutParagraphs(t: TextBody, boxW: number, scale: number, measurer?: TextMeasure): LaidPara[] {
   return t.paragraphs.map((p) => {
     const first = p.runs[0];
-    const bulletRun: TextRun | null = p.bullet && first
-      ? bulletTextRun({
-        ...first, text: `${p.bullet} `, size: first.size * (p.bulletSize ?? 1),
-        color: p.bulletColor ?? first.color,
-      })
-      : null;
+    const bulletRun: TextRun | null =
+      p.bullet && first
+        ? bulletTextRun({
+            ...first,
+            text: `${p.bullet} `,
+            size: first.size * (p.bulletSize ?? 1),
+            color: p.bulletColor ?? first.color,
+          })
+        : null;
     const runs: IndexedRun[] = [
       ...(bulletRun ? [{ run: bulletRun, runIndex: -1, bullet: true }] : []),
       ...p.runs.map((run, runIndex) => ({ run, runIndex, bullet: false })),
@@ -289,13 +309,7 @@ interface TextScaleOverrides {
   vert?: TextBody['vert'];
 }
 
-export function autoFitScale(
-  t: TextBody,
-  w: number,
-  h: number,
-  measurer?: TextMeasure,
-  overrides: TextScaleOverrides = {},
-): number {
+export function autoFitScale(t: TextBody, w: number, h: number, measurer?: TextMeasure, overrides: TextScaleOverrides = {}): number {
   const [pt, pr, pb, pl] = overrides.insets ?? t.insets;
   const vert = overrides.vert ?? t.vert ?? 'horz';
   // 竖排先把行盒宽高交换；求解器必须使用与最终行盒相同的逻辑内容盒。
@@ -305,10 +319,12 @@ export function autoFitScale(
   const boxH = Math.max(1, layoutH - pt - pb);
   if (textHeight(t, boxW, 1, measurer) <= boxH) return 1;
 
-  let lo = MIN_AUTOFIT, hi = 1;
+  let lo = MIN_AUTOFIT,
+    hi = 1;
   for (let i = 0; i < 12; i++) {
     const mid = (lo + hi) / 2;
-    if (textHeight(t, boxW, mid, measurer) <= boxH) lo = mid; else hi = mid;
+    if (textHeight(t, boxW, mid, measurer) <= boxH) lo = mid;
+    else hi = mid;
   }
   return lo;
 }
@@ -317,13 +333,7 @@ export function autoFitScale(
 const MIN_AUTOFIT = 0.25;
 
 /** TextBody 的最终字号比例；HTML、SVG 和公共行盒共用。 */
-export function resolveTextScale(
-  t: TextBody,
-  w: number,
-  h: number,
-  measurer?: TextMeasure,
-  overrides: TextScaleOverrides = {},
-): number {
+export function resolveTextScale(t: TextBody, w: number, h: number, measurer?: TextMeasure, overrides: TextScaleOverrides = {}): number {
   const base = Number.isFinite(t.fontScale) && t.fontScale > 0 ? t.fontScale : 1;
   if (!t.autoFitCompute || t.autoFitShape) return base;
   return base * autoFitScale(t, w, h, measurer, overrides);
@@ -338,8 +348,7 @@ function flattenLayout(paragraphs: LaidPara[]): RenderItem[] {
         line,
         paragraphIndex,
         li,
-        h: lp.lineHeights[li] + (li === 0 ? lp.before : 0)
-          + (li === lp.lines.length - 1 ? lp.after : 0),
+        h: lp.lineHeights[li] + (li === 0 ? lp.before : 0) + (li === lp.lines.length - 1 ? lp.after : 0),
         padTop: li === 0 ? lp.before : 0,
       });
     });
@@ -355,18 +364,13 @@ const itemsHeight = (items: RenderItem[]): number => items.reduce((sum, item) =>
  * 行与字符坐标位于逻辑排版空间；竖排调用方把 `transform` 同时应用到覆盖层和命中点。
  * `from/to/offset` 均为 TextRun.text 的 UTF-16 下标，可直接映射 DOM Range。
  */
-export function layoutText(
-  t: TextBody,
-  w: number,
-  h: number,
-  opts: TextLayoutOptions = {},
-): TextLayout {
+export function layoutText(t: TextBody, w: number, h: number, opts: TextLayoutOptions = {}): TextLayout {
   const vert = opts.vert ?? t.vert ?? 'horz';
-  const scale = Number.isFinite(opts.scale) && opts.scale! > 0
-    ? opts.scale!
-    : resolveTextScale(t, w, h, opts.measureText, { insets: opts.insets, vert: opts.vert });
-  const autoFit: TextLayout['autoFit'] = t.autoFitShape ? 'shape'
-    : t.autoFitNormal || t.autoFitCompute ? 'normal' : 'none';
+  const scale =
+    Number.isFinite(opts.scale) && opts.scale! > 0
+      ? opts.scale!
+      : resolveTextScale(t, w, h, opts.measureText, { insets: opts.insets, vert: opts.vert });
+  const autoFit: TextLayout['autoFit'] = t.autoFitShape ? 'shape' : t.autoFitNormal || t.autoFitCompute ? 'normal' : 'none';
 
   if (vert === 'vert' || vert === 'wordArtVert' || vert === 'vert270') {
     const inner = layoutText({ ...t, vert: undefined }, h, w, {
@@ -376,8 +380,7 @@ export function layoutText(
     });
     const [, pr, , pl] = opts.insets ?? t.insets;
     // 竖排的物理高度就是内部横排的逻辑宽度；不可断的长词即使只有一行也会溢出。
-    const overflowWidth = inner.lines.some((line) =>
-      line.x < pl - 1e-9 || line.x + line.width > h - pr + 1e-9);
+    const overflowWidth = inner.lines.some((line) => line.x < pl - 1e-9 || line.x + line.width > h - pr + 1e-9);
     return {
       ...inner,
       width: w,
@@ -387,9 +390,7 @@ export function layoutText(
       scale,
       autoFit,
       vert,
-      transform: vert === 'vert270'
-        ? [0, -1, 1, 0, 0, h]
-        : [0, 1, -1, 0, w, 0],
+      transform: vert === 'vert270' ? [0, -1, 1, 0, 0, h] : [0, 1, -1, 0, w, 0],
       unwarped: warpSupported(t.warp?.preset),
       overflow: inner.overflow || overflowWidth,
     };
@@ -433,13 +434,9 @@ export function layoutText(
       const indent = li === 0 ? lp.para.indent : 0;
       const left = originX + Math.max(0, lp.para.marL) + indent;
       const textAnchor = ANCHOR[lp.para.align];
-      const anchorX = textAnchor === 'middle'
-        ? originX + colW / 2
-        : textAnchor === 'end' ? originX + colW : left;
+      const anchorX = textAnchor === 'middle' ? originX + colW / 2 : textAnchor === 'end' ? originX + colW : left;
       const width = lineWidth(line);
-      const lineStart = textAnchor === 'middle'
-        ? anchorX - width / 2
-        : textAnchor === 'end' ? anchorX - width : anchorX;
+      const lineStart = textAnchor === 'middle' ? anchorX - width / 2 : textAnchor === 'end' ? anchorX - width : anchorX;
       const rtl = lp.para.rtl === true;
       lines.push({
         paragraphIndex,

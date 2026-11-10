@@ -2,22 +2,28 @@ import { formatDrawingAutoNumber } from '@web-ppt/core';
 import type { TextBody } from '@web-ppt/core';
 import type { TextEditOp, TextPosition, TextRange } from './commands/types';
 import type {
-  FlatTextParagraph, ParagraphPropertiesState, ParagraphPropertyOverrides,
-  RunPropertiesState, RunPropertyOverrides, RunPropertyState, TextFragment, TextMark, TextOverride,
+  FlatTextParagraph,
+  ParagraphPropertiesState,
+  ParagraphPropertyOverrides,
+  RunPropertiesState,
+  RunPropertyOverrides,
+  RunPropertyState,
+  TextFragment,
+  TextMark,
+  TextOverride,
 } from './types';
 import { applyParagraphPropertyOverrides } from './paragraph-level';
 import { flattenTextBody } from './text-flatten';
 import { assertTextAtomBoundary, textPositionOffset } from './text-selection';
-import {
-  clearedMark, DEFAULT_RUN, formattedMark, sameInherited, sameRunOverrides, visibleHighlight,
-} from './run-style';
+import { clearedMark, DEFAULT_RUN, formattedMark, sameInherited, sameRunOverrides, visibleHighlight } from './run-style';
 
 export { textBodyFromOverride } from './text-override-projection';
 export { flattenTextBody } from './text-flatten';
 export { textFragmentFromRange } from './text-fragment';
 
 function sameStyle(left: TextMark, right: TextMark): boolean {
-  return left.atomText === right.atomText
+  return (
+    left.atomText === right.atomText
     && JSON.stringify(left.props) === JSON.stringify(right.props)
     && left.preserveSource === right.preserveSource
     && sameRunOverrides(left.runOverrides, right.runOverrides)
@@ -28,7 +34,8 @@ function sameStyle(left: TextMark, right: TextMark): boolean {
     && JSON.stringify(left.inheritedFontSlots) === JSON.stringify(right.inheritedFontSlots)
     && left.sourceLinkReadonly === right.sourceLinkReadonly
     // 不跨来源合并字段/超链接身份；同一来源被区间操作切开的片段仍会归一。
-    && JSON.stringify(left.source) === JSON.stringify(right.source);
+    && JSON.stringify(left.source) === JSON.stringify(right.source)
+  );
 }
 
 interface Segment {
@@ -36,10 +43,7 @@ interface Segment {
   template: TextMark;
 }
 
-function normalizedParagraph(
-  source: FlatTextParagraph,
-  segments: readonly Segment[],
-): FlatTextParagraph {
+function normalizedParagraph(source: FlatTextParagraph, segments: readonly Segment[]): FlatTextParagraph {
   let text = '';
   const marks: TextMark[] = [];
   const normalizedSegments = segments.flatMap((segment): Segment[] => {
@@ -61,9 +65,15 @@ function normalizedParagraph(
     text += segment.text;
     const next: TextMark = { ...segment.template, from, to: text.length };
     const previous = marks[marks.length - 1];
-    if (previous && previous.to === next.from && sameStyle(previous, next)
-      && !previous.atomText && !next.atomText && segment.text !== '\n'
-      && text.slice(previous.from, previous.to) !== '\n') {
+    if (
+      previous
+      && previous.to === next.from
+      && sameStyle(previous, next)
+      && !previous.atomText
+      && !next.atomText
+      && segment.text !== '\n'
+      && text.slice(previous.from, previous.to) !== '\n'
+    ) {
       marks[marks.length - 1] = { ...previous, to: next.to };
     } else if (next.to > next.from || segments.length === 1) marks.push(next);
   }
@@ -71,7 +81,8 @@ function normalizedParagraph(
 }
 
 function styleAt(paragraph: FlatTextParagraph, offset: number): TextMark {
-  const mark = paragraph.marks.find((candidate) => offset >= candidate.from && offset < candidate.to)
+  const mark =
+    paragraph.marks.find((candidate) => offset >= candidate.from && offset < candidate.to)
     ?? [...paragraph.marks].reverse().find((candidate) => candidate.to <= offset)
     ?? paragraph.marks[0];
   if (mark) {
@@ -105,8 +116,7 @@ function replace(
   if (text.includes('\r') || (!allowLineBreak && text.includes('\n'))) {
     throw new Error('replace 文本不能包含换行');
   }
-  if (!Number.isInteger(from.p) || !Number.isInteger(to.p)
-    || from.p < 0 || to.p < from.p || to.p >= paragraphs.length) {
+  if (!Number.isInteger(from.p) || !Number.isInteger(to.p) || from.p < 0 || to.p < from.p || to.p >= paragraphs.length) {
     throw new Error('文字选择的段落范围无效');
   }
   const first = paragraphs[from.p];
@@ -126,10 +136,7 @@ function replace(
   return [...paragraphs.slice(0, from.p), joined, ...paragraphs.slice(to.p + 1)];
 }
 
-function splitParagraph(
-  paragraphs: readonly FlatTextParagraph[],
-  at: TextPosition,
-): FlatTextParagraph[] {
+function splitParagraph(paragraphs: readonly FlatTextParagraph[], at: TextPosition): FlatTextParagraph[] {
   if (!Number.isInteger(at.p) || at.p < 0 || at.p >= paragraphs.length) {
     throw new Error('拆分段落位置无效');
   }
@@ -159,15 +166,18 @@ function replaceFragment(
   const source = removed[from.p];
   const prefix = sliceSegments(source, 0, offset);
   const suffix = sliceSegments(source, offset, source.text.length);
-  const fragmentSegments = fragment.paragraphs.map((paragraph): Segment[] => paragraph.text.length
-    ? paragraph.marks.map((mark) => ({
-      text: paragraph.text.slice(mark.from, mark.to),
-      template: formattedMark(inherited, mark.props),
-    }))
-    : [{ text: '', template: inherited }]);
+  const fragmentSegments = fragment.paragraphs.map((paragraph): Segment[] =>
+    paragraph.text.length
+      ? paragraph.marks.map((mark) => ({
+          text: paragraph.text.slice(mark.from, mark.to),
+          template: formattedMark(inherited, mark.props),
+        }))
+      : [{ text: '', template: inherited }],
+  );
   const inserted = fragmentSegments.map((segments, index) => {
     const normalized = normalizedParagraph(source, [
-      ...(index === 0 ? prefix : []), ...segments,
+      ...(index === 0 ? prefix : []),
+      ...segments,
       ...(index === fragmentSegments.length - 1 ? suffix : []),
     ]);
     const bullet = fragment.paragraphs[index].bullet;
@@ -175,11 +185,16 @@ function replaceFragment(
     const image = bullet.kind === 'blip' ? imageOverrides?.get(index) : undefined;
     if (bullet.kind === 'blip' && !image) throw new Error('富文本图片项目符号缺少资源闭包');
     // 片段中的缺省样式表示“跟随文字”，落到覆盖层时必须显式归一为 null；否则保存会保留目标 pPr 的旧样式。
-    const styledBullet = bullet.kind === 'none' ? bullet : {
-      ...bullet, font: bullet.font ?? null, color: bullet.color ?? null, size: bullet.size ?? null,
-    };
-    const storedBullet = styledBullet.kind === 'blip'
-      ? { ...styledBullet, image: { src: image!.src } } : styledBullet;
+    const styledBullet =
+      bullet.kind === 'none'
+        ? bullet
+        : {
+            ...bullet,
+            font: bullet.font ?? null,
+            color: bullet.color ?? null,
+            size: bullet.size ?? null,
+          };
+    const storedBullet = styledBullet.kind === 'blip' ? { ...styledBullet, image: { src: image!.src } } : styledBullet;
     const props = { ...normalized.props };
     if (storedBullet.kind === 'char') {
       props.bullet = storedBullet.char;
@@ -198,9 +213,8 @@ function replaceFragment(
       props.bulletFont = storedBullet.font ?? null;
       props.bulletColor = storedBullet.color ?? null;
       const maxSize = Math.max(...normalized.marks.map((mark) => mark.props.size), 1);
-      props.bulletSize = storedBullet.size?.kind === 'points'
-        ? storedBullet.size.value * (4 / 3) / maxSize
-        : storedBullet.size?.value ?? null;
+      props.bulletSize =
+        storedBullet.size?.kind === 'points' ? (storedBullet.size.value * (4 / 3)) / maxSize : (storedBullet.size?.value ?? null);
     }
     return {
       ...normalized,
@@ -216,22 +230,19 @@ export function applyTextEditOps(
   body: TextBody,
   ops: readonly TextEditOp[],
   initial?: Extract<TextOverride, { kind: 'flat' }>,
-  fragmentImageOverrides?: ReadonlyMap<number, ReadonlyMap<number,
-    import('./types').ElementImageReplacement>>,
+  fragmentImageOverrides?: ReadonlyMap<number, ReadonlyMap<number, import('./types').ElementImageReplacement>>,
 ): TextOverride {
   let override = initial ?? flattenTextBody(body);
   for (let opIndex = 0; opIndex < ops.length; opIndex++) {
     const op = ops[opIndex];
-    const paragraphs = op.type === 'replace'
-      ? replace(override.paragraphs, op.from, op.to, op.text)
-      : op.type === 'splitParagraph'
-        ? splitParagraph(override.paragraphs, op.at)
-        : op.type === 'insertLineBreak'
-          ? replace(override.paragraphs, op.at, op.at, '\n', true)
-          : replaceFragment(
-            override.paragraphs, op.from, op.to, op.fragment,
-            fragmentImageOverrides?.get(opIndex),
-          );
+    const paragraphs =
+      op.type === 'replace'
+        ? replace(override.paragraphs, op.from, op.to, op.text)
+        : op.type === 'splitParagraph'
+          ? splitParagraph(override.paragraphs, op.at)
+          : op.type === 'insertLineBreak'
+            ? replace(override.paragraphs, op.at, op.at, '\n', true)
+            : replaceFragment(override.paragraphs, op.from, op.to, op.fragment, fragmentImageOverrides?.get(opIndex));
     override = { ...override, paragraphs };
   }
   return override;
@@ -298,18 +309,17 @@ export function applyRunProps(
     const start = index === range.from.p ? from : 0;
     const end = index === range.to.p ? to : paragraph.text.length;
     paragraphs[index] = transformParagraph(
-      paragraph, start, end, (mark) => formattedMark(mark, props),
+      paragraph,
+      start,
+      end,
+      (mark) => formattedMark(mark, props),
       range.from.p !== range.to.p && !paragraph.text.length,
     );
   }
   return { ...override, paragraphs };
 }
 
-export function clearRunFormat(
-  body: TextBody,
-  range: TextRange,
-  initial?: Extract<TextOverride, { kind: 'flat' }>,
-): TextOverride {
+export function clearRunFormat(body: TextBody, range: TextRange, initial?: Extract<TextOverride, { kind: 'flat' }>): TextOverride {
   const override = initial ?? flattenTextBody(body);
   queryTextRunProps(body, range, override);
   const first = override.paragraphs[range.from.p];
@@ -342,9 +352,7 @@ export function applyParagraphProps(
 ): TextOverride {
   const override = initial ?? flattenTextBody(body);
   queryTextRunProps(body, range, override);
-  return applyParagraphPropertyOverrides(
-    sourceBody, override, range, props, levelTemplate, imageOverride,
-  );
+  return applyParagraphPropertyOverrides(sourceBody, override, range, props, levelTemplate, imageOverride);
 }
 
 export function queryTextParagraphProps(
@@ -357,8 +365,7 @@ export function queryTextParagraphProps(
   const paragraphs = override.paragraphs.slice(range.from.p, range.to.p + 1);
   const bullet = (paragraph: FlatTextParagraph) => {
     if (Object.prototype.hasOwnProperty.call(paragraph.paragraphOverrides ?? {}, 'bullet')) {
-      return paragraph.paragraphOverrides?.bullet
-        ?? paragraph.inheritedBullet ?? { kind: 'none' as const };
+      return paragraph.paragraphOverrides?.bullet ?? paragraph.inheritedBullet ?? { kind: 'none' as const };
     }
     if (paragraph.sourceBullet) return paragraph.sourceBullet;
     if (paragraph.props.bullet === null || paragraph.props.bulletImage) return null;
@@ -401,11 +408,7 @@ function fontState(marks: readonly TextMark[]): RunPropertyState<string> {
   };
 }
 
-export function queryTextRunProps(
-  body: TextBody,
-  range: TextRange,
-  initial?: Extract<TextOverride, { kind: 'flat' }>,
-): RunPropertiesState {
+export function queryTextRunProps(body: TextBody, range: TextRange, initial?: Extract<TextOverride, { kind: 'flat' }>): RunPropertiesState {
   const selected = textMarksInRange(body, range, initial);
   return {
     font: fontState(selected),
@@ -416,8 +419,7 @@ export function queryTextRunProps(
     u: state(selected.map((mark) => mark.props.u)),
     strike: state(selected.map((mark) => mark.props.strike)),
     underline: state(selected.map((mark) => mark.props.underline ?? (mark.props.u ? 'sng' : 'none'))),
-    strikeType: state(selected.map((mark) => mark.props.strikeType
-      ?? (mark.props.strike ? 'sngStrike' : 'noStrike'))),
+    strikeType: state(selected.map((mark) => mark.props.strikeType ?? (mark.props.strike ? 'sngStrike' : 'noStrike'))),
     highlight: state(selected.map((mark) => visibleHighlight(mark.props.highlight))),
     spacing: state(selected.map((mark) => mark.props.spacing ?? 0)),
     caps: state(selected.map((mark) => mark.props.caps ?? 'none')),
@@ -426,11 +428,7 @@ export function queryTextRunProps(
 }
 
 /** 链接查询与字符面板复用完全相同的区间/公式边界语义。 */
-export function textMarksInRange(
-  body: TextBody,
-  range: TextRange,
-  initial?: Extract<TextOverride, { kind: 'flat' }>,
-): TextMark[] {
+export function textMarksInRange(body: TextBody, range: TextRange, initial?: Extract<TextOverride, { kind: 'flat' }>): TextMark[] {
   const override = initial ?? flattenTextBody(body);
   if (range.from.p < 0 || range.to.p < range.from.p || range.to.p >= override.paragraphs.length) {
     throw new Error('字符格式查询段落范围无效');

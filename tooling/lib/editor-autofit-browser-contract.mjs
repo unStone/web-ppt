@@ -1,14 +1,16 @@
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const textOf = (text) => text.paragraphs
-  .map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n');
+const textOf = (text) => text.paragraphs.map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n');
 
 function caretAtEnd(root) {
   const marker = [...root.querySelectorAll('[data-r]')].at(-1);
   const walker = document.createTreeWalker(marker, NodeFilter.SHOW_TEXT);
   let node = walker.nextNode();
   let last = node;
-  while (node) { last = node; node = walker.nextNode(); }
+  while (node) {
+    last = node;
+    node = walker.nextNode();
+  }
   const range = document.createRange();
   range.setStart(last ?? marker, last?.textContent.length ?? marker.childNodes.length);
   range.collapse(true);
@@ -20,29 +22,25 @@ const scaleOf = (root) => Number(root.querySelector('[data-font-scale]').dataset
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const nearScale = (actual, expected) => Math.abs(actual - expected) <= 0.005;
 
-async function measureTarget({
-  openEditor, layoutText, bytes, textMode, idPrefix, recordName, selector, inserted, resolveLayout,
-}) {
+async function measureTarget({ openEditor, layoutText, bytes, textMode, idPrefix, recordName, selector, inserted, resolveLayout }) {
   const session = await openEditor(bytes, { idPrefix });
-  const record = Object.values(session.editor.doc.elements)
-    .find((candidate) => candidate.src.name === recordName);
+  const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === recordName);
   const mount = document.createElement('div');
   mount.className = 'contract-offscreen';
   document.body.append(mount);
   const view = session.mount(mount, { mode: 'edit', textMode });
   const targetSelector = typeof selector === 'function' ? selector(record) : selector;
-  const activate = () => mount.querySelector(targetSelector).dispatchEvent(
-    new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }),
-  );
+  const activate = () =>
+    mount.querySelector(targetSelector).dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }));
   activate();
 
   let editable = mount.querySelector('[data-ppt-text-editor]');
   const initialScale = scaleOf(editable);
   const initialLayout = resolveLayout(session.editor.effectiveElement(record.id));
-  const initialExpected = layoutText(
-    initialLayout.text, initialLayout.width, initialLayout.height,
-    { ...initialLayout.options, includeCarets: false },
-  ).scale;
+  const initialExpected = layoutText(initialLayout.text, initialLayout.width, initialLayout.height, {
+    ...initialLayout.options,
+    includeCarets: false,
+  }).scale;
   const beforeLength = textOf(initialLayout.text).length;
   const samples = [];
   const burstStarted = performance.now();
@@ -53,7 +51,11 @@ async function measureTarget({
     caretAtEnd(editable);
     const started = performance.now();
     const event = new InputEvent('beforeinput', {
-      inputType: 'insertText', data: inserted, bubbles: true, composed: true, cancelable: true,
+      inputType: 'insertText',
+      data: inserted,
+      bubbles: true,
+      composed: true,
+      cancelable: true,
     });
     editable.dispatchEvent(event);
     editable = mount.querySelector('[data-ppt-text-editor]');
@@ -73,21 +75,33 @@ async function measureTarget({
   editable = mount.querySelector('[data-ppt-text-editor]');
   const settledScale = scaleOf(editable);
   const settledLayout = resolveLayout(session.editor.effectiveElement(record.id));
-  const expectedScale = layoutText(
-    settledLayout.text, settledLayout.width, settledLayout.height,
-    { ...settledLayout.options, includeCarets: false },
-  ).scale;
-  editable.dispatchEvent(new KeyboardEvent('keydown', {
-    key: 'Escape', bubbles: true, composed: true, cancelable: true,
-  }));
+  const expectedScale = layoutText(settledLayout.text, settledLayout.width, settledLayout.height, {
+    ...settledLayout.options,
+    includeCarets: false,
+  }).scale;
+  editable.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    }),
+  );
   activate();
   const reopenedScale = scaleOf(mount.querySelector('[data-ppt-text-editor]'));
   view.destroy();
   session.dispose();
   mount.remove();
   return {
-    p95, firstWindowStable, settledDuringBurst, synchronous,
-    initialScale, initialExpected, settledScale, expectedScale, reopenedScale,
+    p95,
+    firstWindowStable,
+    settledDuringBurst,
+    synchronous,
+    initialScale,
+    initialExpected,
+    settledScale,
+    expectedScale,
+    reopenedScale,
   };
 }
 
@@ -112,30 +126,51 @@ const tableCellLayout = (element) => {
 export async function runEditorAutofitBrowserContract({ openEditor, load, layoutText }) {
   const shapeBytes = await load('sample-editor-engine-text.pptx');
   const common = {
-    openEditor, layoutText, recordName: 'Engine 裸自动缩放',
+    openEditor,
+    layoutText,
+    recordName: 'Engine 裸自动缩放',
     selector: (record) => `[data-edit-id="${record.id}"]`,
-    inserted: '自动缩放', resolveLayout: shapeLayout,
+    inserted: '自动缩放',
+    resolveLayout: shapeLayout,
   };
   const browser = await measureTarget({
-    ...common, bytes: shapeBytes.slice(0), textMode: 'html', idPrefix: 'browser-autofit-html-',
+    ...common,
+    bytes: shapeBytes.slice(0),
+    textMode: 'html',
+    idPrefix: 'browser-autofit-html-',
   });
   const engine = await measureTarget({
-    ...common, bytes: shapeBytes.slice(0), textMode: 'svg', idPrefix: 'browser-autofit-svg-',
+    ...common,
+    bytes: shapeBytes.slice(0),
+    textMode: 'svg',
+    idPrefix: 'browser-autofit-svg-',
   });
   const cell = await measureTarget({
-    openEditor, layoutText, bytes: await load('sample-editor-table-text.pptx'),
-    textMode: 'html', idPrefix: 'browser-autofit-cell-', recordName: '表格文字综合',
-    selector: '[data-table-cell="1:3"]', inserted: '单元格', resolveLayout: tableCellLayout,
+    openEditor,
+    layoutText,
+    bytes: await load('sample-editor-table-text.pptx'),
+    textMode: 'html',
+    idPrefix: 'browser-autofit-cell-',
+    recordName: '表格文字综合',
+    selector: '[data-table-cell="1:3"]',
+    inserted: '单元格',
+    resolveLayout: tableCellLayout,
   });
 
   for (const [mode, result] of Object.entries({ browser, engine, cell })) {
-    if (!result.firstWindowStable || !result.settledDuringBurst || !result.synchronous
+    if (
+      !result.firstWindowStable
+      || !result.settledDuringBurst
+      || !result.synchronous
       || !nearScale(result.initialScale, result.initialExpected)
       || !nearScale(result.settledScale, result.expectedScale)
-      || result.reopenedScale !== result.settledScale) {
-      throw new Error(`${mode} autofit 功能失败：initial=${result.initialScale}/${result.initialExpected} `
-        + `settled=${result.settledScale}/${result.expectedScale}/${result.reopenedScale} `
-        + `window=${result.firstWindowStable}/${result.settledDuringBurst}`);
+      || result.reopenedScale !== result.settledScale
+    ) {
+      throw new Error(
+        `${mode} autofit 功能失败：initial=${result.initialScale}/${result.initialExpected} `
+          + `settled=${result.settledScale}/${result.expectedScale}/${result.reopenedScale} `
+          + `window=${result.firstWindowStable}/${result.settledDuringBurst}`,
+      );
     }
     recordPerformanceBudget(`${mode} autofit p95`, result.p95, 30);
   }

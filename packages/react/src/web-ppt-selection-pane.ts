@@ -1,6 +1,4 @@
-import {
-  createElement, forwardRef, useEffect, useImperativeHandle, useRef,
-} from 'react';
+import { createElement, forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import type { HTMLAttributes } from 'react';
 import type { SelectionPane, WebPptAdapter } from '@web-ppt/editor';
 
@@ -12,9 +10,7 @@ export interface WebPptSelectionPaneHandle {
   readonly pane: SelectionPane | null;
 }
 
-const SelectionPaneComponent = forwardRef<
-WebPptSelectionPaneHandle, WebPptSelectionPaneProps
->(({ adapter, ...containerProps }, ref) => {
+const SelectionPaneComponent = forwardRef<WebPptSelectionPaneHandle, WebPptSelectionPaneProps>(({ adapter, ...containerProps }, ref) => {
   const container = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!adapter || adapter.disposed) return;
@@ -23,9 +19,15 @@ WebPptSelectionPaneHandle, WebPptSelectionPaneProps
       if (!adapter.disposed) adapter.attachSelectionPane(null);
     };
   }, [adapter]);
-  useImperativeHandle(ref, () => ({
-    get pane() { return adapter?.snapshot.selectionPane ?? null; },
-  }), [adapter]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      get pane() {
+        return adapter?.snapshot.selectionPane ?? null;
+      },
+    }),
+    [adapter],
+  );
   return createElement('div', { ...containerProps, ref: container });
 });
 

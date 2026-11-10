@@ -1,6 +1,4 @@
-import type {
-  EditIdentity, Editor, EditorPatchEvent, Patch,
-} from '@web-ppt/edit-core';
+import type { EditIdentity, Editor, EditorPatchEvent, Patch } from '@web-ppt/edit-core';
 
 export interface CollabStamp {
   readonly clock: number;
@@ -17,8 +15,7 @@ export interface CollabRegisterCheckpoint {
   readonly kind: 'field' | 'hierarchy';
 }
 
-export type CollabExtensionOperation = { readonly op: 'set'; readonly value: string | number | boolean | null }
-  | { readonly op: 'del' };
+export type CollabExtensionOperation = { readonly op: 'set'; readonly value: string | number | boolean | null } | { readonly op: 'del' };
 
 export interface CollabSlideMoveCheckpoint {
   readonly stamp: CollabStamp;

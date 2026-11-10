@@ -3,14 +3,11 @@ import { desiredSlideOrder } from './slide-order';
 import type { SectionMove } from './state';
 
 /** 用全量节顺序意图重写批次最后一个节快照，使不同目标的并发移动也与到达顺序无关。 */
-export function materializeSectionOrder(
-  base: readonly string[], moves: ReadonlyMap<string, SectionMove>, patches: Patch[],
-): Patch[] {
+export function materializeSectionOrder(base: readonly string[], moves: ReadonlyMap<string, SectionMove>, patches: Patch[]): Patch[] {
   let last = -1;
   for (let index = 0; index < patches.length; index++) {
     const patch = patches[index];
-    if (patch.op === 'set' && patch.path.length === 4
-      && patch.path[0] === 'document' && patch.path[1] === 'sections') last = index;
+    if (patch.op === 'set' && patch.path.length === 4 && patch.path[0] === 'document' && patch.path[1] === 'sections') last = index;
   }
   if (last < 0) return patches;
   const patch = patches[last] as SectionStatePatch;

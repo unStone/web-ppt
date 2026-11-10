@@ -78,15 +78,23 @@ export function reparsePptxSlideWithLayout(
   try {
     return {
       slide: parseSlide(
-        session.pkg, slidePath, slideNum, session.presRoot, session.tableStyles,
-        session.slideIdMap, session.authors, true, layoutPath,
+        session.pkg,
+        slidePath,
+        slideNum,
+        session.presRoot,
+        session.tableStyles,
+        session.slideIdMap,
+        session.authors,
+        true,
+        layoutPath,
       ),
       assets: session.pkg.deferred,
     };
   } finally {
     // 版式继承树跨页共享；其余实际触碰的图表、VML、SmartArt、备注等属于页面闭包。
     for (const part of session.pkg.endCacheTrace(trace)) {
-      const shared = part === 'ppt/presentation.xml'
+      const shared =
+        part === 'ppt/presentation.xml'
         || part.startsWith('ppt/slideLayouts/')
         || part.startsWith('ppt/slideMasters/')
         || part.startsWith('ppt/theme/')
@@ -99,28 +107,32 @@ export function reparsePptxSlideWithLayout(
 }
 
 /** 主题内存覆盖后的版式目录必须重走 core 解析，不能在 edit-core 复制颜色与字体继承。 */
-export function reparsePptxLayoutTemplate(
-  source: OpcPackage,
-  layoutPath: string,
-): PptxLayoutTemplateReparseResult {
+export function reparsePptxLayoutTemplate(source: OpcPackage, layoutPath: string): PptxLayoutTemplateReparseResult {
   if (!source.parts[layoutPath]) throw new Error(`找不到版式 part：${layoutPath}`);
   const session = sessionFor(source);
   const trace = session.pkg.beginCacheTrace();
   try {
     const presRels = session.pkg.rels('ppt/presentation.xml');
     const themes = parseThemeCatalog(
-      session.presRoot, presRels,
-      (path) => session.pkg.xml(path), (path) => session.pkg.rels(path),
+      session.presRoot,
+      presRels,
+      (path) => session.pkg.xml(path),
+      (path) => session.pkg.rels(path),
     );
     const layout = parseLayoutCatalog(
-      session.pkg, session.presRoot, presRels, session.tableStyles,
-      session.slideIdMap, themes.themeByMaster,
+      session.pkg,
+      session.presRoot,
+      presRels,
+      session.tableStyles,
+      session.slideIdMap,
+      themes.themeByMaster,
     ).find((candidate) => candidate.id === layoutPath);
     if (!layout) throw new Error(`版式目录不存在：${layoutPath}`);
     return { layout, assets: session.pkg.deferred };
   } finally {
     for (const part of session.pkg.endCacheTrace(trace)) {
-      const shared = part === 'ppt/presentation.xml'
+      const shared =
+        part === 'ppt/presentation.xml'
         || part.startsWith('ppt/slideLayouts/')
         || part.startsWith('ppt/slideMasters/')
         || part.startsWith('ppt/theme/')
@@ -133,28 +145,32 @@ export function reparsePptxLayoutTemplate(
 }
 
 /** 主题或母版覆盖后的母版目录仍由 core 的完整 OOXML 继承链重新求值。 */
-export function reparsePptxMasterTemplate(
-  source: OpcPackage,
-  masterPath: string,
-): PptxMasterTemplateReparseResult {
+export function reparsePptxMasterTemplate(source: OpcPackage, masterPath: string): PptxMasterTemplateReparseResult {
   if (!source.parts[masterPath]) throw new Error(`找不到母版 part：${masterPath}`);
   const session = sessionFor(source);
   const trace = session.pkg.beginCacheTrace();
   try {
     const presRels = session.pkg.rels('ppt/presentation.xml');
     const themes = parseThemeCatalog(
-      session.presRoot, presRels,
-      (path) => session.pkg.xml(path), (path) => session.pkg.rels(path),
+      session.presRoot,
+      presRels,
+      (path) => session.pkg.xml(path),
+      (path) => session.pkg.rels(path),
     );
     const master = parseMasterCatalog(
-      session.pkg, session.presRoot, presRels, session.tableStyles,
-      session.slideIdMap, themes.themeByMaster,
+      session.pkg,
+      session.presRoot,
+      presRels,
+      session.tableStyles,
+      session.slideIdMap,
+      themes.themeByMaster,
     ).find((candidate) => candidate.id === masterPath);
     if (!master) throw new Error(`母版目录不存在：${masterPath}`);
     return { master, assets: session.pkg.deferred };
   } finally {
     for (const part of session.pkg.endCacheTrace(trace)) {
-      const shared = part === 'ppt/presentation.xml'
+      const shared =
+        part === 'ppt/presentation.xml'
         || part.startsWith('ppt/slideLayouts/')
         || part.startsWith('ppt/slideMasters/')
         || part.startsWith('ppt/theme/')

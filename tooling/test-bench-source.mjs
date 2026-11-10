@@ -29,11 +29,17 @@ try {
     const source = join(root, 'packages', name, 'dist');
     if (!existsSync(source)) continue;
     const saved = join(temporary, name);
-    renameSync(source, saved); moved.push({ source, saved });
+    renameSync(source, saved);
+    moved.push({ source, saved });
   }
-  const result = JSON.parse(execFileSync(process.execPath, ['--expose-gc', join(root, 'tooling/bench.mjs'), '1', '--edit', '--json'], {
-    cwd: root, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024, timeout: 180_000,
-  }));
+  const result = JSON.parse(
+    execFileSync(process.execPath, ['--expose-gc', join(root, 'tooling/bench.mjs'), '1', '--edit', '--json'], {
+      cwd: root,
+      encoding: 'utf8',
+      maxBuffer: 4 * 1024 * 1024,
+      timeout: 180_000,
+    }),
+  );
   assert.equal(result.mode, 'edit');
   assert.equal(result.pages, 7);
   assert.equal(result.defaultState.package, true);

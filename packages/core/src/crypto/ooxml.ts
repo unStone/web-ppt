@@ -40,7 +40,10 @@ function concat(...parts: Uint8Array[]): Uint8Array {
   const total = parts.reduce((n, p) => n + p.length, 0);
   const out = new Uint8Array(total);
   let off = 0;
-  for (const p of parts) { out.set(p, off); off += p.length; }
+  for (const p of parts) {
+    out.set(p, off);
+    off += p.length;
+  }
   return out;
 }
 
@@ -101,9 +104,12 @@ function parseStandard(info: Uint8Array): StandardInfo | null {
   const saltSize = dv.getUint32(off, true);
   off += 4;
   if (saltSize !== 16) return null;
-  const salt = info.subarray(off, off + 16); off += 16;
-  const encryptedVerifier = info.subarray(off, off + 16); off += 16;
-  const verifierHashSize = dv.getUint32(off, true); off += 4;
+  const salt = info.subarray(off, off + 16);
+  off += 16;
+  const encryptedVerifier = info.subarray(off, off + 16);
+  off += 16;
+  const verifierHashSize = dv.getUint32(off, true);
+  off += 4;
   if (verifierHashSize < 20) return null;
   const encryptedVerifierHash = info.subarray(off, off + 32);
   return { keyBytes, salt, encryptedVerifier, encryptedVerifierHash };
@@ -151,11 +157,13 @@ interface AgileInfo {
 }
 
 function b64(s: string): Uint8Array {
-  const bin = typeof atob === 'function'
-    ? atob(s)
-    // Node 环境（测试 / SSR）没有 atob 时退回 Buffer
-    : (globalThis as { Buffer?: { from(v: string, e: string): { toString(e: string): string } } })
-      .Buffer!.from(s, 'base64').toString('binary');
+  const bin =
+    typeof atob === 'function'
+      ? atob(s)
+      : // Node 环境（测试 / SSR）没有 atob 时退回 Buffer
+        (globalThis as { Buffer?: { from(v: string, e: string): { toString(e: string): string } } })
+          .Buffer!.from(s, 'base64')
+          .toString('binary');
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
@@ -218,8 +226,7 @@ function decryptAgile(info: Uint8Array, pkg: Uint8Array, password: string): Uint
   const vv = aesDecryptCbc(agileBlockKey(ag, base, BLOCK_VERIFIER_VALUE), ag.pwSalt, ag.encryptedVerifierHashValue);
   if (!eq(ag.pwHash(vi.subarray(0, 16)), vv, Math.min(ag.hashSize, vv.length))) throw new WrongPasswordError();
 
-  const secret = aesDecryptCbc(agileBlockKey(ag, base, BLOCK_KEY_VALUE), ag.pwSalt, ag.encryptedKeyValue)
-    .subarray(0, ag.keyBytes);
+  const secret = aesDecryptCbc(agileBlockKey(ag, base, BLOCK_KEY_VALUE), ag.pwSalt, ag.encryptedKeyValue).subarray(0, ag.keyBytes);
 
   const size = Number(new DataView(pkg.buffer, pkg.byteOffset, pkg.byteLength).getBigUint64(0, true));
   const body = pkg.subarray(8);

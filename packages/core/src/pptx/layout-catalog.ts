@@ -17,9 +17,7 @@ export function layoutCatalogPaths(
   xml: (path: string) => Element | null,
   relationships: (path: string) => LayoutRelationshipIndex,
 ): string[] {
-  return masterCatalogPaths(
-    presentation, presentationRelationships, xml, relationships,
-  ).flatMap((master) => master.layoutIds);
+  return masterCatalogPaths(presentation, presentationRelationships, xml, relationships).flatMap((master) => master.layoutIds);
 }
 
 /** 母版身份与直属版式必须从关系图读取，不能依赖编号或文件名约定。 */
@@ -56,15 +54,18 @@ export function layoutPlaceholderTemplate(element: SlideElement): SlideElement |
   if (element.kind !== 'shape') return element;
   const sourceText = element.editInfo?.textTemplate ?? element.text ?? undefined;
   const firstParagraph = sourceText?.paragraphs[0];
-  const textTemplate = sourceText && firstParagraph ? {
-    ...sourceText,
-    paragraphs: [{
-      ...firstParagraph,
-      runs: firstParagraph.runs.length
-        ? [{ ...firstParagraph.runs[firstParagraph.runs.length - 1], text: '' }]
-        : [],
-    }],
-  } : sourceText;
+  const textTemplate =
+    sourceText && firstParagraph
+      ? {
+          ...sourceText,
+          paragraphs: [
+            {
+              ...firstParagraph,
+              runs: firstParagraph.runs.length ? [{ ...firstParagraph.runs[firstParagraph.runs.length - 1], text: '' }] : [],
+            },
+          ],
+        }
+      : sourceText;
   return {
     ...element,
     text: FIELD_PLACEHOLDERS.has(placeholder.type) ? element.text : null,

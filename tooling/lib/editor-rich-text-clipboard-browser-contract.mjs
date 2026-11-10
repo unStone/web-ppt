@@ -27,16 +27,17 @@ export async function runEditorRichTextClipboardBrowserContract({ openEditor, lo
   mount.className = 'contract-offscreen';
   document.body.append(mount);
   const view = session.mount(mount, { mode: 'edit', zoom: 1 });
-  const record = Object.values(session.editor.doc.elements)
-    .find((candidate) => candidate.src.name === '富文本剪贴板');
-  mount.querySelector(`[data-edit-id="${record.id}"]`).dispatchEvent(
-    new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }),
-  );
+  const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === '富文本剪贴板');
+  mount
+    .querySelector(`[data-edit-id="${record.id}"]`)
+    .dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true, cancelable: true }));
   const chunks = Array.from({ length: 200 }, (_, index) => String(index % 10).repeat(10));
   const plain = chunks.join('');
-  const html = chunks.map((chunk, index) => index % 2
-    ? `<i style="font-family:Arial;font-size:18px">${chunk}</i>`
-    : `<b style="font-family:Calibri;font-size:20px">${chunk}</b>`).join('');
+  const html = chunks
+    .map((chunk, index) =>
+      index % 2 ? `<i style="font-family:Arial;font-size:18px">${chunk}</i>` : `<b style="font-family:Calibri;font-size:20px">${chunk}</b>`,
+    )
+    .join('');
   const samples = [];
   for (let index = 0; index < 20; index++) {
     const editable = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
@@ -49,9 +50,12 @@ export async function runEditorRichTextClipboardBrowserContract({ openEditor, lo
     mount.querySelector(`[data-ppt-text-editor="${record.id}"]`)?.getBoundingClientRect();
     samples.push(performance.now() - started);
     const runs = session.editor.effectiveElement(record.id).text.paragraphs[0].runs;
-    if (accepted || runs.map((run) => run.text).join('').length !== plain.length + 2
+    if (
+      accepted
+      || runs.map((run) => run.text).join('').length !== plain.length + 2
       || !runs.some((run) => run.b && run.fonts[0] === 'Calibri')
-      || !runs.some((run) => run.i && run.fonts[0] === 'Arial')) {
+      || !runs.some((run) => run.i && run.fonts[0] === 'Arial')
+    ) {
       throw new Error('真实浏览器富文本粘贴没有保留白名单格式');
     }
     session.editor.undo();
@@ -62,10 +66,12 @@ export async function runEditorRichTextClipboardBrowserContract({ openEditor, lo
   selectFirstCharacter(editable);
   const bulletData = new DataTransfer();
   bulletData.setData('text/plain', '列表');
-  bulletData.setData('text/html', '<div data-web-ppt-bullet="{&quot;kind&quot;:&quot;char&quot;,&quot;char&quot;:&quot;→&quot;}">列表</div>');
+  bulletData.setData(
+    'text/html',
+    '<div data-web-ppt-bullet="{&quot;kind&quot;:&quot;char&quot;,&quot;char&quot;:&quot;→&quot;}">列表</div>',
+  );
   const bulletAccepted = editable.dispatchEvent(clipboardEvent('paste', bulletData));
-  if (bulletAccepted
-    || session.editor.effectiveElement(record.id).text.paragraphs[0].bullet !== '→') {
+  if (bulletAccepted || session.editor.effectiveElement(record.id).text.paragraphs[0].bullet !== '→') {
     throw new Error('真实浏览器富文本粘贴没有保留段落项目符号语义');
   }
   session.editor.undo();
@@ -73,10 +79,17 @@ export async function runEditorRichTextClipboardBrowserContract({ openEditor, lo
 
   let editableForAdvanced = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
   selectFirstCharacter(editableForAdvanced);
-  if (!view.setRunProps({
-    highlight: '#AABBCC', spacing: 2, caps: 'small', baseline: 20,
-    underline: 'wavyDbl', strikeType: 'dblStrike',
-  })) throw new Error('高级格式测试无法设置来源文字');
+  if (
+    !view.setRunProps({
+      highlight: '#AABBCC',
+      spacing: 2,
+      caps: 'small',
+      baseline: 20,
+      underline: 'wavyDbl',
+      strikeType: 'dblStrike',
+    })
+  )
+    throw new Error('高级格式测试无法设置来源文字');
   editableForAdvanced = mount.querySelector(`[data-ppt-text-editor="${record.id}"]`);
   selectFirstCharacter(editableForAdvanced);
   const copiedAdvanced = new DataTransfer();
@@ -92,9 +105,15 @@ export async function runEditorRichTextClipboardBrowserContract({ openEditor, lo
   getSelection().addRange(targetRange);
   const pastedAdvanced = editableForAdvanced.dispatchEvent(clipboardEvent('paste', copiedAdvanced));
   const advancedRun = session.editor.effectiveElement(record.id).text.paragraphs[0].runs.at(-1);
-  if (pastedAdvanced || advancedRun.highlight !== 'rgb(170,187,204)'
-    || advancedRun.spacing !== 2 || advancedRun.caps !== 'small' || advancedRun.baseline !== 20
-    || advancedRun.underline !== 'wavyDbl' || advancedRun.strikeType !== 'dblStrike') {
+  if (
+    pastedAdvanced
+    || advancedRun.highlight !== 'rgb(170,187,204)'
+    || advancedRun.spacing !== 2
+    || advancedRun.caps !== 'small'
+    || advancedRun.baseline !== 20
+    || advancedRun.underline !== 'wavyDbl'
+    || advancedRun.strikeType !== 'dblStrike'
+  ) {
     throw new Error(`内部富文本剪贴板丢失高级格式：${JSON.stringify(advancedRun)}`);
   }
   session.editor.undo();

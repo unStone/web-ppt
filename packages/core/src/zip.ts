@@ -31,7 +31,10 @@ export type ZipSafetyReason =
   | 'zip-output-too-large';
 
 export class ZipSafetyError extends Error {
-  constructor(readonly reason: ZipSafetyReason, message: string) {
+  constructor(
+    readonly reason: ZipSafetyReason,
+    message: string,
+  ) {
     super(message);
     this.name = 'ZipSafetyError';
   }
@@ -78,8 +81,9 @@ function normalizeName(name: string): string {
   }
   const segments = normalized.split('/');
   const directory = normalized.endsWith('/');
-  if (segments.some((segment, index) => segment === '.' || segment === '..'
-    || (!segment && !(directory && index === segments.length - 1)))) {
+  if (
+    segments.some((segment, index) => segment === '.' || segment === '..' || (!segment && !(directory && index === segments.length - 1)))
+  ) {
     fail('zip-invalid-name', `ZIP 条目包含路径穿越、当前目录或空路径段：${name}`);
   }
   return normalized;
@@ -95,15 +99,24 @@ function findEnd(source: Uint8Array): number {
     if (offset + 22 + commentLength === source.length) return offset;
     const tail = source.length - offset - 22;
     // 部分真实语料在零注释 EOCD 后多一个文本换行；只豁免 LF / CRLF，不接受其他尾随数据。
-    if (commentLength === 0 && ((tail === 1 && source[offset + 22] === 0x0a)
-      || (tail === 2 && source[offset + 22] === 0x0d && source[offset + 23] === 0x0a))) return offset;
+    if (
+      commentLength === 0
+      && ((tail === 1 && source[offset + 22] === 0x0a) || (tail === 2 && source[offset + 22] === 0x0d && source[offset + 23] === 0x0a))
+    )
+      return offset;
   }
   return fail('zip-invalid-structure', 'ZIP EOCD 或注释长度无效');
 }
 
 function ensureRange(source: Uint8Array, start: number, length: number, end: number, label: string): void {
-  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(length) || start < 0 || length < 0
-    || start + length > end || start + length > source.length) {
+  if (
+    !Number.isSafeInteger(start)
+    || !Number.isSafeInteger(length)
+    || start < 0
+    || length < 0
+    || start + length > end
+    || start + length > source.length
+  ) {
     fail('zip-invalid-structure', `ZIP ${label} 超出允许边界`);
   }
 }
@@ -122,7 +135,10 @@ export class ZipReader {
   readonly limits: ZipLimits;
   private readonly entries = new Map<string, ZipEntry>();
 
-  constructor(private readonly source: Uint8Array, limits?: ZipLimitOptions) {
+  constructor(
+    private readonly source: Uint8Array,
+    limits?: ZipLimitOptions,
+  ) {
     this.limits = resolveLimits(limits);
     this.inspectCentral();
   }
@@ -130,9 +146,13 @@ export class ZipReader {
   private inspectCentral(): void {
     const end = findEnd(this.source);
     const view = new DataView(this.source.buffer, this.source.byteOffset, this.source.byteLength);
-    if ((end >= 20 && view.getUint32(end - 20, true) === ZIP64_LOCATOR_SIGNATURE)
-      || view.getUint16(end + 8, true) === 0xffff || view.getUint16(end + 10, true) === 0xffff
-      || view.getUint32(end + 12, true) === 0xffffffff || view.getUint32(end + 16, true) === 0xffffffff) {
+    if (
+      (end >= 20 && view.getUint32(end - 20, true) === ZIP64_LOCATOR_SIGNATURE)
+      || view.getUint16(end + 8, true) === 0xffff
+      || view.getUint16(end + 10, true) === 0xffff
+      || view.getUint32(end + 12, true) === 0xffffffff
+      || view.getUint32(end + 16, true) === 0xffffffff
+    ) {
       fail('zip64-unsupported', 'ZIP64 当前不支持安全大小与边界校验');
     }
     const disk = view.getUint16(end + 4, true);
@@ -205,13 +225,16 @@ export class ZipReader {
       if (localName !== name || localCompression !== compression || localFlags !== flags) {
         fail('zip-invalid-structure', `ZIP 本地头与中央目录元数据不一致：${name}`);
       }
-      if (!(flags & 8) && (view.getUint32(localOffset + 18, true) !== size
-        || view.getUint32(localOffset + 22, true) !== originalSize)) {
+      if (!(flags & 8) && (view.getUint32(localOffset + 18, true) !== size || view.getUint32(localOffset + 22, true) !== originalSize)) {
         fail('zip-invalid-structure', `ZIP 本地头与中央目录大小不一致：${name}`);
       }
       ensureRange(this.source, payloadOffset, size, centralOffset, `压缩数据 ${name}`);
       this.entries.set(name, {
-        name, size, originalSize, compression, flags,
+        name,
+        size,
+        originalSize,
+        compression,
+        flags,
         payload: this.source.subarray(payloadOffset, payloadOffset + size),
       });
       cursor += centralLength;
@@ -250,7 +273,10 @@ export class ZipReader {
         fail('zip-output-too-large', `ZIP 条目 ${entry.name} 实际输出超过配置上限`);
       }
       Object.defineProperty(output, entry.name, {
-        value: data, enumerable: true, configurable: true, writable: true,
+        value: data,
+        enumerable: true,
+        configurable: true,
+        writable: true,
       });
     }
     return output;

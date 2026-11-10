@@ -53,7 +53,9 @@ export function bindSlideNumber(options: {
     buffer = buffer.length >= width ? digit : buffer + digit;
     paint();
     window.clearTimeout(timer);
-    timer = window.setTimeout(() => { clear(); }, SLIDE_NUMBER_TIMEOUT_MS);
+    timer = window.setTimeout(() => {
+      clear();
+    }, SLIDE_NUMBER_TIMEOUT_MS);
   };
 
   const confirm = (): void => {
@@ -70,8 +72,7 @@ export function bindSlideNumber(options: {
   };
 
   const armed = (event: KeyboardEvent): boolean => {
-    const typing = event.target instanceof Element
-      && !!event.target.closest('input,select,textarea,[contenteditable]');
+    const typing = event.target instanceof Element && !!event.target.closest('input,select,textarea,[contenteditable]');
     return presenting() && !typing && !event.isComposing && (!keysActive || keysActive());
   };
 

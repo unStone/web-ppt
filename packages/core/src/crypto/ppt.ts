@@ -30,7 +30,9 @@ export function rc4(key: Uint8Array, data: Uint8Array): Uint8Array {
   let j = 0;
   for (let i = 0; i < 256; i++) {
     j = (j + s[i] + key[i % key.length]) & 255;
-    const t = s[i]; s[i] = s[j]; s[j] = t;
+    const t = s[i];
+    s[i] = s[j];
+    s[j] = t;
   }
   const out = new Uint8Array(data.length);
   let i = 0;
@@ -38,7 +40,9 @@ export function rc4(key: Uint8Array, data: Uint8Array): Uint8Array {
   for (let k = 0; k < data.length; k++) {
     i = (i + 1) & 255;
     j = (j + s[i]) & 255;
-    const t = s[i]; s[i] = s[j]; s[j] = t;
+    const t = s[i];
+    s[i] = s[j];
+    s[j] = t;
     out[k] = data[k] ^ s[(s[i] + s[j]) & 255];
   }
   return out;
@@ -59,7 +63,8 @@ function le32(n: number): Uint8Array {
 
 function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
   const out = new Uint8Array(a.length + b.length);
-  out.set(a); out.set(b, a.length);
+  out.set(a);
+  out.set(b, a.length);
   return out;
 }
 
@@ -85,11 +90,15 @@ function parseCryptSession(body: Uint8Array): CryptInfo | null {
   // keySize=0 表示「用算法默认」，RC4 CryptoAPI 的默认是 40 位
   const keyBits = dv.getUint32(12 + 16, true) || 40;
   let o = 12 + headerSize;
-  const saltSize = dv.getUint32(o, true); o += 4;
+  const saltSize = dv.getUint32(o, true);
+  o += 4;
   if (saltSize !== 16) return null;
-  const salt = body.subarray(o, o + 16); o += 16;
-  const encVerifier = body.subarray(o, o + 16); o += 16;
-  const vhSize = dv.getUint32(o, true); o += 4;
+  const salt = body.subarray(o, o + 16);
+  o += 16;
+  const encVerifier = body.subarray(o, o + 16);
+  o += 16;
+  const vhSize = dv.getUint32(o, true);
+  o += 4;
   if (vhSize < 20) return null;
   return { keyBytes: Math.max(1, Math.floor(keyBits / 8)), salt, encVerifier, encVerifierHash: body.subarray(o, o + 20) };
 }
@@ -150,7 +159,8 @@ function readLayout(doc: Uint8Array, currentUser: Uint8Array): Layout | null {
       let p = pdOff + 8;
       const end = Math.min(p + pdLen, doc.length);
       while (p + 4 <= end) {
-        const h = dv.getUint32(p, true); p += 4;
+        const h = dv.getUint32(p, true);
+        p += 4;
         const startId = h & 0xfffff;
         const cnt = h >>> 20;
         for (let i = 0; i < cnt && p + 4 <= end; i++) {
@@ -172,9 +182,7 @@ function readLayout(doc: Uint8Array, currentUser: Uint8Array): Layout | null {
 
   return {
     info,
-    persists: [...persists.entries()]
-      .filter(([id]) => id !== encRef)
-      .map(([id, offset]) => ({ id, offset })),
+    persists: [...persists.entries()].filter(([id]) => id !== encRef).map(([id, offset]) => ({ id, offset })),
     plain,
   };
 }
@@ -183,9 +191,7 @@ function readLayout(doc: Uint8Array, currentUser: Uint8Array): Layout | null {
  * 解密 .ppt 的 PowerPoint Document 流，返回明文副本。
  * 密码错误抛 {@link WrongPasswordError}；结构认不出返回 null 由调用方兜底。
  */
-export function decryptPptStream(
-  doc: Uint8Array, currentUser: Uint8Array, password: string,
-): Uint8Array | null {
+export function decryptPptStream(doc: Uint8Array, currentUser: Uint8Array, password: string): Uint8Array | null {
   const layout = readLayout(doc, currentUser);
   if (!layout) return null;
   const { info, persists, plain } = layout;

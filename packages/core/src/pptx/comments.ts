@@ -60,8 +60,9 @@ export function parseSlideComments(pkg: Pkg, slideRels: Rels, authors: Map<strin
       const textEl = kid(cm, 'text');
       const text = textEl?.textContent ?? extractText(kid(cm, 'txBody')).trim();
       const idx = numAttr(cm, 'idx');
-      const parent = Array.from(cm.getElementsByTagName('*')).find((node) => node.localName === 'parentCm'
-        && node.namespaceURI === 'http://schemas.microsoft.com/office/powerpoint/2012/main');
+      const parent = Array.from(cm.getElementsByTagName('*')).find(
+        (node) => node.localName === 'parentCm' && node.namespaceURI === 'http://schemas.microsoft.com/office/powerpoint/2012/main',
+      );
       out.push({
         id: attr(cm, 'id') ?? `${authorId}:${idx ?? out.length}`,
         ...(parent ? { parentId: `${attr(parent, 'authorId') ?? ''}:${numAttr(parent, 'idx')}` } : {}),

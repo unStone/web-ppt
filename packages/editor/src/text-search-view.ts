@@ -4,8 +4,7 @@ import { TextSearchHighlightProjection } from './text-search-highlight';
 import type { TextSearch, TextSearchOpenOptions, TextSearchSnapshot } from './text-search-types';
 
 function isTextInput(target: EventTarget | null): boolean {
-  return target instanceof Element && (!!target.closest('[contenteditable="true"]')
-    || target.matches('input,textarea,select'));
+  return target instanceof Element && (!!target.closest('[contenteditable="true"]') || target.matches('input,textarea,select'));
 }
 
 /** 每个视图只投影会话搜索状态；导航只让发起动作的视图跨页。 */
@@ -45,9 +44,15 @@ export class TextSearchViewBinding {
     this.search.open(options);
     this.revealCurrent();
   }
-  close(): void { this.search.close(); }
-  next(): TextSearchMatch | null { return this.navigate(1); }
-  previous(): TextSearchMatch | null { return this.navigate(-1); }
+  close(): void {
+    this.search.close();
+  }
+  next(): TextSearchMatch | null {
+    return this.navigate(1);
+  }
+  previous(): TextSearchMatch | null {
+    return this.navigate(-1);
+  }
   replaceCurrent(): boolean {
     if (this.mode() !== 'edit' || this.readonlyDocument()) return false;
     const changed = this.search.replaceCurrent();
@@ -65,9 +70,14 @@ export class TextSearchViewBinding {
     const snapshot = this.search.snapshot;
     if (!snapshot.open) {
       for (const key of [
-        'textSearch', 'textSearchCount', 'textSearchIndex', 'textSearchReplaceDisabled',
-        'textSearchInvalidated', 'textSearchAria',
-      ]) delete this.root.dataset[key];
+        'textSearch',
+        'textSearchCount',
+        'textSearchIndex',
+        'textSearchReplaceDisabled',
+        'textSearchInvalidated',
+        'textSearchAria',
+      ])
+        delete this.root.dataset[key];
       this.highlight.clear();
       this.restoreAriaLabel();
       return;
@@ -75,9 +85,7 @@ export class TextSearchViewBinding {
     this.root.dataset.textSearch = snapshot.mode;
     this.root.dataset.textSearchCount = String(snapshot.matches.length);
     this.root.dataset.textSearchIndex = String(snapshot.currentIndex);
-    this.root.dataset.textSearchReplaceDisabled = String(
-      this.mode() !== 'edit' || this.readonlyDocument(),
-    );
+    this.root.dataset.textSearchReplaceDisabled = String(this.mode() !== 'edit' || this.readonlyDocument());
     this.root.toggleAttribute('data-text-search-invalidated', snapshot.currentInvalidated);
     const label = this.ariaLabel(snapshot);
     this.root.dataset.textSearchAria = label;
@@ -144,7 +152,11 @@ export class TextSearchViewBinding {
   private report(error: unknown): void {
     const CustomEventCtor = this.root.ownerDocument.defaultView?.CustomEvent ?? CustomEvent;
     this.root.dispatchEvent(new CustomEventCtor('webpptsearcherror', { detail: error }));
-    try { this.onError?.(error); } catch { /* 宿主错误观察者不能破坏搜索状态。 */ }
+    try {
+      this.onError?.(error);
+    } catch {
+      /* 宿主错误观察者不能破坏搜索状态。 */
+    }
   }
 
   private restoreAriaLabel(): void {

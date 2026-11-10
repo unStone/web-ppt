@@ -1,9 +1,6 @@
 import { assertDataObject } from './data-validation';
 import { orderedTableColumns, orderedTableRows } from './table-grid';
-import type {
-  ElementRecord, TableCellAddress, TableCellColumnRef, TableCellKey, TableCellRef,
-  TableCellRowRef, TableRowId,
-} from './types';
+import type { ElementRecord, TableCellAddress, TableCellColumnRef, TableCellKey, TableCellRef, TableCellRowRef, TableRowId } from './types';
 
 export function tableCellKey(cell: TableCellAddress): TableCellKey {
   return `${cell.r}:${cell.c}`;
@@ -20,7 +17,9 @@ function insertedTableCellKey(rowId: TableRowId, column: number): TableCellKey {
   return `@${rowId.length}:${rowId}:${column}`;
 }
 
-function refToken(ref: number | string): string { return typeof ref === 'number' ? `#${ref}` : ref; }
+function refToken(ref: number | string): string {
+  return typeof ref === 'number' ? `#${ref}` : ref;
+}
 
 function universalTableCellKey(row: TableCellRowRef, column: TableCellColumnRef): TableCellKey {
   const rowToken = refToken(row);
@@ -36,7 +35,8 @@ function parseRefToken(token: string): number | string | null {
 }
 
 function parseUniversalTableCellKey(value: string): {
-  row: TableCellRowRef; column: TableCellColumnRef;
+  row: TableCellRowRef;
+  column: TableCellColumnRef;
 } | null {
   if (!value.startsWith('!')) return null;
   const rowLengthEnd = value.indexOf(':', 1);
@@ -58,8 +58,7 @@ function parseUniversalTableCellKey(value: string): {
 }
 
 export function tableCellKeyBelongsToRow(key: string, rowId: TableRowId): boolean {
-  return key.startsWith(`@${rowId.length}:${rowId}:`)
-    || parseUniversalTableCellKey(key)?.row === rowId;
+  return key.startsWith(`@${rowId.length}:${rowId}:`) || parseUniversalTableCellKey(key)?.row === rowId;
 }
 
 function parseInsertedTableCellKey(value: string): { rowId: TableRowId; c: number } | null {
@@ -77,27 +76,17 @@ function parseInsertedTableCellKey(value: string): { rowId: TableRowId; c: numbe
   return rowId && Number.isSafeInteger(c) ? { rowId, c } : null;
 }
 
-export function tableCellRowRef(
-  record: ElementRecord,
-  cell: TableCellAddress,
-): TableCellRowRef | null {
+export function tableCellRowRef(record: ElementRecord, cell: TableCellAddress): TableCellRowRef | null {
   if (record.src.kind !== 'table') return null;
   return orderedTableRows(record)[cell.r]?.rowRef ?? null;
 }
 
-export function tableCellColumnRef(
-  record: ElementRecord,
-  cell: TableCellAddress,
-): TableCellColumnRef | null {
+export function tableCellColumnRef(record: ElementRecord, cell: TableCellAddress): TableCellColumnRef | null {
   if (record.src.kind !== 'table') return null;
   return orderedTableColumns(record)[cell.c]?.columnRef ?? null;
 }
 
-export function tableCellAddressFromRowRef(
-  record: ElementRecord,
-  row: unknown,
-  column: unknown,
-): TableCellAddress | null {
+export function tableCellAddressFromRowRef(record: ElementRecord, row: unknown, column: unknown): TableCellAddress | null {
   if (record.src.kind !== 'table' || !Number.isSafeInteger(column) || Number(column) < 0) return null;
   if (typeof row === 'number') {
     const r = orderedTableRows(record).findIndex((entry) => entry.rowRef === row);
@@ -108,40 +97,26 @@ export function tableCellAddressFromRowRef(
   return index < 0 ? null : { r: index, c: Number(column) };
 }
 
-export function tableCellAddressFromRefs(
-  record: ElementRecord,
-  row: unknown,
-  column: unknown,
-): TableCellAddress | null {
+export function tableCellAddressFromRefs(record: ElementRecord, row: unknown, column: unknown): TableCellAddress | null {
   if (record.src.kind !== 'table') return null;
   const r = orderedTableRows(record).findIndex((entry) => entry.rowRef === row);
   const c = orderedTableColumns(record).findIndex((entry) => entry.columnRef === column);
   return r < 0 || c < 0 ? null : { r, c };
 }
 
-export function tableCellAddressFromStableRef(
-  record: ElementRecord,
-  cell: TableCellRef,
-): TableCellAddress | null {
+export function tableCellAddressFromStableRef(record: ElementRecord, cell: TableCellRef): TableCellAddress | null {
   if (record.src.kind !== 'table') return null;
   const r = orderedTableRows(record).findIndex((entry) => entry.id === cell.row);
   const c = orderedTableColumns(record).findIndex((entry) => entry.id === cell.column);
   return r < 0 || c < 0 ? null : { r, c };
 }
 
-export function tableCellOverrideKeyFromRowRef(
-  row: TableCellRowRef,
-  column: number,
-): TableCellKey {
+export function tableCellOverrideKeyFromRowRef(row: TableCellRowRef, column: number): TableCellKey {
   return typeof row === 'number' ? tableCellKey({ r: row, c: column }) : insertedTableCellKey(row, column);
 }
 
-export function tableCellOverrideKeyFromRefs(
-  row: TableCellRowRef,
-  column: TableCellColumnRef,
-): TableCellKey {
-  return typeof column === 'number' ? tableCellOverrideKeyFromRowRef(row, column)
-    : universalTableCellKey(row, column);
+export function tableCellOverrideKeyFromRefs(row: TableCellRowRef, column: TableCellColumnRef): TableCellKey {
+  return typeof column === 'number' ? tableCellOverrideKeyFromRowRef(row, column) : universalTableCellKey(row, column);
 }
 
 export function tableCellOverrideKey(record: ElementRecord, cell: TableCellAddress): TableCellKey {
@@ -151,17 +126,12 @@ export function tableCellOverrideKey(record: ElementRecord, cell: TableCellAddre
   return tableCellOverrideKeyFromRefs(row, column);
 }
 
-export function tableCellKeyResolver(
-  record: ElementRecord,
-): (key: string) => TableCellAddress | null {
+export function tableCellKeyResolver(record: ElementRecord): (key: string) => TableCellAddress | null {
   const rows = orderedTableRows(record);
   const columns = orderedTableColumns(record);
-  const sourceRows = new Map(rows.flatMap((entry, index) =>
-    entry.source === null ? [] : [[entry.source, index] as const]));
-  const sourceColumns = new Map(columns.flatMap((entry, index) =>
-    entry.source === null ? [] : [[entry.source, index] as const]));
-  const insertedRows = new Map(rows.flatMap((entry, index) =>
-    entry.source === null ? [[entry.id, index] as const] : []));
+  const sourceRows = new Map(rows.flatMap((entry, index) => (entry.source === null ? [] : [[entry.source, index] as const])));
+  const sourceColumns = new Map(columns.flatMap((entry, index) => (entry.source === null ? [] : [[entry.source, index] as const])));
+  const insertedRows = new Map(rows.flatMap((entry, index) => (entry.source === null ? [[entry.id, index] as const] : [])));
   return (key) => {
     const source = parseTableCellKey(key);
     if (source) {
@@ -181,14 +151,14 @@ export function tableCellKeyResolver(
 }
 
 /** 协同冲突判断必须能解析已被 tombstone 隐藏的格，但不能让普通编辑重新寻址它。 */
-export function tableCellStableRefFromKey(
-  record: ElementRecord, key: string,
-): TableCellRef | null {
+export function tableCellStableRefFromKey(record: ElementRecord, key: string): TableCellRef | null {
   if (record.src.kind !== 'table') return null;
   const unrestricted = {
     ...record,
     ovr: {
-      ...record.ovr, tableRemovedRows: undefined, tableRemovedColumns: undefined,
+      ...record.ovr,
+      tableRemovedRows: undefined,
+      tableRemovedColumns: undefined,
     },
   } satisfies ElementRecord;
   const address = tableCellKeyResolver(unrestricted)(key);
@@ -198,14 +168,10 @@ export function tableCellStableRefFromKey(
   return row && column ? { row: row.id, column: column.id } : null;
 }
 
-export function assertTableCellAddress(
-  value: unknown,
-  label: string,
-): asserts value is TableCellAddress {
+export function assertTableCellAddress(value: unknown, label: string): asserts value is TableCellAddress {
   assertDataObject(value, ['r', 'c'], label);
   const cell = value as TableCellAddress;
-  if (!Number.isSafeInteger(cell.r) || cell.r < 0
-    || !Number.isSafeInteger(cell.c) || cell.c < 0) {
+  if (!Number.isSafeInteger(cell.r) || cell.r < 0 || !Number.isSafeInteger(cell.c) || cell.c < 0) {
     throw new Error(`${label} 必须使用非负安全整数行列坐标`);
   }
 }

@@ -39,8 +39,7 @@ export class SlideEditorKeyboardEvents {
       event.preventDefault();
       return;
     }
-    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)
-      && o.links.followSelection('edit', event)) {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && o.links.followSelection('edit', event)) {
       event.preventDefault();
       return;
     }
@@ -70,8 +69,7 @@ export class SlideEditorKeyboardEvents {
     if (selection.kind === 'elements' && selection.enteredGroup) {
       const groupId = selection.enteredGroup;
       const parent = o.session.editor.doc.elements[groupId]?.parent;
-      const enteredGroup = parent && o.session.editor.doc.elements[parent]?.src.kind === 'group'
-        ? parent : null;
+      const enteredGroup = parent && o.session.editor.doc.elements[parent]?.src.kind === 'group' ? parent : null;
       o.session.editor.select({ kind: 'elements', ids: [groupId], enteredGroup });
     } else {
       o.session.editor.select({ kind: 'none' });
@@ -88,8 +86,16 @@ export class SlideEditorKeyboardEvents {
     if (o.keyboard.keyUp(event)) event.preventDefault();
   };
 
-  readonly blur = (): void => { this.options.keyboard.breakSequence(); };
-  readonly copy = (event: ClipboardEvent): void => { this.options.clipboard.copy(event); };
-  readonly cut = (event: ClipboardEvent): void => { this.options.clipboard.cut(event); };
-  readonly paste = (event: ClipboardEvent): void => { this.options.clipboard.paste(event); };
+  readonly blur = (): void => {
+    this.options.keyboard.breakSequence();
+  };
+  readonly copy = (event: ClipboardEvent): void => {
+    this.options.clipboard.copy(event);
+  };
+  readonly cut = (event: ClipboardEvent): void => {
+    this.options.clipboard.cut(event);
+  };
+  readonly paste = (event: ClipboardEvent): void => {
+    this.options.clipboard.paste(event);
+  };
 }

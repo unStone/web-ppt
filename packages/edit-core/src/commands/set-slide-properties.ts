@@ -8,18 +8,24 @@ import type { EditDoc, SlideImageBackground } from '../types';
 import { resolveRelationshipTarget } from '../clipboard-source';
 import { sourceImageBackground } from '../slide-background-source';
 import { createImageResource, imageResourcePatches, MAX_REPLACE_IMAGE_BYTES } from './image-resource';
-import {
-  prepareExistingSourceClosure, prepareMediaResourceClosure, prepareTrustedSourceClosure,
-} from './paste-resources';
+import { prepareExistingSourceClosure, prepareMediaResourceClosure, prepareTrustedSourceClosure } from './paste-resources';
 import { normalizeSlideImageTilePlacement } from './slide-image';
 import { normalizeSlideTransition, querySlideTransition } from '../slide-transition';
 import { UPLOAD_BACKGROUND_SOURCE_ID } from './slide-property';
 import { assertDesignTarget } from '../design-target';
 import type {
-  CommandPatches, LayoutBackgroundPatch, LayoutTransitionPatch,
+  CommandPatches,
+  LayoutBackgroundPatch,
+  LayoutTransitionPatch,
   MasterBackgroundPatch,
-  SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand,
-  SetHiddenCommand, SetTransitionCommand, SlideBackgroundImagePatch, SlideBackgroundPatch, SlideHiddenPatch,
+  SetBackgroundCommand,
+  SetBackgroundCropCommand,
+  SetBackgroundImageCommand,
+  SetHiddenCommand,
+  SetTransitionCommand,
+  SlideBackgroundImagePatch,
+  SlideBackgroundPatch,
+  SlideHiddenPatch,
   SlideTransitionPatch,
 } from './types';
 
@@ -34,7 +40,9 @@ function imageMetadataPatches(
   const path = ['slides', id, 'backgroundImage'] as const;
   const forward: SlideBackgroundImagePatch[] = value
     ? [{ op: 'set', path, value: structuredClone(value), origin }]
-    : record.backgroundImage ? [{ op: 'del', path, origin }] : [];
+    : record.backgroundImage
+      ? [{ op: 'del', path, origin }]
+      : [];
   if (!forward.length) return { forward: [], inverse: [] };
   const inverse: SlideBackgroundImagePatch[] = record.backgroundImage
     ? [{ op: 'set', path, value: structuredClone(record.backgroundImage), origin }]
@@ -42,26 +50,25 @@ function imageMetadataPatches(
   return { forward, inverse };
 }
 
-export function setBackgroundPatches(
-  doc: EditDoc,
-  command: SetBackgroundCommand,
-  origin: string,
-): CommandPatches {
+export function setBackgroundPatches(doc: EditDoc, command: SetBackgroundCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改页面背景');
   if ('target' in command && command.target) {
     assertDesignTarget(doc, command.target);
     if (command.fill !== null) assertVectorFill(command.fill, 'SetBackground.fill');
     const target = command.target;
     const record = target.kind === 'master' ? doc.masters[target.id] : doc.layouts[target.id];
-    const path = target.kind === 'master'
-      ? ['masters', target.id, 'ovr', 'background'] as const
-      : ['layouts', target.id, 'ovr', 'background'] as const;
+    const path =
+      target.kind === 'master'
+        ? (['masters', target.id, 'ovr', 'background'] as const)
+        : (['layouts', target.id, 'ovr', 'background'] as const);
     const hadOverride = own(record.ovr, 'background');
     if (command.fill === null) {
       if (!hadOverride) return { forward: [], inverse: [] };
       return {
         forward: [{ op: 'del', path, origin } as LayoutBackgroundPatch | MasterBackgroundPatch],
-        inverse: [{ op: 'set', path, value: structuredClone(record.ovr.background!), origin } as LayoutBackgroundPatch | MasterBackgroundPatch],
+        inverse: [
+          { op: 'set', path, value: structuredClone(record.ovr.background!), origin } as LayoutBackgroundPatch | MasterBackgroundPatch,
+        ],
       };
     }
     const value = normalizeVectorFill(command.fill);
@@ -69,9 +76,9 @@ export function setBackgroundPatches(
       return { forward: [], inverse: [] };
     }
     const forward = { op: 'set', path, value, origin } as LayoutBackgroundPatch | MasterBackgroundPatch;
-    const inverse = (hadOverride
-      ? { op: 'set', path, value: structuredClone(record.ovr.background!), origin }
-      : { op: 'del', path, origin }) as LayoutBackgroundPatch | MasterBackgroundPatch;
+    const inverse = (
+      hadOverride ? { op: 'set', path, value: structuredClone(record.ovr.background!), origin } : { op: 'del', path, origin }
+    ) as LayoutBackgroundPatch | MasterBackgroundPatch;
     return { forward: [forward], inverse: [inverse] };
   }
   const record = doc.slides[command.id];
@@ -79,18 +86,19 @@ export function setBackgroundPatches(
   if (command.fill !== null) assertVectorFill(command.fill, 'SetBackground.fill');
   const path = ['slides', command.id, 'ovr', 'background'] as const;
   const hadOverride = own(record.ovr, 'background');
-  const direct: Fill | undefined = hadOverride ? (() => {
-    const fill = record.ovr.background;
-    if (!fill) throw new Error(`页面 ${command.id} 的背景覆盖无效`);
-    return fill;
-  })() : undefined;
+  const direct: Fill | undefined = hadOverride
+    ? (() => {
+        const fill = record.ovr.background;
+        if (!fill) throw new Error(`页面 ${command.id} 的背景覆盖无效`);
+        return fill;
+      })()
+    : undefined;
   if (command.fill === null) {
     const metadata = imageMetadataPatches(record, command.id, null, origin);
     if (!hadOverride && !metadata.forward.length) return { forward: [], inverse: [] };
     return {
       forward: [...(hadOverride ? [{ op: 'del' as const, path, origin }] : []), ...metadata.forward],
-      inverse: [...metadata.inverse, ...(hadOverride
-        ? [{ op: 'set' as const, path, value: structuredClone(direct!), origin }] : [])],
+      inverse: [...metadata.inverse, ...(hadOverride ? [{ op: 'set' as const, path, value: structuredClone(direct!), origin }] : [])],
     };
   }
   const value = normalizeVectorFill(command.fill);
@@ -100,7 +108,10 @@ export function setBackgroundPatches(
     return { forward: [], inverse: [] };
   }
   const forward: SlideBackgroundPatch = {
-    op: 'set', path, value: structuredClone(value), origin,
+    op: 'set',
+    path,
+    value: structuredClone(value),
+    origin,
   };
   const inverse: SlideBackgroundPatch = hadOverride
     ? { op: 'set', path, value: structuredClone(direct!), origin }
@@ -111,36 +122,32 @@ export function setBackgroundPatches(
   };
 }
 
-export function setBackgroundImagePatches(
-  doc: EditDoc,
-  command: SetBackgroundImageCommand,
-  origin: string,
-): CommandPatches {
+export function setBackgroundImagePatches(doc: EditDoc, command: SetBackgroundImageCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改页面背景');
   const record = doc.slides[command.id];
   if (!record) throw new Error(`找不到幻灯片：${String(command.id)}`);
   const part = record.origin?.part;
   if (!part || !doc.package) throw new Error(`幻灯片缺少可写回来源：${command.id}`);
   if (command.crop !== undefined) assertImageCrop(command.crop, 'SetBackgroundImage.crop');
-  if (command.alpha !== undefined
-    && (typeof command.alpha !== 'number' || !Number.isFinite(command.alpha)
-      || command.alpha < 0 || command.alpha > 1)) {
+  if (
+    command.alpha !== undefined
+    && (typeof command.alpha !== 'number' || !Number.isFinite(command.alpha) || command.alpha < 0 || command.alpha > 1)
+  ) {
     throw new Error('SetBackgroundImage.alpha 必须是 [0, 1] 内的有限数');
   }
   const placement = normalizeSlideImageTilePlacement(command.tile, 'SetBackgroundImage.tile');
-  const resource = createImageResource(
-    command.bytes, command.mime, 'SetBackgroundImage', MAX_REPLACE_IMAGE_BYTES,
-  );
+  const resource = createImageResource(command.bytes, command.mime, 'SetBackgroundImage', MAX_REPLACE_IMAGE_BYTES);
   const imageInfo = placement ? readImageMetadata(command.bytes) : null;
   if (placement && !imageInfo) throw new Error('SetBackgroundImage.bytes 缺少可用图片尺寸');
-  const tile = placement && imageInfo ? {
-    ...placement,
-    sourceWidth: imageInfo.width * 96 / imageInfo.dpiX,
-    sourceHeight: imageInfo.height * 96 / imageInfo.dpiY,
-  } : undefined;
-  const closure = prepareMediaResourceClosure(
-    doc, part, UPLOAD_BACKGROUND_SOURCE_ID, IMAGE_REL, resource,
-  );
+  const tile =
+    placement && imageInfo
+      ? {
+          ...placement,
+          sourceWidth: (imageInfo.width * 96) / imageInfo.dpiX,
+          sourceHeight: (imageInfo.height * 96) / imageInfo.dpiY,
+        }
+      : undefined;
+  const closure = prepareMediaResourceClosure(doc, part, UPLOAD_BACKGROUND_SOURCE_ID, IMAGE_REL, resource);
   const backgroundMetadata: SlideImageBackground = {
     src: insertionResourceToken(resource.hash),
     relationships: closure.relationships,
@@ -152,18 +159,19 @@ export function setBackgroundImagePatches(
     type: 'image' as const,
     src: backgroundMetadata.src,
     ...(command.crop ? { crop: normalizeImageCrop(command.crop) } : {}),
-    ...(command.alpha !== undefined
-      ? { alpha: Math.round(command.alpha * 100000) / 100000 } : {}),
+    ...(command.alpha !== undefined ? { alpha: Math.round(command.alpha * 100000) / 100000 } : {}),
     ...(tile ? { tile } : {}),
   };
-  const same = record.backgroundImage?.resourceHash === resource.hash
-    && JSON.stringify(record.ovr.background) === JSON.stringify(fill);
+  const same = record.backgroundImage?.resourceHash === resource.hash && JSON.stringify(record.ovr.background) === JSON.stringify(fill);
   if (same) return { forward: [], inverse: [] };
   const backgroundPath = ['slides', command.id, 'ovr', 'background'] as const;
   const metadataPatches = imageMetadataPatches(record, command.id, backgroundMetadata, origin);
   const hadBackground = own(record.ovr, 'background');
   const backgroundForward: SlideBackgroundPatch = {
-    op: 'set', path: backgroundPath, value: fill, origin,
+    op: 'set',
+    path: backgroundPath,
+    value: fill,
+    origin,
   };
   const backgroundInverse: SlideBackgroundPatch = hadBackground
     ? { op: 'set', path: backgroundPath, value: structuredClone(record.ovr.background!), origin }
@@ -175,11 +183,7 @@ export function setBackgroundImagePatches(
   };
 }
 
-export function setBackgroundCropPatches(
-  doc: EditDoc,
-  command: SetBackgroundCropCommand,
-  origin: string,
-): CommandPatches {
+export function setBackgroundCropPatches(doc: EditDoc, command: SetBackgroundCropCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能裁剪页面背景');
   const record = doc.slides[command.id];
   if (!record) throw new Error(`找不到幻灯片：${String(command.id)}`);
@@ -196,17 +200,16 @@ export function setBackgroundCropPatches(
     const closure = directSource
       ? prepareExistingSourceClosure(source.package, source.closure, part)
       : prepareTrustedSourceClosure(doc, source.package, source.closure, source.part, part);
-    const imageRelationship = closure.relationships.find((relationship) =>
-      relationship.sourceId === source.imageRelationshipId);
-    const targetPart = imageRelationship && !imageRelationship.targetMode
-      ? resolveRelationshipTarget(part, imageRelationship.target) : null;
-    const resource = targetPart
-      ? closure.resources.find((candidate) => candidate.targetPart === targetPart) : null;
+    const imageRelationship = closure.relationships.find((relationship) => relationship.sourceId === source.imageRelationshipId);
+    const targetPart =
+      imageRelationship && !imageRelationship.targetMode ? resolveRelationshipTarget(part, imageRelationship.target) : null;
+    const resource = targetPart ? closure.resources.find((candidate) => candidate.targetPart === targetPart) : null;
     if (!imageRelationship || imageRelationship.type !== IMAGE_REL || !resource) {
       throw new Error(`幻灯片图片背景的主图片关系不完整：${command.id}`);
     }
     const metadata: SlideImageBackground = {
-      src: insertionResourceToken(resource.hash), relationships: closure.relationships,
+      src: insertionResourceToken(resource.hash),
+      relationships: closure.relationships,
       resourceHash: resource.hash,
       imageRelationshipId: imageRelationship.targetId,
       resourceHashes: closure.resources.map((candidate) => candidate.hash),
@@ -215,9 +218,7 @@ export function setBackgroundCropPatches(
     const value = {
       ...current,
       src: metadata.src,
-      ...(command.crop === null
-        ? { crop: undefined }
-        : { crop: normalizeImageCrop(command.crop) }),
+      ...(command.crop === null ? { crop: undefined } : { crop: normalizeImageCrop(command.crop) }),
     };
     const path = ['slides', command.id, 'ovr', 'background'] as const;
     const metadataPatches = imageMetadataPatches(record, command.id, metadata, origin);
@@ -232,9 +233,7 @@ export function setBackgroundCropPatches(
   }
   const value = {
     ...record.ovr.background,
-    ...(command.crop === null
-      ? { crop: undefined }
-      : { crop: normalizeImageCrop(command.crop) }),
+    ...(command.crop === null ? { crop: undefined } : { crop: normalizeImageCrop(command.crop) }),
   };
   if (JSON.stringify(value) === JSON.stringify(record.ovr.background)) {
     return { forward: [], inverse: [] };
@@ -246,11 +245,7 @@ export function setBackgroundCropPatches(
   };
 }
 
-export function setHiddenPatches(
-  doc: EditDoc,
-  command: SetHiddenCommand,
-  origin: string,
-): CommandPatches {
+export function setHiddenPatches(doc: EditDoc, command: SetHiddenCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改页面隐藏状态');
   const record = doc.slides[command.id];
   if (!record) throw new Error(`找不到幻灯片：${String(command.id)}`);
@@ -269,17 +264,11 @@ export function setHiddenPatches(
   // false 同样是直接值；来源本来可见时也要保留用户明确覆盖。
   if (hadOverride && record.ovr.hidden === command.v) return { forward: [], inverse: [] };
   const forward: SlideHiddenPatch = { op: 'set', path, value: command.v, origin };
-  const inverse: SlideHiddenPatch = hadOverride
-    ? { op: 'set', path, value: record.ovr.hidden!, origin }
-    : { op: 'del', path, origin };
+  const inverse: SlideHiddenPatch = hadOverride ? { op: 'set', path, value: record.ovr.hidden!, origin } : { op: 'del', path, origin };
   return { forward: [forward], inverse: [inverse] };
 }
 
-export function setTransitionPatches(
-  doc: EditDoc,
-  command: SetTransitionCommand,
-  origin: string,
-): CommandPatches {
+export function setTransitionPatches(doc: EditDoc, command: SetTransitionCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改页面切换');
   if ('target' in command && command.target) {
     assertDesignTarget(doc, command.target);
@@ -294,8 +283,8 @@ export function setTransitionPatches(
       };
     }
     const currentAdvance = (hadOverride ? record.ovr.transition : record.transition)?.advanceAfterMs;
-    const normalizedInput = command.t.advanceAfterMs === undefined && currentAdvance !== undefined
-      ? { ...command.t, advanceAfterMs: currentAdvance } : command.t;
+    const normalizedInput =
+      command.t.advanceAfterMs === undefined && currentAdvance !== undefined ? { ...command.t, advanceAfterMs: currentAdvance } : command.t;
     const value = normalizeSlideTransition(normalizedInput, 'SetTransition.t');
     if (hadOverride && JSON.stringify(record.ovr.transition) === JSON.stringify(value)) {
       return { forward: [], inverse: [] };
@@ -320,9 +309,8 @@ export function setTransitionPatches(
   const currentAdvance = querySlideTransition(doc, [command.id]).value?.advanceAfterMs;
   // 视觉效果与放映策略是两个维度；本阶段尚未开放 advClick，省略延迟时保留现有计时，
   // 避免把 advClick="0" 的页面写成既不能点击、也不会自动前进的死页。
-  const normalizedInput = command.t.advanceAfterMs === undefined && currentAdvance !== undefined
-    ? { ...command.t, advanceAfterMs: currentAdvance }
-    : command.t;
+  const normalizedInput =
+    command.t.advanceAfterMs === undefined && currentAdvance !== undefined ? { ...command.t, advanceAfterMs: currentAdvance } : command.t;
   const value = normalizeSlideTransition(normalizedInput, 'SetTransition.t');
   if (hadOverride && JSON.stringify(record.ovr.transition) === JSON.stringify(value)) {
     return { forward: [], inverse: [] };

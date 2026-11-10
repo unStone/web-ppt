@@ -2,9 +2,7 @@ import { own } from '../data-validation';
 import { canvasTargetOfElement } from '../design-target';
 import { elementOrder, elementParentChildren } from '../element-order';
 import type { EditDoc, ElementId, ElementRecord } from '../types';
-import type {
-  CommandPatches, ElementTreePatch, ElementTreeSnapshot, Patch, RemoveElementCommand,
-} from './types';
+import type { CommandPatches, ElementTreePatch, ElementTreeSnapshot, Patch, RemoveElementCommand } from './types';
 import { clearElementTextPatches } from './element-text';
 import { hasDynamicSlideLink, hasDynamicSlideNumber } from '../dynamic-slide-fields';
 import { querySlideAnimations } from '../slide-animation';
@@ -14,8 +12,7 @@ import { advanceElementSpid } from '../element-spids';
 import { retainElementOrigins, restoreElementOrigins } from '../retained-element-origins';
 
 export function willRemoveElementStructure(record: ElementRecord | undefined): boolean {
-  return !(record?.meta.ph && record.src.kind === 'shape' && record.src.text
-    && record.ovr.text?.kind !== 'empty');
+  return !(record?.meta.ph && record.src.kind === 'shape' && record.src.text && record.ovr.text?.kind !== 'empty');
 }
 
 export function isElementTreePatch(patch: Patch): patch is ElementTreePatch {
@@ -34,7 +31,9 @@ function removedRecord(snapshot: ElementTreeSnapshot, root: ElementRecord) {
   };
   visit(root.id);
   return {
-    id: root.id, parent: root.parent, meta: structuredClone(root.meta),
+    id: root.id,
+    parent: root.parent,
+    meta: structuredClone(root.meta),
     ...(sourceSpids.length ? { sourceSpids: [...new Set(sourceSpids)].sort((a, b) => a - b) } : {}),
   };
 }
@@ -55,11 +54,7 @@ function snapshotTree(doc: EditDoc, root: ElementId): ElementTreeSnapshot {
   return { root, parent: record.parent, records };
 }
 
-export function removeElementPatches(
-  doc: EditDoc,
-  command: RemoveElementCommand,
-  origin: string,
-): CommandPatches {
+export function removeElementPatches(doc: EditDoc, command: RemoveElementCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能执行命令');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
@@ -83,15 +78,20 @@ export function removeElementPatches(
   const animations = querySlideAnimations(doc, [slideId]).value;
   const remainingAnimations = animations
     .filter((step) => !removedIds.has(step.target))
-    .map((step, index) => index === 0 && step.trigger !== 'click'
-      ? { ...step, trigger: 'click' as const } : step);
-  const sourceNeedsPreservingCleanup = slide.sourceAnimationsReadonly === true
-    && !own(slide.ovr, 'animations');
-  const animationPatches = remainingAnimations.length === animations.length || sourceNeedsPreservingCleanup
-    ? { forward: [], inverse: [] }
-    : setAnimationsPatches(doc, {
-      type: 'SetAnimations', slideId, steps: remainingAnimations,
-    }, origin);
+    .map((step, index) => (index === 0 && step.trigger !== 'click' ? { ...step, trigger: 'click' as const } : step));
+  const sourceNeedsPreservingCleanup = slide.sourceAnimationsReadonly === true && !own(slide.ovr, 'animations');
+  const animationPatches =
+    remainingAnimations.length === animations.length || sourceNeedsPreservingCleanup
+      ? { forward: [], inverse: [] }
+      : setAnimationsPatches(
+          doc,
+          {
+            type: 'SetAnimations',
+            slideId,
+            steps: remainingAnimations,
+          },
+          origin,
+        );
   return {
     forward: [...animationPatches.forward, { op: 'remove', path, value, origin }],
     // 动画 Patch 的目标在元素树恢复前无效，因此逆序必须先插回元素。
@@ -100,9 +100,15 @@ export function removeElementPatches(
 }
 
 function assertSnapshot(snapshot: ElementTreeSnapshot, id: ElementId, label: string): void {
-  if (!snapshot || typeof snapshot !== 'object' || snapshot.root !== id
-    || typeof snapshot.parent !== 'string' || !snapshot.parent
-    || !snapshot.records || typeof snapshot.records !== 'object') {
+  if (
+    !snapshot
+    || typeof snapshot !== 'object'
+    || snapshot.root !== id
+    || typeof snapshot.parent !== 'string'
+    || !snapshot.parent
+    || !snapshot.records
+    || typeof snapshot.records !== 'object'
+  ) {
     throw new Error(`${label} 的元素树快照无效`);
   }
   const ids = Object.keys(snapshot.records);
@@ -144,14 +150,18 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
   const canvas = elementTreeCanvas(doc, snapshot);
   const slide = canvas.kind === 'slide' ? doc.slides[canvas.id] : undefined;
   const dynamicIds = Object.values(snapshot.records)
-    .filter((record) => hasDynamicSlideNumber(record.src)).map((record) => record.id);
+    .filter((record) => hasDynamicSlideNumber(record.src))
+    .map((record) => record.id);
   const dynamicLinkIds = Object.values(snapshot.records)
-    .filter((record) => hasDynamicSlideLink(record.src)).map((record) => record.id);
+    .filter((record) => hasDynamicSlideLink(record.src))
+    .map((record) => record.id);
   const siblings = elementParentChildren(doc, snapshot.parent);
   if (patch.op === 'remove') {
-    retainElementOrigins(doc, Object.keys(snapshot.records).map(id => doc.elements[id]));
-    const index = siblings[siblings.length - 1] === snapshot.root
-      ? siblings.length - 1 : siblings.indexOf(snapshot.root);
+    retainElementOrigins(
+      doc,
+      Object.keys(snapshot.records).map((id) => doc.elements[id]),
+    );
+    const index = siblings[siblings.length - 1] === snapshot.root ? siblings.length - 1 : siblings.indexOf(snapshot.root);
     if (index < 0) throw new Error(`删除元素不在父节点 children 中：${snapshot.root}`);
     siblings.splice(index, 1);
     for (const id of Object.keys(snapshot.records)) delete doc.elements[id];
@@ -172,8 +182,7 @@ export function applyElementTreePatch(doc: EditDoc, patch: ElementTreePatch): vo
           doc.removedElements[record.id] = removedRecord(snapshot, record);
         }
       }
-    }
-    else {
+    } else {
       doc.removedElements[snapshot.root] = removedRecord(snapshot, root);
     }
     return;

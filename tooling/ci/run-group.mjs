@@ -20,25 +20,38 @@ export function runGroup({ root, scripts, phase, group, revision = revisionAt(ro
   writeJson(join(directory, 'plan.json'), plan);
   writeJson(countsFile, initialCounts);
   const result = {
-    version: 1, phase, group, revision, planDigest: digest(plan), runId,
+    version: 1,
+    phase,
+    group,
+    revision,
+    planDigest: digest(plan),
+    runId,
     runAttempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
-    status: 'running', commands: [], startedAt: new Date().toISOString(),
+    status: 'running',
+    commands: [],
+    startedAt: new Date().toISOString(),
   };
   const started = performance.now();
   for (const leaf of plan.commands) {
     console.log(`\n[${phase}/${group} ${result.commands.length + 1}/${plan.commands.length}] ${leaf.command}`);
     const before = performance.now();
     const child = spawnSync(leaf.executable, leaf.args, {
-      cwd: root, stdio: 'inherit', env: {
-        ...process.env, WEB_PPT_COUNTS_FILE: countsFile,
+      cwd: root,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        WEB_PPT_COUNTS_FILE: countsFile,
         WEB_PPT_EQUIVALENCE_REPORT: join(directory, 'equivalence.json'),
         WEB_PPT_MIGRATION_REPORT: join(directory, 'migration.json'),
       },
     });
     result.commands.push({
-      id: leaf.id, command: leaf.command, durationMs: performance.now() - before,
+      id: leaf.id,
+      command: leaf.command,
+      durationMs: performance.now() - before,
       status: child.status === 0 && !child.error ? 'success' : 'failure',
-      exitCode: child.status, signal: child.signal,
+      exitCode: child.status,
+      signal: child.signal,
     });
     result.durationMs = performance.now() - started;
     result.countsDigest = digest(readJson(countsFile));

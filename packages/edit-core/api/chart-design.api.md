@@ -63,7 +63,7 @@ export interface ChartDesign {
 }
 
 // @public (undocumented)
-export type ChartType = typeof CHART_TYPES[number];
+export type ChartType = (typeof CHART_TYPES)[number];
 
 // @public (undocumented)
 export function createChartDesignEditor(editor: Pick<Editor, 'doc' | 'exec'>): {

@@ -5,8 +5,8 @@ import { assertDataObject } from './data-validation';
 import { EXTENSION_ADDRESSES, moveExtensionAddress, validateExtensionAddress } from './extension-addresses';
 import { EXTENSION_MIGRATIONS, validateExtensionMigration, applyExtensionMigration } from './extension-migration-receipt';
 
-const validKey = (key: string): boolean => !!key && key.length <= 1024
-  && key !== '__proto__' && key !== 'prototype' && key !== 'constructor';
+const validKey = (key: string): boolean =>
+  !!key && key.length <= 1024 && key !== '__proto__' && key !== 'prototype' && key !== 'constructor';
 
 /** 会话与保存入口只校验存储协议；未加载扩展的领域数据仍须能冷恢复。 */
 export function assertDocumentExtensions(value: unknown): void {
@@ -23,22 +23,27 @@ export function assertDocumentExtensions(value: unknown): void {
       if (depth >= 16 || !validKey(key)) throw new Error('文档扩展路径无效');
       if (child && typeof child === 'object') visit(child, depth + 1);
       else {
-        try { assertExtensionLeaf(child); }
-        catch { throw new Error('文档扩展值必须是有界的纯数据标量'); }
+        try {
+          assertExtensionLeaf(child);
+        } catch {
+          throw new Error('文档扩展值必须是有界的纯数据标量');
+        }
       }
     }
   };
   for (const [namespace, state] of Object.entries(dictionary(value))) {
     if (!validKey(namespace)) throw new Error('文档扩展命名空间无效');
-    try { assertNamespace(namespace); }
-    catch { throw new Error('文档扩展命名空间无效'); }
+    try {
+      assertNamespace(namespace);
+    } catch {
+      throw new Error('文档扩展命名空间无效');
+    }
     visit(state, 0);
   }
 }
 
 export function isDocumentExtensionPatch(patch: { path: readonly unknown[] }): patch is DocumentExtensionPatch {
-  return patch.path.length >= 3 && patch.path[0] === 'document' && patch.path[1] === 'extensions'
-    && typeof patch.path[2] === 'string';
+  return patch.path.length >= 3 && patch.path[0] === 'document' && patch.path[1] === 'extensions' && typeof patch.path[2] === 'string';
 }
 
 export function validateDocumentExtensionPatch(doc: EditDoc, patch: DocumentExtensionPatch, index: number): void {
@@ -46,11 +51,12 @@ export function validateDocumentExtensionPatch(doc: EditDoc, patch: DocumentExte
   assertNamespace(patch.path[2]);
   if (!validKey(patch.path[2])) throw new Error('文档扩展命名空间无效');
   const path = patch.path.slice(3);
-  if (!path.length || path.length > 16 || path.some(key => typeof key !== 'string' || !validKey(key))) throw new Error('文档扩展路径无效');
+  if (!path.length || path.length > 16 || path.some((key) => typeof key !== 'string' || !validKey(key)))
+    throw new Error('文档扩展路径无效');
   if (patch.op === 'set') assertExtensionLeaf(patch.value);
   if (patch.path[2] === EXTENSION_ADDRESSES) return validateExtensionAddress(doc, patch);
-  if (patch.path[2] === EXTENSION_MIGRATIONS) return validateExtensionMigration(doc, patch,
-    validateDocumentExtensionPatch, applyDocumentExtensionPatch);
+  if (patch.path[2] === EXTENSION_MIGRATIONS)
+    return validateExtensionMigration(doc, patch, validateDocumentExtensionPatch, applyDocumentExtensionPatch);
   const state = doc.extensions?.[patch.path[2]];
   if (state !== undefined && (!state || typeof state !== 'object' || Array.isArray(state))) throw new Error('文档扩展覆盖无效');
   const runtime = registeredEditExtensions().get(patch.path[2]);
@@ -79,7 +85,8 @@ export function applyDocumentExtensionPatch(doc: EditDoc, patch: DocumentExtensi
   else if (!target[key] || typeof target[key] !== 'object') delete target[key];
   for (const parent of parents.reverse()) {
     if (Object.keys(target).length) break;
-    delete parent.target[parent.key]; target = parent.target;
+    delete parent.target[parent.key];
+    target = parent.target;
   }
   if (!Object.keys(doc.extensions).length) delete doc.extensions;
   else observeDocumentExtension(doc, patch.path[2]);

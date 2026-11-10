@@ -14,7 +14,9 @@ interface SessionState {
   browserFontsReady?: boolean;
 }
 
-interface TextEditingOwner { releaseTextEditing(): void }
+interface TextEditingOwner {
+  releaseTextEditing(): void;
+}
 
 const states = new WeakMap<EditorSession, SessionState>();
 

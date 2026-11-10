@@ -1,7 +1,9 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "cacheDir": ".turbo/cache",
-  "remoteCache": { "enabled": false },
+  "remoteCache": {
+    "enabled": false
+  },
   "tasks": {
     "//#build:packages": {
       "inputs": [
@@ -14,7 +16,12 @@
         "packages/*/skills/**",
         "tooling/**"
       ],
-      "env": ["WEB_PPT_BUILD_RUNTIME", "NODE_ENV", "NODE_OPTIONS", "VITE_*"],
+      "env": [
+        "WEB_PPT_BUILD_RUNTIME",
+        "NODE_ENV",
+        "NODE_OPTIONS",
+        "VITE_*"
+      ],
       "outputs": [
         "packages/core/dist/**",
         "packages/edit-core/dist/**",

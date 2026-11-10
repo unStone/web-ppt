@@ -55,7 +55,8 @@ const DOM_ALLOWED = new Set([
   'packages/core/src/xml.ts',
   'packages/core/src/render/text-measure.ts',
 ]);
-const DOM_PATTERN = /document\.(createElement|implementation|body|getElementById|querySelector|createTextNode)|window\.|new Image\b|requestAnimationFrame|new DOMParser|new XMLSerializer|navigator\./;
+const DOM_PATTERN =
+  /document\.(createElement|implementation|body|getElementById|querySelector|createTextNode)|window\.|new Image\b|requestAnimationFrame|new DOMParser|new XMLSerializer|navigator\./;
 for (const file of walk(join(root, 'packages/core/src'))) {
   if (DOM_ALLOWED.has(rel(file))) continue;
   if (DOM_PATTERN.test(readFileSync(file, 'utf8'))) {
@@ -64,8 +65,7 @@ for (const file of walk(join(root, 'packages/core/src'))) {
 }
 
 // ④ 包依赖单向：发布包只 import 自己声明的 deps/peer（含自身），viewer/site 不被任何包反向依赖
-const packageDirs = readdirSync(join(root, 'packages')).filter((n) =>
-  existsSync(join(root, 'packages', n, 'package.json')));
+const packageDirs = readdirSync(join(root, 'packages')).filter((n) => existsSync(join(root, 'packages', n, 'package.json')));
 const privateNames = new Set();
 for (const name of packageDirs) {
   if (JSON.parse(readFileSync(join(root, 'packages', name, 'package.json'), 'utf8')).private) {
@@ -74,8 +74,7 @@ for (const name of packageDirs) {
 }
 for (const name of packageDirs) {
   const manifest = JSON.parse(readFileSync(join(root, 'packages', name, 'package.json'), 'utf8'));
-  const allowed = new Set([manifest.name, ...Object.keys(manifest.dependencies ?? {}),
-    ...Object.keys(manifest.peerDependencies ?? {})]);
+  const allowed = new Set([manifest.name, ...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.peerDependencies ?? {})]);
   const srcDir = join(root, 'packages', name, 'src');
   if (!existsSync(srcDir)) continue;
   for (const file of walk(srcDir)) {

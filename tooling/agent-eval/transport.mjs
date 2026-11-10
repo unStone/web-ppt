@@ -3,12 +3,17 @@ import { readFile } from 'node:fs/promises';
 import { EvaluationHostError } from './paths.mjs';
 
 const automaticTools = new Set(['ppt_edit', 'ppt_undo', 'ppt_redo']);
-const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 function toolPayload(message) {
   const result = message.result;
-  if (!object(result) || !Array.isArray(result.content) || result.content.length !== 1
-    || result.content[0].type !== 'text' || typeof result.content[0].text !== 'string') {
+  if (
+    !object(result)
+    || !Array.isArray(result.content)
+    || result.content.length !== 1
+    || result.content[0].type !== 'text'
+    || typeof result.content[0].text !== 'string'
+  ) {
     throw new EvaluationHostError('eval-invalid-response', '生产 MCP 工具返回值不是唯一 JSON 文本');
   }
   const payload = JSON.parse(result.content[0].text);
@@ -19,10 +24,28 @@ function toolPayload(message) {
 }
 
 function failure(request, error) {
-  return { jsonrpc: '2.0', id: request.id, result: { isError: true,
-    content: [{ type: 'text', text: JSON.stringify({ ok: false, error: {
-      reason: error.reason, message: error.message, commandIndex: null, elementId: null, slideNumber: null,
-    } }) }] } };
+  return {
+    jsonrpc: '2.0',
+    id: request.id,
+    result: {
+      isError: true,
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            ok: false,
+            error: {
+              reason: error.reason,
+              message: error.message,
+              commandIndex: null,
+              elementId: null,
+              slideNumber: null,
+            },
+          }),
+        },
+      ],
+    },
+  };
 }
 
 export function createEvaluationTransport(base, { config, policy, log, onFatal, onCallLimit }) {
@@ -34,31 +57,44 @@ export function createEvaluationTransport(base, { config, policy, log, onFatal, 
   let accepting = true;
   let baseClosed = false;
   let fatal = false;
-  const context = request => ({ callIndex: request?.callIndex ?? null, toolName: request?.toolName ?? null });
-  const reportFatal = error => {
+  const context = (request) => ({ callIndex: request?.callIndex ?? null, toolName: request?.toolName ?? null });
+  const reportFatal = (error) => {
     if (fatal) return;
     fatal = true;
     transport.onerror?.(error);
     onFatal(error);
   };
   const transport = {
-    onmessage: undefined, onerror: undefined, onclose: undefined,
-    get callCount() { return callCount; },
-    get pendingCount() { return pending.size; },
-    stopInput() { accepting = false; },
-    drainInput() { return input; },
+    onmessage: undefined,
+    onerror: undefined,
+    onclose: undefined,
+    get callCount() {
+      return callCount;
+    },
+    get pendingCount() {
+      return pending.size;
+    },
+    stopInput() {
+      accepting = false;
+    },
+    drainInput() {
+      return input;
+    },
     async settleResponses() {
       const deadline = Date.now() + 3000;
-      while (!baseClosed && [...pending.values()].some(request => !request.cancelled)) {
+      while (!baseClosed && [...pending.values()].some((request) => !request.cancelled)) {
         if (Date.now() >= deadline) {
           throw new EvaluationHostError('eval-shutdown-timeout', '评测 host 关闭时仍有未完成的生产工具回复');
         }
-        await new Promise(resolve => setTimeout(resolve, 5));
+        await new Promise((resolve) => setTimeout(resolve, 5));
       }
     },
     async start() {
-      base.onerror = error => reportFatal(error);
-      base.onclose = () => { baseClosed = true; transport.onclose?.(); };
+      base.onerror = (error) => reportFatal(error);
+      base.onclose = () => {
+        baseClosed = true;
+        transport.onclose?.();
+      };
       base.onmessage = (message, extra) => {
         if (!accepting) return;
         input = input.then(async () => {
@@ -72,8 +108,7 @@ export function createEvaluationTransport(base, { config, policy, log, onFatal, 
             const cancelled = pending.get(message.params?.requestId);
             if (cancelled) cancelled.cancelled = true;
           }
-          await log.write({ direction: 'client-to-server', ...context(request),
-            original: message, delivered: message });
+          await log.write({ direction: 'client-to-server', ...context(request), original: message, delivered: message });
           if (request) {
             try {
               if (callCount > config.maxCalls) {
@@ -103,13 +138,21 @@ export function createEvaluationTransport(base, { config, policy, log, onFatal, 
         let savedFile;
         if (request?.toolName && Object.hasOwn(message, 'result')) {
           const payload = toolPayload(delivered);
-          if (!delivered.result.isError && payload.ok && automaticTools.has(request.toolName)
-            && config.condition === 'without-lint' && object(payload.value)
-            && Object.hasOwn(payload.value, 'lint')) {
+          if (
+            !delivered.result.isError
+            && payload.ok
+            && automaticTools.has(request.toolName)
+            && config.condition === 'without-lint'
+            && object(payload.value)
+            && Object.hasOwn(payload.value, 'lint')
+          ) {
             delete payload.value.lint;
             delivered.result.content[0].text = JSON.stringify(payload);
-            if (object(delivered.result.structuredContent) && delivered.result.structuredContent.ok === true
-              && object(delivered.result.structuredContent.value)) {
+            if (
+              object(delivered.result.structuredContent)
+              && delivered.result.structuredContent.ok === true
+              && object(delivered.result.structuredContent.value)
+            ) {
               delete delivered.result.structuredContent.value.lint;
             }
             removedAutomaticLint = true;
@@ -120,8 +163,14 @@ export function createEvaluationTransport(base, { config, policy, log, onFatal, 
             savedFile = { path, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
           }
         }
-        await log.write({ direction: 'server-to-client', ...context(request), original, delivered,
-          removedAutomaticLint, ...(savedFile && { savedFile }) });
+        await log.write({
+          direction: 'server-to-client',
+          ...context(request),
+          original,
+          delivered,
+          removedAutomaticLint,
+          ...(savedFile && { savedFile }),
+        });
         await base.send(delivered, options);
         if (Object.hasOwn(message, 'id') && !Object.hasOwn(message, 'method')) pending.delete(message.id);
       });

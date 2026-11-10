@@ -118,10 +118,20 @@ async function ensureSample(file) {
 
 function bundlePage() {
   const output = join(WORK, 'page.js');
-  execFileSync('npx', [
-    'esbuild', join(root, 'tooling/lib/demo-gif-page.mjs'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error', ...sourceAliasArgs(root), `--outfile=${output}`,
-  ], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'tooling/lib/demo-gif-page.mjs'),
+      '--bundle',
+      '--format=esm',
+      '--platform=browser',
+      '--log-level=error',
+      ...sourceAliasArgs(root),
+      `--outfile=${output}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return output;
 }
 
@@ -170,23 +180,31 @@ async function launchChrome(port) {
   const bin = CHROME_CANDIDATES.find((p) => existsSync(p));
   if (!bin) throw new Error(`未找到 Chrome。装一个，或把路径加进 CHROME_CANDIDATES`);
   const profile = mkdtempSync(join(WORK, 'chrome-'));
-  const proc = spawn(bin, [
-    '--headless=new',
-    `--remote-debugging-port=${port}`,
-    `--user-data-dir=${profile}`,
-    '--no-first-run', '--no-default-browser-check',
-    '--hide-scrollbars', '--disable-gpu',
-    // 无头下默认会按省电策略降帧，动画会被抽稀
-    '--disable-features=CalculateNativeWinOcclusion',
-    '--autoplay-policy=no-user-gesture-required',
-    'about:blank',
-  ], { stdio: 'ignore' });
+  const proc = spawn(
+    bin,
+    [
+      '--headless=new',
+      `--remote-debugging-port=${port}`,
+      `--user-data-dir=${profile}`,
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--hide-scrollbars',
+      '--disable-gpu',
+      // 无头下默认会按省电策略降帧，动画会被抽稀
+      '--disable-features=CalculateNativeWinOcclusion',
+      '--autoplay-policy=no-user-gesture-required',
+      'about:blank',
+    ],
+    { stdio: 'ignore' },
+  );
 
   for (let i = 0; i < 80; i++) {
     try {
       const v = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
       return { proc, profile, ws: v.webSocketDebuggerUrl, version: v.Browser };
-    } catch { await sleep(250); }
+    } catch {
+      await sleep(250);
+    }
   }
   proc.kill();
   throw new Error('Chrome 起不来');
@@ -207,7 +225,10 @@ function connect(url) {
       for (const fn of listeners) fn(msg);
     }
   };
-  const ready = new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
+  const ready = new Promise((res, rej) => {
+    ws.onopen = res;
+    ws.onerror = rej;
+  });
   const send = (method, params = {}, sessionId) =>
     new Promise((resolve, reject) => {
       const n = ++id;
@@ -272,9 +293,19 @@ async function captureStills(name, deck) {
   writeFileSync(join(dir, 'links.json'), JSON.stringify(links, null, 2));
   // 缩略图拼成一张总览，挑分镜时一眼看完
   const cols = 4;
-  execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', join(dir, 's%02d.png'),
-    '-vf', `scale=440:-1,pad=iw+8:ih+8:4:4:white,tile=${cols}x${Math.ceil(deck.count / cols)}`,
-    '-frames:v', '1', join(dir, 'contact.png')]);
+  execFileSync('ffmpeg', [
+    '-y',
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-i',
+    join(dir, 's%02d.png'),
+    '-vf',
+    `scale=440:-1,pad=iw+8:ih+8:4:4:white,tile=${cols}x${Math.ceil(deck.count / cols)}`,
+    '-frames:v',
+    '1',
+    join(dir, 'contact.png'),
+  ]);
   console.log(`✓ ${name}: ${deck.count} 页 → ${dir.replace(root + '/', '')}/（contact.png + links.json）`);
 }
 
@@ -290,7 +321,10 @@ async function record(name, reel, deck, cdp) {
   });
 
   await deck.call('Page.startScreencast', {
-    format: 'png', maxWidth: W * SCALE, maxHeight: deck.H * SCALE, everyNthFrame: 1,
+    format: 'png',
+    maxWidth: W * SCALE,
+    maxHeight: deck.H * SCALE,
+    everyNthFrame: 1,
   });
 
   for (const step of reel.story) {
@@ -308,7 +342,8 @@ async function record(name, reel, deck, cdp) {
       const before = await deck.evaluate('__demo.viewer.index');
       const link = (await deck.evaluate('__demo.links()')).find((l) => l.slide === String(step.slide));
       if (!link) throw new Error(`${name}: 第 ${before} 页没有指向 ${step.slide} 的跳页按钮`);
-      const x = link.x + link.w / 2, y = link.y + link.h / 2;
+      const x = link.x + link.w / 2,
+        y = link.y + link.h / 2;
       await deck.evaluate(`__demo.pulse(${x}, ${y})`);
       await sleep(350);
       for (const type of ['mousePressed', 'mouseReleased']) {
@@ -353,11 +388,20 @@ async function record(name, reel, deck, cdp) {
   const ff = (args) => execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', ...args], { stdio: 'inherit' });
   const src = join(work, 'f%05d.png');
   try {
-    ff(['-framerate', String(FPS), '-i', src,
-      '-vf', `${frame},palettegen=max_colors=${reel.colors}:stats_mode=diff`, pal]);
-    ff(['-framerate', String(FPS), '-i', src, '-i', pal,
-      '-lavfi', `${frame}[x];[x][1:v]paletteuse=dither=none:diff_mode=rectangle`,
-      '-loop', '0', out]);
+    ff(['-framerate', String(FPS), '-i', src, '-vf', `${frame},palettegen=max_colors=${reel.colors}:stats_mode=diff`, pal]);
+    ff([
+      '-framerate',
+      String(FPS),
+      '-i',
+      src,
+      '-i',
+      pal,
+      '-lavfi',
+      `${frame}[x];[x][1:v]paletteuse=dither=none:diff_mode=rectangle`,
+      '-loop',
+      '0',
+      out,
+    ]);
   } finally {
     rmSync(work, { recursive: true, force: true });
   }

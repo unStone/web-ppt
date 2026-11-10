@@ -21,8 +21,4 @@ export interface VertexEditor {
   destroy(): void;
 }
 
-export type VertexEditorFactory = (
-  session: EditorSession,
-  view: SlideEditor,
-  options?: VertexEditorOptions,
-) => VertexEditor;
+export type VertexEditorFactory = (session: EditorSession, view: SlideEditor, options?: VertexEditorOptions) => VertexEditor;

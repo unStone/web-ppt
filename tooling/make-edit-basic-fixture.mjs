@@ -7,7 +7,14 @@ import { deck, makePng, makeZip, px, slideXml, solid, sp } from './lib/ooxml.mjs
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const groupChild = sp({
-  x: 40, y: 30, w: 180, h: 100, prst: 'roundRect', fill: solid('accent2'), text: '', name: '组内形状',
+  x: 40,
+  y: 30,
+  w: 180,
+  h: 100,
+  prst: 'roundRect',
+  fill: solid('accent2'),
+  text: '',
+  name: '组内形状',
 });
 const group = `<p:grpSp>
 <p:nvGrpSpPr><p:cNvPr id="201" name="测试组"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
@@ -37,22 +44,41 @@ const table = `<p:graphicFrame>
 </a:tbl></a:graphicData></a:graphic>
 </p:graphicFrame>`;
 const shape = sp({
-  x: 90, y: 120, w: 260, h: 150, prst: 'rect', fill: solid('accent1'), name: '普通形状',
+  x: 90,
+  y: 120,
+  w: 260,
+  h: 150,
+  prst: 'rect',
+  fill: solid('accent1'),
+  name: '普通形状',
   text: '<a:p><a:r><a:rPr sz="1800"/><a:t>可编辑</a:t></a:r></a:p>',
 });
 const slide = slideXml(shape + group + frame + picture + table);
-const secondSlide = slideXml(sp({
-  x: 120, y: 160, w: 320, h: 180, prst: 'ellipse', fill: solid('accent3'), name: '第二页形状',
-}));
+const secondSlide = slideXml(
+  sp({
+    x: 120,
+    y: 160,
+    w: 320,
+    h: 180,
+    prst: 'ellipse',
+    fill: solid('accent3'),
+    name: '第二页形状',
+  }),
+);
 const files = unzipSync(deck({ name: 'Edit Basic', width: 1280, height: 720, slides: [slide, secondSlide] }));
 const decoder = new TextDecoder();
 files['ppt/slides/_rels/slide1.xml.rels'] = new TextEncoder().encode(
-  decoder.decode(files['ppt/slides/_rels/slide1.xml.rels']).replace('</Relationships>',
-    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/></Relationships>'),
+  decoder
+    .decode(files['ppt/slides/_rels/slide1.xml.rels'])
+    .replace(
+      '</Relationships>',
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/></Relationships>',
+    ),
 );
 files['[Content_Types].xml'] = new TextEncoder().encode(
-  decoder.decode(files['[Content_Types].xml']).replace('<Default Extension="xml"',
-    '<Default Extension="png" ContentType="image/png"/>\n<Default Extension="xml"'),
+  decoder
+    .decode(files['[Content_Types].xml'])
+    .replace('<Default Extension="xml"', '<Default Extension="png" ContentType="image/png"/>\n<Default Extension="xml"'),
 );
 files['ppt/media/image1.png'] = makePng(16, 12, (x, y) => [x * 12, y * 16, 160]);
 const bytes = makeZip(Object.entries(files));

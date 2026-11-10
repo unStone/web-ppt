@@ -62,70 +62,154 @@ mkdirSync(out, { recursive: true });
 const domEnvironment = installDomEnv();
 
 const bundle = join(out, 'editor.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/editor/src/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${bundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/editor/src/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${bundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const adjustmentsBundle = join(out, 'adjustments.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/editor/src/adjustments/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${adjustmentsBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/editor/src/adjustments/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${adjustmentsBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const designBundle = join(out, 'design.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/editor/src/design/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${designBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/editor/src/design/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${designBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const vertexBundle = join(out, 'vertex.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/editor/src/vertex/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${vertexBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/editor/src/vertex/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${vertexBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const coreBundle = join(out, 'core.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'tooling/lib/media-browser-api.mjs'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${join(out, 'media.mjs')}`,
-], { cwd: root, stdio: 'inherit' });
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error', ...sourceAliasArgs(root), `--outfile=${coreBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'tooling/lib/media-browser-api.mjs'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${join(out, 'media.mjs')}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/core/src/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${coreBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const imageZipBundle = join(out, 'image-zip.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/core/src/image-zip.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error', ...sourceAliasArgs(root), `--outfile=${imageZipBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/core/src/image-zip.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${imageZipBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const generateBundle = join(out, 'generate.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/edit-core/src/generate/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${generateBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/edit-core/src/generate/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${generateBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const templatesBundle = join(out, 'templates.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/editor/src/templates/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${templatesBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/editor/src/templates/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${templatesBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const viewerBundle = join(out, 'viewer-core.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/viewer-core/src/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${viewerBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/viewer-core/src/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${viewerBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const lib = await import(`file://${bundle}?run=${Date.now()}`);
 const imageZip = await import(`file://${imageZipBundle}?run=${Date.now()}`);
 const vertex = await import(`file://${vertexBundle}?run=${Date.now()}`);
@@ -133,12 +217,21 @@ const adjustments = await import(`file://${adjustmentsBundle}?run=${Date.now()}`
 const core = await import(`file://${coreBundle}?run=${Date.now()}`);
 const viewer = await import(`file://${viewerBundle}?run=${Date.now()}`);
 const frameworkBundle = join(out, 'framework-adapters.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'tooling/lib/framework-adapters-browser-contract.tsx'),
-  '--bundle', '--format=esm', '--platform=browser', '--jsx=automatic', '--log-level=error',
-  ...sourceAliasArgs(root),
-  `--outfile=${frameworkBundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'tooling/lib/framework-adapters-browser-contract.tsx'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--jsx=automatic',
+    '--log-level=error',
+    ...sourceAliasArgs(root),
+    `--outfile=${frameworkBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const load = (name) => new Uint8Array(readFileSync(join(root, 'fixtures', name)));
 
 let passed = 0;
@@ -171,19 +264,24 @@ await runTouchAdapterContract({ lib, load, check });
 
 console.log('\n\x1b[36m▸ 编辑会话资源所有权\x1b[0m');
 {
-  check('发布入口只暴露工厂，不泄漏依赖内部注册状态的构造器',
-    lib.EditorSession === undefined && lib.SlideEditor === undefined);
+  check('发布入口只暴露工厂，不泄漏依赖内部注册状态的构造器', lib.EditorSession === undefined && lib.SlideEditor === undefined);
   const bytes = new Uint8Array(readFileSync(join(root, 'fixtures/sample-edit-xfrm.pptx')));
   const session = await lib.openEditor(bytes, { idPrefix: 'editor-session-' });
   const pkg = session.editor.doc.package;
-  check('openEditor 一步建立可写 headless Editor', session.editor.doc.meta.readonly === false
-    && session.editor.doc.slideOrder.length === 1 && !!pkg && !pkg.disposed);
+  check(
+    'openEditor 一步建立可写 headless Editor',
+    session.editor.doc.meta.readonly === false && session.editor.doc.slideOrder.length === 1 && !!pkg && !pkg.disposed,
+  );
   const projection = session.toPresentation();
-  check('编辑会话公开当前 Presentation 投影且读取不改变脏状态',
+  check(
+    '编辑会话公开当前 Presentation 投影且读取不改变脏状态',
     projection.width === session.editor.doc.meta.width
       && projection.height === session.editor.doc.meta.height
       && projection.slides.length === session.editor.doc.slideOrder.length
-      && !session.editor.isDirty() && projection.dispose === undefined && projection.package === undefined);
+      && !session.editor.isDirty()
+      && projection.dispose === undefined
+      && projection.package === undefined,
+  );
   session.dispose();
   session.dispose();
   check('会话释放幂等并释放原包', session.disposed === true && pkg.disposed === true);
@@ -201,13 +299,16 @@ console.log('\n\x1b[36m▸ 编辑会话资源所有权\x1b[0m');
   stop();
   seed.dispose();
   const restored = await lib.openEditor(bytes, {
-    idPrefix: 'editor-recovery-', recoveryFrames: JSON.parse(JSON.stringify(frames)),
+    idPrefix: 'editor-recovery-',
+    recoveryFrames: JSON.parse(JSON.stringify(frames)),
   });
-  check('openEditor 在任何 DOM 视图可见前透传并完成恢复日志',
+  check(
+    'openEditor 在任何 DOM 视图可见前透传并完成恢复日志',
     restored.editor.effectiveElement(seedElement).x === recoveredX
       && restored.editor.selection.kind === 'elements'
       && restored.editor.selection.ids[0] === seedElement
-      && restored.editor.isDirty());
+      && restored.editor.isDirty(),
+  );
   restored.dispose();
 }
 
@@ -217,14 +318,21 @@ console.log('\n\x1b[36m▸ 三层静态视图生命周期\x1b[0m');
   const session = await lib.openEditor(bytes, { idPrefix: 'editor-view-' });
   const container = document.createElement('div');
   let invalidMountRejected = false;
-  try { session.mount(container, { zoom: 0 }); } catch { invalidMountRejected = true; }
+  try {
+    session.mount(container, { zoom: 0 });
+  } catch {
+    invalidMountRejected = true;
+  }
   let invalidMarginsRejected = false;
   try {
     session.mount(container, { snapMargins: { left: -1, right: 0, top: 0, bottom: 0 } });
-  } catch { invalidMarginsRejected = true; }
-  check('挂载校验失败不会遗留 DOM 或污染会话内视图集合',
-    invalidMountRejected && invalidMarginsRejected
-    && container.childElementCount === 0 && !session.disposed);
+  } catch {
+    invalidMarginsRejected = true;
+  }
+  check(
+    '挂载校验失败不会遗留 DOM 或污染会话内视图集合',
+    invalidMountRejected && invalidMarginsRejected && container.childElementCount === 0 && !session.disposed,
+  );
   const view = session.mount(container, { mode: 'view', zoom: 1.25 });
   const rootElement = container.querySelector('[data-web-ppt-editor]');
   const stage = container.querySelector('[data-ppt-stage]');
@@ -232,21 +340,40 @@ console.log('\n\x1b[36m▸ 三层静态视图生命周期\x1b[0m');
   const interactionLayer = container.querySelector('[data-ppt-layer="interaction"]');
   const textLayer = container.querySelector('[data-ppt-layer="text"]');
   const beforeModeChange = staticLayer?.innerHTML;
-  check('mount 建立可缩放的静态、交互、文本三层并渲染首屏', !!rootElement && !!stage
-    && !!staticLayer?.querySelector('svg') && !!interactionLayer && !!textLayer
-    && stage.style.transform === 'scale(1.25)'
-    && rootElement.getAttribute('data-mode') === 'view'
-    && interactionLayer.style.display === 'none' && textLayer.style.display === 'none'
-    && interactionLayer.style.pointerEvents === 'none' && textLayer.style.pointerEvents === 'none');
+  check(
+    'mount 建立可缩放的静态、交互、文本三层并渲染首屏',
+    !!rootElement
+      && !!stage
+      && !!staticLayer?.querySelector('svg')
+      && !!interactionLayer
+      && !!textLayer
+      && stage.style.transform === 'scale(1.25)'
+      && rootElement.getAttribute('data-mode') === 'view'
+      && interactionLayer.style.display === 'none'
+      && textLayer.style.display === 'none'
+      && interactionLayer.style.pointerEvents === 'none'
+      && textLayer.style.pointerEvents === 'none',
+  );
   view.setMode('edit');
-  check('查看与编辑模式复用同一静态预览 DOM', rootElement.getAttribute('data-mode') === 'edit'
-    && staticLayer.innerHTML === beforeModeChange && !interactionLayer.hasAttribute('hidden')
-    && interactionLayer.style.display === '' && textLayer.style.display === '');
+  check(
+    '查看与编辑模式复用同一静态预览 DOM',
+    rootElement.getAttribute('data-mode') === 'edit'
+      && staticLayer.innerHTML === beforeModeChange
+      && !interactionLayer.hasAttribute('hidden')
+      && interactionLayer.style.display === ''
+      && textLayer.style.display === '',
+  );
   const stableIds = elementIds(session.editor.doc, view.slideId);
   const renderedNodes = [...staticLayer.querySelectorAll('[data-edit-id]')];
-  check('顶层与嵌套组节点都映射到稳定 EditDoc 身份', renderedNodes.length === stableIds.length
-    && renderedNodes.every((node, index) => node.getAttribute('data-edit-id') === stableIds[index]
-      && Number(node.getAttribute('data-el')) === session.editor.doc.elements[stableIds[index]].src.id));
+  check(
+    '顶层与嵌套组节点都映射到稳定 EditDoc 身份',
+    renderedNodes.length === stableIds.length
+      && renderedNodes.every(
+        (node, index) =>
+          node.getAttribute('data-edit-id') === stableIds[index]
+          && Number(node.getAttribute('data-el')) === session.editor.doc.elements[stableIds[index]].src.id,
+      ),
+  );
   const nestedId = stableIds.find((id) => session.editor.doc.elements[session.editor.doc.elements[id].parent]);
   const nestedRecord = session.editor.doc.elements[nestedId];
   let groupId = nestedRecord.parent;
@@ -259,52 +386,69 @@ console.log('\n\x1b[36m▸ 三层静态视图生命周期\x1b[0m');
   const outsideGroupBefore = staticLayer.querySelector(`[data-edit-id="${outsideGroupId}"]`);
   const nestedSvgBefore = staticLayer.querySelector('svg');
   session.editor.exec({ type: 'SetXfrm', id: nestedId, x: nestedRecord.src.x + 3 });
-  check('嵌套组内单元素提交只替换自身，保留组容器、外部兄弟与整页 DOM',
+  check(
+    '嵌套组内单元素提交只替换自身，保留组容器、外部兄弟与整页 DOM',
     staticLayer.querySelector(`[data-edit-id="${nestedId}"]`) !== nestedBefore
-    && staticLayer.querySelector(`[data-edit-id="${groupId}"]`) === groupBefore
-    && staticLayer.querySelector(`[data-edit-id="${outsideGroupId}"]`) === outsideGroupBefore
-    && staticLayer.querySelector('svg') === nestedSvgBefore,
-  `nested=${nestedId} group=${groupId} replaced=${staticLayer.querySelector(`[data-edit-id="${nestedId}"]`) !== nestedBefore}`
-    + ` groupStable=${staticLayer.querySelector(`[data-edit-id="${groupId}"]`) === groupBefore}`
-    + ` siblingStable=${staticLayer.querySelector(`[data-edit-id="${outsideGroupId}"]`) === outsideGroupBefore}`
-    + ` pageStable=${staticLayer.querySelector('svg') === nestedSvgBefore}`);
+      && staticLayer.querySelector(`[data-edit-id="${groupId}"]`) === groupBefore
+      && staticLayer.querySelector(`[data-edit-id="${outsideGroupId}"]`) === outsideGroupBefore
+      && staticLayer.querySelector('svg') === nestedSvgBefore,
+    `nested=${nestedId} group=${groupId} replaced=${staticLayer.querySelector(`[data-edit-id="${nestedId}"]`) !== nestedBefore}`
+      + ` groupStable=${staticLayer.querySelector(`[data-edit-id="${groupId}"]`) === groupBefore}`
+      + ` siblingStable=${staticLayer.querySelector(`[data-edit-id="${outsideGroupId}"]`) === outsideGroupBefore}`
+      + ` pageStable=${staticLayer.querySelector('svg') === nestedSvgBefore}`,
+  );
   const [targetId, siblingId] = session.editor.doc.slides[view.slideId].children;
   const targetBefore = staticLayer.querySelector(`[data-edit-id="${targetId}"]`);
   const siblingBefore = staticLayer.querySelector(`[data-edit-id="${siblingId}"]`);
   const svgBefore = staticLayer.querySelector('svg');
   session.editor.exec({
-    type: 'SetXfrm', id: targetId, x: session.editor.doc.elements[targetId].src.x + 17,
+    type: 'SetXfrm',
+    id: targetId,
+    x: session.editor.doc.elements[targetId].src.x + 17,
   });
   const targetAfter = staticLayer.querySelector(`[data-edit-id="${targetId}"]`);
-  check('单元素事务只替换目标 markup/defs 分区', targetAfter !== targetBefore
-    && staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) === siblingBefore
-    && staticLayer.querySelector('svg') === svgBefore);
+  check(
+    '单元素事务只替换目标 markup/defs 分区',
+    targetAfter !== targetBefore
+      && staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) === siblingBefore
+      && staticLayer.querySelector('svg') === svgBefore,
+  );
   const beforePageFallback = staticLayer.querySelector('svg');
   session.editor.transaction((transaction) => {
     for (const id of [targetId, siblingId]) {
       transaction.exec({ type: 'SetXfrm', id, x: session.editor.effectiveElement(id).x + 1 });
     }
   }, '小页面少量提交');
-  check('小页面少量脏元素不因比例失真而重建整页 SVG',
-    staticLayer.querySelector('svg') === beforePageFallback
-    && staticLayer.querySelectorAll('[data-edit-id]').length === stableIds.length);
+  check(
+    '小页面少量脏元素不因比例失真而重建整页 SVG',
+    staticLayer.querySelector('svg') === beforePageFallback && staticLayer.querySelectorAll('[data-edit-id]').length === stableIds.length,
+  );
   const firstSvg = staticLayer.querySelector('svg');
   session.editor.select({ kind: 'elements', ids: [targetId], enteredGroup: null });
   const selectedFrame = interactionLayer.querySelector('[data-edit-selection-frame]');
   const secondSlide = session.editor.doc.slideOrder[1];
   view.setSlide(secondSlide);
-  check('切页只替换静态内容并保留三层视图实例', view.slideId === secondSlide
-    && staticLayer.querySelector('svg') !== firstSvg
-    && container.querySelector('[data-ppt-stage]') === stage
-    && !interactionLayer.querySelector('[data-edit-selection-frame]'));
+  check(
+    '切页只替换静态内容并保留三层视图实例',
+    view.slideId === secondSlide
+      && staticLayer.querySelector('svg') !== firstSvg
+      && container.querySelector('[data-ppt-stage]') === stage
+      && !interactionLayer.querySelector('[data-edit-selection-frame]'),
+  );
   view.setSlide(session.editor.doc.slideOrder[0]);
-  check('切回选中元素所在页会以当前视图自己的 DOM 恢复选择框',
+  check(
+    '切回选中元素所在页会以当前视图自己的 DOM 恢复选择框',
     interactionLayer.querySelector('[data-edit-selection-frame]') !== selectedFrame
-    && interactionLayer.querySelector('[data-edit-selection-id]')?.getAttribute('data-edit-selection-id') === targetId);
+      && interactionLayer.querySelector('[data-edit-selection-id]')?.getAttribute('data-edit-selection-id') === targetId,
+  );
   view.destroy();
-  check('销毁视图只移除自己的 DOM，不释放共享会话', container.childElementCount === 0
-    && session.disposed === false && session.editor.doc.package?.disposed === false
-    && domEnvironment.blobs.size > 0);
+  check(
+    '销毁视图只移除自己的 DOM，不释放共享会话',
+    container.childElementCount === 0
+      && session.disposed === false
+      && session.editor.doc.package?.disposed === false
+      && domEnvironment.blobs.size > 0,
+  );
   session.dispose();
   check('销毁会话释放视图仍在使用的图片 blob URL', domEnvironment.blobs.size === 0);
 }
@@ -319,9 +463,14 @@ console.log('\n\x1b[36m▸ 多视图共享会话\x1b[0m');
   const first = session.mount(firstContainer, { mode: 'view' });
   const second = session.mount(secondContainer, { mode: 'edit' });
   session.dispose();
-  check('销毁共享会话会退订并移除全部视图', first.destroyed && second.destroyed
-    && firstContainer.childElementCount === 0 && secondContainer.childElementCount === 0
-    && pkg.disposed === true);
+  check(
+    '销毁共享会话会退订并移除全部视图',
+    first.destroyed
+      && second.destroyed
+      && firstContainer.childElementCount === 0
+      && secondContainer.childElementCount === 0
+      && pkg.disposed === true,
+  );
 }
 
 await runNativeHitContract({ check, lib, root });
@@ -376,10 +525,14 @@ console.log('\n\x1b[36m▸ Safari 安全文本路径\x1b[0m');
   const staticLayer = container.querySelector('[data-ppt-layer="static"]');
   const portableBefore = !staticLayer.querySelector('foreignObject') && !!staticLayer.querySelector('text');
   session.editor.exec({
-    type: 'SetXfrm', id: targetId, x: session.editor.doc.elements[targetId].src.x + 1,
+    type: 'SetXfrm',
+    id: targetId,
+    x: session.editor.doc.elements[targetId].src.x + 1,
   });
-  check('显式原生文本模式在整页与增量更新中都不产生 foreignObject', portableBefore
-    && !staticLayer.querySelector('foreignObject') && !!staticLayer.querySelector('text'));
+  check(
+    '显式原生文本模式在整页与增量更新中都不产生 foreignObject',
+    portableBefore && !staticLayer.querySelector('foreignObject') && !!staticLayer.querySelector('text'),
+  );
   session.dispose();
 }
 
@@ -396,26 +549,41 @@ console.log('\n\x1b[36m▸ SVG 定义分区原子替换\x1b[0m');
   const sibling = staticLayer.querySelector(`[data-edit-id="${siblingId}"]`);
   const target = staticLayer.querySelector(`[data-edit-id="${targetId}"]`);
   const defs = staticLayer.querySelector('defs');
-  const maskId = target.querySelector('[mask]')?.getAttribute('mask')?.match(/^url\(#(.+)\)$/)?.[1];
+  const maskId = target
+    .querySelector('[mask]')
+    ?.getAttribute('mask')
+    ?.match(/^url\(#(.+)\)$/)?.[1];
   const originalMask = [...defs.querySelectorAll('[id]')].find((node) => node.id === maskId);
-  const gradientId = originalMask?.querySelector('[fill^="url(#"]')?.getAttribute('fill')
+  const gradientId = originalMask
+    ?.querySelector('[fill^="url(#"]')
+    ?.getAttribute('fill')
     ?.match(/^url\(#(.+)\)$/)?.[1];
   const originalGradient = [...defs.querySelectorAll('[id]')].find((node) => node.id === gradientId);
   const originalDefCount = defs.children.length;
-  const move = (delta) => session.editor.exec({
-    type: 'SetXfrm', id: targetId,
-    x: session.editor.doc.elements[targetId].src.x + delta,
-  });
+  const move = (delta) =>
+    session.editor.exec({
+      type: 'SetXfrm',
+      id: targetId,
+      x: session.editor.doc.elements[targetId].src.x + delta,
+    });
   move(1);
   const firstDefs = [...staticLayer.querySelectorAll(`[data-edit-defs="${targetId}"]`)];
   const firstDefCount = defs.children.length;
   move(2);
   const secondDefs = [...staticLayer.querySelectorAll(`[data-edit-defs="${targetId}"]`)];
-  check('倒影元素从首次更新起递归换代 mask/gradient defs 而不累积或重建兄弟', firstDefs.length > 0
-    && !!originalMask && !originalMask.isConnected && !!originalGradient && !originalGradient.isConnected
-    && firstDefCount === originalDefCount && defs.children.length === originalDefCount
-    && secondDefs.length === firstDefs.length && secondDefs[0] !== firstDefs[0]
-    && staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) === sibling);
+  check(
+    '倒影元素从首次更新起递归换代 mask/gradient defs 而不累积或重建兄弟',
+    firstDefs.length > 0
+      && !!originalMask
+      && !originalMask.isConnected
+      && !!originalGradient
+      && !originalGradient.isConnected
+      && firstDefCount === originalDefCount
+      && defs.children.length === originalDefCount
+      && secondDefs.length === firstDefs.length
+      && secondDefs[0] !== firstDefs[0]
+      && staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) === sibling,
+  );
   session.dispose();
 }
 
@@ -433,18 +601,19 @@ console.log('\n\x1b[36m▸ 单元素 DOM 提交性能\x1b[0m');
   const samples = [];
   for (let index = 0; index < 80; index++) {
     const started = performance.now();
-    session.editor.exec({ type: 'SetXfrm', id: targetId, x: sourceX + index % 2 + 1 });
+    session.editor.exec({ type: 'SetXfrm', id: targetId, x: sourceX + (index % 2) + 1 });
     samples.push(performance.now() - started);
   }
   samples.sort((left, right) => left - right);
   const p95 = samples[Math.floor(samples.length * 0.95)];
-  check('60 元素页单元素提交到 DOM 的 p95 不超过 16ms', roots.length === 60 && p95 <= 16
-    && staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) === sibling,
-  `p95=${p95.toFixed(3)}ms`);
+  check(
+    '60 元素页单元素提交到 DOM 的 p95 不超过 16ms',
+    roots.length === 60 && p95 <= 16 && staticLayer.querySelector(`[data-edit-id="${siblingId}"]`) === sibling,
+    `p95=${p95.toFixed(3)}ms`,
+  );
   console.log(`  60 元素 · 单元素提交 p95 ${p95.toFixed(3)}ms`);
 
-  const hitTargets = [targetId, siblingId]
-    .map((id) => staticLayer.querySelector(`[data-edit-id="${id}"]`));
+  const hitTargets = [targetId, siblingId].map((id) => staticLayer.querySelector(`[data-edit-id="${id}"]`));
   const hitSvgBefore = staticLayer.querySelector('svg');
   const hitSamples = [];
   for (let index = 0; index < 80; index++) {
@@ -456,12 +625,15 @@ console.log('\n\x1b[36m▸ 单元素 DOM 提交性能\x1b[0m');
   }
   hitSamples.sort((left, right) => left - right);
   const hitP95 = hitSamples[Math.floor(hitSamples.length * 0.95)];
-  check('点选事件到完整选择框与 9 个手柄上屏的 p95 不超过 8ms', hitP95 <= 8
-    && staticLayer.querySelector('svg') === hitSvgBefore
-    && !!container.querySelector(`[data-edit-selection-id="${siblingId}"]`)
-    && container.querySelectorAll('[data-edit-handle]').length === 9
-    && !!container.querySelector('[data-edit-selection-frame]'),
-  `p95=${hitP95.toFixed(3)}ms`);
+  check(
+    '点选事件到完整选择框与 9 个手柄上屏的 p95 不超过 8ms',
+    hitP95 <= 8
+      && staticLayer.querySelector('svg') === hitSvgBefore
+      && !!container.querySelector(`[data-edit-selection-id="${siblingId}"]`)
+      && container.querySelectorAll('[data-edit-handle]').length === 9
+      && !!container.querySelector('[data-edit-selection-frame]'),
+    `p95=${hitP95.toFixed(3)}ms`,
+  );
   console.log(`  60 元素 · 完整选择框反馈 p95 ${hitP95.toFixed(3)}ms`);
 
   const beforeBatch = staticLayer.querySelector('svg');
@@ -470,9 +642,10 @@ console.log('\n\x1b[36m▸ 单元素 DOM 提交性能\x1b[0m');
       transaction.exec({ type: 'SetXfrm', id, x: session.editor.effectiveElement(id).x + 1 });
     }
   }, '真实批量提交');
-  check('绝对数量和占比都超过阈值时只做一次整页重绘',
-    staticLayer.querySelector('svg') !== beforeBatch
-      && staticLayer.querySelectorAll('[data-edit-id]').length === roots.length);
+  check(
+    '绝对数量和占比都超过阈值时只做一次整页重绘',
+    staticLayer.querySelector('svg') !== beforeBatch && staticLayer.querySelectorAll('[data-edit-id]').length === roots.length,
+  );
   session.dispose();
 }
 

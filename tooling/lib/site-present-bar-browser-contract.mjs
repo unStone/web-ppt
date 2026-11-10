@@ -30,10 +30,7 @@ export async function runViewerPresentBarContract({ evaluate, request, click, wa
         stageEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       }
     })()`);
-    await waitFor(
-      `document.querySelector(${JSON.stringify(pager)}).textContent !== ${JSON.stringify(start)}`,
-      '控制条隐去后点舞台仍前进',
-    );
+    await waitFor(`document.querySelector(${JSON.stringify(pager)}).textContent !== ${JSON.stringify(start)}`, '控制条隐去后点舞台仍前进');
 
     await pressT();
     await waitFor(shown, 'T 唤出控制条');
@@ -47,7 +44,8 @@ export async function runViewerPresentBarContract({ evaluate, request, click, wa
       if (await evaluate(shown)) throw new Error('能悬停时 2s 后控制条应隐去');
     }
 
-    const readInput = () => evaluate(`(() => {
+    const readInput = () =>
+      evaluate(`(() => {
       const matches = (query) => window.matchMedia(query).matches;
       return {
         points: navigator.maxTouchPoints,
@@ -68,13 +66,13 @@ export async function runViewerPresentBarContract({ evaluate, request, click, wa
       if (await evaluate("window.matchMedia('(hover: hover) and (pointer: fine)').matches")) {
         throw new Error('触屏仿真后仍被当成可悬停');
       }
-      if (!await evaluate("navigator.maxTouchPoints === 1 && window.matchMedia('(hover: none) and (pointer: coarse)').matches")) {
+      if (!(await evaluate("navigator.maxTouchPoints === 1 && window.matchMedia('(hover: none) and (pointer: coarse)').matches"))) {
         throw new Error('触屏仿真未建立单触点、无悬停与粗指针能力');
       }
-      if (!await evaluate(shown)) await pressT();
+      if (!(await evaluate(shown))) await pressT();
       await waitFor(`${presenting} && ${shown}`, '不能悬停时控制条保持可见');
       await evaluate('(async () => { await new Promise((resolve) => setTimeout(resolve, 2100)); })()', true);
-      if (!await evaluate(`${presenting} && ${shown}`)) throw new Error('不能悬停时控制条不应自动隐去');
+      if (!(await evaluate(`${presenting} && ${shown}`))) throw new Error('不能悬停时控制条不应自动隐去');
     } catch (error) {
       contractFailure = error;
     }

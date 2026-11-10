@@ -20,21 +20,31 @@ import type { SharedXYRecords } from './shared-xy-records';
 
 /** 共享保存直接消费唯一单元格覆盖；不能让不同图表的显示缓存轮流重写同一工作簿。 */
 export function sharedWorkbookPatch(doc: EditDoc, workbook: string): Uint8Array | undefined {
-  const resource = (doc.extensions?.['chart-shared'] as Record<string, {
-    cells?: Record<string, unknown>; rows?: Record<string, unknown>; series?: SharedSeriesRemovals;
-    addedSeries?: AddedSeries;
-    insertions?: InsertedRows;
-    xyRecords?: SharedXYRecords;
-  }> | undefined)?.[workbook];
+  const resource = (
+    doc.extensions?.['chart-shared'] as
+      | Record<
+          string,
+          {
+            cells?: Record<string, unknown>;
+            rows?: Record<string, unknown>;
+            series?: SharedSeriesRemovals;
+            addedSeries?: AddedSeries;
+            insertions?: InsertedRows;
+            xyRecords?: SharedXYRecords;
+          }
+        >
+      | undefined
+  )?.[workbook];
   if (!resource) return undefined;
   const source = chartSourceBytes(doc, workbook);
   if (!source) throw new Error(`共享工作簿不存在：${workbook}`);
   const { parts, map, baseline } = sharedWorkbookSource(doc, workbook);
   const shared = sharedGroupForWorkbook(doc, workbook);
-  const values = shared ? insertedCellOverrides(shared, resource) : resource.cells ?? {};
+  const values = shared ? insertedCellOverrides(shared, resource) : (resource.cells ?? {});
   const writes = new Map<string, Map<string, { kind: 'number' | 'string'; value: string | number | null }>>();
   const write = (key: string, value: string | number | null) => {
-    const separator = key.lastIndexOf('!'), sheet = decodeURIComponent(key.slice(0, separator));
+    const separator = key.lastIndexOf('!'),
+      sheet = decodeURIComponent(key.slice(0, separator));
     const cells = writes.get(sheet) ?? new Map();
     cells.set(key.slice(separator + 1), { kind: typeof value === 'number' ? 'number' : 'string', value });
     writes.set(sheet, cells);
@@ -43,10 +53,12 @@ export function sharedWorkbookPatch(doc: EditDoc, workbook: string): Uint8Array 
   const unused = resource.series ? unusedSharedCells(doc, workbook) : new Set<string>();
   for (const key of unused) write(key, null);
   for (const [key, raw] of Object.entries(resource.rows ?? {})) {
-    const cell = sharedCellAddress(key), { horizontal, end } = removedCell(raw);
+    const cell = sharedCellAddress(key),
+      { horizontal, end } = removedCell(raw);
     for (let axis = horizontal ? cell.column : cell.row; axis <= end; axis++) {
       const address = workbookCellKey(cell.sheet, `${columnName(horizontal ? axis : cell.column)}${horizontal ? cell.row : axis}`);
-      affected.add(address); write(address, null);
+      affected.add(address);
+      write(address, null);
     }
   }
   for (const key of new Set([...affected, ...Object.keys(resource.cells ?? {})])) {

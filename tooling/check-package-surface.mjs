@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (file) => readFileSync(join(root, file), 'utf8');
@@ -21,7 +21,8 @@ const check = (label, condition, detail = '') => {
   else failures.push(detail ? `${label}：${detail}` : label);
 };
 
-const published = readdirSync(join(root, 'packages')).sort()
+const published = readdirSync(join(root, 'packages'))
+  .sort()
   .filter((dir) => existsSync(join(root, 'packages', dir, 'package.json')))
   .map((dir) => ({ dir, manifest: json(`packages/${dir}/package.json`) }))
   .filter(({ manifest }) => !manifest.private);
@@ -61,7 +62,9 @@ for (const [dir, symbol] of ROOT_EXCLUDED) {
 
 // 公开类型契约只有被 tsconfig 纳入，npm run check 才会检查它们
 const tsconfig = ts.parseConfigFileTextToJson('tsconfig.json', read('tsconfig.json')).config;
-for (const file of readdirSync(join(root, 'tooling/type-contracts')).filter((f) => f.endsWith('.ts')).sort()) {
+for (const file of readdirSync(join(root, 'tooling/type-contracts'))
+  .filter((f) => f.endsWith('.ts'))
+  .sort()) {
   check(`类型契约 ${file} 纳入 tsconfig`, tsconfig.include.includes(`tooling/type-contracts/${file}`));
 }
 
