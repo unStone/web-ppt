@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 
 /** 源码分组按执行文件中的声明推导计数，避免漏传报告后 verify 静默跳过。 */
 export function expectedCountKeys(root, leaves) {

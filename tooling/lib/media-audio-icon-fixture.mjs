@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 import { makePng } from './ooxml.mjs';
 
 /** 用 TypeScript 解析器读出 edit-core 内置的图标常量；按文本匹配会随源码排版失效。 */
