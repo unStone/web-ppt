@@ -302,7 +302,9 @@ const applicationAdditional = [...closure([applicationEntry], false)]
 // 同一源码 0.21.5 → 0.28.2 实测 561,646B → 562,911B gzip，增 1265B，上调 1300B
 // 整仓 Biome 重排（无行为变化）：非压缩 esbuild 产物沿用源码里对象 / 数组字面量的分行，
 // 实测 gzip 563,644B，超出 595B，上调 600B（raw 仍在预算内）；压缩产物不受源码排版影响
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 53_800 };
+// runtime 依赖组升级（cordis 4.0.0-rc.9→rc.12、lucide 1.46→1.70、harfbuzzjs 1.6.1→1.6.4、
+// mtx-decompressor 1.6→1.8）：应用按需闭包实测 gzip 564,477B，超出 828B，上调 900B（raw 仍在预算内）
+const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 54_700 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
