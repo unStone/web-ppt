@@ -556,7 +556,8 @@ $('btnPresent').addEventListener('click', () => void enterPresent());
 $('pvExit').addEventListener('click', exitPresent);
 btnNotes.addEventListener('click', () => {
   if (!viewer) return;
-  setViewerNotesOpen(notesPanel, btnNotes, notesPanel.hidden);
+  // DOM 类型把 hidden 标为 boolean | string（hidden="until-found"）；这里只会写过 true/false，统一按非 false 视为隐藏。
+  setViewerNotesOpen(notesPanel, btnNotes, notesPanel.hidden !== false);
   search?.syncHighlight();
 });
 
