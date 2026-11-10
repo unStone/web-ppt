@@ -7,15 +7,22 @@ import { buildFixture, buildReferenceSolution } from './agent-eval/fixtures.mjs'
 
 const directory = resolve(import.meta.dirname, 'agent-eval/fixtures');
 const check = process.argv.includes('--check');
-assert(process.argv.slice(2).every(value => value === '--check'), '仅支持 --check');
+assert(
+  process.argv.slice(2).every((value) => value === '--check'),
+  '仅支持 --check',
+);
 mkdirSync(directory, { recursive: true });
-const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const manifest = { version: 1, generator: 'tooling/make-agent-eval-fixture.mjs', tasks: [] };
 for (const task of TASKS) {
-  const input = buildFixture(task.id), reference = buildReferenceSolution(task.id);
+  const input = buildFixture(task.id),
+    reference = buildReferenceSolution(task.id);
   assert.deepEqual(input, buildFixture(task.id), `${task.id} 输入生成不可重复`);
   assert.deepEqual(reference, buildReferenceSolution(task.id), `${task.id} 参考生成不可重复`);
-  for (const [name, bytes] of [[task.fixtureName, input], [task.referenceName, reference]]) {
+  for (const [name, bytes] of [
+    [task.fixtureName, input],
+    [task.referenceName, reference],
+  ]) {
     const path = join(directory, name);
     if (check) assert.deepEqual(readFileSync(path), Buffer.from(bytes), `${name} 与生成器不一致`);
     else writeFileSync(path, bytes);

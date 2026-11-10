@@ -13,7 +13,7 @@ export async function runSitePortableClipboardBrowserContract(context) {
     await click(`[data-site-locale="${index % 2 ? 'en' : 'zh-CN'}"]`);
     await openFixture(context, `/fixtures/${fixture}`, `portable-source-${index}.${fixture.endsWith('.ppt') ? 'ppt' : 'pptx'}`);
     if (index === 0) await click('#editMode');
-    const name = objectName ?? await evaluate(`document.querySelector('[data-pane-element] [data-pane-name]')?.textContent`);
+    const name = objectName ?? (await evaluate(`document.querySelector('[data-pane-element] [data-pane-name]')?.textContent`));
     await selectPaneObject(context, name);
     const copied = await evaluate(`(() => {
       const root = document.querySelector('#canvasMount').firstElementChild;
@@ -32,12 +32,12 @@ export async function runSitePortableClipboardBrowserContract(context) {
       data.setData('application/x-web-ppt-elements+json',globalThis.__portableClipboard);
       root.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));
     })()`);
-    await waitFor(`document.querySelectorAll('[data-pane-element]').length===${count+1}`, `${name} 跨文稿粘贴`);
+    await waitFor(`document.querySelectorAll('[data-pane-element]').length===${count + 1}`, `${name} 跨文稿粘贴`);
     await click('#undo');
     await waitFor(`document.querySelectorAll('[data-pane-element]').length===${count}`, '粘贴撤销');
     await click('#redo');
     await captureSaveAndReopen(context, `portable-reopened-${index}.pptx`);
-    await waitFor(`document.querySelectorAll('[data-pane-element]').length===${count+1}`, '保存重开');
+    await waitFor(`document.querySelectorAll('[data-pane-element]').length===${count + 1}`, '保存重开');
     if (objectName) await selectPaneObject(context, objectName);
   }
   await click('[data-site-locale="zh-CN"]');

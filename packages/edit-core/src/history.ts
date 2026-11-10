@@ -11,7 +11,10 @@ interface StoredHistoryEntry extends HistoryEntry {
   readonly storedBytes: number;
 }
 
-interface StoredPatchLink { readonly trigger: string; readonly related: readonly string[] }
+interface StoredPatchLink {
+  readonly trigger: string;
+  readonly related: readonly string[];
+}
 
 export interface HistoryPatchLink {
   readonly trigger: Patch['path'];
@@ -30,12 +33,12 @@ export interface HistoryStoreHooks {
   readonly rebase?: (entry: HistoryEntry, patches: readonly Patch[]) => HistoryEntry;
 }
 
-const clonePatch = <P extends Patch>(patch: P): P => ({
-  ...patch,
-  path: [...patch.path],
-  ...('value' in patch && typeof patch.value === 'object'
-    ? { value: structuredClone(patch.value) } : {}),
-} as P);
+const clonePatch = <P extends Patch>(patch: P): P =>
+  ({
+    ...patch,
+    path: [...patch.path],
+    ...('value' in patch && typeof patch.value === 'object' ? { value: structuredClone(patch.value) } : {}),
+  }) as P;
 
 export function cloneHistoryEntry(entry: HistoryEntry): HistoryEntry {
   // 一对结构 patch 共用同一快照；一次 structuredClone 才能保留资源闭包的共享身份。
@@ -58,14 +61,14 @@ function pathContains(left: Patch['path'], right: Patch['path']): boolean {
   return left.length <= right.length && left.every((segment, index) => segment === right[index]);
 }
 
-const pathsConflict = (left: Patch['path'], right: Patch['path']): boolean =>
-  pathContains(left, right) || pathContains(right, left);
+const pathsConflict = (left: Patch['path'], right: Patch['path']): boolean => pathContains(left, right) || pathContains(right, left);
 
 function affectedPatchPaths(patch: Patch): Patch['path'][] {
   const affected: Patch['path'][] = [patch.path];
-  const value = 'value' in patch && patch.value && typeof patch.value === 'object'
-    ? patch.value as { records?: Readonly<Record<string, unknown>>; affected?: readonly string[] }
-    : null;
+  const value =
+    'value' in patch && patch.value && typeof patch.value === 'object'
+      ? (patch.value as { records?: Readonly<Record<string, unknown>>; affected?: readonly string[] })
+      : null;
   if (patch.path[0] === 'slides' && patch.path.length === 2) {
     affected.push(['slideOrder', patch.path[1]]);
     for (const id of Object.keys(value?.records ?? {})) affected.push(['elements', id]);
@@ -97,8 +100,11 @@ function canMerge(previous: HistoryEntry, next: HistoryEntry): boolean {
   if (previous.affectedSlides.length !== 1 || next.affectedSlides.length !== 1) return false;
   const elapsed = next.time - previous.time;
   if (elapsed < 0 || elapsed > 500) return false;
-  if (previous.affectedSlides.length !== next.affectedSlides.length
-    || previous.affectedSlides.some((slide, index) => slide !== next.affectedSlides[index])) return false;
+  if (
+    previous.affectedSlides.length !== next.affectedSlides.length
+    || previous.affectedSlides.some((slide, index) => slide !== next.affectedSlides[index])
+  )
+    return false;
   const previousPaths = new Set(previous.forward.map(pathKey));
   return next.forward.some((patch) => previousPaths.has(pathKey(patch)));
 }
@@ -116,11 +122,12 @@ function storeLinks(links: readonly HistoryPatchLink[]): StoredPatchLink[] {
 
 function mergeLinks(...groups: readonly (readonly StoredPatchLink[])[]): StoredPatchLink[] {
   const byTrigger = new Map<string, Set<string>>();
-  for (const links of groups) for (const link of links) {
-    const related = byTrigger.get(link.trigger) ?? new Set<string>();
-    link.related.forEach((path) => related.add(path));
-    byTrigger.set(link.trigger, related);
-  }
+  for (const links of groups)
+    for (const link of links) {
+      const related = byTrigger.get(link.trigger) ?? new Set<string>();
+      link.related.forEach((path) => related.add(path));
+      byTrigger.set(link.trigger, related);
+    }
   return [...byTrigger].map(([trigger, related]) => ({ trigger, related: [...related] }));
 }
 
@@ -151,11 +158,21 @@ export class HistoryStore implements History {
     this.hooks = hooks;
   }
 
-  get undoCount(): number { return this.undoList.length; }
-  get redoCount(): number { return this.redoList.length; }
-  get byteSize(): number { return this.bytes + this.externalBytes; }
-  get undoEntries(): readonly HistoryEntry[] { return this.undoList.map(cloneHistoryEntry); }
-  get redoEntries(): readonly HistoryEntry[] { return this.redoList.map(cloneHistoryEntry); }
+  get undoCount(): number {
+    return this.undoList.length;
+  }
+  get redoCount(): number {
+    return this.redoList.length;
+  }
+  get byteSize(): number {
+    return this.bytes + this.externalBytes;
+  }
+  get undoEntries(): readonly HistoryEntry[] {
+    return this.undoList.map(cloneHistoryEntry);
+  }
+  get redoEntries(): readonly HistoryEntry[] {
+    return this.redoList.map(cloneHistoryEntry);
+  }
 
   clear(): void {
     this.undoList.length = 0;
@@ -165,20 +182,27 @@ export class HistoryStore implements History {
     this.hooks.changed?.([]);
   }
 
-  breakMerge(): void { this.mergeBarrier = true; }
+  breakMerge(): void {
+    this.mergeBarrier = true;
+  }
 
   /** 快照派生与证据验证可失败，须先完成，再允许宿主提交模型。 */
   prepareRebase(patches: readonly Patch[]): ReadonlyMap<HistoryEntry, HistoryEntry> {
     const prepared = new Map<HistoryEntry, HistoryEntry>();
-    if (this.hooks.rebase) for (const entry of [...this.undoList, ...this.redoList]) {
-      prepared.set(entry, this.hooks.rebase(entry, patches));
-    }
+    if (this.hooks.rebase)
+      for (const entry of [...this.undoList, ...this.redoList]) {
+        prepared.set(entry, this.hooks.rebase(entry, patches));
+      }
     return prepared;
   }
 
   /** 后到的非记录写入胜出；旧历史只保留未冲突路径，避免撤销覆盖远端或系统改动。 */
-  rebaseUnrecorded(patches: readonly Patch[], currentState: number, allocateState: () => number,
-    prepared: ReadonlyMap<HistoryEntry, HistoryEntry> = new Map()): void {
+  rebaseUnrecorded(
+    patches: readonly Patch[],
+    currentState: number,
+    allocateState: () => number,
+    prepared: ReadonlyMap<HistoryEntry, HistoryEntry> = new Map(),
+  ): void {
     const canonical = (path: Patch['path']) => this.hooks.canonicalPath?.(path) ?? path;
     const key = (path: string) => JSON.stringify(canonical(JSON.parse(path)));
     const patchPaths = patches.flatMap(affectedPatchPaths).map(canonical);
@@ -188,11 +212,9 @@ export class HistoryStore implements History {
       for (let index = list.length - 1; index >= 0; index--) {
         const entry = list[index];
         const rebased = prepared.get(entry) ?? entry;
-        const linked = new Set(entry.links
-          .filter((link) => paths.has(key(link.trigger)))
-          .flatMap((link) => link.related.map(key)));
-        const conflicts = (patch: Patch): boolean => patchPaths.some((path) => pathsConflict(path, canonical(patch.path)))
-          || linked.has(JSON.stringify(canonical(patch.path)));
+        const linked = new Set(entry.links.filter((link) => paths.has(key(link.trigger))).flatMap((link) => link.related.map(key)));
+        const conflicts = (patch: Patch): boolean =>
+          patchPaths.some((path) => pathsConflict(path, canonical(patch.path))) || linked.has(JSON.stringify(canonical(patch.path)));
         const forward = rebased.forward.filter((patch) => !conflicts(patch));
         if (forward.length === entry.forward.length && rebased === entry) continue;
         const inverse = rebased.inverse.filter((patch) => !conflicts(patch));
@@ -200,7 +222,10 @@ export class HistoryStore implements History {
         if (!forward.length) list.splice(index, 1);
         else {
           list[index] = this.withStoredBytes({
-            ...entry, forward, inverse, links: survivingLinks(entry.links, forward),
+            ...entry,
+            forward,
+            inverse,
+            links: survivingLinks(entry.links, forward),
           });
           this.bytes += list[index].storedBytes;
         }
@@ -224,14 +249,12 @@ export class HistoryStore implements History {
     this.breakMerge();
   }
 
-  push(
-    entry: HistoryEntry,
-    beforeState: number,
-    afterState: number,
-    links: readonly HistoryPatchLink[] = [],
-  ): void {
+  push(entry: HistoryEntry, beforeState: number, afterState: number, links: readonly HistoryPatchLink[] = []): void {
     let next = this.withStoredBytes({
-      ...cloneHistoryEntry(entry), beforeState, afterState, links: storeLinks(links),
+      ...cloneHistoryEntry(entry),
+      beforeState,
+      afterState,
+      links: storeLinks(links),
     });
     const previous = this.peekUndo();
     if (!this.mergeBarrier && previous && canMerge(previous, next)) {
@@ -257,8 +280,12 @@ export class HistoryStore implements History {
     this.rebudget();
   }
 
-  peekUndo(): StoredHistoryEntry | null { return this.undoList[this.undoList.length - 1] ?? null; }
-  peekRedo(): StoredHistoryEntry | null { return this.redoList[this.redoList.length - 1] ?? null; }
+  peekUndo(): StoredHistoryEntry | null {
+    return this.undoList[this.undoList.length - 1] ?? null;
+  }
+  peekRedo(): StoredHistoryEntry | null {
+    return this.redoList[this.redoList.length - 1] ?? null;
+  }
 
   moveToRedo(): void {
     const entry = this.undoList.pop();
@@ -284,8 +311,7 @@ export class HistoryStore implements History {
       this.externalBytes = Number.isFinite(value) && value > 0 ? Math.ceil(value) : 0;
     };
     measure();
-    while (this.undoList.length + this.redoList.length > this.limit
-      || this.bytes + this.externalBytes > this.byteLimit) {
+    while (this.undoList.length + this.redoList.length > this.limit || this.bytes + this.externalBytes > this.byteLimit) {
       const removed = this.undoList.shift() ?? this.redoList.shift();
       if (!removed) break;
       this.bytes -= removed.storedBytes;
@@ -294,9 +320,7 @@ export class HistoryStore implements History {
     this.hooks.changed?.(this.entries());
   }
 
-  private withStoredBytes(
-    entry: Omit<StoredHistoryEntry, 'storedBytes'> | StoredHistoryEntry,
-  ): StoredHistoryEntry {
+  private withStoredBytes(entry: Omit<StoredHistoryEntry, 'storedBytes'> | StoredHistoryEntry): StoredHistoryEntry {
     return { ...entry, storedBytes: this.sizeOf(entry) };
   }
 
@@ -304,21 +328,26 @@ export class HistoryStore implements History {
     const stored = entry as Partial<StoredHistoryEntry>;
     const seen = new WeakSet<object>();
     // 计量只读遍历即可；结构历史可能携带整页 XML，先深拷贝会把一次提交放大成双份峰值内存。
-    return encoder.encode(JSON.stringify({
-      forward: entry.forward,
-      inverse: entry.inverse,
-      selectionBefore: entry.selectionBefore,
-      selectionAfter: entry.selectionAfter,
-      label: entry.label,
-      time: entry.time,
-      ...(entry.mergeKey ? { mergeKey: entry.mergeKey } : {}),
-      affectedSlides: entry.affectedSlides,
-      links: stored.links ?? [],
-    }, (_key, value) => {
-      if (!value || typeof value !== 'object') return value;
-      if (seen.has(value)) return null;
-      seen.add(value);
-      return value;
-    })).length;
+    return encoder.encode(
+      JSON.stringify(
+        {
+          forward: entry.forward,
+          inverse: entry.inverse,
+          selectionBefore: entry.selectionBefore,
+          selectionAfter: entry.selectionAfter,
+          label: entry.label,
+          time: entry.time,
+          ...(entry.mergeKey ? { mergeKey: entry.mergeKey } : {}),
+          affectedSlides: entry.affectedSlides,
+          links: stored.links ?? [],
+        },
+        (_key, value) => {
+          if (!value || typeof value !== 'object') return value;
+          if (seen.has(value)) return null;
+          seen.add(value);
+          return value;
+        },
+      ),
+    ).length;
   }
 }

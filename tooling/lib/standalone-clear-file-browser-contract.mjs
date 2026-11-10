@@ -1,12 +1,15 @@
 export async function runStandaloneClearFileContract({ evaluate, request, waitFor, click }) {
-  const standalone = (query = '') => evaluate(`new URL(${JSON.stringify(query ? `/standalone.html?${query}` : '/standalone.html')}, location.href).href`);
+  const standalone = (query = '') =>
+    evaluate(`new URL(${JSON.stringify(query ? `/standalone.html?${query}` : '/standalone.html')}, location.href).href`);
   const press = async (name, value, code = name) => {
     const key = { key: name, code, windowsVirtualKeyCode: value, nativeVirtualKeyCode: value };
     await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...key });
     await request('Input.dispatchKeyEvent', { type: 'keyUp', ...key });
   };
   const search = () => evaluate('location.search');
-  const openLocal = async (src, name) => evaluate(`(async () => {
+  const openLocal = async (src, name) =>
+    evaluate(
+      `(async () => {
     const bytes = await fetch(${JSON.stringify(src)}).then((r) => r.arrayBuffer());
     const file = new File([bytes], ${JSON.stringify(name)});
     const input = document.querySelector('#fileInput');
@@ -14,10 +17,15 @@ export async function runStandaloneClearFileContract({ evaluate, request, waitFo
     transfer.items.add(file);
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
+  })()`,
+      true,
+    );
 
   await request('Page.navigate', { url: await standalone() });
-  await waitFor("document.querySelector('#dropHint') || document.querySelector('#fileInfo')?.textContent === '未打开文件'", '对照页：没有 ?file=');
+  await waitFor(
+    "document.querySelector('#dropHint') || document.querySelector('#fileInfo')?.textContent === '未打开文件'",
+    '对照页：没有 ?file=',
+  );
   const emptyUrl = await evaluate('location.href');
 
   await request('Page.navigate', { url: await standalone('file=/demo/showcase.pptx&p=3') });
@@ -26,7 +34,8 @@ export async function runStandaloneClearFileContract({ evaluate, request, waitFo
     '清 file 前先落到远程第 3 页',
   );
 
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const bytes = await fetch('/demo/sample-chart.pptx').then((r) => r.arrayBuffer());
     const delayed = new File([bytes], 'held-local.pptx');
     delayed.arrayBuffer = () => new Promise((resolve) => {
@@ -37,8 +46,13 @@ export async function runStandaloneClearFileContract({ evaluate, request, waitFo
     transfer.items.add(delayed);
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  })()`, true);
-  await waitFor("document.querySelector('#stage')?.dataset.openPhase === 'opening' && document.querySelector('#fileInfo')?.textContent === '正在打开…'", '换本地立刻进入打开');
+  })()`,
+    true,
+  );
+  await waitFor(
+    "document.querySelector('#stage')?.dataset.openPhase === 'opening' && document.querySelector('#fileInfo')?.textContent === '正在打开…'",
+    '换本地立刻进入打开',
+  );
   if (String(await search()).includes('file=')) throw new Error('解析中地址还留着远程 file');
   if (String(await search()).includes('p=')) throw new Error('解析中地址还留着远程 p');
 
@@ -47,7 +61,7 @@ export async function runStandaloneClearFileContract({ evaluate, request, waitFo
     "document.querySelector('#fileInfo')?.textContent.includes('held-local.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'",
     '本地打开成功',
   );
-  if (!await evaluate("document.querySelector('#pageIndicator')?.textContent.startsWith('1 /') === true")) {
+  if (!(await evaluate("document.querySelector('#pageIndicator')?.textContent.startsWith('1 /') === true"))) {
     throw new Error('换本地文件仍停在上一份的页码');
   }
   if (String(await search()).includes('file=')) throw new Error('本地打开成功后地址还留着 file');

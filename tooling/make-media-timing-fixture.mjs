@@ -31,7 +31,9 @@ const timing = `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart
 
 const slide = slideXml(intro + audio).replace('</p:sld>', `${timing}</p:sld>`);
 const bytes = deck({
-  name: 'Media Timing', width: 1280, height: 720,
+  name: 'Media Timing',
+  width: 1280,
+  height: 720,
   slides: [slide],
   extraTypes: '<Default Extension="wav" ContentType="audio/wav"/>',
   extraEntries: [['ppt/media/tone.wav', makeWav(12)]],

@@ -12,6 +12,6 @@ export function assertElementName(value: unknown, label = '元素名称'): asser
 
 export function elementName(record: ElementRecord): string {
   return Object.prototype.hasOwnProperty.call(record.ovr, 'name')
-    ? record.ovr.name as string
+    ? (record.ovr.name as string)
     : record.src.name?.trim() || `${record.src.kind} ${record.meta.origin?.spid ?? record.id}`;
 }

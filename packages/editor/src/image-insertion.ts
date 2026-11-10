@@ -1,7 +1,5 @@
 import { detectImageMime, MAX_REPLACE_IMAGE_BYTES } from '@web-ppt/edit-core';
-import type {
-  AddImageCommand, Editor, ElementId, ReplaceImageCommand, SetBackgroundImageCommand, SlideId,
-} from '@web-ppt/edit-core';
+import type { AddImageCommand, Editor, ElementId, ReplaceImageCommand, SetBackgroundImageCommand, SlideId } from '@web-ppt/edit-core';
 
 const ACCEPT = 'image/png,image/jpeg,image/gif,image/webp';
 type DetectedImageMime = NonNullable<ReturnType<typeof detectImageMime>>;
@@ -53,16 +51,11 @@ function formatByteLimit(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(bytes % (1024 * 1024) === 0 ? 0 : 1)} MB`;
 }
 
-function fittedRect(
-  width: number,
-  height: number,
-  slideWidth: number,
-  slideHeight: number,
-): AddImageCommand['rect'] {
+function fittedRect(width: number, height: number, slideWidth: number, slideHeight: number): AddImageCommand['rect'] {
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
     throw new Error('浏览器无法读取图片尺寸');
   }
-  const scale = Math.min(Math.max(1, 96 / Math.max(width, height)), slideWidth * .8 / width, slideHeight * .8 / height);
+  const scale = Math.min(Math.max(1, 96 / Math.max(width, height)), (slideWidth * 0.8) / width, (slideHeight * 0.8) / height);
   const w = width * scale;
   const h = height * scale;
   return { x: (slideWidth - w) / 2, y: (slideHeight - h) / 2, w, h };
@@ -71,7 +64,11 @@ function fittedRect(
 async function decodedSize(blob: Blob, document: Document): Promise<{ width: number; height: number }> {
   if (typeof createImageBitmap === 'function') {
     const bitmap = await createImageBitmap(blob);
-    try { return { width: bitmap.width, height: bitmap.height }; } finally { bitmap.close(); }
+    try {
+      return { width: bitmap.width, height: bitmap.height };
+    } finally {
+      bitmap.close();
+    }
   }
   const url = URL.createObjectURL(blob);
   try {
@@ -90,7 +87,9 @@ export class ImageInsertionController {
   private activeReads = 0;
   private destroyed = false;
 
-  constructor(options: ImageInsertionControllerOptions) { this.options = options; }
+  constructor(options: ImageInsertionControllerOptions) {
+    this.options = options;
+  }
 
   private async applyImage(
     request: ImageReadRequest,
@@ -133,19 +132,27 @@ export class ImageInsertionController {
 
   async insert(blob: Blob, options: InternalImageInsertOptions = {}): Promise<ElementId> {
     const slideId = this.options.slideId();
-    const result = await this.applyImage({
-      ...options, blob, slideId,
-    }, async ({ bytes, mime }) => {
-      const size = await decodedSize(blob, this.options.root.ownerDocument);
-      const { width, height } = this.options.editor.doc.meta;
-      const placement = options.rect || fittedRect(size.width, size.height, width, height);
-      return {
-        type: 'AddImage', slideId, bytes, mime, rect: placement,
-        ...(options.placeholderId ? { placeholderId: options.placeholderId } : {}),
-      };
-    });
-    const id = result.forward.find((patch) =>
-      patch.op === 'insert' && patch.path[0] === 'elements' && patch.path.length === 2)?.path[1];
+    const result = await this.applyImage(
+      {
+        ...options,
+        blob,
+        slideId,
+      },
+      async ({ bytes, mime }) => {
+        const size = await decodedSize(blob, this.options.root.ownerDocument);
+        const { width, height } = this.options.editor.doc.meta;
+        const placement = options.rect || fittedRect(size.width, size.height, width, height);
+        return {
+          type: 'AddImage',
+          slideId,
+          bytes,
+          mime,
+          rect: placement,
+          ...(options.placeholderId ? { placeholderId: options.placeholderId } : {}),
+        };
+      },
+    );
+    const id = result.forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements' && patch.path.length === 2)?.path[1];
     if (!id || this.options.editor.doc.elements[id]?.src.kind !== 'image') {
       throw new Error('图片命令没有返回新元素身份');
     }
@@ -154,9 +161,14 @@ export class ImageInsertionController {
 
   async replace(id: ElementId, blob: Blob, options: ImageReplaceOptions = {}): Promise<ElementId> {
     const slideId = this.options.slideId();
-    await this.applyImage({
-      ...options, blob, slideId,
-    }, (image) => ({ type: 'ReplaceImage', id, ...image }));
+    await this.applyImage(
+      {
+        ...options,
+        blob,
+        slideId,
+      },
+      (image) => ({ type: 'ReplaceImage', id, ...image }),
+    );
     return id;
   }
 
@@ -165,29 +177,31 @@ export class ImageInsertionController {
   }
 
   chooseReplacement(id: ElementId, options: ImageReplaceOptions = {}): Promise<ElementId | null> {
-    return this.chooseFile(
-      '选择替换图片', 'webPptImageReplacementInput', (file) => this.replace(id, file, options), options.signal,
-    );
+    return this.chooseFile('选择替换图片', 'webPptImageReplacementInput', (file) => this.replace(id, file, options), options.signal);
   }
 
   async setBackground(blob: Blob, options: ImageBackgroundOptions = {}): Promise<SlideId> {
     const slideId = this.options.slideId();
-    await this.applyImage({
-      ...options, blob, slideId,
-    }, (image) => ({
-      type: 'SetBackgroundImage', id: slideId, ...image,
-      ...(options.crop ? { crop: options.crop } : {}),
-      ...(options.alpha !== undefined ? { alpha: options.alpha } : {}),
-      ...(options.tile ? { tile: options.tile } : {}),
-    }));
+    await this.applyImage(
+      {
+        ...options,
+        blob,
+        slideId,
+      },
+      (image) => ({
+        type: 'SetBackgroundImage',
+        id: slideId,
+        ...image,
+        ...(options.crop ? { crop: options.crop } : {}),
+        ...(options.alpha !== undefined ? { alpha: options.alpha } : {}),
+        ...(options.tile ? { tile: options.tile } : {}),
+      }),
+    );
     return slideId;
   }
 
   chooseBackground(options: ImageBackgroundOptions = {}): Promise<SlideId | null> {
-    return this.chooseFile(
-      '选择页面背景图片', 'webPptBackgroundImageInput',
-      (file) => this.setBackground(file, options), options.signal,
-    );
+    return this.chooseFile('选择页面背景图片', 'webPptBackgroundImageInput', (file) => this.setBackground(file, options), options.signal);
   }
 
   private async chooseFile<T extends string>(
@@ -215,24 +229,39 @@ export class ImageInsertionController {
         signal?.removeEventListener('abort', cancel);
         this.cancelChooser = null;
         input.remove();
-        if (error) reject(error); else resolve(value);
+        if (error) reject(error);
+        else resolve(value);
       };
       const cancel = () => finish(null);
       this.cancelChooser = cancel;
       signal?.addEventListener('abort', cancel, { once: true });
       input.addEventListener('cancel', cancel, { once: true });
-      input.addEventListener('change', () => {
-        if (settled) return;
-        const file = input.files?.[0];
-        if (!file) {
-          finish(null);
-          return;
-        }
-        input.remove();
-        void commit(file).then((id) => finish(id), (error) => finish(null, error));
-      }, { once: true });
-      if (signal?.aborted || this.destroyed) { cancel(); return; }
-      try { input.click(); } catch (error) { finish(null, error); }
+      input.addEventListener(
+        'change',
+        () => {
+          if (settled) return;
+          const file = input.files?.[0];
+          if (!file) {
+            finish(null);
+            return;
+          }
+          input.remove();
+          void commit(file).then(
+            (id) => finish(id),
+            (error) => finish(null, error),
+          );
+        },
+        { once: true },
+      );
+      if (signal?.aborted || this.destroyed) {
+        cancel();
+        return;
+      }
+      try {
+        input.click();
+      } catch (error) {
+        finish(null, error);
+      }
     });
   }
 

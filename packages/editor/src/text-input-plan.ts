@@ -1,23 +1,23 @@
 import type { TextBody } from '@web-ppt/core';
-import {
-  applyTextEditOps, textBodyEditText, textBodyFromOverride, textPositionAtIndex,
-  textPositionToIndex,
-} from '@web-ppt/edit-core';
+import { applyTextEditOps, textBodyEditText, textBodyFromOverride, textPositionAtIndex, textPositionToIndex } from '@web-ppt/edit-core';
 import type { TextEditOp, TextPosition } from '@web-ppt/edit-core';
 
-export type TextInputPlan = {
-  readonly type: 'format';
-  readonly field: 'b' | 'i' | 'u';
-} | {
-  readonly type: 'history';
-  readonly direction: 'undo' | 'redo';
-} | {
-  readonly type: 'edit';
-  readonly ops: readonly TextEditOp[];
-  readonly nextIndex: number;
-  readonly insertedFrom: number | null;
-  readonly label: string;
-};
+export type TextInputPlan =
+  | {
+      readonly type: 'format';
+      readonly field: 'b' | 'i' | 'u';
+    }
+  | {
+      readonly type: 'history';
+      readonly direction: 'undo' | 'redo';
+    }
+  | {
+      readonly type: 'edit';
+      readonly ops: readonly TextEditOp[];
+      readonly nextIndex: number;
+      readonly insertedFrom: number | null;
+      readonly label: string;
+    };
 
 /** beforeinput 只描述意图；这里把浏览器事件归一成无 DOM 的模型操作计划。 */
 export function planTextInput(
@@ -26,9 +26,13 @@ export function planTextInput(
   inputType: string,
   data: string | null,
 ): TextInputPlan | null {
-  const formatField = ({
-    formatBold: 'b', formatItalic: 'i', formatUnderline: 'u',
-  } as const)[inputType as 'formatBold' | 'formatItalic' | 'formatUnderline'];
+  const formatField = (
+    {
+      formatBold: 'b',
+      formatItalic: 'i',
+      formatUnderline: 'u',
+    } as const
+  )[inputType as 'formatBold' | 'formatItalic' | 'formatUnderline'];
   if (formatField) return { type: 'format', field: formatField };
   if (inputType === 'historyUndo') return { type: 'history', direction: 'undo' };
   if (inputType === 'historyRedo') return { type: 'history', direction: 'redo' };
@@ -61,9 +65,7 @@ export function planTextInput(
       at = textPositionAtIndex(textBodyFromOverride(interim), fromIndex);
       ops.push(remove);
     }
-    ops.push(inputType === 'insertParagraph'
-      ? { type: 'splitParagraph', at }
-      : { type: 'insertLineBreak', at });
+    ops.push(inputType === 'insertParagraph' ? { type: 'splitParagraph', at } : { type: 'insertLineBreak', at });
     nextIndex++;
   } else return null;
   return { type: 'edit', ops, nextIndex, insertedFrom, label };

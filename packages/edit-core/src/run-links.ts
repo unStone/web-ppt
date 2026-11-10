@@ -1,13 +1,9 @@
 import { own } from './data-validation';
-import {
-  linkValueFollowable, sourceLinkReadonly, sourceLinkValue,
-} from './hyperlink';
+import { linkValueFollowable, sourceLinkReadonly, sourceLinkValue } from './hyperlink';
 import { textMarksInRange, textBodyFromOverride } from './text-model';
 import { textTargetContext } from './commands/text-target';
 import type { TextRange } from './commands/types';
-import type {
-  EditDoc, LinkSourceValue, RunLinkState, TableCellAddress, TextMark,
-} from './types';
+import type { EditDoc, LinkSourceValue, RunLinkState, TableCellAddress, TextMark } from './types';
 
 function markSourceValue(doc: EditDoc, mark: TextMark): LinkSourceValue | null {
   return mark.sourceLinkReadonly ? { kind: 'unsupported' } : sourceLinkValue(doc, mark.props.link);
@@ -20,15 +16,8 @@ function effectiveValue(doc: EditDoc, mark: TextMark): LinkSourceValue | null {
   return override.kind === 'none' ? null : structuredClone(override);
 }
 
-export function queryRunLink(
-  doc: EditDoc,
-  id: string,
-  range: TextRange,
-  cell?: TableCellAddress,
-): RunLinkState {
-  const { body: source, before: override } = textTargetContext(
-    doc, { id, ...(cell !== undefined ? { cell } : {}) },
-  );
+export function queryRunLink(doc: EditDoc, id: string, range: TextRange, cell?: TableCellAddress): RunLinkState {
+  const { body: source, before: override } = textTargetContext(doc, { id, ...(cell !== undefined ? { cell } : {}) });
   const body = override?.kind === 'flat' ? textBodyFromOverride(override, source) : source;
   const marks = textMarksInRange(body, range, override?.kind === 'flat' ? override : undefined);
   const values = marks.map((mark) => effectiveValue(doc, mark));

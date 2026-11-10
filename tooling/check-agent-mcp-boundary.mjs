@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { resolve, join } from 'node:path';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 import { moduleClosure } from './lib/module-closure.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -16,11 +16,14 @@ assert.equal(manifest.bin['web-ppt-agent'], './dist/cli.js');
 assert(manifest.files.includes('skills'));
 assert.equal(import.meta.resolve('@web-ppt/agent-mcp'), pathToFileURL(join(root, 'packages/agent-mcp/dist/agent-mcp.js')).href);
 const closure = moduleClosure(join(root, 'packages/agent-mcp/dist/agent-mcp.js'));
-const imports = new Set(closure.files.flatMap(file => {
-  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, false, ts.ScriptKind.JS);
-  return source.statements.flatMap(statement => ts.isImportDeclaration(statement)
-    && ts.isStringLiteral(statement.moduleSpecifier) ? [statement.moduleSpecifier.text] : []);
-}));
+const imports = new Set(
+  closure.files.flatMap((file) => {
+    const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, false, ts.ScriptKind.JS);
+    return source.statements.flatMap((statement) =>
+      ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier) ? [statement.moduleSpecifier.text] : [],
+    );
+  }),
+);
 for (const peer of ['@web-ppt/edit-core/agent', '@web-ppt/edit-core/opc', '@web-ppt/edit-core/save']) {
   assert(imports.has(peer), `MCP 必须通过公开 peer 入口 ${peer} 复用上游，不能把上游实现打入本包`);
 }
@@ -30,20 +33,48 @@ assert(read('packages/agent-mcp/dist/cli.js').startsWith('#!/usr/bin/env node'))
 const directory = join(root, 'out/agent-mcp');
 mkdirSync(directory, { recursive: true });
 const consumer = join(directory, 'consumer.ts');
-writeFileSync(consumer, `import { AgentMcpSessionManager, createAgentMcpServer, type AgentMcpOptions } from '@web-ppt/agent-mcp';
+writeFileSync(
+  consumer,
+  `import { AgentMcpSessionManager, createAgentMcpServer, type AgentMcpOptions } from '@web-ppt/agent-mcp';
 const options: AgentMcpOptions = { lint: { checks: ['off-canvas'] } };
 const manager = new AgentMcpSessionManager(options);
 const { server } = createAgentMcpServer(options);
 void manager;
 void server;
-`);
-execFileSync(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), consumer,
-  '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'ESNext', '--moduleResolution', 'bundler', '--types', 'node'], { cwd: root, stdio: 'inherit' });
-const packed = JSON.parse(execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--cache', join(root, 'out/npm-cache')], {
-  cwd: join(root, 'packages/agent-mcp'), encoding: 'utf8',
-}))[0];
+`,
+);
+execFileSync(
+  process.execPath,
+  [
+    join(root, 'node_modules/typescript/bin/tsc'),
+    consumer,
+    // TypeScript 7 起命令行传文件时若发现 tsconfig.json 会直接报 TS5112；这里刻意只用显式参数检查独立消费方
+    '--ignoreConfig',
+    '--noEmit',
+    '--strict',
+    '--skipLibCheck',
+    '--target',
+    'ES2020',
+    '--module',
+    'ESNext',
+    '--moduleResolution',
+    'bundler',
+    '--types',
+    'node',
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
+const packed = JSON.parse(
+  execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--cache', join(root, 'out/npm-cache')], {
+    cwd: join(root, 'packages/agent-mcp'),
+    encoding: 'utf8',
+  }),
+)[0];
 for (const name of ['dist/agent-mcp.js', 'dist/cli.js', 'dist/index.d.ts', 'skills/web-ppt/SKILL.md']) {
-  assert(packed.files.some((file) => file.path === name), `npm 包必须包含 ${name}`);
+  assert(
+    packed.files.some((file) => file.path === name),
+    `npm 包必须包含 ${name}`,
+  );
 }
 assert(existsSync(join(root, 'packages/agent-mcp/skills/web-ppt/SKILL.md')));
 console.log(`agent-mcp 按需边界通过：${closure.gzip}B gzip；stdio、类型与 Skill 内容完整`);

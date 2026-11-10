@@ -5,9 +5,7 @@ async function pressKey(request, name, value, code = name) {
 }
 
 function installFullscreen(root) {
-  const target = root == null
-    ? 'document.documentElement'
-    : `document.querySelector(${JSON.stringify(root)})`;
+  const target = root == null ? 'document.documentElement' : `document.querySelector(${JSON.stringify(root)})`;
   return `(() => {
     const el = ${target};
     globalThis.__nativeRequestFullscreenVertical = el.requestFullscreen.bind(el);
@@ -16,9 +14,7 @@ function installFullscreen(root) {
 }
 
 function restoreFullscreen(root) {
-  const target = root == null
-    ? 'document.documentElement'
-    : `document.querySelector(${JSON.stringify(root)})`;
+  const target = root == null ? 'document.documentElement' : `document.querySelector(${JSON.stringify(root)})`;
   return `(() => {
     const el = ${target};
     if (el && globalThis.__nativeRequestFullscreenVertical) {
@@ -39,30 +35,36 @@ function dispatchKey(key, extra = '') {
  * 官网放映里 Down 下一步、Up 上一步。浏览不拦截。
  * 修饰键用合成事件，避免真 Chrome 把 Ctrl+方向键交给浏览器。
  */
-export async function runPresentVerticalContract({ evaluate, request, click, waitFor }, {
-  trigger,
-  fullscreenRoot = null,
-  host,
-  stage,
-  pager,
-  prevButton,
-  notesButton,
-  presenting,
-  fileInput = null,
-  fileLabel = null,
-  restoreSample = null,
-  restoreText = null,
-}) {
+export async function runPresentVerticalContract(
+  { evaluate, request, click, waitFor },
+  {
+    trigger,
+    fullscreenRoot = null,
+    host,
+    stage,
+    pager,
+    prevButton,
+    notesButton,
+    presenting,
+    fileInput = null,
+    fileLabel = null,
+    restoreSample = null,
+    restoreText = null,
+  },
+) {
   const pageExpr = `document.querySelector(${JSON.stringify(pager)}).textContent`;
   const openExpr = `document.querySelector(${JSON.stringify(host)}).classList.contains('has-speaker-aids')`;
   const chipSel = JSON.stringify(`${host} .slide-number`);
-  const chipOn = (text) => `(() => { const el = document.querySelector(${chipSel}); return !!el && !el.hidden && el.textContent === ${JSON.stringify(text)}; })()`;
+  const chipOn = (text) =>
+    `(() => { const el = document.querySelector(${chipSel}); return !!el && !el.hidden && el.textContent === ${JSON.stringify(text)}; })()`;
   const chipOff = `(() => { const el = document.querySelector(${chipSel}); return !el || el.hidden || el.textContent === ''; })()`;
   const veilOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on`)})`;
   const whiteOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on.is-white`)})`;
   const gridOn = `document.querySelector('.slide-grid:not([hidden])')`;
 
-  await evaluate(`document.querySelector(${JSON.stringify(fullscreenRoot ?? stage)})?.scrollIntoView({ block: 'nearest', behavior: 'instant' })`);
+  await evaluate(
+    `document.querySelector(${JSON.stringify(fullscreenRoot ?? stage)})?.scrollIntoView({ block: 'nearest', behavior: 'instant' })`,
+  );
   await evaluate(`(() => {
     const prev = document.querySelector(${JSON.stringify(prevButton)});
     const pager = document.querySelector(${JSON.stringify(pager)});
@@ -79,10 +81,10 @@ export async function runPresentVerticalContract({ evaluate, request, click, wai
 
   let failure = null;
   try {
-    if (await evaluate(dispatchKey('ArrowDown')) !== true) throw new Error('浏览态 Down 被 preventDefault');
+    if ((await evaluate(dispatchKey('ArrowDown'))) !== true) throw new Error('浏览态 Down 被 preventDefault');
     await pressKey(request, 'ArrowDown', 40, 'ArrowDown');
     await pressKey(request, 'ArrowUp', 38, 'ArrowUp');
-    if (await evaluate(pageExpr) !== page(1)) throw new Error('浏览态 Down / Up 翻了页');
+    if ((await evaluate(pageExpr)) !== page(1)) throw new Error('浏览态 Down / Up 翻了页');
 
     await click(trigger);
     await waitFor(`${presenting} && ${pageExpr} === ${JSON.stringify(page(1))}`, '进入放映仍在第一页');
@@ -96,7 +98,7 @@ export async function runPresentVerticalContract({ evaluate, request, click, wai
         input.blur();
         return kept;
       })()`);
-      if (typed !== true || await evaluate(pageExpr) !== page(1)) throw new Error('输入框里的 Down 翻了页');
+      if (typed !== true || (await evaluate(pageExpr)) !== page(1)) throw new Error('输入框里的 Down 翻了页');
     }
 
     await pressKey(request, 'ArrowDown', 40, 'ArrowDown');
@@ -104,8 +106,13 @@ export async function runPresentVerticalContract({ evaluate, request, click, wai
     await pressKey(request, 'ArrowUp', 38, 'ArrowUp');
     await waitFor(`${pageExpr} === ${JSON.stringify(page(1))}`, '放映中 Up 回到上一页');
 
-    for (const [label, extra] of [['Ctrl', ', ctrlKey: true'], ['Meta', ', metaKey: true'], ['Alt', ', altKey: true'], ['Shift', ', shiftKey: true']]) {
-      if (await evaluate(dispatchKey('ArrowDown', extra)) !== true || await evaluate(pageExpr) !== page(1)) {
+    for (const [label, extra] of [
+      ['Ctrl', ', ctrlKey: true'],
+      ['Meta', ', metaKey: true'],
+      ['Alt', ', altKey: true'],
+      ['Shift', ', shiftKey: true'],
+    ]) {
+      if ((await evaluate(dispatchKey('ArrowDown', extra))) !== true || (await evaluate(pageExpr)) !== page(1)) {
         throw new Error(`${label}+Down 翻了页`);
       }
     }
@@ -141,14 +148,14 @@ export async function runPresentVerticalContract({ evaluate, request, click, wai
     await waitFor(`${gridOn} && ${pageExpr} === ${JSON.stringify(page(3))}`, '放映网格打开');
     await pressKey(request, 'ArrowDown', 40, 'ArrowDown');
     await pressKey(request, 'ArrowUp', 38, 'ArrowUp');
-    if (!await evaluate(`${gridOn} && ${pageExpr} === ${JSON.stringify(page(3))}`)) {
+    if (!(await evaluate(`${gridOn} && ${pageExpr} === ${JSON.stringify(page(3))}`))) {
       throw new Error('网格开着时 Down / Up 翻了页或关了网格');
     }
     await pressKey(request, 'Escape', 27, 'Escape');
     await waitFor(`!${gridOn} && ${presenting} && ${pageExpr} === ${JSON.stringify(page(3))}`, 'Esc 先关网格');
     await pressKey(request, 'Escape', 27, 'Escape');
     await waitFor(`!${presenting} && ${pageExpr} === ${JSON.stringify(page(3))}`, 'Esc 离开放映');
-    if (await evaluate(dispatchKey('ArrowDown')) !== true || await evaluate(pageExpr) !== page(3)) {
+    if ((await evaluate(dispatchKey('ArrowDown'))) !== true || (await evaluate(pageExpr)) !== page(3)) {
       throw new Error('退出后浏览态 Down 又翻了页');
     }
 
@@ -157,19 +164,22 @@ export async function runPresentVerticalContract({ evaluate, request, click, wai
       await waitFor(presenting, '换文件前再进演示');
       await pressKey(request, 'ArrowDown', 40, 'ArrowDown');
       await waitFor(`${pageExpr} === ${JSON.stringify(page(4))}`, '换文件前再走一页');
-      await evaluate(`(async () => {
+      await evaluate(
+        `(async () => {
         const bytes = await fetch('/demo/showcase.pptx').then((response) => response.arrayBuffer());
         const input = document.querySelector(${JSON.stringify(fileInput)});
         const transfer = new DataTransfer();
         transfer.items.add(new File([bytes], 'present-vertical.pptx'));
         input.files = transfer.files;
         input.dispatchEvent(new Event('change', { bubbles: true }));
-      })()`, true);
+      })()`,
+        true,
+      );
       await waitFor(
         `document.querySelector(${JSON.stringify(fileLabel)}).textContent.includes('present-vertical.pptx') && ${pageExpr}.startsWith('1 /') && !${presenting} && ${chipOff}`,
         '换文件后离开演示并回到第一页',
       );
-      if (await evaluate(dispatchKey('ArrowDown')) !== true || await evaluate(pageExpr) !== page(1)) {
+      if ((await evaluate(dispatchKey('ArrowDown'))) !== true || (await evaluate(pageExpr)) !== page(1)) {
         throw new Error('换文件后浏览态 Down 翻了页');
       }
       if (restoreSample) {
@@ -180,7 +190,7 @@ export async function runPresentVerticalContract({ evaluate, request, click, wai
         );
       }
     }
-    if (notesButton && await evaluate(openExpr)) await click(`${host} .speaker-aids-close`);
+    if (notesButton && (await evaluate(openExpr))) await click(`${host} .speaker-aids-close`);
   } catch (error) {
     failure = error;
   } finally {
@@ -207,7 +217,7 @@ export async function runStandalonePresentVerticalContract({ evaluate, request, 
   await waitFor("document.querySelector('#fileInfo')?.textContent === '未打开文件'", '上下方向键契约打开失败');
   await pressKey(request, 'ArrowDown', 40, 'ArrowDown');
   await pressKey(request, 'ArrowUp', 38, 'ArrowUp');
-  if (await evaluate("document.querySelector('#pageIndicator')?.textContent") !== '- / -') {
+  if ((await evaluate("document.querySelector('#pageIndicator')?.textContent")) !== '- / -') {
     throw new Error('打开失败后 Down / Up 翻了页');
   }
 
@@ -255,7 +265,7 @@ export async function runStandalonePresentVerticalContract({ evaluate, request, 
 
     await evaluate("document.querySelector('#searchInput').focus()");
     await pressKey(request, 'ArrowDown', 40, 'ArrowDown');
-    if (await evaluate(pageExpr) !== '1 / 7') throw new Error('放映中搜索框里的 Down 翻了页');
+    if ((await evaluate(pageExpr)) !== '1 / 7') throw new Error('放映中搜索框里的 Down 翻了页');
     await evaluate("document.querySelector('#searchInput').blur()");
 
     await pressKey(request, '4', 52, 'Digit4');
@@ -269,7 +279,10 @@ export async function runStandalonePresentVerticalContract({ evaluate, request, 
     await waitFor(`${pageExpr} === '1 / 7'`, '查看器放映 Home 仍回第一页');
 
     await pressKey(request, 'b', 66, 'KeyB');
-    await waitFor("document.querySelector('#stage .present-blank.is-on') && !document.querySelector('#stage .present-blank.is-white')", '查看器黑屏');
+    await waitFor(
+      "document.querySelector('#stage .present-blank.is-on') && !document.querySelector('#stage .present-blank.is-white')",
+      '查看器黑屏',
+    );
     await pressKey(request, 'ArrowDown', 40, 'ArrowDown');
     await waitFor(`!document.querySelector('#stage .present-blank.is-on') && ${pageExpr} === '1 / 7'`, '查看器黑屏中 Down 只揭遮罩');
     await pressKey(request, 'w', 87, 'KeyW');
@@ -278,7 +291,7 @@ export async function runStandalonePresentVerticalContract({ evaluate, request, 
     await waitFor(`!document.querySelector('#stage .present-blank.is-on') && ${pageExpr} === '1 / 7'`, '查看器白屏中 Up 只揭遮罩');
 
     await pressKey(request, 's', 83, 'KeyS');
-    if (!await evaluate("document.querySelector('#notesPanel').hidden")) throw new Error('查看器放映中 s 打开了浏览备注');
+    if (!(await evaluate("document.querySelector('#notesPanel').hidden"))) throw new Error('查看器放映中 s 打开了浏览备注');
     await pressKey(request, 'g', 71, 'KeyG');
     await waitFor("document.querySelector('.slide-grid:not([hidden])')", '查看器放映网格');
     await pressKey(request, 'ArrowDown', 40, 'ArrowDown');
@@ -286,7 +299,10 @@ export async function runStandalonePresentVerticalContract({ evaluate, request, 
       throw new Error('查看器网格开着时 Down 翻了页或关了网格');
     }
     await pressKey(request, 'Escape', 27, 'Escape');
-    await waitFor("!document.querySelector('.slide-grid:not([hidden])') && !document.querySelector('#presenter').hidden", '查看器 Esc 先关网格');
+    await waitFor(
+      "!document.querySelector('.slide-grid:not([hidden])') && !document.querySelector('#presenter').hidden",
+      '查看器 Esc 先关网格',
+    );
     await pressKey(request, 'Escape', 27, 'Escape');
     await waitFor("document.querySelector('#presenter').hidden", '查看器 Esc 离开放映');
   } finally {

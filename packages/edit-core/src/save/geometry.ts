@@ -1,6 +1,4 @@
-import type {
-  CustomGeometry, CustomGeometryCommand, CustomGeometryPoint, CustomGeometryScalar, GeomSpec,
-} from '@web-ppt/core';
+import type { CustomGeometry, CustomGeometryCommand, CustomGeometryPoint, CustomGeometryScalar, GeomSpec } from '@web-ppt/core';
 import { own } from '../data-validation';
 import { insertXmlChildUnchecked, removeXmlChild, replaceXmlChildren } from '../xml/nodes';
 import { DRAWINGML_NS, PRESENTATIONML_NS } from '../xml/qname';
@@ -31,7 +29,11 @@ function point(parent: XmlElement, value: CustomGeometryPoint, label: string): v
 
 function pathCommand(parent: XmlElement, command: CustomGeometryCommand, label: string): void {
   const names = {
-    move: 'moveTo', line: 'lnTo', cubic: 'cubicBezTo', quadratic: 'quadBezTo', arc: 'arcTo',
+    move: 'moveTo',
+    line: 'lnTo',
+    cubic: 'cubicBezTo',
+    quadratic: 'quadBezTo',
+    arc: 'arcTo',
     close: 'close',
   } as const;
   const node = namespacedElement(parent, DRAWINGML_NS, names[command.type]);
@@ -53,8 +55,7 @@ function pathList(parent: XmlElement, geometry: CustomGeometry): XmlElement {
     setXmlAttribute(path, 'fill', value.fill);
     setXmlAttribute(path, 'stroke', value.stroke ? '1' : '0');
     setXmlAttribute(path, 'extrusionOk', value.extrusionOk ? '1' : '0');
-    value.commands.forEach((command, commandIndex) =>
-      pathCommand(path, command, `paths[${pathIndex}].commands[${commandIndex}]`));
+    value.commands.forEach((command, commandIndex) => pathCommand(path, command, `paths[${pathIndex}].commands[${commandIndex}]`));
     if (value.closed) insertXmlChildUnchecked(path, namespacedElement(path, DRAWINGML_NS, 'close'));
     insertXmlChildUnchecked(list, path);
   });
@@ -82,11 +83,7 @@ function newCustomGeometry(properties: XmlElement, geometry: CustomGeometry): Xm
   return custom;
 }
 
-function presetAdjustmentList(
-  namespaceContext: XmlElement,
-  parent: XmlElement,
-  geometry: GeomSpec,
-): XmlElement {
+function presetAdjustmentList(namespaceContext: XmlElement, parent: XmlElement, geometry: GeomSpec): XmlElement {
   const list = namespacedElement(namespaceContext, DRAWINGML_NS, 'avLst');
   for (const [name, value] of Object.entries(geometry.adj)) {
     const guide = namespacedElement(namespaceContext, DRAWINGML_NS, 'gd');
@@ -107,8 +104,8 @@ function newPresetGeometry(properties: XmlElement, geometry: GeomSpec): XmlEleme
 function removeDuplicateGeometry(properties: XmlElement, keep: XmlElement): void {
   // 畸形来源也必须收敛到一个几何节点，否则 Office 对“哪个生效”并不一致。
   for (const child of [...xmlElementChildren(properties)]) {
-    if (child !== keep && child.namespaceUri === DRAWINGML_NS
-      && ['custGeom', 'prstGeom'].includes(child.localName)) removeXmlChild(properties, child);
+    if (child !== keep && child.namespaceUri === DRAWINGML_NS && ['custGeom', 'prstGeom'].includes(child.localName))
+      removeXmlChild(properties, child);
   }
 }
 
@@ -127,8 +124,9 @@ export function hasGeometryOverride(record: ElementRecord): boolean {
 export function patchElementGeometry(document: XmlDocument, record: ElementRecord): void {
   if (!hasGeometryOverride(record)) return;
   const properties = shapeProperties(document, record);
-  const current = xmlElementChildren(properties).find((child) =>
-    child.namespaceUri === DRAWINGML_NS && ['custGeom', 'prstGeom'].includes(child.localName));
+  const current = xmlElementChildren(properties).find(
+    (child) => child.namespaceUri === DRAWINGML_NS && ['custGeom', 'prstGeom'].includes(child.localName),
+  );
   if (!current) throw new Error(`元素 ${record.id} 缺少来源几何节点`);
   if (own(record.ovr, 'presetGeometry')) {
     const geometry = record.ovr.presetGeometry!;

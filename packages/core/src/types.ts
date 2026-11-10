@@ -6,9 +6,7 @@
 
 import type { GeomSpec } from './geometry/index';
 import type { CustomGeometry } from './geometry/custom';
-import type {
-  ParagraphLayoutDirectFlags, PlaceholderDirectFlags, TextRunDirectFlags, TextRunEditInfo,
-} from './edit-metadata';
+import type { ParagraphLayoutDirectFlags, PlaceholderDirectFlags, TextRunDirectFlags, TextRunEditInfo } from './edit-metadata';
 import type { TextBodyEditInfo } from './text-body-edit';
 
 export const MAX_SAFE_EXTERNAL_HREF_LENGTH = 2048;
@@ -20,7 +18,11 @@ export const MAX_SAFE_EXTERNAL_HREF_LENGTH = 2048;
 export function parseSafeExternalUrl(href: string): URL | null {
   if (href.length > MAX_SAFE_EXTERNAL_HREF_LENGTH || /[\u0000-\u001f\u007f]/.test(href)) return null;
   let url: URL;
-  try { url = new URL(href); } catch { return null; }
+  try {
+    url = new URL(href);
+  } catch {
+    return null;
+  }
   if (url.protocol !== 'http:' && url.protocol !== 'https:' && url.protocol !== 'mailto:') return null;
   if (url.username || url.password) return null;
   if ((url.protocol === 'http:' || url.protocol === 'https:') && !url.hostname) return null;
@@ -114,12 +116,21 @@ export interface SlideMasterTemplate {
 }
 
 export const THEME_COLOR_SLOTS = [
-  'dk1', 'lt1', 'dk2', 'lt2',
-  'accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6',
-  'hlink', 'folHlink',
+  'dk1',
+  'lt1',
+  'dk2',
+  'lt2',
+  'accent1',
+  'accent2',
+  'accent3',
+  'accent4',
+  'accent5',
+  'accent6',
+  'hlink',
+  'folHlink',
 ] as const;
 
-export type ThemeColorSlot = typeof THEME_COLOR_SLOTS[number];
+export type ThemeColorSlot = (typeof THEME_COLOR_SLOTS)[number];
 export type ThemeColorScheme = Readonly<Record<ThemeColorSlot, string>>;
 
 export interface ThemeFontCollection {
@@ -243,11 +254,26 @@ export interface TableStyleDefinition {
   readonly source: 'document' | 'builtin';
   /** 缺失样式按需写回时使用；只在 edit 模式进入公开目录。 */
   readonly markup: string;
-  readonly parts: Readonly<Partial<Record<
-    'wholeTbl' | 'band1H' | 'band2H' | 'band1V' | 'band2V'
-    | 'firstRow' | 'lastRow' | 'firstCol' | 'lastCol'
-    | 'nwCell' | 'neCell' | 'swCell' | 'seCell', TableStylePart
-  >>>;
+  readonly parts: Readonly<
+    Partial<
+      Record<
+        | 'wholeTbl'
+        | 'band1H'
+        | 'band2H'
+        | 'band1V'
+        | 'band2V'
+        | 'firstRow'
+        | 'lastRow'
+        | 'firstCol'
+        | 'lastCol'
+        | 'nwCell'
+        | 'neCell'
+        | 'swCell'
+        | 'seCell',
+        TableStylePart
+      >
+    >
+  >;
 }
 
 export interface ShapeCreationDefaults {
@@ -293,13 +319,47 @@ export interface SlideComment {
 
 export type TransitionType =
   // ECMA-376 原生
-  | 'none' | 'fade' | 'cut' | 'push' | 'pull' | 'cover' | 'wipe' | 'split' | 'zoom'
-  | 'dissolve' | 'checker' | 'blinds' | 'comb' | 'wheel' | 'circle' | 'diamond'
-  | 'plus' | 'wedge' | 'newsflash' | 'randomBar' | 'strips'
+  | 'none'
+  | 'fade'
+  | 'cut'
+  | 'push'
+  | 'pull'
+  | 'cover'
+  | 'wipe'
+  | 'split'
+  | 'zoom'
+  | 'dissolve'
+  | 'checker'
+  | 'blinds'
+  | 'comb'
+  | 'wheel'
+  | 'circle'
+  | 'diamond'
+  | 'plus'
+  | 'wedge'
+  | 'newsflash'
+  | 'randomBar'
+  | 'strips'
   // PowerPoint 2010+ 扩展（p14 命名空间，共 19 种）
-  | 'vortex' | 'switch' | 'flip' | 'ripple' | 'honeycomb' | 'glitter' | 'warp'
-  | 'flythrough' | 'flash' | 'shred' | 'reveal' | 'wheelReverse' | 'ferris'
-  | 'gallery' | 'conveyor' | 'pan' | 'doors' | 'window' | 'prism'
+  | 'vortex'
+  | 'switch'
+  | 'flip'
+  | 'ripple'
+  | 'honeycomb'
+  | 'glitter'
+  | 'warp'
+  | 'flythrough'
+  | 'flash'
+  | 'shred'
+  | 'reveal'
+  | 'wheelReverse'
+  | 'ferris'
+  | 'gallery'
+  | 'conveyor'
+  | 'pan'
+  | 'doors'
+  | 'window'
+  | 'prism'
   // PowerPoint 2016+ 平滑变体（p159 命名空间）
   | 'morph';
 
@@ -315,9 +375,28 @@ export interface Transition {
 }
 
 export type AnimEffect =
-  | 'appear' | 'fade' | 'fly' | 'wipe' | 'zoom' | 'split' | 'wheel' | 'blinds'
-  | 'grow' | 'spin' | 'float' | 'bounce' | 'dissolve' | 'stretch' | 'swivel' | 'random'
-  | 'checkerboard' | 'randomBar' | 'strips' | 'circle' | 'diamond' | 'plus';
+  | 'appear'
+  | 'fade'
+  | 'fly'
+  | 'wipe'
+  | 'zoom'
+  | 'split'
+  | 'wheel'
+  | 'blinds'
+  | 'grow'
+  | 'spin'
+  | 'float'
+  | 'bounce'
+  | 'dissolve'
+  | 'stretch'
+  | 'swivel'
+  | 'random'
+  | 'checkerboard'
+  | 'randomBar'
+  | 'strips'
+  | 'circle'
+  | 'diamond'
+  | 'plus';
 
 export interface AnimStep {
   /** 目标元素 id（对应 SlideElement.id） */
@@ -507,12 +586,7 @@ export interface ElementEditInfo {
   altText?: { title?: string; descr?: string };
 }
 
-export type SlideElement =
-  | ShapeElement
-  | ImageElement
-  | GroupElement
-  | TableElement
-  | UnsupportedElement;
+export type SlideElement = ShapeElement | ImageElement | GroupElement | TableElement | UnsupportedElement;
 
 export interface ShapeElement extends ElementBase {
   kind: 'shape';
@@ -686,10 +760,8 @@ export interface TextWarp {
 export type ParagraphBulletInfo =
   | { readonly kind: 'none' }
   | ({ readonly kind: 'char'; readonly char: string } & ParagraphBulletStyleInfo)
-  | ({ readonly kind: 'autoNum'; readonly type: string; readonly startAt: number }
-    & ParagraphBulletStyleInfo)
-  | ({ readonly kind: 'image'; readonly rid: string; readonly src: string | null }
-    & ParagraphBulletStyleInfo);
+  | ({ readonly kind: 'autoNum'; readonly type: string; readonly startAt: number } & ParagraphBulletStyleInfo)
+  | ({ readonly kind: 'image'; readonly rid: string; readonly src: string | null } & ParagraphBulletStyleInfo);
 
 export interface ParagraphBulletStyleInfo {
   readonly color?: string | null;
@@ -729,10 +801,7 @@ export interface Paragraph {
       indent: number;
     };
     /** 来源 pPr 直接声明过的字段；清除不存在的直设格式必须保持严格 no-op。 */
-    directParagraphProps: Partial<Record<
-      'level' | 'align' | 'lineHeight' | 'spaceBefore' | 'spaceAfter' | 'marginLeft' | 'indent',
-      true
-    >>;
+    directParagraphProps: Partial<Record<'level' | 'align' | 'lineHeight' | 'spaceBefore' | 'spaceAfter' | 'marginLeft' | 'indent', true>>;
     /** pPr/defRPr 声明的字符字段位，对本段所有 run 生效。 */
     directRun: TextRunDirectFlags;
     /** 项目符号、方向等非工具栏段落字段的直设位。 */
@@ -773,9 +842,24 @@ export type MathNode =
 
 /** DrawingML `ST_TextUnderlineType`；`none` 是显式关闭，其余 17 项保留原生精确样式。 */
 export const TEXT_UNDERLINE_STYLES = Object.freeze([
-  'none', 'words', 'sng', 'dbl', 'heavy', 'dotted', 'dottedHeavy', 'dash', 'dashHeavy',
-  'dashLong', 'dashLongHeavy', 'dotDash', 'dotDashHeavy', 'dotDotDash',
-  'dotDotDashHeavy', 'wavy', 'wavyHeavy', 'wavyDbl',
+  'none',
+  'words',
+  'sng',
+  'dbl',
+  'heavy',
+  'dotted',
+  'dottedHeavy',
+  'dash',
+  'dashHeavy',
+  'dashLong',
+  'dashLongHeavy',
+  'dotDash',
+  'dotDashHeavy',
+  'dotDotDash',
+  'dotDotDashHeavy',
+  'wavy',
+  'wavyHeavy',
+  'wavyDbl',
 ] as const);
 export const TEXT_STRIKE_STYLES = Object.freeze(['noStrike', 'sngStrike', 'dblStrike'] as const);
 export const TEXT_CAPS_STYLES = Object.freeze(['none', 'all', 'small'] as const);

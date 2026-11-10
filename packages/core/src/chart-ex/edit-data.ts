@@ -13,13 +13,18 @@ export interface ChartExDataset {
 export function readChartExData(xml: string, env: ChartEnv): ChartExDataset[] {
   const root = parseXml(xml);
   if (root.namespaceURI !== CX || root.localName !== 'chartSpace') throw new Error('非 ChartEx 数据');
-  const resolve = workbookResolver(root, env), seen = new Set<string>();
+  const resolve = workbookResolver(root, env),
+    seen = new Set<string>();
   return children(child(root, 'chartData'), 'data').map((data) => {
-    const id = attr(data, 'id'); integer(id, 0xffff_ffff);
+    const id = attr(data, 'id');
+    integer(id, 0xffff_ffff);
     if (seen.has(id!)) throw new Error('ChartEx 数据身份重复');
     seen.add(id!);
-    return { id: id!, dimensions: Array.from(data.children)
-      .filter((node) => node.namespaceURI === CX && ['strDim', 'numDim'].includes(node.localName))
-      .map((node) => readDimension(node, resolve)) };
+    return {
+      id: id!,
+      dimensions: Array.from(data.children)
+        .filter((node) => node.namespaceURI === CX && ['strDim', 'numDim'].includes(node.localName))
+        .map((node) => readDimension(node, resolve)),
+    };
   });
 }

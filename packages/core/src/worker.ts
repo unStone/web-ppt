@@ -46,7 +46,10 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
     });
 
     const res: WorkerResponse = { id, ok: true, presentation: plain, assets: buffers };
-    (self as unknown as Worker).postMessage(res, buffers.map((b) => b.data));
+    (self as unknown as Worker).postMessage(
+      res,
+      buffers.map((b) => b.data),
+    );
   } catch (err) {
     const error = err as Error & { reason?: ZipSafetyReason };
     const res: WorkerResponse = {

@@ -1,6 +1,4 @@
-import type {
-  CustomGeometry, CustomGeometryCommand, CustomGeometryPath, CustomGeometryPoint,
-} from '@web-ppt/core';
+import type { CustomGeometry, CustomGeometryCommand, CustomGeometryPath, CustomGeometryPoint } from '@web-ppt/core';
 import { arcToCubicSegments } from '@web-ppt/core/geometry';
 
 const EMU_PER_PX = 9525;
@@ -46,7 +44,7 @@ function svgArc(
   }
   const dx = (fromX - x) / 2;
   const dy = (fromY - y) / 2;
-  const lambda = dx * dx / (rx * rx) + dy * dy / (ry * ry);
+  const lambda = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry);
   if (lambda > 1) {
     const scale = Math.sqrt(lambda);
     rx *= scale;
@@ -55,8 +53,8 @@ function svgArc(
   const numerator = Math.max(0, rx * rx * ry * ry - rx * rx * dy * dy - ry * ry * dx * dx);
   const denominator = rx * rx * dy * dy + ry * ry * dx * dx;
   const coefficient = (largeArc === sweep ? -1 : 1) * Math.sqrt(numerator / denominator);
-  const centerPrimeX = coefficient * rx * dy / ry;
-  const centerPrimeY = coefficient * -ry * dx / rx;
+  const centerPrimeX = (coefficient * rx * dy) / ry;
+  const centerPrimeY = (coefficient * -ry * dx) / rx;
   const ux = (dx - centerPrimeX) / rx;
   const uy = (dy - centerPrimeY) / ry;
   const vx = (-dx - centerPrimeX) / rx;
@@ -66,18 +64,14 @@ function svgArc(
   if (!sweep && delta > 0) delta -= Math.PI * 2;
   if (sweep && delta < 0) delta += Math.PI * 2;
   return {
-    segments: arcToCubicSegments(fromX, fromY, rx, ry, start * 180 / Math.PI, delta * 180 / Math.PI),
-    x, y,
+    segments: arcToCubicSegments(fromX, fromY, rx, ry, (start * 180) / Math.PI, (delta * 180) / Math.PI),
+    x,
+    y,
   };
 }
 
 /** 将 core 已求值的预设 SVG 路径显式物化为稳定寻址的自由形状模型。 */
-export function customGeometryFromSvgPath(
-  d: string,
-  width: number,
-  height: number,
-  open = false,
-): CustomGeometry {
+export function customGeometryFromSvgPath(d: string, width: number, height: number, open = false): CustomGeometry {
   if (typeof d !== 'string' || !d.trim()) throw new Error('SVG path 不能为空');
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
     throw new Error('自由形状坐标空间必须大于零');
@@ -106,19 +100,20 @@ export function customGeometryFromSvgPath(
     return path;
   };
   const point = (px: number, py: number, role: 'anchor' | 'control', id: string): CustomGeometryPoint => ({
-    id, role, x: scalar(px * EMU_PER_PX), y: scalar(py * EMU_PER_PX),
+    id,
+    role,
+    x: scalar(px * EMU_PER_PX),
+    y: scalar(py * EMU_PER_PX),
   });
-  const push = (
-    type: 'move' | 'line' | 'quadratic' | 'cubic',
-    values: readonly (readonly [number, number])[],
-  ): void => {
+  const push = (type: 'move' | 'line' | 'quadratic' | 'cubic', values: readonly (readonly [number, number])[]): void => {
     const target = ensurePath();
     const id = `${target.id}-c${target.commands.length}`;
     target.commands.push({
-      id, type,
+      id,
+      type,
       points: values.map(([px, py], index) =>
-        point(px, py, index === values.length - 1 ? 'anchor' : 'control',
-          `${id}-${index === values.length - 1 ? 'a' : `c${index}`}`)),
+        point(px, py, index === values.length - 1 ? 'anchor' : 'control', `${id}-${index === values.length - 1 ? 'a' : `c${index}`}`),
+      ),
     } as CustomGeometryCommand);
     [x, y] = values[values.length - 1];
   };
@@ -144,8 +139,14 @@ export function customGeometryFromSvgPath(
     if (command === 'M') {
       const [nextX, nextY] = read(2);
       path ??= {
-        id: `p${paths.length}`, width: width * EMU_PER_PX, height: height * EMU_PER_PX,
-        fill: open ? 'none' : 'norm', stroke: true, extrusionOk: true, closed: false, commands: [],
+        id: `p${paths.length}`,
+        width: width * EMU_PER_PX,
+        height: height * EMU_PER_PX,
+        fill: open ? 'none' : 'norm',
+        stroke: true,
+        extrusionOk: true,
+        closed: false,
+        commands: [],
       };
       startX = nextX;
       startY = nextY;
@@ -158,25 +159,30 @@ export function customGeometryFromSvgPath(
     else if (command === 'V') push('line', [[x, read(1)[0]]]);
     else if (command === 'C') {
       const values = read(6);
-      push('cubic', [[values[0], values[1]], [values[2], values[3]], [values[4], values[5]]]);
+      push('cubic', [
+        [values[0], values[1]],
+        [values[2], values[3]],
+        [values[4], values[5]],
+      ]);
       cubicControl = [values[2], values[3]];
       quadControl = null;
     } else if (command === 'S') {
       const values = read(4);
-      const first: readonly [number, number] = cubicControl
-        ? [2 * x - cubicControl[0], 2 * y - cubicControl[1]] : [x, y];
+      const first: readonly [number, number] = cubicControl ? [2 * x - cubicControl[0], 2 * y - cubicControl[1]] : [x, y];
       push('cubic', [first, [values[0], values[1]], [values[2], values[3]]]);
       cubicControl = [values[0], values[1]];
       quadControl = null;
     } else if (command === 'Q') {
       const values = read(4);
-      push('quadratic', [[values[0], values[1]], [values[2], values[3]]]);
+      push('quadratic', [
+        [values[0], values[1]],
+        [values[2], values[3]],
+      ]);
       quadControl = [values[0], values[1]];
       cubicControl = null;
     } else if (command === 'T') {
       const values = read(2);
-      const control: readonly [number, number] = quadControl
-        ? [2 * x - quadControl[0], 2 * y - quadControl[1]] : [x, y];
+      const control: readonly [number, number] = quadControl ? [2 * x - quadControl[0], 2 * y - quadControl[1]] : [x, y];
       push('quadratic', [control, [values[0], values[1]]]);
       quadControl = control;
       cubicControl = null;

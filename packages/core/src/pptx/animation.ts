@@ -3,9 +3,7 @@ import { resolveAnimationEffect } from '../animation-effects';
 import { transitionDefaultDirection } from '../transition';
 import { attr, kid, numAttr } from '../xml';
 import { MC_NAMESPACE as MARKUP_COMPATIBILITY_NS, selectAlternateContent } from './markup-compatibility';
-import {
-  MAX_TIMING_NODES, selectSlideTiming, timingHasUnsupportedContent,
-} from './animation-timing';
+import { MAX_TIMING_NODES, selectSlideTiming, timingHasUnsupportedContent } from './animation-timing';
 
 /**
  * 幻灯片切换（p:transition）与元素动画（p:timing）解析。
@@ -19,31 +17,76 @@ const SPEED_MS: Record<string, number> = { slow: 1000, med: 750, fast: 500 };
 const PRESENTATIONML_NS = 'http://schemas.openxmlformats.org/presentationml/2006/main';
 const POWERPOINT_2010_NS = 'http://schemas.microsoft.com/office/powerpoint/2010/main';
 const POWERPOINT_2015_NS = 'http://schemas.microsoft.com/office/powerpoint/2015/09/main';
-const SUPPORTED_TRANSITION_NAMESPACES = new Set([
-  POWERPOINT_2010_NS, POWERPOINT_2015_NS,
-]);
+const SUPPORTED_TRANSITION_NAMESPACES = new Set([POWERPOINT_2010_NS, POWERPOINT_2015_NS]);
 
 const TRANSITION_TAGS: Record<string, TransitionType> = {
-  fade: 'fade', cut: 'cut', push: 'push', pull: 'pull', cover: 'cover',
-  wipe: 'wipe', split: 'split', zoom: 'zoom', dissolve: 'dissolve',
-  checker: 'checker', blinds: 'blinds', comb: 'comb', wheel: 'wheel',
-  circle: 'circle', diamond: 'diamond', plus: 'plus', wedge: 'wedge',
-  newsflash: 'newsflash', randomBar: 'randomBar', strips: 'strips',
-  random: 'dissolve', fadeThroughBlack: 'fade',
+  fade: 'fade',
+  cut: 'cut',
+  push: 'push',
+  pull: 'pull',
+  cover: 'cover',
+  wipe: 'wipe',
+  split: 'split',
+  zoom: 'zoom',
+  dissolve: 'dissolve',
+  checker: 'checker',
+  blinds: 'blinds',
+  comb: 'comb',
+  wheel: 'wheel',
+  circle: 'circle',
+  diamond: 'diamond',
+  plus: 'plus',
+  wedge: 'wedge',
+  newsflash: 'newsflash',
+  randomBar: 'randomBar',
+  strips: 'strips',
+  random: 'dissolve',
+  fadeThroughBlack: 'fade',
   // p14（PowerPoint 2010+）与 p159（morph）扩展。
   // findTransition 会钻进 mc:AlternateContent 的 Choice；expanded name 仍需校验，
   // 否则 mc:Ignorable 外部节点与 p:fade 同名时会被误当成标准效果。
-  vortex: 'vortex', switch: 'switch', flip: 'flip', ripple: 'ripple',
-  honeycomb: 'honeycomb', glitter: 'glitter', warp: 'warp', flythrough: 'flythrough',
-  flash: 'flash', shred: 'shred', reveal: 'reveal', wheelReverse: 'wheelReverse',
-  ferris: 'ferris', gallery: 'gallery', conveyor: 'conveyor', pan: 'pan',
-  doors: 'doors', window: 'window', prism: 'prism', morph: 'morph',
+  vortex: 'vortex',
+  switch: 'switch',
+  flip: 'flip',
+  ripple: 'ripple',
+  honeycomb: 'honeycomb',
+  glitter: 'glitter',
+  warp: 'warp',
+  flythrough: 'flythrough',
+  flash: 'flash',
+  shred: 'shred',
+  reveal: 'reveal',
+  wheelReverse: 'wheelReverse',
+  ferris: 'ferris',
+  gallery: 'gallery',
+  conveyor: 'conveyor',
+  pan: 'pan',
+  doors: 'doors',
+  window: 'window',
+  prism: 'prism',
+  morph: 'morph',
 };
 
 const EXTENDED_TRANSITION_TAGS = new Set([
-  'vortex', 'switch', 'flip', 'ripple', 'honeycomb', 'glitter', 'warp', 'flythrough',
-  'flash', 'shred', 'reveal', 'wheelReverse', 'ferris', 'gallery', 'conveyor', 'pan',
-  'doors', 'window', 'prism',
+  'vortex',
+  'switch',
+  'flip',
+  'ripple',
+  'honeycomb',
+  'glitter',
+  'warp',
+  'flythrough',
+  'flash',
+  'shred',
+  'reveal',
+  'wheelReverse',
+  'ferris',
+  'gallery',
+  'conveyor',
+  'pan',
+  'doors',
+  'window',
+  'prism',
 ]);
 
 function transitionType(element: Element): TransitionType | undefined {
@@ -57,23 +100,16 @@ function transitionType(element: Element): TransitionType | undefined {
   return namespace === PRESENTATIONML_NS ? mapped : undefined;
 }
 
-function numberAttribute(
-  element: Element,
-  localName: string,
-  namespaceURI: string | null,
-): number | null {
-  const attribute = Array.from(element.attributes).find((candidate) =>
-    candidate.localName === localName && candidate.namespaceURI === namespaceURI);
+function numberAttribute(element: Element, localName: string, namespaceURI: string | null): number | null {
+  const attribute = Array.from(element.attributes).find(
+    (candidate) => candidate.localName === localName && candidate.namespaceURI === namespaceURI,
+  );
   if (!attribute || attribute.value === '') return null;
   const value = Number(attribute.value);
   return Number.isFinite(value) ? value : null;
 }
 
-function childByName(
-  parent: Element | null,
-  namespaceURI: string,
-  localName: string,
-): Element | null {
+function childByName(parent: Element | null, namespaceURI: string, localName: string): Element | null {
   if (!parent) return null;
   for (let child = parent.firstElementChild; child; child = child.nextElementSibling) {
     if (child.namespaceURI === namespaceURI && child.localName === localName) return child;
@@ -81,11 +117,7 @@ function childByName(
   return null;
 }
 
-function childrenByName(
-  parent: Element | null,
-  namespaceURI: string,
-  localName: string,
-): Element[] {
+function childrenByName(parent: Element | null, namespaceURI: string, localName: string): Element[] {
   const found: Element[] = [];
   if (!parent) return found;
   for (let child = parent.firstElementChild; child; child = child.nextElementSibling) {
@@ -119,10 +151,8 @@ export function parseTransition(root: Element | null): Transition | undefined {
     break;
   }
 
-  const exactMs = numberAttribute(el, 'dur', POWERPOINT_2010_NS)
-    ?? numberAttribute(el, 'dur', null);
-  const durationMs = type === 'none'
-    ? 0 : exactMs ?? SPEED_MS[el.getAttribute('spd') ?? 'fast'] ?? 500;
+  const exactMs = numberAttribute(el, 'dur', POWERPOINT_2010_NS) ?? numberAttribute(el, 'dur', null);
+  const durationMs = type === 'none' ? 0 : (exactMs ?? SPEED_MS[el.getAttribute('spd') ?? 'fast'] ?? 500);
   const advTm = numberAttribute(el, 'advTm', null);
   dir ??= transitionDefaultDirection(type);
 
@@ -151,7 +181,12 @@ function findTransition(root: Element | null): Element | null {
 // ---------------- 元素动画 ----------------
 
 const CLASS_KIND: Record<string, AnimStep['kind']> = {
-  entr: 'entrance', exit: 'exit', emph: 'emphasis', path: 'motion', mediacall: 'emphasis', verb: 'emphasis',
+  entr: 'entrance',
+  exit: 'exit',
+  emph: 'emphasis',
+  path: 'motion',
+  mediacall: 'emphasis',
+  verb: 'emphasis',
 };
 
 /** 在节点子树里找第一个 spTgt 的 spid */
@@ -163,9 +198,7 @@ const CLASS_KIND: Record<string, AnimStep['kind']> = {
  * 返回位移折线（px）。顶点是几何，匀速由播放层的关键帧 offset 表达；
  * 预先重采样会切掉尖角，也会让“保存后重开”改变用户输入的路径。
  */
-export function parseMotionPath(
-  path: string, slideW: number, slideH: number, maxPoints = 256,
-): [number, number][] | undefined {
+export function parseMotionPath(path: string, slideW: number, slideH: number, maxPoints = 256): [number, number][] | undefined {
   const tokens = path.match(/[MLCZEmlcze]|-?\d*\.?\d+(?:[eE][-+]?\d+)?/g);
   if (!tokens) return undefined;
 
@@ -177,25 +210,34 @@ export function parseMotionPath(
     const v = Number(tokens[i++]);
     return Number.isFinite(v) ? v : 0;
   };
-  const push = (p: [number, number]): void => { pts.push(p); cur = p; };
+  const push = (p: [number, number]): void => {
+    pts.push(p);
+    cur = p;
+  };
 
   while (i < tokens.length) {
     const cmd = tokens[i++];
     switch (cmd) {
-      case 'M': case 'm': {
+      case 'M':
+      case 'm': {
         const p: [number, number] = [num(), num()];
-        startPt = p; pts.length = 0; push(p);
+        startPt = p;
+        pts.length = 0;
+        push(p);
         break;
       }
-      case 'L': case 'l':
+      case 'L':
+      case 'l':
         push([num(), num()]);
         break;
-      case 'C': case 'c': {
+      case 'C':
+      case 'c': {
         const [x1, y1, x2, y2, x, y] = [num(), num(), num(), num(), num(), num()];
         const [x0, y0] = cur;
         // 固定 16 段折线化：运动路径的曲率很低，再细也看不出差别
         for (let k = 1; k <= 16; k++) {
-          const t = k / 16, u = 1 - t;
+          const t = k / 16,
+            u = 1 - t;
           pts.push([
             u * u * u * x0 + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x,
             u * u * u * y0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y,
@@ -204,7 +246,8 @@ export function parseMotionPath(
         cur = [x, y];
         break;
       }
-      case 'Z': case 'z':
+      case 'Z':
+      case 'z':
         push([startPt[0], startPt[1]]);
         break;
       default:
@@ -236,10 +279,7 @@ export function parseMotionPath(
     while (j < seg.length - 1 && seg[j] < want) j++;
     const span = seg[j] - seg[j - 1];
     const t = span > 0 ? (want - seg[j - 1]) / span : 0;
-    out.push([
-      abs[j - 1][0] + (abs[j][0] - abs[j - 1][0]) * t,
-      abs[j - 1][1] + (abs[j][1] - abs[j - 1][1]) * t,
-    ]);
+    out.push([abs[j - 1][0] + (abs[j][0] - abs[j - 1][0]) * t, abs[j - 1][1] + (abs[j][1] - abs[j - 1][1]) * t]);
   }
   return out;
 }
@@ -337,8 +377,10 @@ function findScale(el: Element, depth = 8): AnimStep['scale'] {
       const values = [numAttr(from, 'x'), numAttr(from, 'y'), numAttr(to, 'x'), numAttr(to, 'y')];
       if (values.every((value) => value !== null && Number.isFinite(value))) {
         return {
-          fromX: values[0]! / 100000, fromY: values[1]! / 100000,
-          toX: values[2]! / 100000, toY: values[3]! / 100000,
+          fromX: values[0]! / 100000,
+          fromY: values[1]! / 100000,
+          toX: values[2]! / 100000,
+          toY: values[3]! / 100000,
         };
       }
     }
@@ -375,8 +417,8 @@ function findMediaCommand(el: Element, depth = 8): AnimStep['mediaCommand'] | nu
     if (child.localName === 'cmd') {
       if ((attr(child, 'type') ?? 'call') !== 'call') return null;
       const command = attr(child, 'cmd');
-      if (command === 'play' || command === 'pause' || command === 'resume'
-        || command === 'stop' || command === 'togglePause') return { action: command };
+      if (command === 'play' || command === 'pause' || command === 'resume' || command === 'stop' || command === 'togglePause')
+        return { action: command };
       const start = /^playFrom\((\d+(?:\.\d+)?)\)$/.exec(command ?? '');
       if (!start) return null;
       const fromSeconds = Number(start[1]);
@@ -426,7 +468,11 @@ interface ParsedTiming {
  * preset 子树仍参与计数，但不会把嵌套 cTn 重复解释成第二个效果。
  */
 /** 媒体节点的原始收集：与 preset 序列共用 visit 序号，供分组合并 */
-interface RawMediaNode { element: Element; order: number; kind: 'audio' | 'video' }
+interface RawMediaNode {
+  element: Element;
+  order: number;
+  kind: 'audio' | 'video';
+}
 
 function presetTimeNodes(timing: Element): { presets: { element: Element; order: number }[]; medias: RawMediaNode[] } | null {
   const found: { element: Element; order: number }[] = [];
@@ -438,13 +484,15 @@ function presetTimeNodes(timing: Element): { presets: { element: Element; order:
   }
   const parents: Cursor[] = [];
   let current: { element: Element; depth: number; insidePreset: boolean } | null = {
-    element: timing, depth: 0, insidePreset: false,
+    element: timing,
+    depth: 0,
+    insidePreset: false,
   };
   let visited = 0;
   while (current) {
     if (++visited > MAX_TIMING_NODES) return null;
-    const preset: boolean = !current.insidePreset && current.depth <= 25
-      && current.element.localName === 'cTn' && !!attr(current.element, 'presetClass');
+    const preset: boolean =
+      !current.insidePreset && current.depth <= 25 && current.element.localName === 'cTn' && !!attr(current.element, 'presetClass');
     if (preset) found.push({ element: current.element, order: visited });
     // 媒体节点（p:audio/p:video）不是效果，不进 steps；只收集原始元素供回填播放语义
     if (!current.insidePreset && (current.element.localName === 'audio' || current.element.localName === 'video')) {
@@ -518,12 +566,12 @@ function parseTimingDetailed(timing: Element | null, slideW = 0, slideH = 0): Pa
   // 媒体节点与效果按文档顺序合并编号——媒体跟随最近的效果批次，
   // 自身是 clickEffect 头时同样开新批，与幻灯片上的触发顺序一致。
   const medias = collected.medias
-    .map(raw => ({ raw, timing: mediaTimingOf(raw) }))
+    .map((raw) => ({ raw, timing: mediaTimingOf(raw) }))
     .filter((m): m is { raw: RawMediaNode; timing: MediaTiming } => m.timing !== null);
-  const merged: ({ order: number; step?: AnimStep; media?: { raw: RawMediaNode; timing: MediaTiming } })[]
-    = [...built.map(b => ({ order: b.order, step: b.step })),
-       ...medias.filter(m => m.timing).map(m => ({ order: m.raw.order, media: m }))]
-      .sort((a, b) => a.order - b.order);
+  const merged: { order: number; step?: AnimStep; media?: { raw: RawMediaNode; timing: MediaTiming } }[] = [
+    ...built.map((b) => ({ order: b.order, step: b.step })),
+    ...medias.filter((m) => m.timing).map((m) => ({ order: m.raw.order, media: m })),
+  ].sort((a, b) => a.order - b.order);
   let group = -1;
   const result: MediaTiming[] = [];
   for (const node of merged) {
@@ -533,9 +581,12 @@ function parseTimingDetailed(timing: Element | null, slideW = 0, slideH = 0): Pa
       : group < 0 || attr(kid(kid(node.media!.raw.element, 'cMediaNode'), 'cTn'), 'nodeType') === 'clickEffect';
     if (startsGroup) group++;
     if (node.step) node.step.clickGroup = group;
-    else { node.media!.timing.clickGroup = group; result.push(node.media!.timing); }
+    else {
+      node.media!.timing.clickGroup = group;
+      result.push(node.media!.timing);
+    }
   }
-  steps.push(...merged.filter(n => n.step).map(n => n.step!));
+  steps.push(...merged.filter((n) => n.step).map((n) => n.step!));
   return { animations: steps, media: result, readonly };
 }
 
@@ -560,16 +611,13 @@ function buildStep(cTn: Element, slideW: number, slideH: number): AnimStep | nul
   const filter = findFilter(cTn);
   const { effect, dir } = resolveAnimationEffect(presetID, subtype, filter ?? undefined);
 
-  const trigger: AnimStep['trigger'] =
-    nodeType === 'withEffect' ? 'withPrev' : nodeType === 'afterEffect' ? 'afterPrev' : 'click';
+  const trigger: AnimStep['trigger'] = nodeType === 'withEffect' ? 'withPrev' : nodeType === 'afterEffect' ? 'afterPrev' : 'click';
 
   const dur = numAttr(cTn, 'dur') ?? findDuration(cTn) ?? 500;
 
   // 运动路径优先于 presetID 推出来的效果：路径本身就完整描述了位移
   const rawPath = kind === 'motion' ? findMotion(cTn) : null;
-  const motionPath = rawPath && slideW > 0 && slideH > 0
-    ? parseMotionPath(rawPath, slideW, slideH)
-    : undefined;
+  const motionPath = rawPath && slideW > 0 && slideH > 0 ? parseMotionPath(rawPath, slideW, slideH) : undefined;
   const paragraphRange = findParagraphRange(cTn);
   const scale = findScale(cTn);
   const rotation = findRotation(cTn);

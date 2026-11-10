@@ -1,8 +1,14 @@
-export interface Mp4Box { type: string; start: number; data: number; end: number }
+export interface Mp4Box {
+  type: string;
+  start: number;
+  data: number;
+  end: number;
+}
 
-export const invalidMp4 = (): never => { throw new Error('视频不是完整的自包含 MP4 文件'); };
-export const mp4Tag = (bytes: Uint8Array, at: number): string =>
-  String.fromCharCode(...bytes.subarray(at, at + 4));
+export const invalidMp4 = (): never => {
+  throw new Error('视频不是完整的自包含 MP4 文件');
+};
+export const mp4Tag = (bytes: Uint8Array, at: number): string => String.fromCharCode(...bytes.subarray(at, at + 4));
 
 export function mp4Uint(bytes: Uint8Array, box: Mp4Box, offset: number, size: 1 | 2 | 4 | 8 = 4): number {
   const at = box.data + offset;
@@ -19,7 +25,8 @@ export function mp4Boxes(bytes: Uint8Array, start = 0, end = bytes.length): Mp4B
   const boxes: Mp4Box[] = [];
   while (start < end) {
     if (end - start < 8 || boxes.length >= 100000) invalidMp4();
-    let size = view.getUint32(start), header = 8;
+    let size = view.getUint32(start),
+      header = 8;
     if (size === 1) {
       if (end - start < 16) invalidMp4();
       size = view.getUint32(start + 8) * 2 ** 32 + view.getUint32(start + 12);

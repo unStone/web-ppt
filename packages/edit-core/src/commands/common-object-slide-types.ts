@@ -47,16 +47,18 @@ export interface SetSlideSizeCommand {
   readonly fit?: 'none' | 'ensureFit';
 }
 
-export type ElementAltTextPatch = {
-  readonly op: 'set';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'altText', 'title' | 'descr'];
-  readonly value: string;
-  readonly origin: string;
-} | {
-  readonly op: 'del';
-  readonly path: readonly ['elements', ElementId, 'ovr', 'altText', 'title' | 'descr'];
-  readonly origin: string;
-};
+export type ElementAltTextPatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'altText', 'title' | 'descr'];
+      readonly value: string;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['elements', ElementId, 'ovr', 'altText', 'title' | 'descr'];
+      readonly origin: string;
+    };
 
 export type SectionStatePatch = {
   readonly op: 'set';

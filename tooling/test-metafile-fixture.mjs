@@ -11,12 +11,20 @@ import { recordCount } from './lib/measured.mjs';
 
 let assertions = 0;
 const assert = new Proxy(nativeAssert, {
-  apply(target, receiver, args) { const result = Reflect.apply(target, receiver, args); assertions++; return result; },
+  apply(target, receiver, args) {
+    const result = Reflect.apply(target, receiver, args);
+    assertions++;
+    return result;
+  },
   get(target, key) {
     const value = Reflect.get(target, key);
-    return typeof value === 'function' ? (...args) => {
-      const result = Reflect.apply(value, target, args); assertions++; return result;
-    } : value;
+    return typeof value === 'function'
+      ? (...args) => {
+          const result = Reflect.apply(value, target, args);
+          assertions++;
+          return result;
+        }
+      : value;
   },
 });
 
@@ -24,10 +32,13 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const work = join(root, 'out/agent-eval/metafile-fixture-regression');
 mkdirSync(work, { recursive: true });
 const dist = process.argv.includes('--dist');
-assert(process.argv.slice(2).every(argument => argument === '--dist'), '仅支持 --dist');
-const { detectMetafile, metafileToSvg } = dist ? await import('@web-ppt/core')
-  : await bundleNode({ root, entry: join(root, 'packages/core/src/image/index.ts'),
-    output: join(work, 'image-source.mjs') });
+assert(
+  process.argv.slice(2).every((argument) => argument === '--dist'),
+  '仅支持 --dist',
+);
+const { detectMetafile, metafileToSvg } = dist
+  ? await import('@web-ppt/core')
+  : await bundleNode({ root, entry: join(root, 'packages/core/src/image/index.ts'), output: join(work, 'image-source.mjs') });
 const project = mkdtempSync(join(work, 'run-'));
 const expectedFixtureHash = '8f042fece7c31a68f832bdd2d6bfb8c491d9f3a101b71120a928778931efa99b';
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -37,15 +48,26 @@ assert.equal(sha256(readFileSync(join(root, 'fixtures/sample-metafile.pptx'))), 
 const manifest = JSON.parse(readFileSync(join(root, 'tooling/metafile-assets/manifest.json'), 'utf8'));
 assert.equal(manifest.source.sha256, expectedFixtureHash);
 assert.equal(manifest.source.commit, '88c8df92ee853fa2dc45a413fa38316527b20025');
-assert.deepEqual(manifest.assets.map(({ name }) => name), ['showcase.emf', 'showcase.wmf']);
+assert.deepEqual(
+  manifest.assets.map(({ name }) => name),
+  ['showcase.emf', 'showcase.wmf'],
+);
 
 mkdirSync(join(project, 'tooling/lib'), { recursive: true });
 mkdirSync(join(project, 'fixtures'), { recursive: true });
-for (const name of ['make-metafile-fixture.mjs', 'make-metafile-assets.mjs', 'make-emf-plus-fixture.mjs', 'lib/ooxml.mjs', 'lib/metafile-assets.mjs', 'lib/emf-plus-fixture.mjs']) {
+for (const name of [
+  'make-metafile-fixture.mjs',
+  'make-metafile-assets.mjs',
+  'make-emf-plus-fixture.mjs',
+  'lib/ooxml.mjs',
+  'lib/metafile-assets.mjs',
+  'lib/emf-plus-fixture.mjs',
+]) {
   cpSync(join(root, 'tooling', name), join(project, 'tooling', name));
 }
 cpSync(join(root, 'tooling/metafile-assets'), assetDirectory, { recursive: true });
-const run = (script, args = []) => spawnSync(process.execPath, [join(project, 'tooling', script), ...args], { cwd: project, encoding: 'utf8' });
+const run = (script, args = []) =>
+  spawnSync(process.execPath, [join(project, 'tooling', script), ...args], { cwd: project, encoding: 'utf8' });
 const succeed = (result) => assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 const fail = (result, expression) => {
   assert.notEqual(result.status, 0, result.stdout);

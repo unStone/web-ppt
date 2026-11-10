@@ -103,10 +103,7 @@ export const SUBSTITUTIONS: Readonly<Record<string, Substitution>> = { ...LATIN,
 const SYMBOL = /^(wingdings|webdings|symbol|marlett)/i;
 
 /** 查一个字体该用什么替代；没有对应项返回 null */
-export function substituteFor(
-  family: string,
-  overrides?: Readonly<Record<string, Substitution>>,
-): Substitution | null {
+export function substituteFor(family: string, overrides?: Readonly<Record<string, Substitution>>): Substitution | null {
   const key = family.trim().toLowerCase();
   if (!key || SYMBOL.test(key)) return null;
   return overrides?.[key] ?? SUBSTITUTIONS[key] ?? null;

@@ -4,11 +4,47 @@ import type { EditDoc, SlideId, SlideRecord, SlideTransitionState } from './type
 
 /** 顺序是公开契约；宿主可以稳定地分组或持久化最近使用项。 */
 export const SLIDE_TRANSITION_TYPES = Object.freeze([
-  'none', 'fade', 'cut', 'push', 'pull', 'cover', 'wipe', 'split', 'zoom', 'dissolve',
-  'checker', 'blinds', 'comb', 'wheel', 'circle', 'diamond', 'plus', 'wedge', 'newsflash',
-  'randomBar', 'strips', 'vortex', 'switch', 'flip', 'ripple', 'honeycomb', 'glitter',
-  'warp', 'flythrough', 'flash', 'shred', 'reveal', 'wheelReverse', 'ferris', 'gallery',
-  'conveyor', 'pan', 'doors', 'window', 'prism', 'morph',
+  'none',
+  'fade',
+  'cut',
+  'push',
+  'pull',
+  'cover',
+  'wipe',
+  'split',
+  'zoom',
+  'dissolve',
+  'checker',
+  'blinds',
+  'comb',
+  'wheel',
+  'circle',
+  'diamond',
+  'plus',
+  'wedge',
+  'newsflash',
+  'randomBar',
+  'strips',
+  'vortex',
+  'switch',
+  'flip',
+  'ripple',
+  'honeycomb',
+  'glitter',
+  'warp',
+  'flythrough',
+  'flash',
+  'shred',
+  'reveal',
+  'wheelReverse',
+  'ferris',
+  'gallery',
+  'conveyor',
+  'pan',
+  'doors',
+  'window',
+  'prism',
+  'morph',
 ] as const satisfies readonly TransitionType[]);
 
 const TYPE_SET = new Set<string>(SLIDE_TRANSITION_TYPES);
@@ -23,13 +59,32 @@ const CORNER_CENTER = Object.freeze(['lu', 'ld', 'ru', 'rd', 'center'] as const)
 const NONE = Object.freeze([] as const);
 
 const DIRECTIONS: Readonly<Partial<Record<TransitionType, readonly string[]>>> = Object.freeze({
-  push: SIDE, wipe: SIDE, vortex: SIDE, glitter: SIDE, pan: SIDE, prism: SIDE,
-  pull: EIGHT, cover: EIGHT,
-  switch: HORIZONTAL, flip: HORIZONTAL, ferris: HORIZONTAL,
-  gallery: HORIZONTAL, conveyor: HORIZONTAL, reveal: HORIZONTAL,
-  checker: AXIS, blinds: AXIS, comb: AXIS, randomBar: AXIS, doors: AXIS, window: AXIS,
-  zoom: IN_OUT, warp: IN_OUT, flythrough: IN_OUT, shred: IN_OUT,
-  split: SPLIT, strips: DIAGONAL,
+  push: SIDE,
+  wipe: SIDE,
+  vortex: SIDE,
+  glitter: SIDE,
+  pan: SIDE,
+  prism: SIDE,
+  pull: EIGHT,
+  cover: EIGHT,
+  switch: HORIZONTAL,
+  flip: HORIZONTAL,
+  ferris: HORIZONTAL,
+  gallery: HORIZONTAL,
+  conveyor: HORIZONTAL,
+  reveal: HORIZONTAL,
+  checker: AXIS,
+  blinds: AXIS,
+  comb: AXIS,
+  randomBar: AXIS,
+  doors: AXIS,
+  window: AXIS,
+  zoom: IN_OUT,
+  warp: IN_OUT,
+  flythrough: IN_OUT,
+  shred: IN_OUT,
+  split: SPLIT,
+  strips: DIAGONAL,
   ripple: CORNER_CENTER,
 });
 
@@ -64,30 +119,27 @@ export function normalizeSlideTransition(value: unknown, label = '页面切换')
   }
   const type = input.type as TransitionType;
   const directions = transitionDirections(type);
-  if (input.dir !== undefined
-    && (typeof input.dir !== 'string' || !directions.includes(input.dir))) {
+  if (input.dir !== undefined && (typeof input.dir !== 'string' || !directions.includes(input.dir))) {
     throw new Error(`${label}.dir 与 ${type} 不相容`);
   }
-  if (input.morphBy !== undefined
-    && (type !== 'morph' || !['byObject', 'byWord', 'byChar'].includes(input.morphBy))) {
+  if (input.morphBy !== undefined && (type !== 'morph' || !['byObject', 'byWord', 'byChar'].includes(input.morphBy))) {
     throw new Error(`${label}.morphBy 只适用于 morph`);
   }
   if (type === 'none') {
-    if ((input.durationMs !== undefined && input.durationMs !== 0)
-      || input.dir !== undefined || input.morphBy !== undefined) {
+    if ((input.durationMs !== undefined && input.durationMs !== 0) || input.dir !== undefined || input.morphBy !== undefined) {
       throw new Error(`${label} 的 none 不能携带播放参数`);
     }
-    const advanceAfterMs = input.advanceAfterMs === undefined
-      ? undefined : integerInRange(input.advanceAfterMs, 0, 0xffffffff, `${label}.advanceAfterMs`);
+    const advanceAfterMs =
+      input.advanceAfterMs === undefined ? undefined : integerInRange(input.advanceAfterMs, 0, 0xffffffff, `${label}.advanceAfterMs`);
     return { type, durationMs: 0, ...(advanceAfterMs !== undefined ? { advanceAfterMs } : {}) };
   }
-  const durationMs = input.durationMs === undefined
-    ? 750 : integerInRange(input.durationMs, 80, 5000, `${label}.durationMs`);
+  const durationMs = input.durationMs === undefined ? 750 : integerInRange(input.durationMs, 80, 5000, `${label}.durationMs`);
   const dir = input.dir ?? transitionPreferredDirection(type);
-  const advanceAfterMs = input.advanceAfterMs === undefined
-    ? undefined : integerInRange(input.advanceAfterMs, 0, 0xffffffff, `${label}.advanceAfterMs`);
+  const advanceAfterMs =
+    input.advanceAfterMs === undefined ? undefined : integerInRange(input.advanceAfterMs, 0, 0xffffffff, `${label}.advanceAfterMs`);
   return {
-    type, durationMs,
+    type,
+    durationMs,
     ...(dir !== undefined ? { dir } : {}),
     ...(advanceAfterMs !== undefined ? { advanceAfterMs } : {}),
     ...(type === 'morph' ? { morphBy: input.morphBy ?? 'byObject' } : {}),
@@ -111,8 +163,7 @@ function records(doc: EditDoc, ids: readonly SlideId[]) {
   });
 }
 
-const clone = (value: Transition | undefined): Transition | null =>
-  value ? structuredClone(value) : null;
+const clone = (value: Transition | undefined): Transition | null => (value ? structuredClone(value) : null);
 
 /** 换版式只改变继承来源；查询元数据不应为此重投影整页元素。 */
 function sourceTransition(doc: EditDoc, record: SlideRecord): Transition | undefined {
@@ -125,12 +176,12 @@ function sourceTransition(doc: EditDoc, record: SlideRecord): Transition | undef
 export function querySlideTransition(doc: EditDoc, ids: readonly SlideId[]): SlideTransitionState {
   const selected = records(doc, ids);
   const sources = selected.map((record) => sourceTransition(doc, record));
-  const values = selected.map((record, index) =>
-    own(record.ovr, 'transition') ? record.ovr.transition : sources[index]);
+  const values = selected.map((record, index) => (own(record.ovr, 'transition') ? record.ovr.transition : sources[index]));
   const valueSignature = JSON.stringify(values[0] ?? null);
   const sourceSignature = JSON.stringify(sources[0] ?? null);
   return {
-    value: clone(values[0]), source: clone(sources[0]),
+    value: clone(values[0]),
+    source: clone(sources[0]),
     mixed: values.some((value) => JSON.stringify(value ?? null) !== valueSignature),
     sourceMixed: sources.some((value) => JSON.stringify(value ?? null) !== sourceSignature),
     direct: selected.some((record) => own(record.ovr, 'transition')),

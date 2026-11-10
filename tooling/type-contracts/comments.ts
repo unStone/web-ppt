@@ -5,7 +5,9 @@ import { createCommentsPanel, type CommentsPanel } from '@web-ppt/viewer-core/co
 export async function commentContract(pres: Presentation, container: HTMLElement): Promise<void> {
   const options: CommentExportOptions = { showComments: true };
   const panel: CommentsPanel = createCommentsPanel(container);
-  panel.setSlide(pres.slides[0]); panel.setSlide(null); panel.dispose();
+  panel.setSlide(pres.slides[0]);
+  panel.setSlide(null);
+  panel.dispose();
   await slideToPng(pres, pres.slides[0]);
   await slideToPng(pres, pres.slides[0], 1, options);
   await slideToSvgFile(pres, pres.slides[0], [], options);

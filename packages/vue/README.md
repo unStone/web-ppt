@@ -161,4 +161,4 @@ Those components destroy their views but never dispose the injected session; the
 | `adapter.dispose()` | automatic on unmount |
 
 Validated in Node SSR and Chromium with Vue 3.5.41; the optional peer range supports Vue 3.3–3.5. The
-framework-excluded ESM is 1.34KB gzip, ships declarations, and does not add Vue to the base packages.
+framework-excluded ESM is 1.31KB gzip, ships declarations, and does not add Vue to the base packages.

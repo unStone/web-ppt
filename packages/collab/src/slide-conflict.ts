@@ -3,8 +3,7 @@ import type { EditDoc, ElementRecord, SlideTreePatch } from '@web-ppt/edit-core'
 
 /** 节删除胜过并发复制的旧归属；页面本身仍可插入，降级为未分节。 */
 export function rebaseSlideInsertion(doc: EditDoc, patch: SlideTreePatch): SlideTreePatch {
-  if (patch.op !== 'insert' || !patch.value.sectionId
-    || doc.sections.records[patch.value.sectionId]) return patch;
+  if (patch.op !== 'insert' || !patch.value.sectionId || doc.sections.records[patch.value.sectionId]) return patch;
   const { sectionId: _removed, ...value } = patch.value;
   return { ...patch, value };
 }

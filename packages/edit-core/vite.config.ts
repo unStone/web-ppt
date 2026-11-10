@@ -5,12 +5,15 @@ export default defineConfig({
     copyPublicDir: false,
     lib: {
       entry: {
-        'edit-core': 'src/index.ts', xml: 'src/xml/index.ts', opc: 'src/opc/index.ts',
-        save: 'src/save/index.ts', generate: 'src/generate/index.ts',
+        'edit-core': 'src/index.ts',
+        xml: 'src/xml/index.ts',
+        opc: 'src/opc/index.ts',
+        save: 'src/save/index.ts',
+        generate: 'src/generate/index.ts',
       },
       fileName: (_format, entryName) => `${entryName}.js`,
       formats: ['es'],
     },
-    rollupOptions: { external: ['@web-ppt/edit-core', '@web-ppt/core', '@web-ppt/core/geometry', '@web-ppt/core/zip', 'fflate'] },
+    rolldownOptions: { external: ['@web-ppt/edit-core', '@web-ppt/core', '@web-ppt/core/geometry', '@web-ppt/core/zip', 'fflate'] },
   },
 });

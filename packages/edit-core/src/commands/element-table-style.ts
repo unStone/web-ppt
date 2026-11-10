@@ -3,15 +3,10 @@ import type { EditDoc } from '../types';
 import type { ElementTableStylePatch, Patch } from './types';
 
 export function isElementTableStylePatch(patch: Patch): patch is ElementTableStylePatch {
-  return patch.path.length === 4 && patch.path[0] === 'elements'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'tableStyle';
+  return patch.path.length === 4 && patch.path[0] === 'elements' && patch.path[2] === 'ovr' && patch.path[3] === 'tableStyle';
 }
 
-export function validateElementTableStylePatch(
-  doc: EditDoc,
-  patch: ElementTableStylePatch,
-  index: number,
-): void {
+export function validateElementTableStylePatch(doc: EditDoc, patch: ElementTableStylePatch, index: number): void {
   const record = doc.elements[patch.path[1]];
   if (!record || record.src.kind !== 'table' || record.meta.editable !== 'full') {
     throw new Error(`Patch ${index} 指向不可编辑表格`);

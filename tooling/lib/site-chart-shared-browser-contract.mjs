@@ -20,7 +20,10 @@ export async function runSiteChartSharedBrowserContract(context) {
     await openFixture(context, `/fixtures/sample-chart-shared${cache ? '-cache' : ''}.pptx`, 'shared-ui.pptx');
     await click('#editMode');
     await selectPaneObject(context, '图表');
-    await waitFor(`!document.querySelector('#chartInspector').hidden && !!document.querySelector('${cell}') && !document.querySelector('${cell}').disabled`, '共享图表可写');
+    await waitFor(
+      `!document.querySelector('#chartInspector').hidden && !!document.querySelector('${cell}') && !document.querySelector('${cell}').disabled`,
+      '共享图表可写',
+    );
     await changeValue(context, cell, '729');
     await page(2);
     assert.equal(await evaluate(`document.querySelector('${cell}').value`), cache ? '10' : '729');
@@ -48,7 +51,7 @@ export async function runSiteChartSharedBrowserContract(context) {
     assert.equal(await evaluate(`document.querySelector('${added}').value`), '847', '新系列值同步到另一框架');
     await click('[data-chart-category="0"] button[aria-label^="删除类别"]');
     await waitFor("document.querySelectorAll('[data-chart-category]').length === 5", '删除共享类别');
-    assert.equal(await evaluate("document.querySelector('[data-chart-category=\"0\"] td:last-child input').value"), '847');
+    assert.equal(await evaluate('document.querySelector(\'[data-chart-category="0"] td:last-child input\').value'), '847');
     await click('#undo');
     await waitFor("document.querySelectorAll('[data-chart-category]').length === 6", '撤销共享删行');
     await click('[data-chart-grid] thead th:last-child button');
@@ -70,7 +73,8 @@ export async function runSiteChartSharedBrowserContract(context) {
     writeFileSync(`out/chart-shared/browser-${cache ? 'cache' : 'workbook'}.png`, Buffer.from(screenshot.result.data, 'base64'));
   }
   await openFixture(context, '/fixtures/sample-chart-shared-xy.pptx', 'shared-xy-ui.pptx');
-  await click('#editMode'); await selectPaneObject(context, '图表');
+  await click('#editMode');
+  await selectPaneObject(context, '图表');
   await waitFor("document.querySelectorAll('.chart-xy-series').length === 2", '共享气泡系列就绪');
   const sourceXY = '.chart-xy-series:first-of-type';
   await evaluate("document.querySelector('.chart-xy-series').lastElementChild.click()");
@@ -79,7 +83,11 @@ export async function runSiteChartSharedBrowserContract(context) {
     await changeValue(context, `${sourceXY} tbody tr:last-child td:nth-child(${index + 1}) input`, value);
   }
   await page(2, '[data-chart-grid="bubble"]');
-  assert.deepEqual(await evaluate(`[...document.querySelectorAll('${sourceXY} tbody tr:last-child input')].map(input => input.value)`), ['41', '42', '43']);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('${sourceXY} tbody tr:last-child input')].map(input => input.value)`), [
+    '41',
+    '42',
+    '43',
+  ]);
   await click(`${sourceXY} tbody tr:first-child button`);
   await waitFor(`document.querySelectorAll('${sourceXY} tbody tr').length === 4`, '原有共享点删除');
   await page(3, '[data-chart-grid="bubble"]');
@@ -88,7 +96,9 @@ export async function runSiteChartSharedBrowserContract(context) {
   await click('#redo');
   await waitFor(`document.querySelectorAll('${sourceXY} tbody tr').length === 4`, '重做来源点删除');
   await page(1, '[data-chart-grid="bubble"]');
-  await evaluate("[...document.querySelectorAll('[data-chart-table] button')].find(button => button.textContent === '增加气泡系列').click()");
+  await evaluate(
+    "[...document.querySelectorAll('[data-chart-table] button')].find(button => button.textContent === '增加气泡系列').click()",
+  );
   await waitFor("document.querySelectorAll('.chart-xy-series').length === 3", '新增共享气泡系列');
   const addPoint = () => evaluate("[...document.querySelectorAll('.chart-xy-series')].at(-1).lastElementChild.click()");
   await addPoint();
@@ -107,18 +117,28 @@ export async function runSiteChartSharedBrowserContract(context) {
   await click('[data-site-locale="en"]');
   await captureSaveAndReopen(context, 'shared-xy-reopened.pptx');
   await page(3, '[data-chart-grid="bubble"]');
-  assert.deepEqual(await evaluate(`[...document.querySelectorAll('${lastXY} tbody tr:first-child input')].map(input => input.value)`), ['31', '32', '33']);
-  assert.deepEqual(await evaluate(`[...document.querySelectorAll('${sourceXY} tbody tr:last-child input')].map(input => input.value)`), ['41', '42', '43'],
-    '原有 XY 系列的点增删和数值编辑保存重开保持');
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('${lastXY} tbody tr:first-child input')].map(input => input.value)`), [
+    '31',
+    '32',
+    '33',
+  ]);
+  assert.deepEqual(
+    await evaluate(`[...document.querySelectorAll('${sourceXY} tbody tr:last-child input')].map(input => input.value)`),
+    ['41', '42', '43'],
+    '原有 XY 系列的点增删和数值编辑保存重开保持',
+  );
   await click('[data-site-locale="zh-CN"]');
   let xySeries = await evaluate("document.querySelectorAll('.chart-xy-series').length");
   while (xySeries) {
-    await click('.chart-xy-series .chart-series-heading button'); xySeries--;
+    await click('.chart-xy-series .chart-series-heading button');
+    xySeries--;
     await waitFor(`document.querySelectorAll('.chart-xy-series').length === ${xySeries}`, '删空共享 XY 系列');
   }
   await captureSaveAndReopen(context, 'shared-empty-xy.pptx');
   await page(3, '[data-chart-table] > .inspector-actions');
-  await evaluate("[...document.querySelectorAll('[data-chart-table] button')].find(button => button.textContent === '增加气泡系列').click()");
+  await evaluate(
+    "[...document.querySelectorAll('[data-chart-table] button')].find(button => button.textContent === '增加气泡系列').click()",
+  );
   await waitFor("document.querySelectorAll('.chart-xy-series').length === 1", '保存模板重建共享 XY 系列');
   await evaluate("document.querySelector('.chart-xy-series').lastElementChild.click()");
   await waitFor("document.querySelectorAll('.chart-xy-series tbody tr').length === 1", '重建 XY 系列添加数据点');
@@ -128,10 +148,15 @@ export async function runSiteChartSharedBrowserContract(context) {
   await click('[data-site-locale="en"]');
   await captureSaveAndReopen(context, 'shared-rebuilt-xy.pptx');
   await page(3, '[data-chart-grid="bubble"]');
-  assert.deepEqual(await evaluate(`[...document.querySelectorAll('${sourceXY} tbody tr:first-child input')].map(input => input.value)`), ['141', '142', '143']);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('${sourceXY} tbody tr:first-child input')].map(input => input.value)`), [
+    '141',
+    '142',
+    '143',
+  ]);
   await click('[data-site-locale="zh-CN"]');
   await openFixture(context, '/fixtures/sample-chart-shared-cache-horizontal.pptx', 'shared-square-ui.pptx');
-  await click('#editMode'); await selectPaneObject(context, '图表');
+  await click('#editMode');
+  await selectPaneObject(context, '图表');
   await waitFor("!!document.querySelector('[data-chart-category]')", '横向共享层级就绪');
   let categories = await evaluate("document.querySelectorAll('[data-chart-category]').length");
   while (categories > 2) {
@@ -141,7 +166,8 @@ export async function runSiteChartSharedBrowserContract(context) {
   }
   let seriesCount = await evaluate("document.querySelectorAll('[data-chart-grid] thead input').length");
   while (seriesCount) {
-    await click('[data-chart-grid] thead th:last-child button'); seriesCount--;
+    await click('[data-chart-grid] thead th:last-child button');
+    seriesCount--;
     await waitFor(`document.querySelectorAll('[data-chart-grid] thead input').length === ${seriesCount}`, '删空层级系列');
   }
   await captureSaveAndReopen(context, 'shared-empty-series.pptx');

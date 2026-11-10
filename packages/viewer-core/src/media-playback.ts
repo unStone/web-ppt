@@ -10,11 +10,7 @@ export interface ScheduledMediaCommand {
 const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
 /** 媒体调用属于时间线行为；视觉动画结束不代表媒体已开始播放。 */
-export function scheduleMediaCommand(
-  target: Element,
-  command: MediaCommand,
-  startMs: number,
-): ScheduledMediaCommand | null {
+export function scheduleMediaCommand(target: Element, command: MediaCommand, startMs: number): ScheduledMediaCommand | null {
   const player = target.querySelector('audio,video') as HTMLMediaElement | null;
   if (!player) return null;
   if (!Number.isFinite(startMs) || startMs < 0) {

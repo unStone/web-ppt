@@ -5,9 +5,7 @@ import type { GroupElement, SlideElement } from '../types';
 import { attr, kid, numAttr, walk } from '../xml';
 import { getChartParser } from '../chart/hook';
 import { parseTextBody, TextEnv } from './text';
-import {
-  buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram,
-} from './diagram';
+import { buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram } from './diagram';
 import { Env, relByType } from './slide-inheritance';
 import { parseTable } from './table-style';
 import { retainCompatibilitySource } from './compatibility-source';
@@ -25,18 +23,16 @@ export function parseGraphicFrame(frame: Element, env: Env): SlideElement | Slid
   const name = attr(frameCNvPr, 'name') ?? undefined;
   const frameId = numAttr(frameCNvPr, 'id') ?? undefined;
   const frameEditInfo = editInfoOf(env, frameCNvPr, framePh, undefined, undefined, movementLocked(nv));
-  const frameOnlyEditInfo = editInfoOf(
-    env, frameCNvPr, framePh, undefined, 'frame', movementLocked(nv),
-  );
+  const frameOnlyEditInfo = editInfoOf(env, frameCNvPr, framePh, undefined, 'frame', movementLocked(nv));
 
   const tbl = kid(data, 'tbl');
   if (tbl) {
     const parsed = parseTable(tbl, base(xf), env, TABLE_FORMAT_READER, name);
-    const editInfo = env.edit
-      ? { ...parsed.editInfo, ...frameEditInfo.editInfo }
-      : undefined;
+    const editInfo = env.edit ? { ...parsed.editInfo, ...frameEditInfo.editInfo } : undefined;
     return {
-      ...parsed, id: frameId, ...frameEditInfo,
+      ...parsed,
+      id: frameId,
+      ...frameEditInfo,
       ...(editInfo ? { editInfo } : {}),
     };
   }
@@ -126,7 +122,9 @@ function parseChartFrame(data: Element | null, xf: XfrmInfo, env: Env, extended 
   let children: SlideElement[];
   try {
     children = render(root, xf.w, xf.h, {
-      ctx: env.ctx, fonts: env.theme.fonts, rels: env.pkg.rels(target),
+      ctx: env.ctx,
+      fonts: env.theme.fonts,
+      rels: env.pkg.rels(target),
       ...(extended ? { readPart: (path: string) => env.pkg.files?.[path] } : {}),
     });
   } catch {
@@ -134,8 +132,12 @@ function parseChartFrame(data: Element | null, xf: XfrmInfo, env: Env, extended 
   }
   if (!children.length) return null;
   return {
-    kind: 'group', ...base(xf),
-    childX: 0, childY: 0, scaleX: 1, scaleY: 1,
+    kind: 'group',
+    ...base(xf),
+    childX: 0,
+    childY: 0,
+    scaleX: 1,
+    scaleY: 1,
     children,
     name: '图表',
   };
@@ -175,8 +177,12 @@ function parseDiagram(data: Element | null, xf: XfrmInfo, env: Env): GroupElemen
 
   // drawing 里的坐标是相对 frame 的绝对 EMU，用 group 的子坐标系归一
   return {
-    kind: 'group', ...base(xf),
-    childX: 0, childY: 0, scaleX: 1, scaleY: 1,
+    kind: 'group',
+    ...base(xf),
+    childX: 0,
+    childY: 0,
+    scaleX: 1,
+    scaleY: 1,
     children,
     name: 'SmartArt',
   };
@@ -200,8 +206,9 @@ function layoutDiagram(relIds: Element | null, xf: XfrmInfo, env: Env): GroupEle
 
   // 配色：先用 colors part 里的，取不到退到主题强调色
   const raw = parseDiagramColors(colorsRoot);
-  const colors = (raw.length ? raw : ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'])
-    .map((v: string) => (/^[0-9a-fA-F]{6}$/.test(v) ? `#${v}` : `#${env.ctx.theme[env.ctx.clrMap[v] ?? v] ?? '4472C4'}`));
+  const colors = (raw.length ? raw : ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6']).map((v: string) =>
+    /^[0-9a-fA-F]{6}$/.test(v) ? `#${v}` : `#${env.ctx.theme[env.ctx.clrMap[v] ?? v] ?? '4472C4'}`,
+  );
 
   const textEnv: TextEnv = {
     ctx: env.ctx,

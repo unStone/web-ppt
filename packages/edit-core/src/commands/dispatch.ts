@@ -16,8 +16,14 @@ import { setXfrmPatches } from './set-xfrm';
 import { setBodyPropsPatches } from './set-body-props';
 import { insertRowPatches } from './insert-row';
 import {
-  insertColumnPatches, mergeCellsPatches, removeColumnPatches, removeRowPatches,
-  setCellPropsPatches, setColumnWidthPatches, setRowHeightPatches, splitCellPatches,
+  insertColumnPatches,
+  mergeCellsPatches,
+  removeColumnPatches,
+  removeRowPatches,
+  setCellPropsPatches,
+  setColumnWidthPatches,
+  setRowHeightPatches,
+  splitCellPatches,
 } from './edit-table-grid';
 import { addShapePatches } from './add-shape';
 import { addImagePatches } from './add-image';
@@ -26,9 +32,7 @@ import { addSlidePatches } from './add-slide';
 import { moveSlidePatches } from './slide-order';
 import { removeSlidePatches } from './remove-slide';
 import { duplicateSlidePatches } from './duplicate-slide';
-import {
-  addSectionPatches, moveSectionPatches, removeSectionPatches, renameSectionPatches,
-} from './sections';
+import { addSectionPatches, moveSectionPatches, removeSectionPatches, renameSectionPatches } from './sections';
 import { setSlideSizePatches } from './slide-size';
 import { setFillPatches } from './set-fill';
 import { setStrokePatches } from './set-stroke';
@@ -40,7 +44,10 @@ import { convertToCustomGeometryPatches } from './convert-to-custom-geometry';
 import { setAdjPatches, setPresetPatches } from './set-preset';
 import { replaceImagePatches } from './replace-image';
 import {
-  setBackgroundCropPatches, setBackgroundImagePatches, setBackgroundPatches, setHiddenPatches,
+  setBackgroundCropPatches,
+  setBackgroundImagePatches,
+  setBackgroundPatches,
+  setHiddenPatches,
   setTransitionPatches,
 } from './set-slide-properties';
 import { setLayoutPatches } from './slide-layout';
@@ -51,16 +58,67 @@ import { setNamePatches } from './element-name';
 import { setAltTextPatches } from './element-alt-text';
 import { applyFormatPatches } from './apply-format';
 import { replaceTextPatches } from './replace-text';
-import {
-  assertElementUnlocked, setElementHiddenPatches, setLockedPatches,
-} from './element-interaction';
+import { assertElementUnlocked, setElementHiddenPatches, setLockedPatches } from './element-interaction';
 import type {
-  AddImageCommand, AddSectionCommand, AddShapeCommand, AddSlideCommand, AddTableCommand, AlignElementsCommand, ClearFormatCommand, Command, CommandPatches, DistributeElementsCommand, DuplicateSlideCommand, EditTextCommand, FitTextShapeCommand, GroupCommand, MoveSectionCommand, MoveSlideCommand, PasteElementsCommand, RemoveElementCommand, RemoveSectionCommand, RemoveSlideCommand, RenameSectionCommand, ReplaceImageCommand, SetCropCommand, SetFlipCommand,
-  InsertColumnCommand, InsertRowCommand, MergeCellsCommand, RemoveColumnCommand, RemoveRowCommand, SetAltTextCommand, SetAnimationsCommand, SetBackgroundCommand, SetBackgroundCropCommand, SetBackgroundImageCommand, SetBodyPropsCommand, SetCellPropsCommand, SetColumnWidthCommand, SetEffectsCommand, SetElementHiddenCommand, SetFillCommand, SetHiddenCommand, SetTransitionCommand, SetLayoutCommand, SetLinkCommand, SetLockedCommand, SetNameCommand, SetNotesCommand, SetParaPropsCommand, SetRowHeightCommand, SetRunPropsCommand, SetSlideSizeCommand, SetStrokeCommand, SetTableStyleCommand, SetXfrmCommand, SetZCommand, SplitCellCommand, UngroupCommand,
+  AddImageCommand,
+  AddSectionCommand,
+  AddShapeCommand,
+  AddSlideCommand,
+  AddTableCommand,
+  AlignElementsCommand,
+  ClearFormatCommand,
+  Command,
+  CommandPatches,
+  DistributeElementsCommand,
+  DuplicateSlideCommand,
+  EditTextCommand,
+  FitTextShapeCommand,
+  GroupCommand,
+  MoveSectionCommand,
+  MoveSlideCommand,
+  PasteElementsCommand,
+  RemoveElementCommand,
+  RemoveSectionCommand,
+  RemoveSlideCommand,
+  RenameSectionCommand,
+  ReplaceImageCommand,
+  SetCropCommand,
+  SetFlipCommand,
+  InsertColumnCommand,
+  InsertRowCommand,
+  MergeCellsCommand,
+  RemoveColumnCommand,
+  RemoveRowCommand,
+  SetAltTextCommand,
+  SetAnimationsCommand,
+  SetBackgroundCommand,
+  SetBackgroundCropCommand,
+  SetBackgroundImageCommand,
+  SetBodyPropsCommand,
+  SetCellPropsCommand,
+  SetColumnWidthCommand,
+  SetEffectsCommand,
+  SetElementHiddenCommand,
+  SetFillCommand,
+  SetHiddenCommand,
+  SetTransitionCommand,
+  SetLayoutCommand,
+  SetLinkCommand,
+  SetLockedCommand,
+  SetNameCommand,
+  SetNotesCommand,
+  SetParaPropsCommand,
+  SetRowHeightCommand,
+  SetRunPropsCommand,
+  SetSlideSizeCommand,
+  SetStrokeCommand,
+  SetTableStyleCommand,
+  SetXfrmCommand,
+  SetZCommand,
+  SplitCellCommand,
+  UngroupCommand,
 } from './types';
-import type {
-  ConvertToCustomGeometryCommand, SetAdjCommand, SetGeometryCommand, SetPresetCommand,
-} from './geometry-types';
+import type { ConvertToCustomGeometryCommand, SetAdjCommand, SetGeometryCommand, SetPresetCommand } from './geometry-types';
 import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
@@ -95,9 +153,9 @@ function register<C extends Command>(
 const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   Extension: register<ExtensionCommand>(['namespace', 'scope', 'id', 'payload'], extensionCommandPatches),
   SetTheme: register<SetThemeCommand>(['id', 'clrScheme', 'fontScheme'], setThemePatches, { target: 'none' }),
-  SetMasterTextStyle: register<SetMasterTextStyleCommand>(
-    ['target', 'category', 'level', 'paragraph', 'run'], setMasterTextStylePatches, { target: 'none' },
-  ),
+  SetMasterTextStyle: register<SetMasterTextStyleCommand>(['target', 'category', 'level', 'paragraph', 'run'], setMasterTextStylePatches, {
+    target: 'none',
+  }),
   SetXfrm: register<SetXfrmCommand>(['id', ...NUMERIC_XFRM_FIELDS], setXfrmPatches),
   SetFlip: register<SetFlipCommand>(['id', ...SET_FLIP_COMMAND_FIELDS], setFlipPatches),
   RemoveElement: register<RemoveElementCommand>(['id'], removeElementPatches),
@@ -106,31 +164,30 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   SetAltText: register<SetAltTextCommand>(['id', 'title', 'descr'], setAltTextPatches),
   SetLocked: register<SetLockedCommand>(['id', 'locked'], setLockedPatches),
   SetElementHidden: register<SetElementHiddenCommand>(['id', 'hidden'], setElementHiddenPatches),
-  ApplyFormat: register<ApplyFormatCommand>([
-    'from', 'to', 'mask', 'fromCell', 'toCell', 'fromRange', 'toRange',
-  ], applyFormatPatches, { target: 'to' }),
-  ReplaceText: register<ReplaceTextCommand>([
-    'scope', 'from', 'to', 'matchCase', 'wholeWord',
-  ], replaceTextPatches, { target: 'none' }),
+  ApplyFormat: register<ApplyFormatCommand>(['from', 'to', 'mask', 'fromCell', 'toCell', 'fromRange', 'toRange'], applyFormatPatches, {
+    target: 'to',
+  }),
+  ReplaceText: register<ReplaceTextCommand>(['scope', 'from', 'to', 'matchCase', 'wholeWord'], replaceTextPatches, { target: 'none' }),
   AlignElements: register<AlignElementsCommand>(['ids', 'edge'], alignElementsPatches, { target: 'ids' }),
-  DistributeElements: register<DistributeElementsCommand>(
-    ['ids', 'axis'], distributeElementsPatches, { target: 'ids' },
-  ),
+  DistributeElements: register<DistributeElementsCommand>(['ids', 'axis'], distributeElementsPatches, { target: 'ids' }),
   Group: register<GroupCommand>(['ids'], groupPatches, { target: 'ids' }),
   Ungroup: register<UngroupCommand>(['id'], ungroupPatches),
   PasteElements: register<PasteElementsCommand>(['payload', 'at'], pasteElementsPatches, { target: 'none' }),
-  AddShape: register<AddShapeCommand>(['slideId', 'target', 'preset', 'rect'], addShapePatches,
-    { target: 'none', selectInserted: true }),
-  AddImage: register<AddImageCommand>(['slideId', 'target', 'placeholderId', 'bytes', 'mime', 'rect'], addImagePatches,
-    { target: 'none', selectInserted: true }),
+  AddShape: register<AddShapeCommand>(['slideId', 'target', 'preset', 'rect'], addShapePatches, { target: 'none', selectInserted: true }),
+  AddImage: register<AddImageCommand>(['slideId', 'target', 'placeholderId', 'bytes', 'mime', 'rect'], addImagePatches, {
+    target: 'none',
+    selectInserted: true,
+  }),
   ReplaceImage: register<ReplaceImageCommand>(['id', 'bytes', 'mime'], replaceImagePatches),
   SetCrop: register<SetCropCommand>(['id', 'crop'], setCropPatches),
   SetGeometry: register<SetGeometryCommand>(['id', 'geometry'], setGeometryPatches),
   ConvertToCustomGeometry: register<ConvertToCustomGeometryCommand>(['id'], convertToCustomGeometryPatches),
   SetPreset: register<SetPresetCommand>(['id', 'preset'], setPresetPatches),
   SetAdj: register<SetAdjCommand>(['id', 'name', 'value'], setAdjPatches),
-  AddTable: register<AddTableCommand>(['slideId', 'target', 'rows', 'cols', 'rect', 'placeholderId'], addTablePatches,
-    { target: 'none', selectInserted: true }),
+  AddTable: register<AddTableCommand>(['slideId', 'target', 'rows', 'cols', 'rect', 'placeholderId'], addTablePatches, {
+    target: 'none',
+    selectInserted: true,
+  }),
   AddSlide: register<AddSlideCommand>(['layoutId', 'at'], addSlidePatches, { target: 'none' }),
   MoveSlide: register<MoveSlideCommand>(['id', 'at'], moveSlidePatches, { target: 'none' }),
   RemoveSlide: register<RemoveSlideCommand>(['id'], removeSlidePatches, { target: 'none' }),
@@ -141,12 +198,10 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   RemoveSection: register<RemoveSectionCommand>(['id'], removeSectionPatches, { target: 'none' }),
   SetSlideSize: register<SetSlideSizeCommand>(['w', 'h', 'fit'], setSlideSizePatches, { target: 'none' }),
   SetBackground: register<SetBackgroundCommand>(['id', 'target', 'fill'], setBackgroundPatches, { target: 'none' }),
-  SetBackgroundImage: register<SetBackgroundImageCommand>(
-    ['id', 'bytes', 'mime', 'crop', 'alpha', 'tile'], setBackgroundImagePatches, { target: 'none' },
-  ),
-  SetBackgroundCrop: register<SetBackgroundCropCommand>(
-    ['id', 'crop'], setBackgroundCropPatches, { target: 'none' },
-  ),
+  SetBackgroundImage: register<SetBackgroundImageCommand>(['id', 'bytes', 'mime', 'crop', 'alpha', 'tile'], setBackgroundImagePatches, {
+    target: 'none',
+  }),
+  SetBackgroundCrop: register<SetBackgroundCropCommand>(['id', 'crop'], setBackgroundCropPatches, { target: 'none' }),
   SetHidden: register<SetHiddenCommand>(['id', 'v'], setHiddenPatches, { target: 'none' }),
   SetTransition: register<SetTransitionCommand>(['id', 'target', 't'], setTransitionPatches, { target: 'none' }),
   SetAnimations: register<SetAnimationsCommand>(['slideId', 'steps'], setAnimationsPatches, { target: 'none' }),
@@ -171,9 +226,10 @@ const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   MergeCells: register<MergeCellsCommand>(['id', 'from', 'to'], mergeCellsPatches),
   SplitCell: register<SplitCellCommand>(['id', 'cell'], splitCellPatches),
   SetCellProps: register<SetCellPropsCommand>(['id', 'cell', 'props'], setCellPropsPatches),
-  SetTableStyle: register<SetTableStyleCommand>([
-    'id', 'styleId', 'firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol',
-  ], setTableStylePatches),
+  SetTableStyle: register<SetTableStyleCommand>(
+    ['id', 'styleId', 'firstRow', 'lastRow', 'bandRow', 'firstCol', 'lastCol', 'bandCol'],
+    setTableStylePatches,
+  ),
 };
 
 export function assertPureCommand(input: Command): void {

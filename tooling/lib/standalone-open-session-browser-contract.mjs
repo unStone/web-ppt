@@ -12,7 +12,8 @@ export async function runStandaloneOpenSessionContract({ evaluate, request, wait
     '独立查看器打开会话前 showcase',
   );
 
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const first = await fetch('/demo/sample-chart.pptx').then((r) => r.arrayBuffer());
     const second = await fetch('/demo/showcase.pptx').then((r) => r.arrayBuffer());
     const delayed = new File([first], 'held-chart.pptx');
@@ -25,9 +26,14 @@ export async function runStandaloneOpenSessionContract({ evaluate, request, wait
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
     globalThis.__secondOpen = { name: 'user-second.pptx', bytes: second };
-  })()`, true);
+  })()`,
+    true,
+  );
 
-  await waitFor("document.querySelector('#stage')?.dataset.openPhase === 'opening' && document.querySelector('#fileInfo')?.textContent === '正在打开…'", '换文件立刻拆掉旧页并进入打开');
+  await waitFor(
+    "document.querySelector('#stage')?.dataset.openPhase === 'opening' && document.querySelector('#fileInfo')?.textContent === '正在打开…'",
+    '换文件立刻拆掉旧页并进入打开',
+  );
   if (await evaluate("document.querySelector('#stage svg')")) {
     throw new Error('独立查看器打开中仍留着旧幻灯片');
   }
@@ -45,7 +51,10 @@ export async function runStandaloneOpenSessionContract({ evaluate, request, wait
     input.dispatchEvent(new Event('change', { bubbles: true }));
   })()`);
   await evaluate('globalThis.__releaseHeldOpen()');
-  await waitFor("document.querySelector('#fileInfo')?.textContent.includes('user-second.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'", '后一次本地打开赢');
+  await waitFor(
+    "document.querySelector('#fileInfo')?.textContent.includes('user-second.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'",
+    '后一次本地打开赢',
+  );
   if (await evaluate("document.querySelector('#fileInfo').textContent.includes('held-chart.pptx')")) {
     throw new Error('被换掉的本地打开仍写进了文件信息');
   }

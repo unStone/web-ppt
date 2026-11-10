@@ -1,14 +1,11 @@
 import { MAX_SAFE_EXTERNAL_HREF_LENGTH, parseSafeExternalUrl } from '@web-ppt/core';
 import type { SlideElement } from '@web-ppt/core';
 import { assertDataObject, own } from './data-validation';
-import type {
-  EditDoc, ElementId, ElementLinkState, LinkOverride, LinkSourceValue, LinkTarget, SlideId,
-} from './types';
+import type { EditDoc, ElementId, ElementLinkState, LinkOverride, LinkSourceValue, LinkTarget, SlideId } from './types';
 
 export const MAX_EXTERNAL_LINK_LENGTH = MAX_SAFE_EXTERNAL_HREF_LENGTH;
 
-export const supportsElementLink = (kind: SlideElement['kind']): boolean =>
-  kind === 'shape' || kind === 'image' || kind === 'group';
+export const supportsElementLink = (kind: SlideElement['kind']): boolean => kind === 'shape' || kind === 'image' || kind === 'group';
 
 export function normalizeExternalLinkTarget(href: string): LinkTarget | null {
   const url = parseSafeExternalUrl(href);
@@ -55,14 +52,15 @@ function slideIdByPart(doc: EditDoc, part: string): SlideId | null {
 
 export function sourceLinkValue(doc: EditDoc, link: string | undefined): LinkSourceValue | null {
   if (!link) return null;
-  const relative = /^slide:(next|previous|first|last)$/.exec(link)?.[1] as
-    | 'next' | 'previous' | 'first' | 'last' | undefined;
+  const relative = /^slide:(next|previous|first|last)$/.exec(link)?.[1] as 'next' | 'previous' | 'first' | 'last' | undefined;
   if (relative) return { kind: 'relative', action: relative };
   if (link.startsWith('slide-part:')) {
     try {
       const id = slideIdByPart(doc, decodeURIComponent(link.slice('slide-part:'.length)));
       return id ? { kind: 'slide', slideId: id } : { kind: 'unsupported' };
-    } catch { return { kind: 'unsupported' }; }
+    } catch {
+      return { kind: 'unsupported' };
+    }
   }
   const page = /^slide:(\d+)$/.exec(link);
   if (page) {
@@ -75,8 +73,7 @@ export function sourceLinkValue(doc: EditDoc, link: string | undefined): LinkSou
 function elementSourceLinkValue(doc: EditDoc, id: ElementId): LinkSourceValue | null {
   const record = doc.elements[id];
   if (!record) throw new Error(`找不到元素：${id}`);
-  return record.meta.sourceLinkReadonly ? { kind: 'unsupported' }
-    : sourceLinkValue(doc, record.src.link);
+  return record.meta.sourceLinkReadonly ? { kind: 'unsupported' } : sourceLinkValue(doc, record.src.link);
 }
 
 function effectiveLinkValue(doc: EditDoc, id: ElementId): LinkSourceValue | null {

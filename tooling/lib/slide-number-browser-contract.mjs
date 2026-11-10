@@ -5,9 +5,7 @@ async function pressKey(request, name, value, code = name, modifiers = 0) {
 }
 
 function installFullscreen(root) {
-  const target = root == null
-    ? 'document.documentElement'
-    : `document.querySelector(${JSON.stringify(root)})`;
+  const target = root == null ? 'document.documentElement' : `document.querySelector(${JSON.stringify(root)})`;
   return `(() => {
     const el = ${target};
     globalThis.__nativeRequestFullscreenNumber = el.requestFullscreen.bind(el);
@@ -16,9 +14,7 @@ function installFullscreen(root) {
 }
 
 function restoreFullscreen(root) {
-  const target = root == null
-    ? 'document.documentElement'
-    : `document.querySelector(${JSON.stringify(root)})`;
+  const target = root == null ? 'document.documentElement' : `document.querySelector(${JSON.stringify(root)})`;
   return `(() => {
     const el = ${target};
     if (el && globalThis.__nativeRequestFullscreenNumber) {
@@ -28,34 +24,40 @@ function restoreFullscreen(root) {
   })()`;
 }
 
-export async function runSlideNumberContract({ evaluate, request, click, waitFor }, {
-  trigger,
-  fullscreenRoot = null,
-  host,
-  stage,
-  pager,
-  prevButton,
-  presenting,
-  search = null,
-  zoomIn = null,
-  zoomLabel = null,
-  hint = null,
-  fileInput = null,
-  fileLabel = null,
-  restoreSample = null,
-  restoreText = null,
-}) {
+export async function runSlideNumberContract(
+  { evaluate, request, click, waitFor },
+  {
+    trigger,
+    fullscreenRoot = null,
+    host,
+    stage,
+    pager,
+    prevButton,
+    presenting,
+    search = null,
+    zoomIn = null,
+    zoomLabel = null,
+    hint = null,
+    fileInput = null,
+    fileLabel = null,
+    restoreSample = null,
+    restoreText = null,
+  },
+) {
   const chip = `${host} .slide-number`;
   const chipSel = JSON.stringify(chip);
   const pageExpr = `document.querySelector(${JSON.stringify(pager)}).textContent`;
-  const chipOn = (text) => `(() => { const el = document.querySelector(${chipSel}); return !!el && !el.hidden && el.textContent === ${JSON.stringify(text)}; })()`;
+  const chipOn = (text) =>
+    `(() => { const el = document.querySelector(${chipSel}); return !!el && !el.hidden && el.textContent === ${JSON.stringify(text)}; })()`;
   const chipOff = `(() => { const el = document.querySelector(${chipSel}); return !el || el.hidden || el.textContent === ''; })()`;
   const veilOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on`)})`;
   const whiteOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on.is-white`)})`;
   const gridOn = `document.querySelector('.slide-grid:not([hidden])')`;
   const bubbled = 'globalThis.__numberBubbled.length';
 
-  await evaluate(`document.querySelector(${JSON.stringify(fullscreenRoot ?? stage)})?.scrollIntoView({ block: 'nearest', behavior: 'instant' })`);
+  await evaluate(
+    `document.querySelector(${JSON.stringify(fullscreenRoot ?? stage)})?.scrollIntoView({ block: 'nearest', behavior: 'instant' })`,
+  );
   if (prevButton) {
     await evaluate(`(() => {
       const prev = document.querySelector(${JSON.stringify(prevButton)});
@@ -75,9 +77,11 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
 
   const browse = await evaluate(pageExpr);
   await pressKey(request, '3', 51, 'Digit3');
-  await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: '#', code: 'Digit3', shiftKey: true, bubbles: true, cancelable: true }))`);
-  if (!await evaluate(chipOff)) throw new Error('浏览态出现了页码');
-  if (await evaluate(pageExpr) !== browse) throw new Error('浏览态数字翻了页');
+  await evaluate(
+    `document.dispatchEvent(new KeyboardEvent('keydown', { key: '#', code: 'Digit3', shiftKey: true, bubbles: true, cancelable: true }))`,
+  );
+  if (!(await evaluate(chipOff))) throw new Error('浏览态出现了页码');
+  if ((await evaluate(pageExpr)) !== browse) throw new Error('浏览态数字翻了页');
 
   if (zoomIn && zoomLabel) {
     const label = `document.querySelector(${JSON.stringify(zoomLabel)}).textContent`;
@@ -85,7 +89,7 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
     await waitFor(`${label} !== '适应'`, '放大后离开适应窗口');
     await pressKey(request, '0', 48, 'Digit0');
     await waitFor(`${label} === '适应'`, '浏览态 0 仍是适应窗口');
-    if (!await evaluate(chipOff)) throw new Error('浏览态 0 被收成页码');
+    if (!(await evaluate(chipOff))) throw new Error('浏览态 0 被收成页码');
   }
 
   if (search) {
@@ -96,11 +100,20 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
       input.setSelectionRange(input.value.length, input.value.length);
     })()`);
     await request('Input.dispatchKeyEvent', {
-      type: 'keyDown', key: '3', code: 'Digit3', text: '3', unmodifiedText: '3',
-      windowsVirtualKeyCode: 51, nativeVirtualKeyCode: 51,
+      type: 'keyDown',
+      key: '3',
+      code: 'Digit3',
+      text: '3',
+      unmodifiedText: '3',
+      windowsVirtualKeyCode: 51,
+      nativeVirtualKeyCode: 51,
     });
     await request('Input.dispatchKeyEvent', {
-      type: 'keyUp', key: '3', code: 'Digit3', windowsVirtualKeyCode: 51, nativeVirtualKeyCode: 51,
+      type: 'keyUp',
+      key: '3',
+      code: 'Digit3',
+      windowsVirtualKeyCode: 51,
+      nativeVirtualKeyCode: 51,
     });
     await waitFor(
       `document.querySelector(${JSON.stringify(search)}).value === 'zzz3' && ${chipOff} && ${pageExpr} === ${JSON.stringify(browse)}`,
@@ -139,9 +152,9 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
     await evaluate(`document.activeElement instanceof HTMLElement && document.activeElement.blur()`);
 
     await pressEnter();
-    if (await evaluate(bubbled) !== 1) throw new Error('空缓冲的 Enter 没有到达原来的监听');
-    if (await evaluate(pageExpr) === page(3)) throw new Error('空 Enter 跳到了第 3 页');
-    if (await evaluate(pageExpr) !== page(1)) await backToFirst();
+    if ((await evaluate(bubbled)) !== 1) throw new Error('空缓冲的 Enter 没有到达原来的监听');
+    if ((await evaluate(pageExpr)) === page(3)) throw new Error('空 Enter 跳到了第 3 页');
+    if ((await evaluate(pageExpr)) !== page(1)) await backToFirst();
 
     await pressDigit('1');
     await waitFor(chipOn('1'), '第一位页码');
@@ -149,13 +162,13 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
     await waitFor(`${chipOn('2')} && ${pageExpr} === ${JSON.stringify(page(1))}`, '7 页时第二位改口而不是变成 12');
     await pressEnter();
     await waitFor(`${pageExpr} === ${JSON.stringify(page(2))} && ${chipOff} && !${veilOn}`, 'Enter 跳到第 2 页');
-    if (await evaluate(bubbled) !== 0) throw new Error('确认页码的 Enter 又冒泡去前进');
+    if ((await evaluate(bubbled)) !== 0) throw new Error('确认页码的 Enter 又冒泡去前进');
     await backToFirst();
 
     await pressDigit('3');
     await pressEnter();
     await waitFor(`${pageExpr} === ${JSON.stringify(page(3))} && ${chipOff}`, '3 再 Enter 到第 3 页');
-    if (await evaluate(bubbled) !== 0) throw new Error('跳到第 3 页的 Enter 冒泡了');
+    if ((await evaluate(bubbled)) !== 0) throw new Error('跳到第 3 页的 Enter 冒泡了');
     await backToFirst();
 
     const stay = async (digit, label) => {
@@ -164,38 +177,42 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
       await waitFor(chipOn(digit), label);
       await pressEnter();
       await waitFor(`${pageExpr} === ${JSON.stringify(before)} && ${chipOff} && !${veilOn}`, `${label}后仍留在当前页`);
-      if (await evaluate(bubbled) !== 0) throw new Error(`${label}的 Enter 冒泡去前进了`);
+      if ((await evaluate(bubbled)) !== 0) throw new Error(`${label}的 Enter 冒泡去前进了`);
     };
     await stay('0', '0 不是页码');
-    if (zoomLabel && await evaluate(`document.querySelector(${JSON.stringify(zoomLabel)}).textContent`) !== '适应') {
+    if (zoomLabel && (await evaluate(`document.querySelector(${JSON.stringify(zoomLabel)}).textContent`)) !== '适应') {
       throw new Error('放映中的 0 改成了适应窗口以外的缩放');
     }
     await stay('9', '9 超出 7 页');
 
-    await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: '3', code: 'Digit3', ctrlKey: true, bubbles: true, cancelable: true }))`);
-    if (!await evaluate(`${chipOff} && ${pageExpr} === ${JSON.stringify(page(1))}`)) {
+    await evaluate(
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: '3', code: 'Digit3', ctrlKey: true, bubbles: true, cancelable: true }))`,
+    );
+    if (!(await evaluate(`${chipOff} && ${pageExpr} === ${JSON.stringify(page(1))}`))) {
       throw new Error('Ctrl+3 进了页码缓冲');
     }
 
     await pressDigit('4');
     await waitFor(chipOn('4'), '点一下之前有页码');
-    await evaluate(`document.querySelector(${JSON.stringify(stage)}).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }))`);
+    await evaluate(
+      `document.querySelector(${JSON.stringify(stage)}).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }))`,
+    );
     await waitFor(`${chipOff} && ${pageExpr} === ${JSON.stringify(page(1))}`, '点一下丢掉页码');
     await pressEnter();
-    if (await evaluate(bubbled) !== 1 || await evaluate(pageExpr) === page(4)) {
+    if ((await evaluate(bubbled)) !== 1 || (await evaluate(pageExpr)) === page(4)) {
       throw new Error('丢掉页码之后 Enter 仍跳到第 4 页');
     }
-    if (await evaluate(pageExpr) !== page(1)) await backToFirst();
+    if ((await evaluate(pageExpr)) !== page(1)) await backToFirst();
 
     await pressDigit('5');
     await waitFor(chipOn('5'), '超时前有页码');
     await evaluate('new Promise((resolve) => setTimeout(resolve, 2300))', true);
     await waitFor(`${chipOff} && ${pageExpr} === ${JSON.stringify(page(1))}`, '两秒后页码消失');
     await pressEnter();
-    if (await evaluate(bubbled) !== 1 || await evaluate(pageExpr) === page(5)) {
+    if ((await evaluate(bubbled)) !== 1 || (await evaluate(pageExpr)) === page(5)) {
       throw new Error('超时之后 Enter 仍跳到第 5 页');
     }
-    if (await evaluate(pageExpr) !== page(1)) await backToFirst();
+    if ((await evaluate(pageExpr)) !== page(1)) await backToFirst();
 
     if (search) {
       const held = await evaluate(pageExpr);
@@ -206,18 +223,27 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
         input.setSelectionRange(input.value.length, input.value.length);
       })()`);
       await request('Input.dispatchKeyEvent', {
-        type: 'keyDown', key: '3', code: 'Digit3', text: '3', unmodifiedText: '3',
-        windowsVirtualKeyCode: 51, nativeVirtualKeyCode: 51,
+        type: 'keyDown',
+        key: '3',
+        code: 'Digit3',
+        text: '3',
+        unmodifiedText: '3',
+        windowsVirtualKeyCode: 51,
+        nativeVirtualKeyCode: 51,
       });
       await request('Input.dispatchKeyEvent', {
-        type: 'keyUp', key: '3', code: 'Digit3', windowsVirtualKeyCode: 51, nativeVirtualKeyCode: 51,
+        type: 'keyUp',
+        key: '3',
+        code: 'Digit3',
+        windowsVirtualKeyCode: 51,
+        nativeVirtualKeyCode: 51,
       });
       await waitFor(
         `document.querySelector(${JSON.stringify(search)}).value === 'qq3' && ${chipOff} && ${pageExpr} === ${JSON.stringify(held)}`,
         '放映中搜索框里的数字留在查询里',
       );
       await evaluate(`document.querySelector(${JSON.stringify(search)}).blur()`);
-      if (await evaluate(pageExpr) !== held || !await evaluate(chipOff)) throw new Error('离开搜索框时页码变了');
+      if ((await evaluate(pageExpr)) !== held || !(await evaluate(chipOff))) throw new Error('离开搜索框时页码变了');
     }
 
     await pressDigit('2');
@@ -225,7 +251,7 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
     await pressKey(request, 'g', 71, 'KeyG');
     await waitFor(`${gridOn} && ${chipOff} && ${pageExpr} === ${JSON.stringify(page(1))}`, '网格打开并丢掉页码');
     await pressDigit('5');
-    if (!await evaluate(`${gridOn} && ${chipOff} && ${pageExpr} === ${JSON.stringify(page(1))}`)) {
+    if (!(await evaluate(`${gridOn} && ${chipOff} && ${pageExpr} === ${JSON.stringify(page(1))}`))) {
       throw new Error('网格开着时数字跳了页或关掉了网格');
     }
     await pressKey(request, 'Escape', 27, 'Escape');
@@ -235,20 +261,20 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
     await waitFor(`${whiteOn} && ${pageExpr} === ${JSON.stringify(page(1))}`, '白屏');
     await pressEnter();
     await waitFor(`!${veilOn} && ${pageExpr} === ${JSON.stringify(page(1))}`, '白屏里空 Enter 只恢复');
-    if (await evaluate(bubbled) !== 0) throw new Error('白屏里的空 Enter 冒泡翻页了');
+    if ((await evaluate(bubbled)) !== 0) throw new Error('白屏里的空 Enter 冒泡翻页了');
 
     await pressKey(request, 'w', 87, 'KeyW');
     await waitFor(whiteOn, '再白一次以便非法页码');
     await pressDigit('0');
     await pressEnter();
     await waitFor(`${whiteOn} && ${pageExpr} === ${JSON.stringify(page(1))} && ${chipOff}`, '白屏上的 0 不揭遮罩');
-    if (await evaluate(bubbled) !== 0) throw new Error('白屏上的非法 Enter 冒泡了');
+    if ((await evaluate(bubbled)) !== 0) throw new Error('白屏上的非法 Enter 冒泡了');
 
     await pressDigit('3');
     await waitFor(`${chipOn('3')} && ${whiteOn}`, '白屏上能接着输页码');
     await pressEnter();
     await waitFor(`${pageExpr} === ${JSON.stringify(page(3))} && !${veilOn} && ${chipOff}`, '白屏上的合法 Enter 跳页并揭掉遮罩');
-    if (await evaluate(bubbled) !== 0) throw new Error('白屏确认页码后又前进了');
+    if ((await evaluate(bubbled)) !== 0) throw new Error('白屏确认页码后又前进了');
     await backToFirst();
 
     await pressKey(request, 'b', 66, 'KeyB');
@@ -268,14 +294,17 @@ export async function runSlideNumberContract({ evaluate, request, click, waitFor
       await waitFor(presenting, '换文件前再进演示');
       await pressDigit('4');
       await waitFor(chipOn('4'), '换文件前有页码');
-      await evaluate(`(async () => {
+      await evaluate(
+        `(async () => {
         const bytes = await fetch('/demo/showcase.pptx').then((response) => response.arrayBuffer());
         const input = document.querySelector(${JSON.stringify(fileInput)});
         const transfer = new DataTransfer();
         transfer.items.add(new File([bytes], 'slide-number.pptx'));
         input.files = transfer.files;
         input.dispatchEvent(new Event('change', { bubbles: true }));
-      })()`, true);
+      })()`,
+        true,
+      );
       await waitFor(
         `document.querySelector(${JSON.stringify(fileLabel)}).textContent.includes('slide-number.pptx') && ${pageExpr}.startsWith('1 /') && !${presenting} && ${chipOff}`,
         '换文件后页码消失并回到第一页',
@@ -326,19 +355,22 @@ export async function runStandaloneSlideNumberContract({ evaluate, request, wait
     "document.querySelector('#fileInfo')?.textContent.includes('showcase.pptx') && document.querySelector('#pageIndicator')?.textContent.startsWith('1 /') && !document.querySelector('#searchInput').disabled",
     '数字跳页契约 showcase',
   );
-  await runSlideNumberContract({ evaluate, request, waitFor, click }, {
-    trigger: '#btnPresent',
-    host: '#presenter',
-    stage: '#stage',
-    pager: '#pageIndicator',
-    prevButton: '#btnPrev',
-    presenting: "!document.querySelector('#presenter').hidden",
-    search: '#searchInput',
-    zoomIn: '#btnZoomIn',
-    zoomLabel: '#zoomLabel',
-    hint: '.hint',
-    fileInput: '#fileInput',
-    fileLabel: '#fileInfo',
-  });
+  await runSlideNumberContract(
+    { evaluate, request, waitFor, click },
+    {
+      trigger: '#btnPresent',
+      host: '#presenter',
+      stage: '#stage',
+      pager: '#pageIndicator',
+      prevButton: '#btnPrev',
+      presenting: "!document.querySelector('#presenter').hidden",
+      search: '#searchInput',
+      zoomIn: '#btnZoomIn',
+      zoomLabel: '#zoomLabel',
+      hint: '.hint',
+      fileInput: '#fileInput',
+      fileLabel: '#fileInfo',
+    },
+  );
   console.log('  放映数字跳页通过');
 }

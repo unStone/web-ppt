@@ -1,6 +1,8 @@
 import type { CollabMessage, CollabMessageListener, CollabProvider } from './types';
 
-interface MessageEventLike { readonly data: unknown }
+interface MessageEventLike {
+  readonly data: unknown;
+}
 interface BroadcastChannelLike {
   postMessage(message: unknown): void;
   addEventListener(type: 'message', listener: (event: MessageEventLike) => void): void;
@@ -34,7 +36,9 @@ export class BroadcastChannelCollabProvider implements CollabProvider {
     if (this.disposed) throw new Error('BroadcastChannel provider 已释放');
     if (typeof listener !== 'function') throw new Error('协同消息订阅者必须是函数');
     this.listeners.add(listener);
-    return () => { this.listeners.delete(listener); };
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   dispose(): void {

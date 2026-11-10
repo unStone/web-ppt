@@ -21,7 +21,8 @@ if (!version) {
   throw new Error(`版本号「${requested ?? '（未提供）'}」不是合法的 semver；用法：npm run release:version -- 0.9.0`);
 }
 
-const manifests = readdirSync(join(root, 'packages')).sort()
+const manifests = readdirSync(join(root, 'packages'))
+  .sort()
   .map((dir) => join(root, 'packages', dir, 'package.json'))
   .filter((file) => existsSync(file))
   .map((file) => ({ file, json: JSON.parse(readFileSync(file, 'utf8')) }))

@@ -1,7 +1,5 @@
 import { configureCollaborationIdentity } from '@web-ppt/edit-core';
-import type {
-  EditDoc, EditIdentity, Editor, EditorPatchEvent, Patch,
-} from '@web-ppt/edit-core';
+import type { EditDoc, EditIdentity, Editor, EditorPatchEvent, Patch } from '@web-ppt/edit-core';
 import { assertCollaborationCheckpoint } from './checkpoint';
 import { assertCollabMessage, compareStamp, messageKey } from './message';
 import { foldInsertedElementOverrides } from './atomic-patches';
@@ -12,9 +10,7 @@ import { materializeSectionOrder } from './section-order';
 import { checkpointSeen, cloneSeen, hasSeen, hasSequenceGap, markSeen, restoreSeen } from './seen';
 import { recordPatches, slideLifecycle } from './state';
 import type { CollaborationSession, DeferredPatch } from './state';
-import type {
-  CollabMessage, CollaborationBinding, CollaborationCheckpoint, CollaborationOptions,
-} from './types';
+import type { CollabMessage, CollaborationBinding, CollaborationCheckpoint, CollaborationOptions } from './types';
 import { canonicalRegisters } from './extension-addresses';
 
 const sessions = new WeakMap<Editor, CollaborationSession>();
@@ -33,11 +29,7 @@ function assertId(value: string, label: string): void {
   }
 }
 
-function createSession(
-  editor: Editor,
-  options: CollaborationOptions,
-  checkpoint?: CollaborationCheckpoint,
-): CollaborationSession {
+function createSession(editor: Editor, options: CollaborationOptions, checkpoint?: CollaborationCheckpoint): CollaborationSession {
   const allocation = editor.doc.identity.allocation!;
   checkpoint = structuredClone(checkpoint);
   return {
@@ -52,7 +44,7 @@ function createSession(
     seen: restoreSeen(checkpoint?.seen),
     baseSlideOrder: [...(checkpoint?.baseSlideOrder ?? editor.doc.slideOrder)],
     baseSectionOrder: [...(checkpoint?.baseSectionOrder ?? editor.doc.sections.order)],
-    deferred: [...checkpoint?.deferred ?? []],
+    deferred: [...(checkpoint?.deferred ?? [])],
     clock: allocation.clock,
     sequence: allocation.sequence,
     active: false,
@@ -81,26 +73,26 @@ function createCheckpoint(session: CollaborationSession, doc: EditDoc): Collabor
 
 function assertSession(session: CollaborationSession, options: CollaborationOptions): void {
   if (session.active) throw new Error('同一个 Editor 已经绑定协同 provider');
-  if (session.documentId !== options.documentId || session.replicaId !== options.replicaId
-    || session.replicaSlot !== options.replicaSlot) {
+  if (session.documentId !== options.documentId || session.replicaId !== options.replicaId || session.replicaSlot !== options.replicaSlot) {
     throw new Error('同一个 Editor 不能切换协同文档或副本身份');
   }
 }
 
-export const bindWithEvaluator = bindCollaboration as (editor: Editor, options: CollaborationOptions,
-  evaluate: typeof evaluateRemoteMessage) => CollaborationBinding;
+export const bindWithEvaluator = bindCollaboration as (
+  editor: Editor,
+  options: CollaborationOptions,
+  evaluate: typeof evaluateRemoteMessage,
+) => CollaborationBinding;
 
 export function bindCollaboration(editor: Editor, options: CollaborationOptions): CollaborationBinding;
-export function bindCollaboration(editor: Editor, options: CollaborationOptions,
-  evaluate = evaluateRemoteMessage): CollaborationBinding {
-  if (!editor || typeof editor.subscribePatches !== 'function'
-    || typeof editor.applyExternalPatches !== 'function') {
+export function bindCollaboration(editor: Editor, options: CollaborationOptions, evaluate = evaluateRemoteMessage): CollaborationBinding {
+  if (!editor || typeof editor.subscribePatches !== 'function' || typeof editor.applyExternalPatches !== 'function') {
     throw new Error('协同绑定需要支持外部补丁的 Editor');
   }
   assertId(options.documentId, 'documentId');
   assertId(options.replicaId, 'replicaId');
-  if (!options.provider || typeof options.provider.send !== 'function'
-    || typeof options.provider.subscribe !== 'function') throw new Error('provider 接口无效');
+  if (!options.provider || typeof options.provider.send !== 'function' || typeof options.provider.subscribe !== 'function')
+    throw new Error('provider 接口无效');
   if (!Number.isSafeInteger(options.replicaSlot) || options.replicaSlot < 0 || options.replicaSlot >= 4096) {
     throw new Error('replicaSlot 必须是 0–4095 的整数');
   }
@@ -111,9 +103,9 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
   if (session) assertSession(session, options);
   else {
     const allocation = editor.doc.identity.allocation;
-    const restoredSession = allocation?.replicaId === options.replicaId
-      && allocation.slot === options.replicaSlot && allocation.count === 4096;
-    if (editor.history.undoCount || editor.history.redoCount || editor.isDirty() && !restoredSession) {
+    const restoredSession =
+      allocation?.replicaId === options.replicaId && allocation.slot === options.replicaSlot && allocation.count === 4096;
+    if (editor.history.undoCount || editor.history.redoCount || (editor.isDirty() && !restoredSession)) {
       throw new Error('协同绑定必须在本地编辑开始前建立');
     }
     identityBefore = structuredClone(editor.doc.identity);
@@ -137,7 +129,11 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
   const activeSession = session;
 
   const report = (error: unknown): void => {
-    try { options.onError?.(error); } catch { /* 错误观察者不能打断已提交的编辑。 */ }
+    try {
+      options.onError?.(error);
+    } catch {
+      /* 错误观察者不能打断已提交的编辑。 */
+    }
   };
   const snapshotSession = () => ({
     registers: new Map(activeSession.registers),
@@ -163,11 +159,10 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
       if (slide.state === 'present') members.add(slide.id);
       else members.delete(slide.id);
     }
-    const desired = desiredSlideOrder(
-      activeSession.baseSlideOrder, members, activeSession.slideMoves,
-    );
+    const desired = desiredSlideOrder(activeSession.baseSlideOrder, members, activeSession.slideMoves);
     return materializeSectionOrder(
-      activeSession.baseSectionOrder, activeSession.sectionMoves,
+      activeSession.baseSectionOrder,
+      activeSession.sectionMoves,
       materializeSlideOrder(editor.doc.slideOrder, desired, folded),
     );
   };
@@ -182,14 +177,13 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
     const accepted: Patch[] = [];
     const errors: unknown[] = [];
     let available = seed;
-    let preview = stageExternalPatches(
-      editor.doc, materializeAcceptedPatches(baseAccepted),
-    );
+    let preview = stageExternalPatches(editor.doc, materializeAcceptedPatches(baseAccepted));
     let progressed = true;
     while (progressed) {
       progressed = false;
-      const ordered = [...activeSession.deferred].sort((left, right) =>
-        compareStamp(left.message.stamp, right.message.stamp) || left.ordinal - right.ordinal);
+      const ordered = [...activeSession.deferred].sort(
+        (left, right) => compareStamp(left.message.stamp, right.message.stamp) || left.ordinal - right.ordinal,
+      );
       const groups = new Map<string, DeferredPatch[]>();
       for (const deferred of ordered) {
         const key = messageKey(deferred.message);
@@ -215,9 +209,10 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
             continue;
           }
           recordPatches(activeSession, evaluated.recorded, message.stamp);
-          const nextPreview = stageExternalPatches(editor.doc, materializeAcceptedPatches([
-            ...baseAccepted, ...accepted, ...evaluated.accepted,
-          ]));
+          const nextPreview = stageExternalPatches(
+            editor.doc,
+            materializeAcceptedPatches([...baseAccepted, ...accepted, ...evaluated.accepted]),
+          );
           const nextAvailable = patchAvailability(evaluated.accepted, available);
           accepted.push(...evaluated.accepted);
           preview = nextPreview;
@@ -243,11 +238,11 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
       }
       if (hasSeen(activeSession.seen, raw)) return;
       const evaluated = evaluate(editor.doc, activeSession, raw);
-      const causallyBlocked = hasSequenceGap(activeSession.seen, raw)
-        || activeSession.deferred.some((entry) =>
-          entry.message.replicaId === raw.replicaId && entry.message.sequence < raw.sequence);
-      const deferred = causallyBlocked || evaluated.missingDependency
-        ? raw.patches.map((patch, ordinal) => ({ message: raw, patch, ordinal })) : [];
+      const causallyBlocked =
+        hasSequenceGap(activeSession.seen, raw)
+        || activeSession.deferred.some((entry) => entry.message.replicaId === raw.replicaId && entry.message.sequence < raw.sequence);
+      const deferred =
+        causallyBlocked || evaluated.missingDependency ? raw.patches.map((patch, ordinal) => ({ message: raw, patch, ordinal })) : [];
       if (activeSession.deferred.length + deferred.length > MAX_DEFERRED_PATCHES) {
         throw new Error('协同延迟补丁超过安全上限');
       }
@@ -263,39 +258,42 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
         if (deferred.length) activeSession.deferred.push(...deferred);
         else recordPatches(activeSession, evaluated.recorded, raw.stamp);
         if (!deferred.length) {
-          stageExternalPatches(
-            editor.doc, materializeAcceptedPatches(evaluated.accepted),
-          );
+          stageExternalPatches(editor.doc, materializeAcceptedPatches(evaluated.accepted));
         }
-        const ready = deferred.length ? { patches: [] as Patch[], errors: [] as unknown[] }
+        const ready = deferred.length
+          ? { patches: [] as Patch[], errors: [] as unknown[] }
           : collectReadyDeferred(patchAvailability(evaluated.accepted), evaluated.accepted);
         isolatedErrors = ready.errors;
         const accepted = deferred.length ? [] : [...evaluated.accepted, ...ready.patches];
         const atomicPatches = materializeAcceptedPatches(accepted);
-        if (atomicPatches.length) editor.applyExternalPatches(atomicPatches, {
-          identity: raw.identity,
-          origin: `collab:${raw.replicaId}`,
-          label: raw.label,
-          time: raw.time,
-        });
-        else editor.applyExternalPatches([], {
-          identity: raw.identity, origin: `collab:${raw.replicaId}`,
-        });
+        if (atomicPatches.length)
+          editor.applyExternalPatches(atomicPatches, {
+            identity: raw.identity,
+            origin: `collab:${raw.replicaId}`,
+            label: raw.label,
+            time: raw.time,
+          });
+        else
+          editor.applyExternalPatches([], {
+            identity: raw.identity,
+            origin: `collab:${raw.replicaId}`,
+          });
       } catch (error) {
         restoreSession(sessionBefore);
         allocation.clock = previousPersistentClock;
         throw error;
       }
       isolatedErrors.forEach(report);
-    } catch (error) { report(error); }
+    } catch (error) {
+      report(error);
+    }
   };
 
   const pendingLocalMessages = new Map<number, CollabMessage>();
   const observeLocal = (event: EditorPatchEvent): void => {
     if (!activeSession.active || event.source === 'external' || !event.patches.length) return;
     const allocation = event.identity.allocation;
-    if (!allocation || allocation.replicaId !== options.replicaId
-      || allocation.slot !== options.replicaSlot) {
+    if (!allocation || allocation.replicaId !== options.replicaId || allocation.slot !== options.replicaSlot) {
       report(new Error('本地补丁缺少匹配的协同身份版本'));
       return;
     }
@@ -335,7 +333,9 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
     try {
       const sent = options.provider.send(structuredClone(message));
       if (sent && typeof sent.then === 'function') void sent.catch(report);
-    } catch (error) { report(error); }
+    } catch (error) {
+      report(error);
+    }
   };
 
   let unsubscribeBeforeRecovery: (() => void) | null = null;
@@ -358,9 +358,21 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
     accepting = true;
     for (const message of buffered) acceptRemote(message);
   } catch (error) {
-    try { unsubscribeBeforeRecovery?.(); } catch { /* 失败绑定只保留原始错误。 */ }
-    try { unsubscribeEditor?.(); } catch { /* 失败绑定只保留原始错误。 */ }
-    try { unsubscribeProvider?.(); } catch { /* 失败绑定只保留原始错误。 */ }
+    try {
+      unsubscribeBeforeRecovery?.();
+    } catch {
+      /* 失败绑定只保留原始错误。 */
+    }
+    try {
+      unsubscribeEditor?.();
+    } catch {
+      /* 失败绑定只保留原始错误。 */
+    }
+    try {
+      unsubscribeProvider?.();
+    } catch {
+      /* 失败绑定只保留原始错误。 */
+    }
     if (isNewSession && identityBefore) {
       editor.doc.identity = identityBefore;
       sessions.delete(editor);
@@ -380,9 +392,21 @@ export function bindCollaboration(editor: Editor, options: CollaborationOptions,
       accepting = false;
       buffered.length = 0;
       pendingLocalMessages.clear();
-      try { unsubscribeBeforeRecovery?.(); } catch (error) { report(error); }
-      try { unsubscribeEditor?.(); } catch (error) { report(error); }
-      try { unsubscribeProvider?.(); } catch (error) { report(error); }
+      try {
+        unsubscribeBeforeRecovery?.();
+      } catch (error) {
+        report(error);
+      }
+      try {
+        unsubscribeEditor?.();
+      } catch (error) {
+        report(error);
+      }
+      try {
+        unsubscribeProvider?.();
+      } catch (error) {
+        report(error);
+      }
     },
   };
 }

@@ -2,9 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { openAgentSession } from '@web-ppt/edit-core/agent';
 import { disposeOpcPackage } from '@web-ppt/edit-core/opc';
 import { serializeEditDoc } from '@web-ppt/edit-core/save';
-import type {
-  AgentSession, AgentToolName, AgentToolInput, AgentToolResult, AgentRenderInput,
-} from '@web-ppt/edit-core/agent';
+import type { AgentSession, AgentToolName, AgentToolInput, AgentToolResult, AgentRenderInput } from '@web-ppt/edit-core/agent';
 import { atomicWrite, localPath } from './files';
 import { AgentMcpError } from './types';
 import type { AgentMcpOpenResult, AgentMcpOptions, AgentMcpRenderResult, AgentMcpSaveResult } from './types';
@@ -66,19 +64,22 @@ export class AgentMcpSessionManager {
       if (result.package !== doc.package) disposeOpcPackage(result.package);
       await atomicWrite(path, result.bytes);
       confirm();
-      return { ok: true, value: {
-        bytes: Buffer.from(result.bytes).toString('base64'), path, saveMode, packageMode: result.mode,
-        fallbackReason: result.fallbackReason, preservedEntries: result.preservedEntries,
-        rewrittenEntries: result.rewrittenEntries,
-      } };
+      return {
+        ok: true,
+        value: {
+          bytes: Buffer.from(result.bytes).toString('base64'),
+          path,
+          saveMode,
+          packageMode: result.mode,
+          fallbackReason: result.fallbackReason,
+          preservedEntries: result.preservedEntries,
+          rewrittenEntries: result.rewrittenEntries,
+        },
+      };
     });
   }
 
-  async render(
-    sessionId: string,
-    input: AgentRenderInput,
-    pathInput?: unknown,
-  ): Promise<AgentMcpRenderResult> {
+  async render(sessionId: string, input: AgentRenderInput, pathInput?: unknown): Promise<AgentMcpRenderResult> {
     const path = pathInput === undefined ? undefined : localPath(pathInput);
     return this.run(sessionId, async (session) => {
       const result = await session.call('render', input);
@@ -98,7 +99,10 @@ export class AgentMcpSessionManager {
       this.sessions.delete(sessionId);
       return { closed: true as const };
     });
-    entry.queue = closing.then(() => undefined, () => undefined);
+    entry.queue = closing.then(
+      () => undefined,
+      () => undefined,
+    );
     return closing;
   }
 
@@ -128,7 +132,10 @@ export class AgentMcpSessionManager {
       if (!this.active || entry.closing) throw new AgentMcpError('session-disposed', `会话已经关闭：${sessionId}`);
       return action(entry.session);
     });
-    entry.queue = result.then(() => undefined, () => undefined);
+    entry.queue = result.then(
+      () => undefined,
+      () => undefined,
+    );
     return result;
   }
 

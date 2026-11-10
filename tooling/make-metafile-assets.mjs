@@ -21,7 +21,9 @@ for (let index = 2; index < process.argv.length; index++) {
 const source = readRequiredFile(sourcePath);
 const hash = sha256(source);
 if (source.length !== METAFILE_SOURCE.bytes || hash !== METAFILE_SOURCE.sha256) {
-  throw new Error(`metafile 来源基线字节数或 SHA256 不符：${sourcePath}；实际 ${source.length} / ${hash}，预期 ${METAFILE_SOURCE.bytes} / ${METAFILE_SOURCE.sha256}`);
+  throw new Error(
+    `metafile 来源基线字节数或 SHA256 不符：${sourcePath}；实际 ${source.length} / ${hash}，预期 ${METAFILE_SOURCE.bytes} / ${METAFILE_SOURCE.sha256}`,
+  );
 }
 // 只从标准 ZIP 中提取原始媒体，不解析或重新编码 EMF/WMF。
 const parts = unzipSync(source);
@@ -36,7 +38,8 @@ if (!check) mkdirSync(directory, { recursive: true });
 for (const [name, bytes] of files) {
   const path = join(directory, name);
   if (check) {
-    if (!Buffer.from(readRequiredFile(path)).equals(Buffer.from(bytes))) throw new Error(`canonical metafile 资产与来源基线不一致：${path}`);
+    if (!Buffer.from(readRequiredFile(path)).equals(Buffer.from(bytes)))
+      throw new Error(`canonical metafile 资产与来源基线不一致：${path}`);
   } else writeFileSync(path, bytes);
 }
 console.log(`canonical metafile 资产${check ? '校验通过' : '已生成'}：${assets.length} 个媒体，来源 ${METAFILE_SOURCE.commit}`);

@@ -34,6 +34,14 @@ npm ci
 
 依赖一律从官方 registry 安装，不要用镜像源，原因见 AGENTS.md 已知陷阱。
 
+只改格式的提交（例如整仓重排）登记在 [`.git-blame-ignore-revs`](.git-blame-ignore-revs)。让本地 `git blame` 跳过它们，在仓库里执行一次：
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
+GitHub 的 blame 页面会自动读取这个文件，无需设置。
+
 ## 提交 PR
 
 1. 从 `master` 拉分支，一个 PR 只做一件事。
@@ -43,6 +51,8 @@ npm ci
    ```bash
    npm run check && npm test && npm run build && npm run verify
    ```
+
+   `npm run check` 同时检查 Biome 格式，不符时用 `npm run format` 重排。
 
 4. 提交信息使用 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/)，破坏性变更加 `!`；注释和提交信息使用中文。
 5. 用户可见的变化在 [CHANGELOG.md](CHANGELOG.md) 顶部的「未发布」条目中记录。
@@ -65,7 +75,8 @@ npm ci
 
 - Report rendering differences with the sample file and a PowerPoint screenshot; use the issue templates.
 - Report security issues privately via [SECURITY.md](SECURITY.md).
-- Before opening a PR, run `npm run check && npm test && npm run build && npm run verify`.
+- Before opening a PR, run `npm run check && npm test && npm run build && npm run verify`. `check` includes Biome formatting; fix it with `npm run format`.
+- Formatting-only commits are listed in `.git-blame-ignore-revs`; run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once so local `git blame` skips them.
 - New capabilities need deterministic fixtures (`tooling/make-*.mjs`) and assertions.
 - Use Conventional Commits; add user-visible changes to the "Unreleased" section of `CHANGELOG.md`.
 - Architecture rules and known pitfalls live in [AGENTS.md](AGENTS.md).

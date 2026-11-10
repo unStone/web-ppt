@@ -32,19 +32,25 @@ export function textFragmentFromRange(body: TextBody, range: TextRange): TextFra
         text += value;
         const font = mark.props.fonts[0];
         marks.push({
-          from: markFrom, to: text.length,
+          from: markFrom,
+          to: text.length,
           props: {
-            ...(font ? { font } : {}), size: mark.props.size, color: mark.props.color,
-            b: mark.props.b, i: mark.props.i,
+            ...(font ? { font } : {}),
+            size: mark.props.size,
+            color: mark.props.color,
+            b: mark.props.b,
+            i: mark.props.i,
             underline: mark.props.underline ?? (mark.props.u ? 'sng' : 'none'),
             strikeType: mark.props.strikeType ?? (mark.props.strike ? 'sngStrike' : 'noStrike'),
-            highlight: mark.props.highlight ?? NO_HIGHLIGHT, spacing: mark.props.spacing ?? 0,
-            caps: mark.props.caps ?? 'none', baseline: mark.props.baseline ?? 0,
+            highlight: mark.props.highlight ?? NO_HIGHLIGHT,
+            spacing: mark.props.spacing ?? 0,
+            caps: mark.props.caps ?? 'none',
+            baseline: mark.props.baseline ?? 0,
           },
         });
       }
-      const bullet = start === 0 && end === paragraph.text.length
-        ? sourceParagraphBullet(body.paragraphs[index].editInfo?.bullet) : undefined;
+      const bullet =
+        start === 0 && end === paragraph.text.length ? sourceParagraphBullet(body.paragraphs[index].editInfo?.bullet) : undefined;
       return { text, marks, ...(bullet ? { bullet } : {}) };
     }),
   };

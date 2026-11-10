@@ -13,7 +13,21 @@ import { fontMessages } from './en-fonts';
 import { pdfMessages } from './en-pdf';
 
 /** 合并和构建校验必须消费同一注册表，新增目录不能绕过参数与重复译文检查。 */
-export const messageCatalogs = [homeMessages, editorMessages, sampleMessages, mediaMessages, chartMessages, toolMessages, shapeMessages, accessibilityMessages, appearanceMessages, commentMessages, expandedMessages, fontMessages, pdfMessages] as const;
+export const messageCatalogs = [
+  homeMessages,
+  editorMessages,
+  sampleMessages,
+  mediaMessages,
+  chartMessages,
+  toolMessages,
+  shapeMessages,
+  accessibilityMessages,
+  appearanceMessages,
+  commentMessages,
+  expandedMessages,
+  fontMessages,
+  pdfMessages,
+] as const;
 type CatalogKeys<Catalog> = Catalog extends unknown ? keyof Catalog : never;
-export type Message = CatalogKeys<typeof messageCatalogs[number]>;
+export type Message = CatalogKeys<(typeof messageCatalogs)[number]>;
 export const messages = Object.assign({}, ...messageCatalogs) as Readonly<Record<Message, string>>;

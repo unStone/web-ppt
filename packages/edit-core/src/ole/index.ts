@@ -7,38 +7,67 @@ import type { OleCellStyle, OleCellValue, OleEdits, OleRichRun } from './content
 import { olePreviewSvg } from './preview';
 import { saveOle } from './save';
 export type {
-  OleCell, OleCellValue, OleCellStyle, OleRichRun, OleRun, OleRunFormat,
-  OleSheet, OleParagraph, OleContent, OleEdits,
+  OleCell,
+  OleCellValue,
+  OleCellStyle,
+  OleRichRun,
+  OleRun,
+  OleRunFormat,
+  OleSheet,
+  OleParagraph,
+  OleContent,
+  OleEdits,
 } from './content';
 export { cellPosition } from './content';
 // 宿主从嵌入容器字节解出原生文档（parts + kind），用于外部读取器验证或导出下载
 export { readEmbeddedPackage } from './container';
-export function queryOleContent(doc: EditDoc, id: ElementId) { return oleState(doc, id).content; }
+export function queryOleContent(doc: EditDoc, id: ElementId) {
+  return oleState(doc, id).content;
+}
 export function listEditableOle(doc: EditDoc) {
-  return Object.values(doc.elements).filter((record) => objectSource(doc, record.id, OLE)).flatMap((record) => {
-    try { const { pkg } = oleSource(doc, record.id); return [{ id: record.id, name: record.src.name ?? 'OLE', kind: pkg.kind }]; }
-    catch { return []; }
-  });
+  return Object.values(doc.elements)
+    .filter((record) => objectSource(doc, record.id, OLE))
+    .flatMap((record) => {
+      try {
+        const { pkg } = oleSource(doc, record.id);
+        return [{ id: record.id, name: record.src.name ?? 'OLE', kind: pkg.kind }];
+      } catch {
+        return [];
+      }
+    });
 }
 function validate(doc: EditDoc, id: string, value: unknown): OleEdits {
-  const edits = normalizeOleEdits(value); editOleParts(oleSource(doc, id).pkg, edits); return edits;
+  const edits = normalizeOleEdits(value);
+  editOleParts(oleSource(doc, id).pkg, edits);
+  return edits;
 }
 function command(doc: EditDoc, cmd: ExtensionCommand, origin: string) {
   if (doc.meta.readonly) throw new Error('文稿只读');
-  const before = storedOle(doc, cmd.id), state = cmd.payload === null ? undefined : validate(doc, cmd.id, cmd.payload);
+  const before = storedOle(doc, cmd.id),
+    state = cmd.payload === null ? undefined : validate(doc, cmd.id, cmd.payload);
   const value = state && (state.cells.length || state.paragraphs.length) ? JSON.stringify(state) : undefined;
   const path = ['elements', cmd.id, 'ovr', 'extensions', 'ole', 'value'] as const;
-  const patch = (value: string | undefined) => value === undefined ? { op: 'del' as const, path, origin } : { op: 'set' as const, path, origin, value };
+  const patch = (value: string | undefined) =>
+    value === undefined ? { op: 'del' as const, path, origin } : { op: 'set' as const, path, origin, value };
   return before === value ? { forward: [], inverse: [] } : { forward: [patch(value)], inverse: [patch(before)] };
 }
-registerEditExtension('ole', { command,
+registerEditExtension('ole', {
+  command,
   validatePatch(doc: EditDoc, patch: ExtensionPatch) {
     if (patch.path[0] !== 'elements' || patch.path.length !== 6 || patch.path[5] !== 'value') throw new Error('OLE 补丁路径无效');
-    if (patch.op === 'set') { if (typeof patch.value !== 'string') throw new Error('OLE 补丁值无效'); validate(doc, patch.path[1], JSON.parse(patch.value)); }
+    if (patch.op === 'set') {
+      if (typeof patch.value !== 'string') throw new Error('OLE 补丁值无效');
+      validate(doc, patch.path[1], JSON.parse(patch.value));
+    }
   },
   project(doc, id, element) {
     if (!storedOle(doc, id)) return element;
-    return { ...element, kind: 'image', src: 'data:image/svg+xml,' + encodeURIComponent(olePreviewSvg(queryOleContent(doc, id))), crop: null };
+    return {
+      ...element,
+      kind: 'image',
+      src: 'data:image/svg+xml,' + encodeURIComponent(olePreviewSvg(queryOleContent(doc, id))),
+      crop: null,
+    };
   },
   materialize(tree, record, _generated, xml) {
     if (!(record.ovr.extensions?.ole as { value?: string } | undefined)?.value) return;
@@ -51,58 +80,85 @@ registerEditExtension('ole', { command,
   },
   materializePackage: saveOle,
   generateParts(doc, parts) {
-    const changes: Record<string, Uint8Array | null> = { ...parts }; saveOle(doc, {}, new Set(), changes, true);
-    for (const [part, bytes] of Object.entries(changes)) { if (bytes) parts[part] = bytes; else delete parts[part]; }
+    const changes: Record<string, Uint8Array | null> = { ...parts };
+    saveOle(doc, {}, new Set(), changes, true);
+    for (const [part, bytes] of Object.entries(changes)) {
+      if (bytes) parts[part] = bytes;
+      else delete parts[part];
+    }
   },
 });
 export function createOleEditor(editor: Pick<Editor, 'doc' | 'exec'>) {
   const change = (id: ElementId, action: (edits: OleEdits) => void) => {
-    const { edits } = oleState(editor.doc, id); action(edits); editor.exec({ type: 'Extension', namespace: 'ole', id, payload: edits });
+    const { edits } = oleState(editor.doc, id);
+    action(edits);
+    editor.exec({ type: 'Extension', namespace: 'ole', id, payload: edits });
   };
   const mergeCell = (edits: OleEdits, sheet: string, ref: string, patch: OleEdits['cells'][number]) => {
     const prev = edits.cells.find((c) => c.sheet === sheet && c.ref === ref);
     edits.cells = edits.cells.filter((c) => c.sheet !== sheet || c.ref !== ref);
     edits.cells.push({ ...prev, ...patch, sheet, ref });
   };
-  return { query: (id: ElementId) => queryOleContent(editor.doc, id),
-    setCell(id: ElementId, sheet: string, ref: string, value: OleCellValue) { change(id, (edits) => {
-      const original = readOleContent(oleSource(editor.doc, id).pkg); if (original.kind !== 'xlsx') throw new Error('对象不是工作簿');
-      const cell = original.sheets.find((s) => s.id === sheet)?.cells.find((c) => c.ref === ref);
-      const prev = edits.cells.find((c) => c.sheet === sheet && c.ref === ref);
-      edits.cells = edits.cells.filter((c) => c.sheet !== sheet || c.ref !== ref);
-      const valueChanged = cell?.formula !== undefined || (cell?.value ?? null) !== value;
-      if (valueChanged || prev?.style !== undefined || prev?.richText !== undefined) {
-        edits.cells.push({
-          sheet, ref, value,
-          ...(prev?.style !== undefined ? { style: prev.style } : {}),
-          ...(prev?.richText !== undefined ? { richText: prev.richText } : {}),
-        });
-      }
-    }); },
-    setCellStyle(id: ElementId, sheet: string, ref: string, style: OleCellStyle | null) { change(id, (edits) => {
-      if (readOleContent(oleSource(editor.doc, id).pkg).kind !== 'xlsx') throw new Error('对象不是工作簿');
-      mergeCell(edits, sheet, ref, { sheet, ref, style });
-    }); },
-    setCellRichText(id: ElementId, sheet: string, ref: string, richText: OleRichRun[] | null) { change(id, (edits) => {
-      if (readOleContent(oleSource(editor.doc, id).pkg).kind !== 'xlsx') throw new Error('对象不是工作簿');
-      mergeCell(edits, sheet, ref, { sheet, ref, richText, ...(richText ? { value: richText.map((r) => r.text).join('') } : {}) });
-    }); },
-    setParagraph(id: ElementId, index: number, text: string) { change(id, (edits) => {
-      const original = readOleContent(oleSource(editor.doc, id).pkg); if (original.kind !== 'docx') throw new Error('对象不是文档');
-      edits.paragraphs = edits.paragraphs.filter((p) => p.index !== index);
-      if (original.paragraphs[index]?.text !== text) edits.paragraphs.push({ index, text });
-    }); },
-    setRun(id: ElementId, paragraph: number, run: number, text: string) { change(id, (edits) => {
-      const original = readOleContent(oleSource(editor.doc, id).pkg); if (original.kind !== 'docx') throw new Error('对象不是文档');
-      const current = original.paragraphs[paragraph]?.runs[run];
-      let entry = edits.paragraphs.find((p) => p.index === paragraph);
-      edits.paragraphs = edits.paragraphs.filter((p) => p.index !== paragraph);
-      if (!entry) entry = { index: paragraph, runs: [] };
-      const runs = [...(entry.runs ?? [])].filter((r) => r.index !== run);
-      if (current?.text !== text) runs.push({ index: run, text });
-      if (runs.length || entry.text !== undefined) edits.paragraphs.push({ ...entry, runs: runs.length ? runs : undefined });
-    }); },
-    exportContent(id: ElementId) { const state = oleState(editor.doc, id); return state.pkg.wrap(state.changes); },
-    reset(id: ElementId) { editor.exec({ type: 'Extension', namespace: 'ole', id, payload: null }); },
+  return {
+    query: (id: ElementId) => queryOleContent(editor.doc, id),
+    setCell(id: ElementId, sheet: string, ref: string, value: OleCellValue) {
+      change(id, (edits) => {
+        const original = readOleContent(oleSource(editor.doc, id).pkg);
+        if (original.kind !== 'xlsx') throw new Error('对象不是工作簿');
+        const cell = original.sheets.find((s) => s.id === sheet)?.cells.find((c) => c.ref === ref);
+        const prev = edits.cells.find((c) => c.sheet === sheet && c.ref === ref);
+        edits.cells = edits.cells.filter((c) => c.sheet !== sheet || c.ref !== ref);
+        const valueChanged = cell?.formula !== undefined || (cell?.value ?? null) !== value;
+        if (valueChanged || prev?.style !== undefined || prev?.richText !== undefined) {
+          edits.cells.push({
+            sheet,
+            ref,
+            value,
+            ...(prev?.style !== undefined ? { style: prev.style } : {}),
+            ...(prev?.richText !== undefined ? { richText: prev.richText } : {}),
+          });
+        }
+      });
+    },
+    setCellStyle(id: ElementId, sheet: string, ref: string, style: OleCellStyle | null) {
+      change(id, (edits) => {
+        if (readOleContent(oleSource(editor.doc, id).pkg).kind !== 'xlsx') throw new Error('对象不是工作簿');
+        mergeCell(edits, sheet, ref, { sheet, ref, style });
+      });
+    },
+    setCellRichText(id: ElementId, sheet: string, ref: string, richText: OleRichRun[] | null) {
+      change(id, (edits) => {
+        if (readOleContent(oleSource(editor.doc, id).pkg).kind !== 'xlsx') throw new Error('对象不是工作簿');
+        mergeCell(edits, sheet, ref, { sheet, ref, richText, ...(richText ? { value: richText.map((r) => r.text).join('') } : {}) });
+      });
+    },
+    setParagraph(id: ElementId, index: number, text: string) {
+      change(id, (edits) => {
+        const original = readOleContent(oleSource(editor.doc, id).pkg);
+        if (original.kind !== 'docx') throw new Error('对象不是文档');
+        edits.paragraphs = edits.paragraphs.filter((p) => p.index !== index);
+        if (original.paragraphs[index]?.text !== text) edits.paragraphs.push({ index, text });
+      });
+    },
+    setRun(id: ElementId, paragraph: number, run: number, text: string) {
+      change(id, (edits) => {
+        const original = readOleContent(oleSource(editor.doc, id).pkg);
+        if (original.kind !== 'docx') throw new Error('对象不是文档');
+        const current = original.paragraphs[paragraph]?.runs[run];
+        let entry = edits.paragraphs.find((p) => p.index === paragraph);
+        edits.paragraphs = edits.paragraphs.filter((p) => p.index !== paragraph);
+        if (!entry) entry = { index: paragraph, runs: [] };
+        const runs = [...(entry.runs ?? [])].filter((r) => r.index !== run);
+        if (current?.text !== text) runs.push({ index: run, text });
+        if (runs.length || entry.text !== undefined) edits.paragraphs.push({ ...entry, runs: runs.length ? runs : undefined });
+      });
+    },
+    exportContent(id: ElementId) {
+      const state = oleState(editor.doc, id);
+      return state.pkg.wrap(state.changes);
+    },
+    reset(id: ElementId) {
+      editor.exec({ type: 'Extension', namespace: 'ole', id, payload: null });
+    },
   };
 }

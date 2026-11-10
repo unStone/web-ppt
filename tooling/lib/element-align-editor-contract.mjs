@@ -8,8 +8,7 @@ export async function runElementAlignEditorContract({ check, lib, root }) {
   const session = await lib.openEditor(bytes, { idPrefix: 'editor-align-' });
   const container = document.createElement('div');
   const view = session.mount(container, { mode: 'edit', textMode: 'svg', snapping: false });
-  const byName = (name) => Object.values(session.editor.doc.elements)
-    .find((record) => record.src.name === name);
+  const byName = (name) => Object.values(session.editor.doc.elements).find((record) => record.src.name === name);
   const plain = byName('align-plain');
   const rotated = byName('align-rotated');
   const group = byName('align-group');
@@ -25,30 +24,42 @@ export async function runElementAlignEditorContract({ check, lib, root }) {
   const historyBefore = session.editor.history.undoCount;
   session.editor.exec({ type: 'AlignElements', ids: [plain.id, rotated.id], edge: 'left' });
   const selection = session.editor.selection;
-  check('对齐只替换实际移动元素并保持整页、defs 与未触碰兄弟身份',
+  check(
+    '对齐只替换实际移动元素并保持整页、defs 与未触碰兄弟身份',
     node(plain.id) === identities.get(plain.id)
       && node(rotated.id) !== identities.get(rotated.id)
       && node(group.id) === identities.get(group.id)
       && node(frame.id) === identities.get(frame.id)
-      && staticLayer.querySelector('svg') === svg && staticLayer.querySelector('defs') === defs
+      && staticLayer.querySelector('svg') === svg
+      && staticLayer.querySelector('defs') === defs
       && interactionLayer.querySelector('[data-edit-selection-frame]') !== selectionBefore
-      && selection.kind === 'elements' && selection.ids.join(',') === `${plain.id},${rotated.id}`
-      && session.editor.history.undoCount === historyBefore + 1);
+      && selection.kind === 'elements'
+      && selection.ids.join(',') === `${plain.id},${rotated.id}`
+      && session.editor.history.undoCount === historyBefore + 1,
+  );
 
   const movedNode = node(rotated.id);
   session.editor.undo();
-  check('对齐撤销继续增量回显且恢复选区',
-    node(rotated.id) !== movedNode && node(plain.id) === identities.get(plain.id)
-      && staticLayer.querySelector('svg') === svg && staticLayer.querySelector('defs') === defs
-      && session.editor.selection.kind === 'elements');
+  check(
+    '对齐撤销继续增量回显且恢复选区',
+    node(rotated.id) !== movedNode
+      && node(plain.id) === identities.get(plain.id)
+      && staticLayer.querySelector('svg') === svg
+      && staticLayer.querySelector('defs') === defs
+      && session.editor.selection.kind === 'elements',
+  );
   session.editor.redo();
-  check('对齐重做不重建未触碰 DOM', node(plain.id) === identities.get(plain.id)
-    && node(group.id) === identities.get(group.id) && staticLayer.querySelector('svg') === svg);
+  check(
+    '对齐重做不重建未触碰 DOM',
+    node(plain.id) === identities.get(plain.id) && node(group.id) === identities.get(group.id) && staticLayer.querySelector('svg') === svg,
+  );
 
   const frameBefore = node(frame.id);
   session.editor.exec({ type: 'AlignElements', ids: [frame.id], edge: 'bottom' });
-  check('frame 对齐使用同一增量 DOM 路径', node(frame.id) !== frameBefore
-    && node(group.id) === identities.get(group.id) && staticLayer.querySelector('svg') === svg);
+  check(
+    'frame 对齐使用同一增量 DOM 路径',
+    node(frame.id) !== frameBefore && node(group.id) === identities.get(group.id) && staticLayer.querySelector('svg') === svg,
+  );
   view.destroy();
   session.dispose();
 }

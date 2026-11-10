@@ -1,6 +1,8 @@
 import type { MasterTextCategory } from '@web-ppt/core';
 import type {
-  MasterDesignTarget, MasterParagraphPropertyInput, MasterRunPropertyOverrides,
+  MasterDesignTarget,
+  MasterParagraphPropertyInput,
+  MasterRunPropertyOverrides,
   MasterParagraphPropertyOverrides,
 } from '../types';
 
@@ -28,14 +30,16 @@ type DeletePatch<S extends 'paragraph' | 'run', F extends string> = {
   readonly origin: string;
 };
 
-export type MasterParagraphTextStylePatch = SetPatch<
-  'paragraph', keyof MasterParagraphPropertyOverrides & string,
-  NonNullable<MasterParagraphPropertyOverrides[keyof MasterParagraphPropertyOverrides]>
-> | DeletePatch<'paragraph', keyof MasterParagraphPropertyOverrides & string>;
+export type MasterParagraphTextStylePatch =
+  | SetPatch<
+      'paragraph',
+      keyof MasterParagraphPropertyOverrides & string,
+      NonNullable<MasterParagraphPropertyOverrides[keyof MasterParagraphPropertyOverrides]>
+    >
+  | DeletePatch<'paragraph', keyof MasterParagraphPropertyOverrides & string>;
 
-export type MasterRunTextStylePatch = SetPatch<
-  'run', keyof MasterRunPropertyOverrides & string,
-  NonNullable<MasterRunPropertyOverrides[keyof MasterRunPropertyOverrides]>
-> | DeletePatch<'run', keyof MasterRunPropertyOverrides & string>;
+export type MasterRunTextStylePatch =
+  | SetPatch<'run', keyof MasterRunPropertyOverrides & string, NonNullable<MasterRunPropertyOverrides[keyof MasterRunPropertyOverrides]>>
+  | DeletePatch<'run', keyof MasterRunPropertyOverrides & string>;
 
 export type MasterTextStylePatch = MasterParagraphTextStylePatch | MasterRunTextStylePatch;

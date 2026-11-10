@@ -2,12 +2,7 @@ import type { EscherProps } from './escher';
 import { P } from './escher';
 
 /** pVertices + pSegmentInfo → SVG path（复用 pptx 的 custGeom 逻辑不适用，这里直接生成） */
-export function customPath(
-  dv: DataView,
-  props: EscherProps,
-  w: number,
-  h: number,
-): string | null {
+export function customPath(dv: DataView, props: EscherProps, w: number, h: number): string | null {
   const v = props.complex.get(P.pVertices);
   const s = props.complex.get(P.pSegmentInfo);
   if (!v) return null;
@@ -55,7 +50,9 @@ export function customPath(
     else if (msoType === 0b001 || seg === 0xb300) {
       const count = seg === 0xb300 ? 1 : seg & 0x1fff;
       for (let i = 0; i < count; i++) {
-        const a = pts[pi++], b = pts[pi++], c = pts[pi++];
+        const a = pts[pi++],
+          b = pts[pi++],
+          c = pts[pi++];
         if (a && b && c) out.push(`C ${px(a)} ${px(b)} ${px(c)}`);
       }
     } else if (msoType === 0) {

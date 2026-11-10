@@ -11,7 +11,11 @@ for (const name of ['location', 'history', 'localStorage', 'navigator', 'AbortCo
 }
 // 本用例观察服务与恢复决策的 DOM 边界；实际 IndexedDB 往返由官网浏览器契约验证。
 // 在存储边界拒绝 IO，防止测试无意中把错误的伪实现当成原生数据库。
-globalThis.indexedDB = { open() { throw new Error('此用例不执行存储 IO'); } };
+globalThis.indexedDB = {
+  open() {
+    throw new Error('此用例不执行存储 IO');
+  },
+};
 document.documentElement.lang = 'zh-CN';
 document.head.innerHTML = '<link rel="canonical" href="https://web-ppt.test/editor.html">';
 document.body.innerHTML = `<header id="localeHome"><nav id="siteLanguage"></nav></header>
@@ -19,12 +23,17 @@ document.body.innerHTML = `<header id="localeHome"><nav id="siteLanguage"></nav>
 <section id="recoveryPrompt" hidden><span></span><p id="recoverySummary"></p>
 <button id="restoreRecovery"></button><button id="discardRecovery"></button></section>
 <p id="recoveryState"></p>`;
-const root = process.cwd(), out = resolve(root, 'out/site-recovery-plugin');
+const root = process.cwd(),
+  out = resolve(root, 'out/site-recovery-plugin');
 mkdirSync(out, { recursive: true });
-const { Context, editorRecoveryPlugin, languageReady } = await bundleBrowser({ root,
-  entry: resolve(root, 'tooling/lib/site-recovery-plugin-api.mjs'), output: resolve(out, 'api.mjs') });
+const { Context, editorRecoveryPlugin, languageReady } = await bundleBrowser({
+  root,
+  entry: resolve(root, 'tooling/lib/site-recovery-plugin-api.mjs'),
+  output: resolve(out, 'api.mjs'),
+});
 await languageReady;
-const context = new Context(), notices = [];
+const context = new Context(),
+  notices = [];
 const config = { notice: (...args) => notices.push(args) };
 const signal = new AbortController().signal;
 const candidate = { updatedAt: 0, frameCount: 2, latestLabel: '移动形状' };
@@ -62,7 +71,8 @@ try {
   await second.dispose();
   const third = await context.plugin(editorRecoveryPlugin, config);
   assert.deepEqual(context.editorRecovery.openOptions(signal), {}, '服务重建保留本机偏好');
-  toggle.checked = false; toggle.click();
+  toggle.checked = false;
+  toggle.click();
   const choice = context.editorRecovery.openOptions(signal).recovery.decide(candidate);
   document.querySelector('#restoreRecovery').click();
   assert.equal(await choice, 'restore');

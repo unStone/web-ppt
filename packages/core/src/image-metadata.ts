@@ -9,18 +9,13 @@ export interface ImageMetadata {
 
 const ascii = (bytes: Uint8Array, offset: number, value: string): boolean =>
   [...value].every((char, index) => bytes[offset + index] === char.charCodeAt(0));
-const u16be = (bytes: Uint8Array, offset: number): number =>
-  bytes[offset] * 0x100 + bytes[offset + 1];
-const u16le = (bytes: Uint8Array, offset: number): number =>
-  bytes[offset] + bytes[offset + 1] * 0x100;
-const u24le = (bytes: Uint8Array, offset: number): number =>
-  bytes[offset] + bytes[offset + 1] * 0x100 + bytes[offset + 2] * 0x10000;
+const u16be = (bytes: Uint8Array, offset: number): number => bytes[offset] * 0x100 + bytes[offset + 1];
+const u16le = (bytes: Uint8Array, offset: number): number => bytes[offset] + bytes[offset + 1] * 0x100;
+const u24le = (bytes: Uint8Array, offset: number): number => bytes[offset] + bytes[offset + 1] * 0x100 + bytes[offset + 2] * 0x10000;
 const u32be = (bytes: Uint8Array, offset: number): number =>
-  bytes[offset] * 0x1000000 + bytes[offset + 1] * 0x10000
-  + bytes[offset + 2] * 0x100 + bytes[offset + 3];
+  bytes[offset] * 0x1000000 + bytes[offset + 1] * 0x10000 + bytes[offset + 2] * 0x100 + bytes[offset + 3];
 const u32le = (bytes: Uint8Array, offset: number): number =>
-  (bytes[offset] + bytes[offset + 1] * 0x100 + bytes[offset + 2] * 0x10000
-    + bytes[offset + 3] * 0x1000000) >>> 0;
+  (bytes[offset] + bytes[offset + 1] * 0x100 + bytes[offset + 2] * 0x10000 + bytes[offset + 3] * 0x1000000) >>> 0;
 const i16be = (bytes: Uint8Array, offset: number): number => {
   const value = u16be(bytes, offset);
   return value > 0x7fff ? value - 0x10000 : value;
@@ -41,7 +36,7 @@ function pngMetadata(bytes: Uint8Array): ImageMetadata | null {
   const height = u32be(bytes, 20);
   let dpiX = 96;
   let dpiY = 96;
-  for (let offset = 8; offset + 12 <= bytes.length;) {
+  for (let offset = 8; offset + 12 <= bytes.length; ) {
     const length = u32be(bytes, offset);
     if (length > bytes.length - offset - 12) break;
     if (ascii(bytes, offset + 4, 'pHYs') && length === 9 && bytes[offset + 16] === 1) {
@@ -53,9 +48,7 @@ function pngMetadata(bytes: Uint8Array): ImageMetadata | null {
   return sane(width, height, dpiX, dpiY);
 }
 
-const JPEG_SOF = new Set([
-  0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf,
-]);
+const JPEG_SOF = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
 
 function exifDpi(bytes: Uint8Array, data: number, end: number): readonly [number, number] | null {
   if (data + 14 > end || !ascii(bytes, data, 'Exif\0\0')) return null;
@@ -63,8 +56,8 @@ function exifDpi(bytes: Uint8Array, data: number, end: number): readonly [number
   const little = ascii(bytes, base, 'II');
   if (!little && !ascii(bytes, base, 'MM')) return null;
   const inside = (offset: number, length: number): boolean => offset >= base && offset + length <= end;
-  const read16 = (offset: number): number => little ? u16le(bytes, offset) : u16be(bytes, offset);
-  const read32 = (offset: number): number => little ? u32le(bytes, offset) : u32be(bytes, offset);
+  const read16 = (offset: number): number => (little ? u16le(bytes, offset) : u16be(bytes, offset));
+  const read32 = (offset: number): number => (little ? u32le(bytes, offset) : u32be(bytes, offset));
   if (!inside(base, 8) || read16(base + 2) !== 42) return null;
   const ifd = base + read32(base + 4);
   if (!inside(ifd, 2)) return null;
@@ -98,7 +91,7 @@ function jpegMetadata(bytes: Uint8Array): ImageMetadata | null {
   let height = 0;
   let jfifDensity: readonly [number, number] | null = null;
   let exifDensity: readonly [number, number] | null = null;
-  for (let offset = 2; offset + 4 <= bytes.length;) {
+  for (let offset = 2; offset + 4 <= bytes.length; ) {
     if (bytes[offset++] !== 0xff) continue;
     while (bytes[offset] === 0xff) offset++;
     const marker = bytes[offset++];
@@ -145,7 +138,7 @@ function bmpMetadata(bytes: Uint8Array): ImageMetadata | null {
 
 function webpMetadata(bytes: Uint8Array): ImageMetadata | null {
   if (bytes.length < 30 || !ascii(bytes, 0, 'RIFF') || !ascii(bytes, 8, 'WEBP')) return null;
-  for (let offset = 12; offset + 8 <= bytes.length;) {
+  for (let offset = 12; offset + 8 <= bytes.length; ) {
     const length = u32le(bytes, offset + 4);
     const data = offset + 8;
     if (length > bytes.length - data) break;
@@ -168,8 +161,8 @@ function tiffMetadata(bytes: Uint8Array): ImageMetadata | null {
   if (bytes.length < 16) return null;
   const little = ascii(bytes, 0, 'II');
   if (!little && !ascii(bytes, 0, 'MM')) return null;
-  const u16 = (offset: number): number => little ? u16le(bytes, offset) : u16be(bytes, offset);
-  const u32 = (offset: number): number => little ? u32le(bytes, offset) : u32be(bytes, offset);
+  const u16 = (offset: number): number => (little ? u16le(bytes, offset) : u16be(bytes, offset));
+  const u32 = (offset: number): number => (little ? u32le(bytes, offset) : u32be(bytes, offset));
   if (u16(2) !== 42) return null;
   const ifd = u32(4);
   if (ifd + 2 > bytes.length) return null;
@@ -192,9 +185,12 @@ function tiffMetadata(bytes: Uint8Array): ImageMetadata | null {
   }
   const unit = values.get(296) ?? 2;
   const factor = unit === 3 ? 2.54 : unit === 2 ? 1 : 0;
-  return sane(values.get(256) ?? 0, values.get(257) ?? 0,
+  return sane(
+    values.get(256) ?? 0,
+    values.get(257) ?? 0,
     factor ? (values.get(282) ?? 96) * factor : 96,
-    factor ? (values.get(283) ?? values.get(282) ?? 96) * factor : 96);
+    factor ? (values.get(283) ?? values.get(282) ?? 96) * factor : 96,
+  );
 }
 
 function svgMetadata(bytes: Uint8Array): ImageMetadata | null {
@@ -206,14 +202,22 @@ function svgMetadata(bytes: Uint8Array): ImageMetadata | null {
     const match = raw?.trim().match(/^([0-9]+(?:\.[0-9]+)?)(px|in|cm|mm|pt|pc)?$/i);
     if (!match) return null;
     const factor: Record<string, number> = {
-      px: 1, in: 96, cm: 96 / 2.54, mm: 96 / 25.4, pt: 96 / 72, pc: 16,
+      px: 1,
+      in: 96,
+      cm: 96 / 2.54,
+      mm: 96 / 25.4,
+      pt: 96 / 72,
+      pc: 16,
     };
     return Number(match[1]) * factor[(match[2] ?? 'px').toLowerCase()];
   };
   let width = dimension('width');
   let height = dimension('height');
-  const viewBox = tag.match(/\bviewBox\s*=\s*["']([^"']+)["']/i)?.[1]
-    .trim().split(/[ ,]+/).map(Number);
+  const viewBox = tag
+    .match(/\bviewBox\s*=\s*["']([^"']+)["']/i)?.[1]
+    .trim()
+    .split(/[ ,]+/)
+    .map(Number);
   if ((!width || !height) && viewBox?.length === 4 && viewBox.every(Number.isFinite)) {
     width ||= Math.abs(viewBox[2]);
     height ||= Math.abs(viewBox[3]);
@@ -227,13 +231,20 @@ function metafileMetadata(bytes: Uint8Array): ImageMetadata | null {
     const pixelHeight = Math.abs(i32le(bytes, 20) - i32le(bytes, 12));
     const frameWidth = Math.abs(i32le(bytes, 32) - i32le(bytes, 24));
     const frameHeight = Math.abs(i32le(bytes, 36) - i32le(bytes, 28));
-    return sane(pixelWidth || frameWidth * 96 / 2540, pixelHeight || frameHeight * 96 / 2540,
-      frameWidth ? pixelWidth * 2540 / frameWidth : 96,
-      frameHeight ? pixelHeight * 2540 / frameHeight : 96);
+    return sane(
+      pixelWidth || (frameWidth * 96) / 2540,
+      pixelHeight || (frameHeight * 96) / 2540,
+      frameWidth ? (pixelWidth * 2540) / frameWidth : 96,
+      frameHeight ? (pixelHeight * 2540) / frameHeight : 96,
+    );
   }
   if (bytes.length >= 22 && u32le(bytes, 0) === 0x9ac6cdd7) {
-    return sane(Math.abs(i16le(bytes, 10) - i16le(bytes, 6)),
-      Math.abs(i16le(bytes, 12) - i16le(bytes, 8)), u16le(bytes, 14), u16le(bytes, 14));
+    return sane(
+      Math.abs(i16le(bytes, 10) - i16le(bytes, 6)),
+      Math.abs(i16le(bytes, 12) - i16le(bytes, 8)),
+      u16le(bytes, 14),
+      u16le(bytes, 14),
+    );
   }
   for (const base of [512, 0]) {
     if (base + 14 > bytes.length) continue;
@@ -248,6 +259,14 @@ function metafileMetadata(bytes: Uint8Array): ImageMetadata | null {
 
 /** 魔数优先；调用者的扩展名和 MIME 只用于存储，不参与几何真值。 */
 export function readImageMetadata(bytes: Uint8Array): ImageMetadata | null {
-  return pngMetadata(bytes) ?? jpegMetadata(bytes) ?? gifMetadata(bytes) ?? bmpMetadata(bytes)
-    ?? webpMetadata(bytes) ?? tiffMetadata(bytes) ?? svgMetadata(bytes) ?? metafileMetadata(bytes);
+  return (
+    pngMetadata(bytes)
+    ?? jpegMetadata(bytes)
+    ?? gifMetadata(bytes)
+    ?? bmpMetadata(bytes)
+    ?? webpMetadata(bytes)
+    ?? tiffMetadata(bytes)
+    ?? svgMetadata(bytes)
+    ?? metafileMetadata(bytes)
+  );
 }

@@ -11,7 +11,9 @@ export function workbookProbeFixture() {
   return {
     '_rels/.rels': relationships(`<Relationship Id="book" Type="${R}/officeDocument" Target="book/main.xml"/>`),
     'book/main.xml': `<workbook xmlns="${SS}" xmlns:r="${R}"><sheets><sheet name="O'Brien data" sheetId="1" r:id="sheet"/></sheets><definedNames><definedName name="data">'O''Brien data'!$A$1:$A$13</definedName></definedNames></workbook>`,
-    'book/_rels/main.xml.rels': relationships(`<Relationship Id="sheet" Type="${R}/worksheet" Target="/data/values.xml"/><Relationship Id="strings" Type="${R}/sharedStrings" Target="/data/strings.xml"/>`),
+    'book/_rels/main.xml.rels': relationships(
+      `<Relationship Id="sheet" Type="${R}/worksheet" Target="/data/values.xml"/><Relationship Id="strings" Type="${R}/sharedStrings" Target="/data/strings.xml"/>`,
+    ),
     'data/strings.xml': `<sst xmlns="${SS}"><si><r><t>中</t></r><r><t>文</t></r><rPh sb="0" eb="1"><t>zhong</t></rPh></si></sst>`,
     'data/values.xml': `<worksheet xmlns="${SS}"><sheetData><row r="1">
       <c r="A1"><v>0</v></c><c r="A2"/><c r="A4" t="b"><v>1</v></c><c r="A5" t="e"><v>#N/A</v></c>

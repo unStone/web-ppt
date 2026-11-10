@@ -43,7 +43,9 @@ export function masterSourceProjectionPackage(doc: EditDoc): OpcPackage | null {
   }
   if (!parts) return source;
   const overlay = inheritPptxParsingContext(source, {
-    format: 'pptx', bytes: source.bytes, parts,
+    format: 'pptx',
+    bytes: source.bytes,
+    parts,
     ...(source.assets ? { assets: source.assets } : {}),
     disposed: source.disposed,
   });
@@ -67,14 +69,19 @@ export function designProjectionPackage(doc: EditDoc): OpcPackage | null {
     if (!sourceBytes) throw new Error(`母版 part 不存在：${id}`);
     const tree = parseXmlTree(sourceBytes);
     materializeElementTreeState(
-      tree, doc, id, masterRecords(doc, id),
+      tree,
+      doc,
+      id,
+      masterRecords(doc, id),
       Object.values(doc.removedElements).filter((record) => record.meta.origin?.part === id),
     );
     (parts ??= { ...source.parts })[id] = serializeXmlTreeBytes(tree);
   }
   if (!parts) return source;
   const overlay = inheritPptxParsingContext(source, {
-    format: 'pptx', bytes: source.bytes, parts,
+    format: 'pptx',
+    bytes: source.bytes,
+    parts,
     ...(source.assets ? { assets: source.assets } : {}),
     disposed: source.disposed,
   });

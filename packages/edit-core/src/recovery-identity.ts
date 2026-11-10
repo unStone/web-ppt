@@ -4,39 +4,35 @@ import { isSlideNotesPatch } from './commands/slide-notes';
 import { isSlideTreePatch } from './commands/slide-tree';
 import { allocateElementSpid } from './commands/spid';
 import type { Patch } from './commands/types';
-import type {
-  EditDoc, EditIdentity, EditIdentityAllocation, ElementRecord, SlideNotesBinding, SlideRecord,
-} from './types';
+import type { EditDoc, EditIdentity, EditIdentityAllocation, ElementRecord, SlideNotesBinding, SlideRecord } from './types';
 import { assertIdentityAllocation } from './identity-allocation';
 import { maxElementSpid } from './element-spids';
 
-export function assertRecoveryIdentity(
-  value: unknown,
-  prefix: string,
-  sequence: number,
-): asserts value is EditIdentity {
+export function assertRecoveryIdentity(value: unknown, prefix: string, sequence: number): asserts value is EditIdentity {
   if (!value || typeof value !== 'object') throw new Error(`恢复帧 ${sequence} 的身份水位无效`);
   const identity = value as Partial<EditIdentity>;
   const optionalCounter = (counter: unknown, minimum = 1, maximum = Number.MAX_SAFE_INTEGER) =>
-    counter === undefined || typeof counter === 'number'
-      && Number.isSafeInteger(counter) && counter >= minimum && counter <= maximum;
-  if (identity.prefix !== prefix
-    || !Number.isSafeInteger(identity.nextSlide) || identity.nextSlide! <= 0
-    || !Number.isSafeInteger(identity.nextElement) || identity.nextElement! <= 0
-    || !identity.nextSpid || typeof identity.nextSpid !== 'object' || Array.isArray(identity.nextSpid)
-    || Object.entries(identity.nextSpid).some(([part, counter]) =>
-      !part || !Number.isSafeInteger(counter) || counter <= 0)
+    counter === undefined || (typeof counter === 'number' && Number.isSafeInteger(counter) && counter >= minimum && counter <= maximum);
+  if (
+    identity.prefix !== prefix
+    || !Number.isSafeInteger(identity.nextSlide)
+    || identity.nextSlide! <= 0
+    || !Number.isSafeInteger(identity.nextElement)
+    || identity.nextElement! <= 0
+    || !identity.nextSpid
+    || typeof identity.nextSpid !== 'object'
+    || Array.isArray(identity.nextSpid)
+    || Object.entries(identity.nextSpid).some(([part, counter]) => !part || !Number.isSafeInteger(counter) || counter <= 0)
     || !optionalCounter(identity.nextSlidePart)
     || !optionalCounter(identity.nextNotesPart)
     // 0x8000_0000 表示已分配完最后一个合法 ST_SlideId；文档仍可打开，但不能再新增页。
     || !optionalCounter(identity.nextPresentationSlideId, 256, 0x8000_0000)
-    || !optionalCounter(identity.nextPresentationRelationship)) {
+    || !optionalCounter(identity.nextPresentationRelationship)
+  ) {
     throw new Error(`恢复帧 ${sequence} 的身份水位无效`);
   }
   if (identity.allocation !== undefined) {
-    assertIdentityAllocation(
-      identity.allocation, `恢复帧 ${sequence} 的身份分配命名空间`, identity.prefix,
-    );
+    assertIdentityAllocation(identity.allocation, `恢复帧 ${sequence} 的身份分配命名空间`, identity.prefix);
   }
 }
 
@@ -76,8 +72,7 @@ export interface RecoveryIdentityFloor {
 function anchorKey(record: Pick<ElementRecord, 'meta'>): string | null {
   const anchor = record.meta.origin;
   if (!anchor) return null;
-  if (typeof anchor.part !== 'string' || !anchor.part
-    || !Number.isSafeInteger(anchor.spid) || anchor.spid <= 0) {
+  if (typeof anchor.part !== 'string' || !anchor.part || !Number.isSafeInteger(anchor.spid) || anchor.spid <= 0) {
     throw new Error('恢复日志包含无效的 OOXML 元素身份');
   }
   return `${anchor.part}\0${anchor.spid}`;
@@ -89,8 +84,9 @@ function owningParts(doc: EditDoc): Map<string, string | null> {
     ...Object.values(doc.layouts).map((layout) => [layout.id, layout.origin.part] as const),
     ...Object.values(doc.masters).map((master) => [master.id, master.id] as const),
   ]);
-  const records = new Map([...Object.values(doc.elements), ...Object.values(doc.removedElements)]
-    .map((record) => [record.id, record] as const));
+  const records = new Map(
+    [...Object.values(doc.elements), ...Object.values(doc.removedElements)].map((record) => [record.id, record] as const),
+  );
   const resolve = (id: string, visiting = new Set<string>()): string | null => {
     if (owners.has(id)) return owners.get(id)!;
     const record = records.get(id);
@@ -108,26 +104,31 @@ function slideIdentityKey(slide: SlideRecord): string {
   const creation = slide.creation;
   return JSON.stringify([
     slide.origin?.part ?? null,
-    creation ? [
-      creation.layoutPart, creation.layoutRelationshipId, creation.duplicateSourcePart ?? null,
-      creation.duplicateNotesSourcePart ?? null, creation.duplicateNotesPart ?? null,
-      creation.duplicateRemovedSpids ?? null, creation.duplicateRemovedAnimationSpids ?? null,
-      creation.presentationSlideId,
-      creation.presentationRelationshipId, creation.sectionAfterSlideId ?? null,
-    ] : null,
+    creation
+      ? [
+          creation.layoutPart,
+          creation.layoutRelationshipId,
+          creation.duplicateSourcePart ?? null,
+          creation.duplicateNotesSourcePart ?? null,
+          creation.duplicateNotesPart ?? null,
+          creation.duplicateRemovedSpids ?? null,
+          creation.duplicateRemovedAnimationSpids ?? null,
+          creation.presentationSlideId,
+          creation.presentationRelationshipId,
+          creation.sectionAfterSlideId ?? null,
+        ]
+      : null,
   ]);
 }
 
-const notesBindingKey = (binding: SlideNotesBinding): string => JSON.stringify([
-  binding.sourcePart ?? null, binding.targetPart, binding.relationshipId,
-]);
+const notesBindingKey = (binding: SlideNotesBinding): string =>
+  JSON.stringify([binding.sourcePart ?? null, binding.targetPart, binding.relationshipId]);
 
 function inheritedSources(doc: EditDoc): Map<string, Set<string>> {
   const sources = new Map<string, Set<string>>();
   const visit = (element: ElementRecord['src']): void => {
     const origin = element.editInfo?.origin;
-    if (origin && typeof origin.part === 'string' && origin.part
-      && Number.isSafeInteger(origin.spid) && origin.spid > 0) {
+    if (origin && typeof origin.part === 'string' && origin.part && Number.isSafeInteger(origin.spid) && origin.spid > 0) {
       const key = `${origin.part}\0${origin.spid}`;
       const variants = sources.get(key) ?? new Set<string>();
       variants.add(JSON.stringify(element));
@@ -150,27 +151,28 @@ export function createRecoveryIdentityFloor(doc: EditDoc): RecoveryIdentityFloor
     nextSpid: new Map(Object.entries(identity.nextSpid)),
     checkedSpidSources: new Set(),
     createdParts: new Set(),
-    knownElements: new Map([...Object.values(doc.elements), ...Object.values(doc.removedElements)]
-      .map((record) => [record.id, anchorKey(record)])),
+    knownElements: new Map(
+      [...Object.values(doc.elements), ...Object.values(doc.removedElements)].map((record) => [record.id, anchorKey(record)]),
+    ),
     owningParts: owningParts(doc),
-    knownSlides: new Map(Object.values(doc.slides)
-      .map((slide) => [slide.id, slideIdentityKey(slide)])),
+    knownSlides: new Map(Object.values(doc.slides).map((slide) => [slide.id, slideIdentityKey(slide)])),
     occupiedSlideParts: new Set([
       ...packageParts.filter((part) => /^ppt\/slides\/slide\d+\.xml$/.test(part)),
-      ...Object.values(doc.slides).flatMap((slide) => slide.origin ? [slide.origin.part] : []),
+      ...Object.values(doc.slides).flatMap((slide) => (slide.origin ? [slide.origin.part] : [])),
     ]),
-    usedPresentationSlideIds: new Set(Object.values(doc.slides)
-      .flatMap((slide) => slide.creation ? [slide.creation.presentationSlideId] : [])),
-    usedPresentationRelationships: new Set(Object.values(doc.slides)
-      .flatMap((slide) => slide.creation ? [slide.creation.presentationRelationshipId] : [])),
-    allowedNotesBindings: new Map(Object.values(doc.slides).map((slide) => [
-      slide.id, new Set(slide.notes ? [notesBindingKey(slide.notes)] : []),
-    ])),
-    currentNotesBindings: new Map(Object.values(doc.slides)
-      .map((slide) => [slide.id, slide.notes ? notesBindingKey(slide.notes) : null])),
+    usedPresentationSlideIds: new Set(
+      Object.values(doc.slides).flatMap((slide) => (slide.creation ? [slide.creation.presentationSlideId] : [])),
+    ),
+    usedPresentationRelationships: new Set(
+      Object.values(doc.slides).flatMap((slide) => (slide.creation ? [slide.creation.presentationRelationshipId] : [])),
+    ),
+    allowedNotesBindings: new Map(
+      Object.values(doc.slides).map((slide) => [slide.id, new Set(slide.notes ? [notesBindingKey(slide.notes)] : [])]),
+    ),
+    currentNotesBindings: new Map(Object.values(doc.slides).map((slide) => [slide.id, slide.notes ? notesBindingKey(slide.notes) : null])),
     occupiedNotesParts: new Set([
       ...packageParts.filter((part) => /^ppt\/notesSlides\/notesSlide\d+\.xml$/.test(part)),
-      ...Object.values(doc.slides).flatMap((slide) => slide.notes ? [slide.notes.targetPart] : []),
+      ...Object.values(doc.slides).flatMap((slide) => (slide.notes ? [slide.notes.targetPart] : [])),
     ]),
     inheritedSources: inheritedSources(doc),
     slideIdPattern: new RegExp(`^${escaped}s([0-9a-z]+)$`),
@@ -179,10 +181,8 @@ export function createRecoveryIdentityFloor(doc: EditDoc): RecoveryIdentityFloor
     columnIdPattern: new RegExp(`^${escaped}c([0-9a-z]+):`),
     ...(identity.nextSlidePart === undefined ? {} : { nextSlidePart: identity.nextSlidePart }),
     ...(identity.nextNotesPart === undefined ? {} : { nextNotesPart: identity.nextNotesPart }),
-    ...(identity.nextPresentationSlideId === undefined
-      ? {} : { nextPresentationSlideId: identity.nextPresentationSlideId }),
-    ...(identity.nextPresentationRelationship === undefined
-      ? {} : { nextPresentationRelationship: identity.nextPresentationRelationship }),
+    ...(identity.nextPresentationSlideId === undefined ? {} : { nextPresentationSlideId: identity.nextPresentationSlideId }),
+    ...(identity.nextPresentationRelationship === undefined ? {} : { nextPresentationRelationship: identity.nextPresentationRelationship }),
     checkedSlideSource: false,
     checkedNotesSource: false,
     ...(identity.allocation ? { allocation: structuredClone(identity.allocation) } : {}),
@@ -216,8 +216,7 @@ function advanceRecord(
   advanceLogicalId(floor, record.id);
   const anchor = anchorKey(record);
   if (floor.knownElements.has(record.id)) {
-    if (floor.knownElements.get(record.id) !== anchor
-      || floor.owningParts.has(record.id) && floor.owningParts.get(record.id) !== owner) {
+    if (floor.knownElements.get(record.id) !== anchor || (floor.owningParts.has(record.id) && floor.owningParts.get(record.id) !== owner)) {
       throw new Error(`恢复日志改变了已分配元素的 OOXML 身份：${record.id}`);
     }
     if (insert) floor.owningParts.set(record.id, owner);
@@ -231,21 +230,21 @@ function advanceRecord(
     throw new Error(`恢复日志的新元素缺少可持久化宿主：${record.id}`);
   }
   if (record.meta.origin && record.meta.origin.part !== owner) {
-    const inherited = record.meta.inherited === true && record.meta.editable === 'none'
-      && !record.meta.created && !record.meta.insertion && record.order === undefined
+    const inherited =
+      record.meta.inherited === true
+      && record.meta.editable === 'none'
+      && !record.meta.created
+      && !record.meta.insertion
+      && record.order === undefined
       && Object.keys(record.ovr).length === 0
       && floor.inheritedSources.get(anchor!)?.has(JSON.stringify(record.src)) === true;
     if (!inherited) throw new Error(`恢复日志的新元素没有归属当前页面 part：${record.id}`);
   }
-  if (record.meta.origin?.part === owner) floor.nextSpid.set(record.meta.origin.part, Math.max(
-    floor.nextSpid.get(record.meta.origin.part) ?? 1, maxElementSpid(record) + 1,
-  ));
+  if (record.meta.origin?.part === owner)
+    floor.nextSpid.set(record.meta.origin.part, Math.max(floor.nextSpid.get(record.meta.origin.part) ?? 1, maxElementSpid(record) + 1));
 }
 
-function embeddedRecordIds(
-  records: Readonly<Record<string, ElementRecord>>,
-  owner: string | null,
-): Set<string> {
+function embeddedRecordIds(records: Readonly<Record<string, ElementRecord>>, owner: string | null): Set<string> {
   const embedded = new Set<string>();
   const visit = (id: string): void => {
     const record = records[id];
@@ -255,29 +254,26 @@ function embeddedRecordIds(
   };
   for (const record of Object.values(records)) {
     // 图表等原生 frame 的绘制子节点没有各自的 OPC 宿主，随根框架一起复制和恢复。
-    if ((record.meta.created && record.meta.insertion || record.meta.editable === 'frame')
-      && record.meta.origin?.part === owner) {
+    if (((record.meta.created && record.meta.insertion) || record.meta.editable === 'frame') && record.meta.origin?.part === owner) {
       for (const child of record.children ?? []) visit(child);
     }
   }
   return embedded;
 }
 
-function trackNotesBinding(
-  floor: RecoveryIdentityFloor,
-  slideId: string,
-  binding: SlideNotesBinding | undefined,
-  explicit = false,
-): void {
+function trackNotesBinding(floor: RecoveryIdentityFloor, slideId: string, binding: SlideNotesBinding | undefined, explicit = false): void {
   const current = floor.currentNotesBindings.get(slideId) ?? null;
   if (!binding) {
     if (explicit && current === null) throw new Error(`恢复日志重复删除备注绑定：${slideId}`);
     floor.currentNotesBindings.set(slideId, null);
     return;
   }
-  if (typeof binding.targetPart !== 'string' || typeof binding.relationshipId !== 'string'
-    || !binding.relationshipId || binding.sourcePart !== undefined
-      && (typeof binding.sourcePart !== 'string' || !binding.sourcePart)) {
+  if (
+    typeof binding.targetPart !== 'string'
+    || typeof binding.relationshipId !== 'string'
+    || !binding.relationshipId
+    || (binding.sourcePart !== undefined && (typeof binding.sourcePart !== 'string' || !binding.sourcePart))
+  ) {
     throw new Error(`恢复日志的备注绑定无效：${slideId}`);
   }
   const signature = notesBindingKey(binding);
@@ -285,9 +281,11 @@ function trackNotesBinding(
   const allowed = floor.allowedNotesBindings.get(slideId) ?? new Set<string>();
   if (!allowed.has(signature)) {
     const serial = Number(/^ppt\/notesSlides\/notesSlide(\d+)\.xml$/.exec(binding.targetPart)?.[1]);
-    if (!Number.isSafeInteger(serial)
+    if (
+      !Number.isSafeInteger(serial)
       || serial < (floor.minimumNewNotesPart ?? Number.MAX_SAFE_INTEGER)
-      || floor.occupiedNotesParts.has(binding.targetPart)) {
+      || floor.occupiedNotesParts.has(binding.targetPart)
+    ) {
       throw new Error(`恢复日志的备注 part 不是独立新身份：${binding.targetPart}`);
     }
     allowed.add(signature);
@@ -307,24 +305,23 @@ function advanceSlideCreation(floor: RecoveryIdentityFloor, slide: SlideRecord):
   if (part && Number.isSafeInteger(partSerial)) {
     floor.nextSlidePart = Math.max(floor.nextSlidePart ?? 1, partSerial + 1);
   }
-  floor.nextPresentationSlideId = Math.max(
-    floor.nextPresentationSlideId ?? 256, slide.creation.presentationSlideId + 1,
-  );
+  floor.nextPresentationSlideId = Math.max(floor.nextPresentationSlideId ?? 256, slide.creation.presentationSlideId + 1);
   const relationship = /^rId(\d+)$/.exec(slide.creation.presentationRelationshipId);
   const relationshipSerial = Number(relationship?.[1]);
   if (relationship && Number.isSafeInteger(relationshipSerial)) {
-    floor.nextPresentationRelationship = Math.max(
-      floor.nextPresentationRelationship ?? 1, relationshipSerial + 1,
-    );
+    floor.nextPresentationRelationship = Math.max(floor.nextPresentationRelationship ?? 1, relationshipSerial + 1);
   }
 }
 
 function advancePatchIdentities(floor: RecoveryIdentityFloor, patches: readonly Patch[]): void {
   for (const patch of patches) {
     advanceLogicalId(floor, patch.path[1]);
-    if (patch.path[0] === 'elements' && patch.path[2] === 'ovr'
+    if (
+      patch.path[0] === 'elements'
+      && patch.path[2] === 'ovr'
       && (patch.path[3] === 'tableRows' || patch.path[3] === 'tableColumns')
-      && typeof patch.path[4] === 'string') {
+      && typeof patch.path[4] === 'string'
+    ) {
       advanceLogicalId(floor, patch.path[4]);
     }
     if (isElementTreePatch(patch)) {
@@ -346,21 +343,23 @@ function advancePatchIdentities(floor: RecoveryIdentityFloor, patches: readonly 
         }
       } else {
         const partSerial = Number(/^ppt\/slides\/slide(\d+)\.xml$/.exec(owner ?? '')?.[1]);
-        const relationship = slide.creation
-          && /^rId(\d+)$/.exec(slide.creation.presentationRelationshipId);
+        const relationship = slide.creation && /^rId(\d+)$/.exec(slide.creation.presentationRelationshipId);
         const relationshipSerial = Number(relationship?.[1]);
-        if (patch.op !== 'insert' || !slide.creation || !owner
+        if (
+          patch.op !== 'insert'
+          || !slide.creation
+          || !owner
           || (slide.creation.duplicateNotesPart ?? null) !== (slide.notes?.targetPart ?? null)
           || !Number.isSafeInteger(partSerial)
           || partSerial < (floor.minimumNewSlidePart ?? Number.MAX_SAFE_INTEGER)
-          || slide.creation.presentationSlideId
-            < (floor.minimumNewPresentationSlideId ?? Number.MAX_SAFE_INTEGER)
-          || !relationship || !Number.isSafeInteger(relationshipSerial)
-          || relationshipSerial
-            < (floor.minimumNewPresentationRelationship ?? Number.MAX_SAFE_INTEGER)
+          || slide.creation.presentationSlideId < (floor.minimumNewPresentationSlideId ?? Number.MAX_SAFE_INTEGER)
+          || !relationship
+          || !Number.isSafeInteger(relationshipSerial)
+          || relationshipSerial < (floor.minimumNewPresentationRelationship ?? Number.MAX_SAFE_INTEGER)
           || floor.occupiedSlideParts.has(owner)
           || floor.usedPresentationSlideIds.has(slide.creation.presentationSlideId)
-          || floor.usedPresentationRelationships.has(slide.creation.presentationRelationshipId)) {
+          || floor.usedPresentationRelationships.has(slide.creation.presentationRelationshipId)
+        ) {
           throw new Error(`恢复日志的新页面缺少独立 OPC 身份：${slide.id}`);
         }
         floor.knownSlides.set(slide.id, identity);
@@ -376,8 +375,12 @@ function advancePatchIdentities(floor: RecoveryIdentityFloor, patches: readonly 
         advanceRecord(floor, record, patch.op === 'insert', owner, embedded.has(record.id));
       }
     } else if (isSlideNotesPatch(patch) && patch.path.length === 3) {
-      trackNotesBinding(floor, patch.path[1], patch.op === 'set' && typeof patch.value === 'object'
-        ? patch.value as SlideNotesBinding : undefined, true);
+      trackNotesBinding(
+        floor,
+        patch.path[1],
+        patch.op === 'set' && typeof patch.value === 'object' ? (patch.value as SlideNotesBinding) : undefined,
+        true,
+      );
     }
   }
 }
@@ -386,41 +389,32 @@ function identityProbe(doc: EditDoc): EditDoc {
   return {
     ...doc,
     identity: {
-      ...structuredClone(doc.identity), nextSpid: {},
+      ...structuredClone(doc.identity),
+      nextSpid: {},
       allocation: undefined,
-      nextSlidePart: undefined, nextNotesPart: undefined,
-      nextPresentationSlideId: undefined, nextPresentationRelationship: undefined,
+      nextSlidePart: undefined,
+      nextNotesPart: undefined,
+      nextPresentationSlideId: undefined,
+      nextPresentationRelationship: undefined,
     },
   };
 }
 
-function ensureOpcSourceFloors(
-  doc: EditDoc,
-  floor: RecoveryIdentityFloor,
-  next: EditIdentity,
-): void {
-  const needsSlideSource = next.nextSlidePart !== undefined
-    || next.nextPresentationSlideId !== undefined || next.nextPresentationRelationship !== undefined;
+function ensureOpcSourceFloors(doc: EditDoc, floor: RecoveryIdentityFloor, next: EditIdentity): void {
+  const needsSlideSource =
+    next.nextSlidePart !== undefined || next.nextPresentationSlideId !== undefined || next.nextPresentationRelationship !== undefined;
   if (needsSlideSource && !floor.checkedSlideSource) {
     const probe = identityProbe(doc);
     const allocated = allocateSlideOpcIdentity(probe);
     const partSerial = Number(/^ppt\/slides\/slide(\d+)\.xml$/.exec(allocated.part)?.[1]);
     const relationshipSerial = Number(/^rId(\d+)$/.exec(allocated.presentationRelationshipId)?.[1]);
     floor.minimumNewSlidePart = Math.max(floor.nextSlidePart ?? 1, partSerial);
-    floor.minimumNewPresentationSlideId = Math.max(
-      floor.nextPresentationSlideId ?? 256, allocated.presentationSlideId,
-    );
-    floor.minimumNewPresentationRelationship = Math.max(
-      floor.nextPresentationRelationship ?? 1, relationshipSerial,
-    );
+    floor.minimumNewPresentationSlideId = Math.max(floor.nextPresentationSlideId ?? 256, allocated.presentationSlideId);
+    floor.minimumNewPresentationRelationship = Math.max(floor.nextPresentationRelationship ?? 1, relationshipSerial);
     // allocateNotesPart 也会惰性初始化这三项但不会消费页面身份；实际消费由 SlideTreePatch 再推进。
     floor.nextSlidePart = Math.max(floor.nextSlidePart ?? 1, partSerial);
-    floor.nextPresentationSlideId = Math.max(
-      floor.nextPresentationSlideId ?? 256, allocated.presentationSlideId,
-    );
-    floor.nextPresentationRelationship = Math.max(
-      floor.nextPresentationRelationship ?? 1, relationshipSerial,
-    );
+    floor.nextPresentationSlideId = Math.max(floor.nextPresentationSlideId ?? 256, allocated.presentationSlideId);
+    floor.nextPresentationRelationship = Math.max(floor.nextPresentationRelationship ?? 1, relationshipSerial);
     floor.checkedSlideSource = true;
   }
   if (next.nextNotesPart !== undefined && !floor.checkedNotesSource) {
@@ -449,9 +443,7 @@ function ensureSpidSourceFloors(doc: EditDoc, floor: RecoveryIdentityFloor, next
     const probe = identityProbe(doc);
     try {
       allocateElementSpid(probe, part);
-      floor.nextSpid.set(part, Math.max(
-        floor.nextSpid.get(part) ?? 1, probe.identity.nextSpid[part],
-      ));
+      floor.nextSpid.set(part, Math.max(floor.nextSpid.get(part) ?? 1, probe.identity.nextSpid[part]));
     } catch (error) {
       if (!floor.nextSpid.has(part)) throw error;
     }
@@ -469,29 +461,35 @@ export function assertRecoveryIdentityFloor(
   ensureOpcSourceFloors(doc, floor, next);
   advancePatchIdentities(floor, patches);
   ensureSpidSourceFloors(doc, floor, next);
-  const optional = [
-    'nextSlidePart', 'nextNotesPart', 'nextPresentationSlideId', 'nextPresentationRelationship',
-  ] as const;
+  const optional = ['nextSlidePart', 'nextNotesPart', 'nextPresentationSlideId', 'nextPresentationRelationship'] as const;
   const previousAllocation = floor.allocation;
   const nextAllocation = next.allocation;
-  const allocationInvalid = previousAllocation ? !nextAllocation
-    || previousAllocation.replicaId !== nextAllocation.replicaId
-    || previousAllocation.prefix !== nextAllocation.prefix
-    || previousAllocation.slot !== nextAllocation.slot
-    || previousAllocation.count !== nextAllocation.count
-    || nextAllocation.clock < previousAllocation.clock
-    || nextAllocation.sequence < previousAllocation.sequence
-    || Object.entries(previousAllocation.ranges).some(([key, range]) => {
-      const candidate = nextAllocation.ranges[key];
-      return !candidate || candidate.base !== range.base || candidate.maximum !== range.maximum
-        || candidate.end !== range.end || candidate.step !== range.step
-        || candidate.next < range.next;
-    }) : false;
-  const invalid = next.nextSlide < floor.nextSlide || next.nextElement < floor.nextElement
-    || [...floor.nextSpid].some(([part, counter]) =>
-      next.nextSpid[part] === undefined || next.nextSpid[part] < counter)
-    || optional.some((key) => floor[key] !== undefined
-      && (next[key] === undefined || next[key]! < floor[key]!)) || allocationInvalid;
+  const allocationInvalid = previousAllocation
+    ? !nextAllocation
+      || previousAllocation.replicaId !== nextAllocation.replicaId
+      || previousAllocation.prefix !== nextAllocation.prefix
+      || previousAllocation.slot !== nextAllocation.slot
+      || previousAllocation.count !== nextAllocation.count
+      || nextAllocation.clock < previousAllocation.clock
+      || nextAllocation.sequence < previousAllocation.sequence
+      || Object.entries(previousAllocation.ranges).some(([key, range]) => {
+        const candidate = nextAllocation.ranges[key];
+        return (
+          !candidate
+          || candidate.base !== range.base
+          || candidate.maximum !== range.maximum
+          || candidate.end !== range.end
+          || candidate.step !== range.step
+          || candidate.next < range.next
+        );
+      })
+    : false;
+  const invalid =
+    next.nextSlide < floor.nextSlide
+    || next.nextElement < floor.nextElement
+    || [...floor.nextSpid].some(([part, counter]) => next.nextSpid[part] === undefined || next.nextSpid[part] < counter)
+    || optional.some((key) => floor[key] !== undefined && (next[key] === undefined || next[key]! < floor[key]!))
+    || allocationInvalid;
   if (invalid) throw new Error(`恢复帧 ${sequence} 的身份水位没有越过已分配身份`);
   floor.nextSlide = next.nextSlide;
   floor.nextElement = next.nextElement;

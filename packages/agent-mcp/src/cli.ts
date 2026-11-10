@@ -16,7 +16,7 @@ async function injectModule(base: string, value: unknown, exportName: 'measureTe
   if (value === undefined) return undefined;
   if (typeof value !== 'string' || !value) throw new Error(`${exportName} 模块路径必须是非空字符串`);
   const path = localPath(resolve(base, value));
-  const module = await import(pathToFileURL(path).href) as Record<string, unknown>;
+  const module = (await import(pathToFileURL(path).href)) as Record<string, unknown>;
   if (typeof module[exportName] !== 'function') throw new Error(`${path} 未导出 ${exportName} 函数`);
   return module[exportName];
 }
@@ -38,8 +38,12 @@ async function main(): Promise<void> {
   const options = await optionsFromArgs(process.argv.slice(2));
   const { server, manager } = createAgentMcpServer(options);
   const transport = new StdioServerTransport();
-  transport.onclose = () => { void manager.dispose(); };
-  const close = () => { void transport.close().finally(() => manager.dispose()); };
+  transport.onclose = () => {
+    void manager.dispose();
+  };
+  const close = () => {
+    void transport.close().finally(() => manager.dispose());
+  };
   process.once('SIGINT', close);
   process.once('SIGTERM', close);
   await server.connect(transport);

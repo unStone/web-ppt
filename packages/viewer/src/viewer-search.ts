@@ -1,12 +1,7 @@
 import { slideText, type Presentation, type Slide } from '@web-ppt/core';
 import type { Viewer } from '@web-ppt/viewer-core';
 import { enableViewerSearch, resetViewerSearch } from './open-file-info';
-import {
-  applySearchHighlight,
-  clearSearchHighlight,
-  collectSearchRanges,
-  isSearchRootVisible,
-} from './viewer-search-highlight';
+import { applySearchHighlight, clearSearchHighlight, collectSearchRanges, isSearchRootVisible } from './viewer-search-highlight';
 
 export function yieldToMain(): Promise<void> {
   const scheduler = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
@@ -93,16 +88,12 @@ export function bindViewerSearch(options: {
 
   const visibleRoots = (): ParentNode[] => options.highlightRoots().filter(isSearchRootVisible);
 
-  const visibleCount = (q: string): number => (
-    visibleRoots().reduce((sum, root) => sum + collectSearchRanges(root, q).length, 0)
-  );
+  const visibleCount = (q: string): number => visibleRoots().reduce((sum, root) => sum + collectSearchRanges(root, q).length, 0);
 
   const writePageLabel = (count: number, onHit: boolean): void => {
     if (hitsLabel.textContent.startsWith('查找中')) return;
     const pages = `${hits.length} 页`;
-    hitsLabel.textContent = onHit && count > 1
-      ? `${pages} · 第 ${occurrence + 1}/${count} 处`
-      : pages;
+    hitsLabel.textContent = onHit && count > 1 ? `${pages} · 第 ${occurrence + 1}/${count} 处` : pages;
   };
 
   const paintHighlight = (): void => {
@@ -245,11 +236,7 @@ export function bindViewerSearch(options: {
   const findAgain = (delta: 1 | -1): boolean => {
     if (query.disabled || options.presenting() || !options.viewer()) return false;
     const active = document.activeElement;
-    if (
-      active instanceof HTMLElement
-      && active !== query
-      && active.closest('input, textarea, select, [contenteditable]')
-    ) return false;
+    if (active instanceof HTMLElement && active !== query && active.closest('input, textarea, select, [contenteditable]')) return false;
     if (!query.value.trim()) return false;
     if (delta < 0) void previous();
     else void nextOrRun();

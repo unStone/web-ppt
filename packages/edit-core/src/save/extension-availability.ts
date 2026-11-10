@@ -9,19 +9,21 @@ export function assertSaveExtensions(doc: EditDoc): void {
   assertDocumentExtensions(doc.extensions);
   validateExtensionAddresses(doc);
   validateExtensionMigrationReceipts(doc);
-  const extensions = registeredEditExtensions(), unloaded = new Set<string>();
+  const extensions = registeredEditExtensions(),
+    unloaded = new Set<string>();
   for (const namespace of Object.keys(doc.extensions ?? {})) {
     if (namespace === EXTENSION_ADDRESSES || namespace === EXTENSION_MIGRATIONS) continue;
     const runtime = extensions.get(namespace);
     if (!runtime) unloaded.add(namespace);
     else if (!runtime.validateDocumentPatch) throw new Error('保存扩展不支持文档级状态');
   }
-  for (const scope of ['elements', 'slides'] as const) for (const record of Object.values(doc[scope])) {
-    for (const namespace of Object.keys(record.ovr.extensions ?? {})) {
-      const runtime = extensions.get(namespace);
-      if (!runtime) unloaded.add(namespace);
-      else if ((runtime.scope === 'slide' ? 'slides' : 'elements') !== scope) throw new Error('保存扩展 scope 与注册不符');
+  for (const scope of ['elements', 'slides'] as const)
+    for (const record of Object.values(doc[scope])) {
+      for (const namespace of Object.keys(record.ovr.extensions ?? {})) {
+        const runtime = extensions.get(namespace);
+        if (!runtime) unloaded.add(namespace);
+        else if ((runtime.scope === 'slide' ? 'slides' : 'elements') !== scope) throw new Error('保存扩展 scope 与注册不符');
+      }
     }
-  }
   if (unloaded.size) throw new Error(`保存前必须加载编辑扩展：${[...unloaded].join('、')}`);
 }

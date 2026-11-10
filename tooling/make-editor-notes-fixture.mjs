@@ -34,11 +34,9 @@ files['ppt/notesSlides/_rels/notesSlide1.xml.rels'] = encoder.encode(`${XML}<Rel
 <Relationship Id="unknown-ref" Type="urn:web-ppt:unknown" Target="../../customXml/keep.xml"/>
 </Relationships>`);
 
-const emptyNotes = decoder.decode(files['ppt/notesSlides/notesSlide4.xml'])
-  .replace(
-    '<a:p><a:r><a:rPr sz="1200"/><a:t>页面 4 的独立备注</a:t></a:r></a:p>',
-    '<a:p/>',
-  );
+const emptyNotes = decoder
+  .decode(files['ppt/notesSlides/notesSlide4.xml'])
+  .replace('<a:p><a:r><a:rPr sz="1200"/><a:t>页面 4 的独立备注</a:t></a:r></a:p>', '<a:p/>');
 if (emptyNotes.includes('页面 4 的独立备注')) throw new Error('空备注页替换失败');
 files['ppt/notesSlides/notesSlide4.xml'] = encoder.encode(emptyNotes);
 

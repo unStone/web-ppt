@@ -31,7 +31,9 @@ export function themeProjectionPackage(doc: EditDoc): OpcPackage | null {
   }
   if (!parts) return source;
   const overlay = inheritPptxParsingContext(source, {
-    format: 'pptx', bytes: source.bytes, parts,
+    format: 'pptx',
+    bytes: source.bytes,
+    parts,
     ...(source.assets ? { assets: source.assets } : {}),
     disposed: source.disposed,
   });

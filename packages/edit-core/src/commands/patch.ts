@@ -2,77 +2,76 @@ import { validateEditDoc } from '../model-invariants';
 import { releaseProjectionCache } from '../projection';
 import { tableCellKeyBelongsToRow, tableCellOverrideKeyFromRefs } from '../table-cell';
 import type {
-  EditDoc, ElementImageReplacement, ElementInsertionResource, ProjectionInvalidation,
-  SlideImageBackground, TableRowInsertion,
+  EditDoc,
+  ElementImageReplacement,
+  ElementInsertionResource,
+  ProjectionInvalidation,
+  SlideImageBackground,
+  TableRowInsertion,
 } from '../types';
 import { validateElementFillPatch } from './element-fill';
 import { validateElementStrokePatch } from './element-stroke';
 import { validateElementEffectsPatch } from './element-effects';
 import { validateElementLinkPatch } from './element-link';
 import {
-  assertImageReplacement, assertImageResourceTargets,
-  isElementImageReplacementPatch, isImageResourcePatch,
-  validateElementCropPatch, validateElementImageReplacementPatch, validateImageResourcePatch,
+  assertImageReplacement,
+  assertImageResourceTargets,
+  isElementImageReplacementPatch,
+  isImageResourcePatch,
+  validateElementCropPatch,
+  validateElementImageReplacementPatch,
+  validateImageResourcePatch,
 } from './element-image-content';
-import {
-  validateElementOrderPatch, validateElementOrderPatchSet,
-} from './element-order';
+import { validateElementOrderPatch, validateElementOrderPatchSet } from './element-order';
 import { isElementTreePatch, validateElementTreePatch } from './element-tree';
-import {
-  isElementHierarchyPatch, validateElementHierarchyPatch,
-} from './element-hierarchy';
+import { isElementHierarchyPatch, validateElementHierarchyPatch } from './element-hierarchy';
 import { isElementTextPatch, validateElementTextPatch } from './element-text';
 import { isTableRowPatch, validateTableRowPatch } from './table-row';
 import {
-  isTableCellPropsPatch, isTableColumnPatch, isTableGridEntryPatch,
-  isTableMergePatch, validateTableCellPropsPatch, validateTableColumnPatch,
-  validateTableGridEntryPatch, validateTableMergePatch,
+  isTableCellPropsPatch,
+  isTableColumnPatch,
+  isTableGridEntryPatch,
+  isTableMergePatch,
+  validateTableCellPropsPatch,
+  validateTableColumnPatch,
+  validateTableGridEntryPatch,
+  validateTableMergePatch,
 } from './table-grid-patch';
 import { isSlideTreePatch, validateSlideTreePatch } from './slide-tree';
 import { validateSlideOrderPatch } from './slide-order';
 import {
-  isSlideBackgroundImagePatch, isSlideBackgroundPatch,
-  isSlideAnimationsPatch, isSlidePropertyPatch, validateSlidePropertyPatch, assertSlideImageBackground,
+  isSlideBackgroundImagePatch,
+  isSlideBackgroundPatch,
+  isSlideAnimationsPatch,
+  isSlidePropertyPatch,
+  validateSlidePropertyPatch,
+  assertSlideImageBackground,
   assertSlideImageBackgroundDimensions,
 } from './slide-property';
-import {
-  isSlideLayoutPatch, validateSlideLayoutPatch,
-} from './slide-layout';
+import { isSlideLayoutPatch, validateSlideLayoutPatch } from './slide-layout';
 import { isSlideNotesPatch, validateSlideNotesPatch } from './slide-notes';
-import type {
-  ElementTreePatch, ExtensionPatch, ImageResourcePatch, Patch, XfrmField,
-} from './types';
+import type { ElementTreePatch, ExtensionPatch, ImageResourcePatch, Patch, XfrmField } from './types';
 import { assertPatchCount } from './patch-count';
 import { assertXfrmValue, XFRM_FIELD_SET } from './xfrm';
+import { isElementNamePatch, validateElementNamePatch } from './element-name';
+import { isElementInteractionPatch, validateElementInteractionPatch } from './element-interaction';
 import {
-  isElementNamePatch, validateElementNamePatch,
-} from './element-name';
-import {
-  isElementInteractionPatch, validateElementInteractionPatch,
-} from './element-interaction';
-import {
-  isElementGeometryPatch, isElementPresetGeometryPatch,
-  validateElementGeometryPatch, validateElementPresetGeometryPatch,
+  isElementGeometryPatch,
+  isElementPresetGeometryPatch,
+  validateElementGeometryPatch,
+  validateElementPresetGeometryPatch,
 } from './element-geometry';
-import {
-  isElementTableStylePatch, validateElementTableStylePatch,
-} from './element-table-style';
+import { isElementTableStylePatch, validateElementTableStylePatch } from './element-table-style';
 import { canInvalidateAgainst, collectPatchInvalidation } from './patch-invalidation';
-import {
-  validateCommonObjectSlidePatch,
-} from './common-object-slide-patch';
+import { validateCommonObjectSlidePatch } from './common-object-slide-patch';
 import { isThemePatch, validateThemePatch } from './theme';
-import {
-  isLayoutPropertyPatch, validateLayoutPropertyPatch,
-} from './layout-property';
+import { isLayoutPropertyPatch, validateLayoutPropertyPatch } from './layout-property';
 import { isMasterBackgroundPatch, validateMasterBackgroundPatch } from './master-property';
 import { isMasterTextStylePatch, validateMasterTextStylePatch } from './master-text-style';
 import { applyPatchValues } from './patch-apply';
 import { structuralPatchStage } from './patch-stage';
 import { retainInsertionSources } from '../source-retention';
-import {
-  isExtensionPatch, validateExtensionPatch, validateExtensionPatchBatches,
-} from '../extension-runtime';
+import { isExtensionPatch, validateExtensionPatch, validateExtensionPatchBatches } from '../extension-runtime';
 import { isDocumentExtensionPatch, validateDocumentExtensionPatch } from '../document-extensions';
 import { canonicalExtensionPatch, isExtensionAddressPatch } from '../extension-addresses';
 import { isExtensionMigrationPatch } from '../extension-migration-receipt';
@@ -123,21 +122,33 @@ function validatePatch(
     validateElementHierarchyPatch(doc, input, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 2
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
-    && (patch.op === 'remove' || patch.op === 'insert')) {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 2
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && (patch.op === 'remove' || patch.op === 'insert')
+  ) {
     validateElementTreePatch(doc, patch as ElementTreePatch, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 2
-    && patch.path[0] === 'slideOrder' && typeof patch.path[1] === 'string'
-    && patch.op === 'move') {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 2
+    && patch.path[0] === 'slideOrder'
+    && typeof patch.path[1] === 'string'
+    && patch.op === 'move'
+  ) {
     validateSlideOrderPatch(doc, patch as import('./types').SlideOrderPatch, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 2
-    && patch.path[0] === 'slides' && typeof patch.path[1] === 'string'
-    && (patch.op === 'remove' || patch.op === 'insert')) {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 2
+    && patch.path[0] === 'slides'
+    && typeof patch.path[1] === 'string'
+    && (patch.op === 'remove' || patch.op === 'insert')
+  ) {
     validateSlideTreePatch(doc, patch as import('./types').SlideTreePatch, index);
     return;
   }
@@ -153,14 +164,19 @@ function validatePatch(
     validateSlideNotesPatch(doc, input, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path[0] === 'elements'
-    && typeof patch.path[1] === 'string' && patch.path[2] === 'ovr'
+  if (
+    Array.isArray(patch.path)
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr'
     && ((patch.path.length === 4 && patch.path[3] === 'text')
-      || (patch.path.length === 7 && patch.path[3] === 'tableCells'
+      || (patch.path.length === 7
+        && patch.path[3] === 'tableCells'
         && (typeof patch.path[4] === 'number' || typeof patch.path[4] === 'string')
         && (typeof patch.path[5] === 'number' || typeof patch.path[5] === 'string')
         && patch.path[6] === 'text'))
-    && (patch.op === 'set' || patch.op === 'del')) {
+    && (patch.op === 'set' || patch.op === 'del')
+  ) {
     validateElementTextPatch(
       doc,
       patch as import('./types').ElementTextPatch,
@@ -170,10 +186,15 @@ function validatePatch(
     );
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 5
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'tableRows'
-    && (patch.op === 'insert' || patch.op === 'remove')) {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 5
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'tableRows'
+    && (patch.op === 'insert' || patch.op === 'remove')
+  ) {
     validateTableRowPatch(doc, patch as import('./types').TableRowPatch, index);
     return;
   }
@@ -193,9 +214,14 @@ function validatePatch(
     validateTableCellPropsPatch(doc, input, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 3
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string' && patch.path[2] === 'order'
-    && (patch.op === 'set' || patch.op === 'del')) {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 3
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'order'
+    && (patch.op === 'set' || patch.op === 'del')
+  ) {
     validateElementOrderPatch(doc, patch as import('./types').ElementOrderPatch, index);
     return;
   }
@@ -207,17 +233,27 @@ function validatePatch(
     validateElementInteractionPatch(doc, input, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 4
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'fill'
-    && (patch.op === 'set' || patch.op === 'del')) {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 4
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'fill'
+    && (patch.op === 'set' || patch.op === 'del')
+  ) {
     validateElementFillPatch(doc, patch as import('./types').ElementFillPatch, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 4
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'crop'
-    && (patch.op === 'set' || patch.op === 'del')) {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 4
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'crop'
+    && (patch.op === 'set' || patch.op === 'del')
+  ) {
     validateElementCropPatch(doc, patch as import('./types').ElementCropPatch, index);
     return;
   }
@@ -233,39 +269,62 @@ function validatePatch(
     validateElementTableStylePatch(doc, input, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 4
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
-    && patch.path[2] === 'meta' && patch.path[3] === 'imageReplacement'
-    && (patch.op === 'set' || patch.op === 'del')) {
-    validateElementImageReplacementPatch(
-      doc, patch as import('./types').ElementImageReplacementPatch, index, stagedImageResources,
-    );
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 4
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'meta'
+    && patch.path[3] === 'imageReplacement'
+    && (patch.op === 'set' || patch.op === 'del')
+  ) {
+    validateElementImageReplacementPatch(doc, patch as import('./types').ElementImageReplacementPatch, index, stagedImageResources);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 4
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'effects'
-    && (patch.op === 'set' || patch.op === 'del')) {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 4
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'effects'
+    && (patch.op === 'set' || patch.op === 'del')
+  ) {
     validateElementEffectsPatch(doc, patch as import('./types').ElementEffectsPatch, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 4
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'link'
-    && (patch.op === 'set' || patch.op === 'del')) {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 4
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'link'
+    && (patch.op === 'set' || patch.op === 'del')
+  ) {
     validateElementLinkPatch(doc, patch as import('./types').ElementLinkPatch, index);
     return;
   }
-  if (Array.isArray(patch.path) && patch.path.length === 4
-    && patch.path[0] === 'elements' && typeof patch.path[1] === 'string'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'stroke'
-    && (patch.op === 'set' || patch.op === 'del')) {
+  if (
+    Array.isArray(patch.path)
+    && patch.path.length === 4
+    && patch.path[0] === 'elements'
+    && typeof patch.path[1] === 'string'
+    && patch.path[2] === 'ovr'
+    && patch.path[3] === 'stroke'
+    && (patch.op === 'set' || patch.op === 'del')
+  ) {
     validateElementStrokePatch(doc, patch as import('./types').ElementStrokePatch, index);
     return;
   }
-  if (!Array.isArray(patch.path) || patch.path.length !== 4
-    || patch.path[0] !== 'elements' || typeof patch.path[1] !== 'string'
-    || patch.path[2] !== 'ovr' || !XFRM_FIELD_SET.has(patch.path[3] as XfrmField)) {
+  if (
+    !Array.isArray(patch.path)
+    || patch.path.length !== 4
+    || patch.path[0] !== 'elements'
+    || typeof patch.path[1] !== 'string'
+    || patch.path[2] !== 'ovr'
+    || !XFRM_FIELD_SET.has(patch.path[3] as XfrmField)
+  ) {
     throw new Error(`Patch ${index} 的路径不受支持`);
   }
   const id = patch.path[1];
@@ -276,11 +335,7 @@ function validatePatch(
   }
 }
 
-function validatePatchRelations(
-  doc: EditDoc,
-  patches: readonly Patch[],
-  allowSequentialStructure: boolean,
-): void {
+function validatePatchRelations(doc: EditDoc, patches: readonly Patch[], allowSequentialStructure: boolean): void {
   const owner = new Map<string, number>();
   const tableRows = new Map<string, number>();
   const tableOrders = new Map<string, number>();
@@ -303,8 +358,7 @@ function validatePatchRelations(
         tableOrders.set(order, index);
       }
     }
-    if (isTableColumnPatch(patch) || isTableGridEntryPatch(patch)
-      || isTableMergePatch(patch) || isTableCellPropsPatch(patch)) {
+    if (isTableColumnPatch(patch) || isTableGridEntryPatch(patch) || isTableMergePatch(patch) || isTableCellPropsPatch(patch)) {
       const path = JSON.stringify(patch.path);
       const previousPath = tableGridPaths.get(path);
       if (previousPath !== undefined && !allowSequentialStructure) {
@@ -334,15 +388,13 @@ function validatePatchRelations(
     const stateKey = `${elementId}\0${rowId}`;
     let cells = rowCellState.get(stateKey);
     if (!cells) {
-      cells = new Set(Object.keys(doc.elements[elementId]?.ovr.tableCells ?? {})
-        .filter((key) => tableCellKeyBelongsToRow(key, rowId)));
+      cells = new Set(Object.keys(doc.elements[elementId]?.ovr.tableCells ?? {}).filter((key) => tableCellKeyBelongsToRow(key, rowId)));
       rowCellState.set(stateKey, cells);
     }
     return cells;
   };
   for (const patch of patches) {
-    if (isElementTextPatch(patch) && patch.path.length === 7
-      && typeof patch.path[4] === 'string') {
+    if (isElementTextPatch(patch) && patch.path.length === 7 && typeof patch.path[4] === 'string') {
       const cells = cellsFor(patch.path[1], patch.path[4]);
       const key = tableCellOverrideKeyFromRefs(patch.path[4], patch.path[5]);
       if (patch.op === 'set') cells.add(key);
@@ -362,25 +414,33 @@ function validatePatchRelations(
   });
 }
 
-function applyPatchBatch(
-  doc: EditDoc,
-  patches: readonly Patch[],
-  stageStructuralModel: boolean,
-): ProjectionInvalidation {
-  patches = patches.map(patch => canonicalExtensionPatch(doc, patch));
+function applyPatchBatch(doc: EditDoc, patches: readonly Patch[], stageStructuralModel: boolean): ProjectionInvalidation {
+  patches = patches.map((patch) => canonicalExtensionPatch(doc, patch));
   assertPatchCount(patches.length);
   validatePatchRelations(doc, patches, stageStructuralModel);
-  const structural = patches.some((patch) =>
-    isSlideTreePatch(patch) || isElementTreePatch(patch) || isElementHierarchyPatch(patch)
-      || isTableRowPatch(patch) || isTableColumnPatch(patch) || isTableGridEntryPatch(patch)
-      || isTableMergePatch(patch) || isTableCellPropsPatch(patch) || isExtensionAddressPatch(patch) || isExtensionMigrationPatch(patch));
+  const structural = patches.some(
+    (patch) =>
+      isSlideTreePatch(patch)
+      || isElementTreePatch(patch)
+      || isElementHierarchyPatch(patch)
+      || isTableRowPatch(patch)
+      || isTableColumnPatch(patch)
+      || isTableGridEntryPatch(patch)
+      || isTableMergePatch(patch)
+      || isTableCellPropsPatch(patch)
+      || isExtensionAddressPatch(patch)
+      || isExtensionMigrationPatch(patch),
+  );
   // 本机元素删除已由命令生成独立快照，删除分支只读它；再次深拷贝会重复复制九级文字目录。
   // 外部批次及会安装记录的操作仍隔离快照，不能让调用方或暂存写回污染真实模型。
-  const appliedPatches = structural && (stageStructuralModel
-    || patches.some((patch) => patch.op !== 'remove' || !isElementTreePatch(patch)))
-    ? structuredClone([...patches]) : [...patches];
-  const validationStage = structural && (stageStructuralModel || patches.some(patch => isExtensionAddressPatch(patch) || isExtensionMigrationPatch(patch)))
-    ? structuralPatchStage(doc, appliedPatches) : null;
+  const appliedPatches =
+    structural && (stageStructuralModel || patches.some((patch) => patch.op !== 'remove' || !isElementTreePatch(patch)))
+      ? structuredClone([...patches])
+      : [...patches];
+  const validationStage =
+    structural && (stageStructuralModel || patches.some((patch) => isExtensionAddressPatch(patch) || isExtensionMigrationPatch(patch)))
+      ? structuralPatchStage(doc, appliedPatches)
+      : null;
   const needsAnimationStage = structural && patches.some(isSlideAnimationsPatch);
   const animationDoc = needsAnimationStage ? structuralPatchStage(doc, appliedPatches) : doc;
   if (needsAnimationStage) applyPatchValues(animationDoc, structuredClone(appliedPatches));
@@ -391,12 +451,10 @@ function applyPatchBatch(
     if (isImageResourcePatch(patch)) {
       imageResourcePatches.push({ patch, index });
       resourceHashes.add(patch.path[1]);
-    }
-    else if (isExtensionPatch(patch)) extensionEntries.push({ patch, index });
+    } else if (isExtensionPatch(patch)) extensionEntries.push({ patch, index });
   });
   // 变换/文字等热路径只读资源表；只有真正修改资源时才支付写时复制成本。
-  const stagedImageResources = imageResourcePatches.length
-    ? { ...doc.imageResources } : doc.imageResources;
+  const stagedImageResources = imageResourcePatches.length ? { ...doc.imageResources } : doc.imageResources;
   imageResourcePatches.forEach(({ patch, index }) => {
     validateImageResourcePatch(doc, patch, index);
     if (patch.op === 'set') stagedImageResources[patch.path[1]] = patch.value;
@@ -406,21 +464,17 @@ function applyPatchBatch(
   const stagedTableRows = new Map<string, Record<string, TableRowInsertion>>();
   const dirtyElements = new Set<string>();
   const dirtySlides = new Set<string>();
-  const stagedAddresses = new Set<string>(), liveAddresses = new Set<string>();
+  const stagedAddresses = new Set<string>(),
+    liveAddresses = new Set<string>();
   // 结构批次依赖逐条暂存后的模型；普通扩展批次可共享一次昂贵的来源解析。
-  const batchValidatedExtensions = structural
-    ? new Set<number>() : validateExtensionPatchBatches(doc, extensionEntries);
+  const batchValidatedExtensions = structural ? new Set<number>() : validateExtensionPatchBatches(doc, extensionEntries);
   const patchDoc = validationStage ?? doc;
   patches.forEach((input, index) => {
     const patch = canonicalExtensionPatch(patchDoc, input);
     appliedPatches[index] = canonicalExtensionPatch(patchDoc, appliedPatches[index]);
-    validatePatch(
-      patchDoc, patch, index, stagedTableRows, stagedImageResources, animationDoc,
-      batchValidatedExtensions.has(index),
-    );
+    validatePatch(patchDoc, patch, index, stagedTableRows, stagedImageResources, animationDoc, batchValidatedExtensions.has(index));
     if (isTableRowPatch(patch)) {
-      const current = stagedTableRows.get(patch.path[1])
-        ?? { ...patchDoc.elements[patch.path[1]]?.ovr.tableRows };
+      const current = stagedTableRows.get(patch.path[1]) ?? { ...patchDoc.elements[patch.path[1]]?.ovr.tableRows };
       if (patch.op === 'insert') current[patch.path[4]] = { ...patch.value };
       else delete current[patch.path[4]];
       stagedTableRows.set(patch.path[1], current);
@@ -447,45 +501,40 @@ function applyPatchBatch(
     backgroundImages.has(id) ? backgroundImages.get(id) : patchDoc.slides[id]?.backgroundImage;
   if (resourceHashes.size) {
     for (const record of Object.values(patchDoc.elements)) {
-      const replacement = replacements.has(record.id)
-        ? replacements.get(record.id) : record.meta.imageReplacement;
+      const replacement = replacements.has(record.id) ? replacements.get(record.id) : record.meta.imageReplacement;
       if (replacement && resourceHashes.has(replacement.resourceHash)) {
-        assertImageReplacement(
-          replacement, record.meta.origin?.part, stagedImageResources,
-          `元素 ${record.id} 的最终图片替换资源`,
-        );
+        assertImageReplacement(replacement, record.meta.origin?.part, stagedImageResources, `元素 ${record.id} 的最终图片替换资源`);
       }
     }
     for (const record of Object.values(patchDoc.slides)) {
       const backgroundImage = finalBackgroundImage(record.id);
-      if (backgroundImage
-        && backgroundImage.resourceHashes.some((hash) => resourceHashes.has(hash))
-        && record.origin) {
-        assertSlideImageBackground(
-          backgroundImage, record, stagedImageResources,
-          `幻灯片 ${record.id} 的最终图片背景资源`, patchDoc,
-        );
+      if (backgroundImage && backgroundImage.resourceHashes.some((hash) => resourceHashes.has(hash)) && record.origin) {
+        assertSlideImageBackground(backgroundImage, record, stagedImageResources, `幻灯片 ${record.id} 的最终图片背景资源`, patchDoc);
       }
     }
   }
   const touchedBackgroundSlides = new Set([...backgrounds.keys(), ...backgroundImages.keys()]);
-  if (resourceHashes.size) for (const record of Object.values(patchDoc.slides)) {
-    if (finalBackgroundImage(record.id)?.resourceHashes.some((hash) => resourceHashes.has(hash))) {
-      touchedBackgroundSlides.add(record.id);
+  if (resourceHashes.size)
+    for (const record of Object.values(patchDoc.slides)) {
+      if (finalBackgroundImage(record.id)?.resourceHashes.some((hash) => resourceHashes.has(hash))) {
+        touchedBackgroundSlides.add(record.id);
+      }
     }
-  }
   for (const slideId of touchedBackgroundSlides) {
     const record = patchDoc.slides[slideId];
     if (!record) throw new Error(`图片背景 Patch 指向不存在的幻灯片：${slideId}`);
     const background = backgrounds.has(slideId) ? backgrounds.get(slideId) : record.ovr.background;
     const backgroundImage = finalBackgroundImage(slideId);
-    if ((background?.type === 'image') !== !!backgroundImage
-      || (background?.type === 'image' && background.src !== backgroundImage?.src)) {
+    if ((background?.type === 'image') !== !!backgroundImage || (background?.type === 'image' && background.src !== backgroundImage?.src)) {
       throw new Error(`幻灯片 ${record.id} 的图片背景与资源闭包不一致`);
     }
     if (background?.type === 'image' && backgroundImage) {
       assertSlideImageBackgroundDimensions(
-        patchDoc, record, background, backgroundImage, stagedImageResources,
+        patchDoc,
+        record,
+        background,
+        backgroundImage,
+        stagedImageResources,
         `幻灯片 ${record.id} 的最终图片背景`,
       );
     }
@@ -493,9 +542,10 @@ function applyPatchBatch(
   // 结构批中的中途 order 可能被后续解组/删除吸收；逐条验值、最终模型验唯一性即可。
   if (!validationStage) validateElementOrderPatchSet(doc, patches);
   // 失效可能因外部破坏的父链而失败；先完成它，保证失败时还没有任何 patch 落到模型。
-  if (!validationStage) for (const patch of patches) {
-    collectPatchInvalidation(doc, patch, dirtyElements, dirtySlides, liveAddresses);
-  }
+  if (!validationStage)
+    for (const patch of patches) {
+      collectPatchInvalidation(doc, patch, dirtyElements, dirtySlides, liveAddresses);
+    }
   if (validationStage) {
     validateEditDoc(validationStage);
     let released = false;
@@ -509,11 +559,12 @@ function applyPatchBatch(
       }
     }
   }
-  if (structural) for (const patch of appliedPatches) {
-    if (isElementTreePatch(patch) || isSlideTreePatch(patch) || isElementHierarchyPatch(patch)) {
-      retainInsertionSources(doc, patch.value);
+  if (structural)
+    for (const patch of appliedPatches) {
+      if (isElementTreePatch(patch) || isSlideTreePatch(patch) || isElementHierarchyPatch(patch)) {
+        retainInsertionSources(doc, patch.value);
+      }
     }
-  }
   applyPatchValues(doc, appliedPatches);
   return { dirtyElements, dirtySlides };
 }

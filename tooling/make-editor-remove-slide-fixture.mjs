@@ -27,7 +27,8 @@ const sharedPicture = (index) => `<p:pic>
 <p:blipFill><a:blip r:embed="rId8"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>
 <p:spPr><a:xfrm><a:off x="${px(40)}" y="${px(630)}"/><a:ext cx="${px(24)}" cy="${px(24)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
 </p:pic>`;
-const slide = (index) => slideXml(`<p:sp>
+const slide = (index) =>
+  slideXml(`<p:sp>
 <p:nvSpPr><p:cNvPr id="${10 + index}" name="页面 ${index}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr><a:xfrm><a:off x="${px(120)}" y="${px(160)}"/><a:ext cx="${px(1040)}" cy="${px(260)}"/></a:xfrm><a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom>${solid(`accent${index}`)}</p:spPr>
 <p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="3600" b="1"/><a:t>可删除页面 ${index}</a:t></a:r></a:p></p:txBody>
@@ -41,13 +42,22 @@ const sectionExtension = `<p:extLst><p:ext uri="{REMOVE-SLIDE-SECTIONS}">
 </p:ext></p:extLst>`;
 
 const bytes = deck({
-  name: 'Remove Slide Theme', width: 1280, height: 720,
-  slides: [1, 2, 3, 4].map(slide), presExtra: sectionExtension,
-  presRels: '<Relationship Id="rId300" Type="urn:web-ppt:unknown" Target="../customXml/keep.xml"/>'
+  name: 'Remove Slide Theme',
+  width: 1280,
+  height: 720,
+  slides: [1, 2, 3, 4].map(slide),
+  presExtra: sectionExtension,
+  presRels:
+    '<Relationship Id="rId300" Type="urn:web-ppt:unknown" Target="../customXml/keep.xml"/>'
     + `<Relationship Id="notes-master-keep" Type="${REL}/notesMaster" Target="notesMasters/notesMasterKeep.xml"/>`,
-  extraTypes: '<Default Extension="png" ContentType="image/png"/>'
-    + [1, 2, 3, 4].map((index) =>
-      `<Override PartName="/ppt/notesSlides/notesSlide${index}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>`).join('')
+  extraTypes:
+    '<Default Extension="png" ContentType="image/png"/>'
+    + [1, 2, 3, 4]
+      .map(
+        (index) =>
+          `<Override PartName="/ppt/notesSlides/notesSlide${index}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>`,
+      )
+      .join('')
     + '<Override PartName="/ppt/charts/chartKeep.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>'
     + '<Override PartName="/ppt/comments/commentKeep.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.comments+xml"/>'
     + '<Override PartName="/ppt/notesMasters/notesMasterKeep.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml"/>'
@@ -55,31 +65,63 @@ const bytes = deck({
   extraEntries: [
     ['ppt/media/shared.png', makePng(1, 1, () => [33, 150, 243])],
     ['customXml/keep.xml', `${XML}<keep xmlns="urn:web-ppt:remove-slide">原位保留</keep>`],
-    ['ppt/charts/chartKeep.xml', `${XML}<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart><c:plotArea><c:layout/><c:barChart><c:barDir val="col"/><c:axId val="1"/><c:axId val="2"/></c:barChart></c:plotArea><c:plotVisOnly val="1"/></c:chart></c:chartSpace>`],
-    ['ppt/comments/commentKeep.xml', `${XML}<p:cmLst xmlns:p="${NS.p}"><p:cm authorId="42" idx="7"><p:pos x="100" y="200"/><p:text>只保留不级联</p:text></p:cm></p:cmLst>`],
-    ['ppt/notesMasters/notesMasterKeep.xml', `${XML}<p:notesMaster xmlns:a="${NS.a}" xmlns:p="${NS.p}"><p:cSld><p:spTree>${nvGrp}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:hf/><p:notesStyle/></p:notesMaster>`],
-    ['ppt/notesMasters/_rels/notesMasterKeep.xml.rels', `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="theme-keep" Type="${REL}/theme" Target="../theme/theme1.xml"/></Relationships>`],
+    [
+      'ppt/charts/chartKeep.xml',
+      `${XML}<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart><c:plotArea><c:layout/><c:barChart><c:barDir val="col"/><c:axId val="1"/><c:axId val="2"/></c:barChart></c:plotArea><c:plotVisOnly val="1"/></c:chart></c:chartSpace>`,
+    ],
+    [
+      'ppt/comments/commentKeep.xml',
+      `${XML}<p:cmLst xmlns:p="${NS.p}"><p:cm authorId="42" idx="7"><p:pos x="100" y="200"/><p:text>只保留不级联</p:text></p:cm></p:cmLst>`,
+    ],
+    [
+      'ppt/notesMasters/notesMasterKeep.xml',
+      `${XML}<p:notesMaster xmlns:a="${NS.a}" xmlns:p="${NS.p}"><p:cSld><p:spTree>${nvGrp}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:hf/><p:notesStyle/></p:notesMaster>`,
+    ],
+    [
+      'ppt/notesMasters/_rels/notesMasterKeep.xml.rels',
+      `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="theme-keep" Type="${REL}/theme" Target="../theme/theme1.xml"/></Relationships>`,
+    ],
   ],
 });
 
 const files = unzipSync(bytes);
-const replace = (part, fn) => { files[part] = encoder.encode(fn(decoder.decode(files[part]))); };
-replace('ppt/presentation.xml', (xml) => IDS.reduce((value, id, index) => value
-  .replace(`id="${256 + index}" r:id="rId${index + 2}"`,
-    `xmlns:fixture="urn:web-ppt:remove-slide" fixture:slot="${index + 1}" id="${id}" r:id="${RIDS[index]}"`), xml));
-replace('ppt/presentation.xml', (xml) => xml.replace('</p:sldMasterIdLst>',
-  '</p:sldMasterIdLst><p:notesMasterIdLst><p:notesMasterId r:id="notes-master-keep"/></p:notesMasterIdLst>'));
-replace('ppt/_rels/presentation.xml.rels', (xml) => RIDS.reduce((value, rid, index) => value
-  .replace(`Id="rId${index + 2}" Type="${REL}/slide"`, `Id="${rid}" Type="${REL}/slide"`), xml));
+const replace = (part, fn) => {
+  files[part] = encoder.encode(fn(decoder.decode(files[part])));
+};
+replace('ppt/presentation.xml', (xml) =>
+  IDS.reduce(
+    (value, id, index) =>
+      value.replace(
+        `id="${256 + index}" r:id="rId${index + 2}"`,
+        `xmlns:fixture="urn:web-ppt:remove-slide" fixture:slot="${index + 1}" id="${id}" r:id="${RIDS[index]}"`,
+      ),
+    xml,
+  ),
+);
+replace('ppt/presentation.xml', (xml) =>
+  xml.replace(
+    '</p:sldMasterIdLst>',
+    '</p:sldMasterIdLst><p:notesMasterIdLst><p:notesMasterId r:id="notes-master-keep"/></p:notesMasterIdLst>',
+  ),
+);
+replace('ppt/_rels/presentation.xml.rels', (xml) =>
+  RIDS.reduce((value, rid, index) => value.replace(`Id="rId${index + 2}" Type="${REL}/slide"`, `Id="${rid}" Type="${REL}/slide"`), xml),
+);
 
 const notes = (index) => `${XML}<p:notes xmlns:a="${NS.a}" xmlns:r="${NS.r}" xmlns:p="${NS.p}">
 <p:cSld><p:spTree>${nvGrp}<p:sp><p:nvSpPr><p:cNvPr id="2" name="备注"/><p:cNvSpPr/><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr sz="1200"/><a:t>页面 ${index} 的独立备注</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld>
 </p:notes>`;
 for (let index = 1; index <= 4; index++) {
-  replace(`ppt/slides/_rels/slide${index}.xml.rels`, (xml) => xml.replace('</Relationships>',
-    `<Relationship Id="rId8" Type="${REL}/image" Target="../media/shared.png"/><Relationship Id="rId9" Type="${REL}/notesSlide" Target="../notesSlides/notesSlide${index}.xml"/>${index === 2 ? `<Relationship Id="rId96" Type="${REL}/comments" Target="../comments/commentKeep.xml"/><Relationship Id="rId97" Type="${REL}/chart" Target="../charts/chartKeep.xml"/><Relationship Id="rId99" Type="urn:web-ppt:unknown" Target="../../customXml/keep.xml"/>` : ''}</Relationships>`));
+  replace(`ppt/slides/_rels/slide${index}.xml.rels`, (xml) =>
+    xml.replace(
+      '</Relationships>',
+      `<Relationship Id="rId8" Type="${REL}/image" Target="../media/shared.png"/><Relationship Id="rId9" Type="${REL}/notesSlide" Target="../notesSlides/notesSlide${index}.xml"/>${index === 2 ? `<Relationship Id="rId96" Type="${REL}/comments" Target="../comments/commentKeep.xml"/><Relationship Id="rId97" Type="${REL}/chart" Target="../charts/chartKeep.xml"/><Relationship Id="rId99" Type="urn:web-ppt:unknown" Target="../../customXml/keep.xml"/>` : ''}</Relationships>`,
+    ),
+  );
   files[`ppt/notesSlides/notesSlide${index}.xml`] = encoder.encode(notes(index));
-  files[`ppt/notesSlides/_rels/notesSlide${index}.xml.rels`] = encoder.encode(`${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${REL}/hyperlink" Target="https://example.com/note/${index}" TargetMode="External"/><Relationship Id="rId2" Type="${REL}/notesMaster" Target="../notesMasters/notesMasterKeep.xml"/><Relationship Id="rId10" Type="${REL}/slide" Target="../slides/slide${index}.xml"/></Relationships>`);
+  files[`ppt/notesSlides/_rels/notesSlide${index}.xml.rels`] = encoder.encode(
+    `${XML}<Relationships xmlns="${NS.rel}"><Relationship Id="rId1" Type="${REL}/hyperlink" Target="https://example.com/note/${index}" TargetMode="External"/><Relationship Id="rId2" Type="${REL}/notesMaster" Target="../notesMasters/notesMasterKeep.xml"/><Relationship Id="rId10" Type="${REL}/slide" Target="../slides/slide${index}.xml"/></Relationships>`,
+  );
 }
 
 const output = makeZip(Object.entries(files));
@@ -90,7 +132,8 @@ console.log(`fixtures/sample-editor-remove-slide.pptx 已生成（${(output.leng
 // 畸形文件可能让两个页面共享 notes；保存器只能按活动引用判断所有权，不能盲删关系目标。
 const sharedNotesFiles = { ...files };
 sharedNotesFiles['ppt/slides/_rels/slide3.xml.rels'] = encoder.encode(
-  decoder.decode(sharedNotesFiles['ppt/slides/_rels/slide3.xml.rels'])
+  decoder
+    .decode(sharedNotesFiles['ppt/slides/_rels/slide3.xml.rels'])
     .replace('../notesSlides/notesSlide3.xml', '../notesSlides/notesSlide2.xml'),
 );
 const sharedNotesOutput = makeZip(Object.entries(sharedNotesFiles));

@@ -47,12 +47,18 @@ export function bindSwipeNav(options: {
     // 只挡这一手势冒出的 click。Sticky 会把竖滑之后的下一次轻点也吞掉。
     ignoreClick = true;
     window.clearTimeout(ignoreTimer);
-    ignoreTimer = window.setTimeout(() => { ignoreClick = false; }, 50);
+    ignoreTimer = window.setTimeout(() => {
+      ignoreClick = false;
+    }, 50);
   };
 
   const clear = (): void => {
     if (captured && pointerId !== null) {
-      try { host.releasePointerCapture(pointerId); } catch { /* 已经丢了 capture 时不必再抛 */ }
+      try {
+        host.releasePointerCapture(pointerId);
+      } catch {
+        /* 已经丢了 capture 时不必再抛 */
+      }
     }
     pointerId = null;
     axis = null;

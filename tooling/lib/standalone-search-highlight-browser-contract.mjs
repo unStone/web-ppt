@@ -1,5 +1,6 @@
 export async function runStandaloneSearchHighlightContract({ evaluate, request, waitFor, click }) {
-  const standalone = (query = '') => evaluate(`new URL(${JSON.stringify(query ? `/standalone.html?${query}` : '/standalone.html')}, location.href).href`);
+  const standalone = (query = '') =>
+    evaluate(`new URL(${JSON.stringify(query ? `/standalone.html?${query}` : '/standalone.html')}, location.href).href`);
   const highlightCount = () => evaluate(`document.querySelectorAll('.ppt-find-box').length`);
   const typeSearch = async (value) => {
     await evaluate(`(() => {
@@ -26,30 +27,40 @@ export async function runStandaloneSearchHighlightContract({ evaluate, request, 
   await waitFor("document.querySelectorAll('.ppt-find-box').length > 0", '命中页标出查询词');
   const hitPage = String(await evaluate("document.querySelector('#pageIndicator')?.textContent ?? ''"));
   await click('#btnNotes');
-  await waitFor("document.querySelectorAll('.ppt-find-box').length >= 2 && document.querySelector('#notesBody .ppt-find-box')", '备注开着时备注里的词也标');
+  await waitFor(
+    "document.querySelectorAll('.ppt-find-box').length >= 2 && document.querySelector('#notesBody .ppt-find-box')",
+    '备注开着时备注里的词也标',
+  );
   await click('#btnNotes');
-  await waitFor("document.querySelectorAll('.ppt-find-box').length > 0 && !document.querySelector('#notesBody .ppt-find-box')", '关上备注后只留舞台黄框');
+  await waitFor(
+    "document.querySelectorAll('.ppt-find-box').length > 0 && !document.querySelector('#notesBody .ppt-find-box')",
+    '关上备注后只留舞台黄框',
+  );
 
   await typeSearch('挤出');
   await waitFor(
     "document.querySelector('#pageIndicator')?.textContent.startsWith('7 /') && document.querySelector('#searchHits')?.textContent === '1 页 · 第 1/4 处' && document.querySelectorAll('.ppt-find-current').length === 1 && document.querySelectorAll('.ppt-find-box').length >= 4",
     '同页多处标出第 1 处',
   );
-  const firstAt = String(await evaluate(`(() => {
+  const firstAt = String(
+    await evaluate(`(() => {
     const box = document.querySelector('.ppt-find-current');
     const rect = box.getBoundingClientRect();
     return rect.left + ',' + rect.top;
-  })()`));
+  })()`),
+  );
   await evaluate(`document.querySelector('#searchInput').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))`);
   await waitFor(
     "document.querySelector('#pageIndicator')?.textContent.startsWith('7 /') && document.querySelector('#searchHits')?.textContent === '1 页 · 第 2/4 处'",
     'Enter 留在本页走到下一处',
   );
-  const secondAt = String(await evaluate(`(() => {
+  const secondAt = String(
+    await evaluate(`(() => {
     const box = document.querySelector('.ppt-find-current');
     const rect = box.getBoundingClientRect();
     return rect.left + ',' + rect.top;
-  })()`));
+  })()`),
+  );
   if (secondAt === firstAt) throw new Error('下一处的深色框没有移动');
   await evaluate(`document.activeElement?.blur?.()`);
   await press('g', 71, 'KeyG');
@@ -59,7 +70,9 @@ export async function runStandaloneSearchHighlightContract({ evaluate, request, 
     "!document.querySelector('.slide-grid:not([hidden])') && document.querySelector('#searchHits')?.textContent === '1 页 · 第 3/4 处' && document.querySelector('#pageIndicator')?.textContent.startsWith('7 /')",
     '网格开着时 Enter 先关网格再移到下一处',
   );
-  await evaluate(`document.querySelector('#searchInput').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }))`);
+  await evaluate(
+    `document.querySelector('#searchInput').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }))`,
+  );
   await waitFor("document.querySelector('#searchHits')?.textContent === '1 页 · 第 2/4 处'", 'Shift+Enter 回到上一处');
   await evaluate(`document.activeElement?.blur?.()`);
   const chord = async (extra) => {
@@ -100,7 +113,10 @@ export async function runStandaloneSearchHighlightContract({ evaluate, request, 
   }
 
   await typeSearch('立体效果');
-  await waitFor("document.querySelector('#searchHits')?.textContent.includes('页') && document.querySelectorAll('.ppt-find-box').length > 0", '再次查找恢复高亮');
+  await waitFor(
+    "document.querySelector('#searchHits')?.textContent.includes('页') && document.querySelectorAll('.ppt-find-box').length > 0",
+    '再次查找恢复高亮',
+  );
 
   await evaluate(`(() => {
     globalThis.__nativeRequestFullscreenHighlight = document.documentElement.requestFullscreen.bind(document.documentElement);

@@ -8,16 +8,18 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const fixtures = join(root, 'fixtures');
 
 function files(directory) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    return entry.isDirectory() ? files(path) : [path];
-  }).sort();
+  return readdirSync(directory, { withFileTypes: true })
+    .flatMap((entry) => {
+      const path = join(directory, entry.name);
+      return entry.isDirectory() ? files(path) : [path];
+    })
+    .sort();
 }
 
 function snapshot() {
-  return Object.fromEntries(files(fixtures).map((file) => [
-    relative(fixtures, file), createHash('sha256').update(readFileSync(file)).digest('hex'),
-  ]));
+  return Object.fromEntries(
+    files(fixtures).map((file) => [relative(fixtures, file), createHash('sha256').update(readFileSync(file)).digest('hex')]),
+  );
 }
 
 function generate() {

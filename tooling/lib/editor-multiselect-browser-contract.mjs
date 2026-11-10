@@ -1,11 +1,20 @@
 /** 修饰键状态、SVG 布局反馈与帧预算必须由真实 Chrome 验收。 */
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const pointer = (type, point, pointerId, init = {}) => new PointerEvent(type, {
-  bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', pointerId,
-  isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1,
-  clientX: point.x, clientY: point.y, ...init,
-});
+const pointer = (type, point, pointerId, init = {}) =>
+  new PointerEvent(type, {
+    bubbles: true,
+    composed: true,
+    cancelable: true,
+    pointerType: 'mouse',
+    pointerId,
+    isPrimary: true,
+    button: 0,
+    buttons: type === 'pointerup' ? 0 : 1,
+    clientX: point.x,
+    clientY: point.y,
+    ...init,
+  });
 
 function p95(samples) {
   return [...samples].sort((left, right) => left - right)[Math.floor(samples.length * 0.95)];
@@ -16,9 +25,7 @@ function flushFrame(pending, mount, started) {
   if (!next || pending.size !== 1) throw new Error(`增减框选帧队列失控：${pending.size}`);
   pending.delete(next[0]);
   next[1](performance.now());
-  for (const node of mount.querySelectorAll(
-    '[data-edit-marquee-frame], [data-edit-marquee-candidate]',
-  )) node.getBoundingClientRect();
+  for (const node of mount.querySelectorAll('[data-edit-marquee-frame], [data-edit-marquee-candidate]')) node.getBoundingClientRect();
   return performance.now() - started;
 }
 
@@ -38,8 +45,7 @@ export async function runEditorMultiselectBrowserContract({ openEditor, load }) 
     const clickSamples = [];
     let consumed = true;
     for (let index = 0; index < 120; index++) {
-      const init = index % 3 === 0 ? { shiftKey: true }
-        : index % 3 === 1 ? { ctrlKey: true } : { metaKey: true };
+      const init = index % 3 === 0 ? { shiftKey: true } : index % 3 === 1 ? { ctrlKey: true } : { metaKey: true };
       const point = { x: 10, y: 10 };
       const started = performance.now();
       consumed &&= !targets[index % 60].dispatchEvent(pointer('pointerdown', point, 400 + index, init));
@@ -48,9 +54,13 @@ export async function runEditorMultiselectBrowserContract({ openEditor, load }) 
       clickSamples.push(performance.now() - started);
     }
     const clickP95 = p95(clickSamples);
-    if (ids.length !== 60 || !consumed
-      || session.editor.selection.kind !== 'none' || session.editor.history.undoCount !== history
-      || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg) {
+    if (
+      ids.length !== 60
+      || !consumed
+      || session.editor.selection.kind !== 'none'
+      || session.editor.history.undoCount !== history
+      || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg
+    ) {
       throw new Error('60 元素修饰点选的选区、历史或静态层不一致');
     }
     recordPerformanceBudget('60 元素修饰点选 p95', clickP95, 8);
@@ -81,12 +91,9 @@ export async function runEditorMultiselectBrowserContract({ openEditor, load }) 
         view.element.dispatchEvent(pointer('pointermove', end, pointerId, { shiftKey: true }));
         marqueeSamples.push(flushFrame(pending, mount, previewStarted));
         if (index === 0) {
-          firstPreview = mount.querySelector(
-            `[data-edit-marquee-candidate="${ids[0]}"]`,
-          )?.getAttribute('display') === 'none'
-            && mount.querySelector(
-              `[data-edit-marquee-candidate="${ids[1]}"]`,
-            )?.getAttribute('display') !== 'none';
+          firstPreview =
+            mount.querySelector(`[data-edit-marquee-candidate="${ids[0]}"]`)?.getAttribute('display') === 'none'
+            && mount.querySelector(`[data-edit-marquee-candidate="${ids[1]}"]`)?.getAttribute('display') !== 'none';
         }
         const commitStarted = performance.now();
         view.element.dispatchEvent(pointer('pointerup', end, pointerId, { shiftKey: true }));
@@ -99,10 +106,14 @@ export async function runEditorMultiselectBrowserContract({ openEditor, load }) 
     }
     const marqueeP95 = p95(marqueeSamples);
     const selection = session.editor.selection;
-    if (!firstPreview || selection.kind !== 'elements'
-      || selection.ids.join(',') !== initial.join(',') || session.editor.history.undoCount !== history
+    if (
+      !firstPreview
+      || selection.kind !== 'elements'
+      || selection.ids.join(',') !== initial.join(',')
+      || session.editor.history.undoCount !== history
       || mount.querySelector('[data-edit-marquee-layer]')
-      || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg) {
+      || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg
+    ) {
       throw new Error('60 元素增减框选的预览或提交状态不一致');
     }
     recordPerformanceBudget('60 元素增减框选 p95', marqueeP95, 8);

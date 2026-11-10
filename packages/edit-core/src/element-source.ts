@@ -13,9 +13,11 @@ export function sourceElementXml(doc: EditDoc, id: ElementId) {
   if (owner?.meta.insertion && owner.meta.insertion.containsDescendants !== false) {
     for (const relation of owner.meta.insertion.relationships ?? []) {
       const external = relation.targetMode === 'External';
-      relationships[relation.targetId] = { type: relation.type,
+      relationships[relation.targetId] = {
+        type: relation.type,
         target: external ? relation.target : resolveRelationshipTarget(origin.part, relation.target),
-        ...(external ? { external: true as const } : {}) };
+        ...(external ? { external: true as const } : {}),
+      };
     }
     return { part: origin.part, bytes: serializeXmlTreeBytes(materializeInsertionFragment(doc, owner, true)), relationships };
   }

@@ -1,12 +1,15 @@
 import {
-  elementEditParentToSlideMatrix, inverseTransformSpaceVector, slideToElementEditParentPoint, transformSpacePoint,
+  elementEditParentToSlideMatrix,
+  inverseTransformSpaceVector,
+  slideToElementEditParentPoint,
+  transformSpacePoint,
 } from '@web-ppt/edit-core';
 import type { AffineMatrix, EditDoc, ElementId, SpacePoint } from '@web-ppt/edit-core';
 import { MIN_FRAME_SIZE } from './transform-frame';
 import type { TransformFrame } from './transform-frame';
 
 export const RESIZE_HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const;
-export type ResizeHandle = typeof RESIZE_HANDLES[number];
+export type ResizeHandle = (typeof RESIZE_HANDLES)[number];
 
 export function isResizeHandle(value: string | undefined): value is ResizeHandle {
   return RESIZE_HANDLES.some((handle) => handle === value);
@@ -21,20 +24,28 @@ export const MIN_RESIZE_SIZE = MIN_FRAME_SIZE;
 const ROTATION_SEARCH_STEP = 0.25;
 const ROTATION_SEARCH_STEPS = 180 / ROTATION_SEARCH_STEP;
 export const RESIZE_HANDLE_AXES: Record<ResizeHandle, readonly [number, number]> = {
-  nw: [-1, -1], n: [0, -1], ne: [1, -1], e: [1, 0],
-  se: [1, 1], s: [0, 1], sw: [-1, 1], w: [-1, 0],
+  nw: [-1, -1],
+  n: [0, -1],
+  ne: [1, -1],
+  e: [1, 0],
+  se: [1, 1],
+  s: [0, 1],
+  sw: [-1, 1],
+  w: [-1, 0],
 };
 
 export function resizeHandleAfterFlip(handle: ResizeHandle, horizontal: boolean, vertical: boolean): ResizeHandle {
   const [x, y] = RESIZE_HANDLE_AXES[handle];
-  return RESIZE_HANDLES.find((candidate) => {
-    const [candidateX, candidateY] = RESIZE_HANDLE_AXES[candidate];
-    return candidateX === (horizontal ? -x : x) && candidateY === (vertical ? -y : y);
-  }) ?? handle;
+  return (
+    RESIZE_HANDLES.find((candidate) => {
+      const [candidateX, candidateY] = RESIZE_HANDLE_AXES[candidate];
+      return candidateX === (horizontal ? -x : x) && candidateY === (vertical ? -y : y);
+    }) ?? handle
+  );
 }
 
 function unrotate(point: SpacePoint, center: SpacePoint, degrees: number): SpacePoint {
-  const radians = -degrees * Math.PI / 180;
+  const radians = (-degrees * Math.PI) / 180;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   const x = point.x - center.x;
@@ -42,20 +53,20 @@ function unrotate(point: SpacePoint, center: SpacePoint, degrees: number): Space
   return { x: center.x + cos * x - sin * y, y: center.y + sin * x + cos * y };
 }
 
-function signedAxisSize(
-  min: number,
-  size: number,
-  direction: number,
-  current: number,
-  fromCenter: boolean,
-): number {
+function signedAxisSize(min: number, size: number, direction: number, current: number, fromCenter: boolean): number {
   if (!direction) return size;
   if (fromCenter) return 2 * (current - min - size / 2) * direction;
   const anchor = direction < 0 ? min + size : min;
   return (current - anchor) * direction;
 }
 
-function normalizeAxis(min: number, size: number, direction: number, signedSize: number, fromCenter: boolean): {
+function normalizeAxis(
+  min: number,
+  size: number,
+  direction: number,
+  signedSize: number,
+  fromCenter: boolean,
+): {
   min: number;
   size: number;
   crossed: boolean;
@@ -64,9 +75,7 @@ function normalizeAxis(min: number, size: number, direction: number, signedSize:
   const nextSize = Math.max(Math.abs(signedSize), MIN_RESIZE_SIZE);
   if (fromCenter) return { min: min + (size - nextSize) / 2, size: nextSize, crossed: signedSize < 0 };
   const anchor = direction < 0 ? min + size : min;
-  const nextMin = signedSize >= 0
-    ? direction > 0 ? anchor : anchor - nextSize
-    : direction > 0 ? anchor - nextSize : anchor;
+  const nextMin = signedSize >= 0 ? (direction > 0 ? anchor : anchor - nextSize) : direction > 0 ? anchor - nextSize : anchor;
   return { min: nextMin, size: nextSize, crossed: signedSize < 0 };
 }
 
@@ -79,14 +88,9 @@ export function resizeElementFrame(
   const center = { x: source.x + source.w / 2, y: source.y + source.h / 2 };
   const localPointer = unrotate(pointerInParent, center, source.rot);
   const [horizontal, vertical] = RESIZE_HANDLE_AXES[handle];
-  let signedWidth = signedAxisSize(
-    source.x, source.w, horizontal, localPointer.x, modifiers.altKey,
-  );
-  let signedHeight = signedAxisSize(
-    source.y, source.h, vertical, localPointer.y, modifiers.altKey,
-  );
-  if (modifiers.shiftKey && horizontal && vertical
-    && source.w > MIN_RESIZE_SIZE && source.h > MIN_RESIZE_SIZE) {
+  let signedWidth = signedAxisSize(source.x, source.w, horizontal, localPointer.x, modifiers.altKey);
+  let signedHeight = signedAxisSize(source.y, source.h, vertical, localPointer.y, modifiers.altKey);
+  if (modifiers.shiftKey && horizontal && vertical && source.w > MIN_RESIZE_SIZE && source.h > MIN_RESIZE_SIZE) {
     const scale = Math.max(Math.abs(signedWidth / source.w), Math.abs(signedHeight / source.h));
     signedWidth = Math.sign(signedWidth || 1) * source.w * scale;
     signedHeight = Math.sign(signedHeight || 1) * source.h * scale;
@@ -96,7 +100,7 @@ export function resizeElementFrame(
   const nextCenterInUnrotatedParent = { x: x.min + x.size / 2, y: y.min + y.size / 2 };
   const dx = nextCenterInUnrotatedParent.x - center.x;
   const dy = nextCenterInUnrotatedParent.y - center.y;
-  const radians = source.rot * Math.PI / 180;
+  const radians = (source.rot * Math.PI) / 180;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   const nextCenter = {
@@ -106,7 +110,9 @@ export function resizeElementFrame(
   return {
     x: nextCenter.x - x.size / 2,
     y: nextCenter.y - y.size / 2,
-    w: x.size, h: y.size, rot: source.rot,
+    w: x.size,
+    h: y.size,
+    rot: source.rot,
     flipH: x.crossed ? !source.flipH : source.flipH,
     flipV: y.crossed ? !source.flipV : source.flipV,
   };
@@ -122,7 +128,7 @@ function scaledVectorLength(vector: SpacePoint, scale: SpacePoint): number {
 }
 
 function frameWorldAxes(parent: AffineMatrix, degrees: number): FrameWorldAxes {
-  const radians = degrees * Math.PI / 180;
+  const radians = (degrees * Math.PI) / 180;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   return {
@@ -141,12 +147,11 @@ function fitFrameSizeToScaledAabb(
   const sourceHeight = Math.abs(sourceAxes.x.y) * source.w + Math.abs(sourceAxes.y.y) * source.h;
   const width = sourceWidth * scale.x;
   const height = sourceHeight * scale.y;
-  const determinant = Math.abs(nextAxes.x.x) * Math.abs(nextAxes.y.y)
-    - Math.abs(nextAxes.y.x) * Math.abs(nextAxes.x.y);
+  const determinant = Math.abs(nextAxes.x.x) * Math.abs(nextAxes.y.y) - Math.abs(nextAxes.y.x) * Math.abs(nextAxes.x.y);
   const fittedW = (width * Math.abs(nextAxes.y.y) - Math.abs(nextAxes.y.x) * height) / determinant;
   const fittedH = (Math.abs(nextAxes.x.x) * height - width * Math.abs(nextAxes.x.y)) / determinant;
-  const canFitBounds = Math.abs(determinant) > 1e-9
-    && [fittedW, fittedH].every((value) => Number.isFinite(value) && value >= MIN_RESIZE_SIZE);
+  const canFitBounds =
+    Math.abs(determinant) > 1e-9 && [fittedW, fittedH].every((value) => Number.isFinite(value) && value >= MIN_RESIZE_SIZE);
   return canFitBounds ? { w: fittedW, h: fittedH } : null;
 }
 
@@ -170,7 +175,8 @@ function frameFitError(
     x: sourceAxes.y.x * source.h * scale.x * orientationParity,
     y: sourceAxes.y.y * source.h * scale.y,
   };
-  const error = (nextAxes.x.x * size.w - targetX.x) ** 2
+  const error =
+    (nextAxes.x.x * size.w - targetX.x) ** 2
     + (nextAxes.x.y * size.w - targetX.y) ** 2
     + (nextAxes.y.x * size.h - targetY.x) ** 2
     + (nextAxes.y.y * size.h - targetY.y) ** 2;
@@ -191,10 +197,7 @@ function findNearestAabbPreservingFrame(
     y: sourceAxes.x.y * scale.y * orientationParity,
   };
   const parentX = inverseTransformSpaceVector(parent, desiredWorldX);
-  const desiredRotation = nearestEquivalentAngle(
-    Math.atan2(parentX.y, parentX.x) * 180 / Math.PI,
-    source.rot,
-  );
+  const desiredRotation = nearestEquivalentAngle((Math.atan2(parentX.y, parentX.x) * 180) / Math.PI, source.rot);
   let best: { w: number; h: number; rot: number; error: number } | null = null;
   const consider = (rotation: number): boolean => {
     const rot = nearestEquivalentAngle(rotation, source.rot);
@@ -211,7 +214,7 @@ function findNearestAabbPreservingFrame(
     Math.atan2(-parent.b, parent.d),
     Math.atan2(parent.c, parent.a),
     Math.atan2(parent.d, parent.b),
-  ].map((radians) => radians * 180 / Math.PI);
+  ].map((radians) => (radians * 180) / Math.PI);
   for (const rotation of criticalRotations) {
     if (consider(rotation)) return best!;
   }
@@ -247,17 +250,8 @@ interface MultiResizeTarget {
   source: TransformFrame;
 }
 
-function frameFitKey(
-  source: TransformFrame,
-  parent: AffineMatrix,
-  scale: SpacePoint,
-  orientationParity: number,
-): string {
-  return [
-    source.w, source.h, source.rot,
-    parent.a, parent.b, parent.c, parent.d,
-    scale.x, scale.y, orientationParity,
-  ].join('/');
+function frameFitKey(source: TransformFrame, parent: AffineMatrix, scale: SpacePoint, orientationParity: number): string {
+  return [source.w, source.h, source.rot, parent.a, parent.b, parent.c, parent.d, scale.x, scale.y, orientationParity].join('/');
 }
 
 export function resizeMultiElementFrames(
@@ -272,21 +266,15 @@ export function resizeMultiElementFrames(
     x: selectionNext.w / selectionSource.w,
     y: selectionNext.h / selectionSource.h,
   };
-  const orientationParity = (horizontalFlip === verticalFlip) ? 1 : -1;
+  const orientationParity = horizontalFlip === verticalFlip ? 1 : -1;
   const fitCache = new Map<string, { w: number; h: number; rot: number }>();
   // source 是编辑外框，父空间为父组渲染坐标，所以选区缩放在这里求出的外框就是画面上的结果。
   return targets.map(({ id, source }) => {
     const parent = elementEditParentToSlideMatrix(doc, id);
     const center = transformSpacePoint(parent, { x: source.x + source.w / 2, y: source.y + source.h / 2 });
     const mappedCenter = {
-      x: mapSelectionAxis(
-        center.x, selectionSource.x, selectionSource.w,
-        selectionNext.x, selectionNext.w, horizontalFlip,
-      ),
-      y: mapSelectionAxis(
-        center.y, selectionSource.y, selectionSource.h,
-        selectionNext.y, selectionNext.h, verticalFlip,
-      ),
+      x: mapSelectionAxis(center.x, selectionSource.x, selectionSource.w, selectionNext.x, selectionNext.w, horizontalFlip),
+      y: mapSelectionAxis(center.y, selectionSource.y, selectionSource.h, selectionNext.y, selectionNext.h, verticalFlip),
     };
     const parentCenter = slideToElementEditParentPoint(doc, id, mappedCenter);
     const key = frameFitKey(source, parent, scale, orientationParity);

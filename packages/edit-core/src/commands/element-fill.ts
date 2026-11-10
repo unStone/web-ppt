@@ -3,8 +3,7 @@ import type { EditDoc } from '../types';
 import type { ElementFillPatch, Patch } from './types';
 
 export function isElementFillPatch(patch: Patch): patch is ElementFillPatch {
-  return patch.path.length === 4 && patch.path[0] === 'elements'
-    && patch.path[2] === 'ovr' && patch.path[3] === 'fill';
+  return patch.path.length === 4 && patch.path[0] === 'elements' && patch.path[2] === 'ovr' && patch.path[3] === 'fill';
 }
 
 export function validateElementFillPatch(doc: EditDoc, patch: ElementFillPatch, index: number): void {

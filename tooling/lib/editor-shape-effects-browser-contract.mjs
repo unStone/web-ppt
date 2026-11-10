@@ -1,8 +1,7 @@
 import { queryElementEffects } from '/out/editor/editor.mjs';
 import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 
-const byName = (doc, name) => Object.values(doc.elements)
-  .find((record) => record.src.name === name);
+const byName = (doc, name) => Object.values(doc.elements).find((record) => record.src.name === name);
 
 /** 真实浏览器守住效果 filter/mask/use 上屏、双视图同步与 60 元素预算。 */
 export async function runEditorShapeEffectsBrowserContract({ openEditor, load }) {
@@ -17,7 +16,10 @@ export async function runEditorShapeEffectsBrowserContract({ openEditor, load })
   session.mount(mount, { mode: 'edit', textMode: 'svg', snapping: false });
   session.mount(viewMount, { mode: 'view', textMode: 'svg', snapping: false });
   session.mount(unrelatedMount, {
-    slideId: session.editor.doc.slideOrder[1], mode: 'view', textMode: 'svg', snapping: false,
+    slideId: session.editor.doc.slideOrder[1],
+    mode: 'view',
+    textMode: 'svg',
+    snapping: false,
   });
   const target = byName(session.editor.doc, 'effects-rich');
   const sibling = byName(session.editor.doc, 'effects-explicit-empty');
@@ -35,10 +37,12 @@ export async function runEditorShapeEffectsBrowserContract({ openEditor, load })
   const editSibling = editStatic.querySelector(`[data-edit-id="${sibling.id}"]`);
   const viewSibling = viewStatic.querySelector(`[data-edit-id="${sibling.id}"]`);
   session.editor.exec({
-    type: 'SetEffects', id: target.id,
+    type: 'SetEffects',
+    id: target.id,
     effects: {
       shadow: { dx: 6, dy: 5, blur: 7, color: 'rgba(15,23,42,0.6)' },
-      glow: { radius: 8, color: '#F97316' }, softEdge: 2,
+      glow: { radius: 8, color: '#F97316' },
+      softEdge: 2,
       reflection: { alpha: 0.55, size: 0.5, distance: 4 },
     },
   });
@@ -54,8 +58,7 @@ export async function runEditorShapeEffectsBrowserContract({ openEditor, load })
     editSvgStable: editStatic.querySelector('svg') === editSvg,
     viewSvgStable: viewStatic.querySelector('svg') === viewSvg,
     unrelatedSvgStable: unrelatedStatic.querySelector('svg') === unrelatedSvg,
-    unrelatedElementStable:
-      unrelatedStatic.querySelector(`[data-edit-id="${unrelated.id}"]`) === unrelatedElement,
+    unrelatedElementStable: unrelatedStatic.querySelector(`[data-edit-id="${unrelated.id}"]`) === unrelatedElement,
     filter: !!targetAfter?.querySelector('[filter^="url("]'),
     mask: !!targetAfter?.querySelector('[mask^="url("]'),
     reflectionUse: !!targetAfter?.querySelector('use'),
@@ -80,23 +83,46 @@ export async function runEditorShapeEffectsBrowserContract({ openEditor, load })
   const stableSibling = perfStatic.querySelector(`[data-edit-id="${perfSibling}"]`);
   const stableSvg = perfStatic.querySelector('svg');
   const effectCases = [
-    ['阴影', (index) => ({ shadow: {
-      dx: index % 2 ? 3 : 4, dy: 3, blur: 5, color: '#334155',
-    } })],
-    ['发光', (index) => ({ glow: {
-      radius: index % 2 ? 4 : 5, color: '#0284C7',
-    } })],
+    [
+      '阴影',
+      (index) => ({
+        shadow: {
+          dx: index % 2 ? 3 : 4,
+          dy: 3,
+          blur: 5,
+          color: '#334155',
+        },
+      }),
+    ],
+    [
+      '发光',
+      (index) => ({
+        glow: {
+          radius: index % 2 ? 4 : 5,
+          color: '#0284C7',
+        },
+      }),
+    ],
     ['柔边', (index) => ({ softEdge: index % 2 ? 1 : 2 })],
-    ['倒影', (index) => ({ reflection: {
-      alpha: index % 2 ? 0.5 : 0.6, size: 0.6, distance: 2,
-    } })],
+    [
+      '倒影',
+      (index) => ({
+        reflection: {
+          alpha: index % 2 ? 0.5 : 0.6,
+          size: 0.6,
+          distance: 2,
+        },
+      }),
+    ],
   ];
   const p95s = effectCases.map(([name, effects]) => {
     const samples = [];
     for (let index = 0; index < 80; index++) {
       const started = performance.now();
       const result = perfSession.editor.exec({
-        type: 'SetEffects', id: perfTarget, effects: effects(index),
+        type: 'SetEffects',
+        id: perfTarget,
+        effects: effects(index),
       });
       if (!result.dirtyElements.has(perfTarget)) {
         throw new Error(`Chrome ${name}第 ${index + 1} 次性能提交意外成为 no-op`);
@@ -106,9 +132,11 @@ export async function runEditorShapeEffectsBrowserContract({ openEditor, load })
     samples.sort((left, right) => left - right);
     return [name, samples[Math.floor(samples.length * 0.95)]];
   });
-  if (roots.length !== 60
+  if (
+    roots.length !== 60
     || perfStatic.querySelector(`[data-edit-id="${perfSibling}"]`) !== stableSibling
-    || perfStatic.querySelector('svg') !== stableSvg) {
+    || perfStatic.querySelector('svg') !== stableSvg
+  ) {
     throw new Error('Chrome 60 元素二维效果后的 DOM 身份不稳定');
   }
   for (const [name, value] of p95s) recordPerformanceBudget(`Chrome 60 元素${name} p95`, value, 16);

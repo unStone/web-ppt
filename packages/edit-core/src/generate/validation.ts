@@ -12,20 +12,35 @@ export function generatedValidationDoc(doc: EditDoc): EditDoc {
     if (bytes) baselines[part] = bytes;
   };
   const resource = (value: ElementInsertionResource): ElementInsertionResource => ({ ...value, created: true });
-  const elements = Object.fromEntries(Object.entries(doc.elements).map(([id, record]) => {
-    const insertion = record.meta.insertion;
-    if (!insertion) return [id, record];
-    for (const target of insertionPackageTargets(record)) retain(target);
-    return [id, { ...record, meta: { ...record.meta, insertion: {
-      ...insertion, resources: insertion.resources?.map(resource),
-    } } }];
-  }));
+  const elements = Object.fromEntries(
+    Object.entries(doc.elements).map(([id, record]) => {
+      const insertion = record.meta.insertion;
+      if (!insertion) return [id, record];
+      for (const target of insertionPackageTargets(record)) retain(target);
+      return [
+        id,
+        {
+          ...record,
+          meta: {
+            ...record.meta,
+            insertion: {
+              ...insertion,
+              resources: insertion.resources?.map(resource),
+            },
+          },
+        },
+      ];
+    }),
+  );
   for (const slide of Object.values(doc.slides)) {
     retain(slide.creation?.duplicateSourcePart);
     retain(slide.creation?.duplicateNotesSourcePart);
   }
   return {
-    ...doc, elements, meta: { ...doc.meta, readonly: true }, package: null,
+    ...doc,
+    elements,
+    meta: { ...doc.meta, readonly: true },
+    package: null,
     imageResources: Object.fromEntries(Object.entries(doc.imageResources).map(([key, value]) => [key, resource(value)])),
     saveState: { ...doc.saveState, baselines },
   };

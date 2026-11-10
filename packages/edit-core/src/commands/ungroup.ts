@@ -5,8 +5,12 @@ import { fractionalIndexBetween } from '../fractional-index';
 import { effectiveElement } from '../projection';
 import { customGeometryFromSvgPath } from '../custom-geometry-path';
 import {
-  composeSpaceMatrices, elementEditParentToSlideMatrix, groupEditFrameToModelFrame,
-  invertSpaceMatrix, renderedElement, renderedFrameToSlideMatrix,
+  composeSpaceMatrices,
+  elementEditParentToSlideMatrix,
+  groupEditFrameToModelFrame,
+  invertSpaceMatrix,
+  renderedElement,
+  renderedFrameToSlideMatrix,
 } from '../space';
 import type { EditDoc, ElementId, ElementRecord, RemovedElementRecord } from '../types';
 import type { CommandPatches, ElementHierarchyPatch, UngroupCommand, XfrmField } from './types';
@@ -19,13 +23,8 @@ import { ungroupInsertionSources } from './ungroup-source';
 const FIELDS: readonly XfrmField[] = ['x', 'y', 'w', 'h', 'rot', 'flipH', 'flipV'];
 const EPSILON = 1e-8;
 
-function decomposeFrame(
-  matrix: Parameters<typeof decomposeFrameMatrix>[0], width: number, height: number, label: string,
-) {
-  return decomposeFrameMatrix(
-    matrix, width, height,
-    `${label} 的渲染外框退化或不是刚体，无法写回 PPTX frame，不能无损解组`,
-  );
+function decomposeFrame(matrix: Parameters<typeof decomposeFrameMatrix>[0], width: number, height: number, label: string) {
+  return decomposeFrameMatrix(matrix, width, height, `${label} 的渲染外框退化或不是刚体，无法写回 PPTX frame，不能无损解组`);
 }
 
 function sparseTransform(
@@ -35,7 +34,11 @@ function sparseTransform(
 ): ElementRecord['ovr'] {
   const effective = effectiveRecord(record);
   const target = {
-    x: placement.x, y: placement.y, w: placement.w, h: placement.h, rot: placement.rot,
+    x: placement.x,
+    y: placement.y,
+    w: placement.w,
+    h: placement.h,
+    rot: placement.rot,
     flipH: placement.reflectH ? !effective.flipH : effective.flipH,
     flipV: effective.flipV,
   };
@@ -43,8 +46,11 @@ function sparseTransform(
     throw new Error(`框架对象 ${record.id} 不能无损写回解组后的旋转`);
   }
   for (const field of FIELDS) {
-    if (typeof target[field] === 'number' && typeof record.src[field] === 'number'
-      && Math.abs((target[field] as number) - (record.src[field] as number)) <= EPSILON) {
+    if (
+      typeof target[field] === 'number'
+      && typeof record.src[field] === 'number'
+      && Math.abs((target[field] as number) - (record.src[field] as number)) <= EPSILON
+    ) {
       delete overrides[field];
     } else if (Object.is(target[field], record.src[field])) delete overrides[field];
     else (overrides as Record<XfrmField, number | boolean>)[field] = target[field];
@@ -101,7 +107,9 @@ function movedMeta(
 function groupRemoval(record: ElementRecord): RemovedElementRecord | null {
   if (record.meta.created) return null;
   return {
-    id: record.id, parent: record.parent, meta: structuredClone(record.meta),
+    id: record.id,
+    parent: record.parent,
+    meta: structuredClone(record.meta),
     ...(record.meta.origin ? { sourceSpids: [record.meta.origin.spid] } : {}),
   };
 }
@@ -137,8 +145,7 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
     throw new Error(`组合 ${group.id} 的父级投影不是组合：${parent}`);
   }
   const beforeOrder = groupIndex > 0 ? elementOrder(doc.elements[siblings[groupIndex - 1]]) : null;
-  const afterOrder = groupIndex + 1 < siblings.length
-    ? elementOrder(doc.elements[siblings[groupIndex + 1]]) : null;
+  const afterOrder = groupIndex + 1 < siblings.length ? elementOrder(doc.elements[siblings[groupIndex + 1]]) : null;
   let previous = beforeOrder;
   const moved: Record<ElementId, ElementRecord> = Object.create(null);
   for (const childId of children) {
@@ -147,41 +154,48 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
     const child = renderedElement(doc, childId);
     const editFrame = decomposeFrame(
       composeSpaceMatrices(parentToEdit, renderedFrameToSlideMatrix(doc, childId)),
-      child.w, child.h, `元素 ${childId}`,
+      child.w,
+      child.h,
+      `元素 ${childId}`,
     );
     // 父级是组合时，模型坐标还要去掉父组的 chOff/chExt 缩放；画布根直接使用编辑坐标。
-    const placement = parentRecord
-      ? { ...groupEditFrameToModelFrame(doc, parent, editFrame), reflectH: editFrame.reflectH }
-      : editFrame;
+    const placement = parentRecord ? { ...groupEditFrameToModelFrame(doc, parent, editFrame), reflectH: editFrame.reflectH } : editFrame;
     const order = fractionalIndexBetween(previous, afterOrder, childId);
     previous = order;
     const cloned = cloneHierarchyRecord(before);
     const overrides = sparseTransform(before, placement, cloned.ovr);
-    bakeScaledShapePath(effectiveGroup, parentPlaced, effectiveElement(doc, childId),
-      placement, before, overrides);
+    bakeScaledShapePath(effectiveGroup, parentPlaced, effectiveElement(doc, childId), placement, before, overrides);
     moved[childId] = {
-      ...cloned, parent, z: order, order,
+      ...cloned,
+      parent,
+      z: order,
+      order,
       ovr: overrides,
-      meta: { ...movedMeta(before, parent, cloned.meta),
-        ...(sources.has(childId) ? { insertion: sources.get(childId)! } : {}),
-      },
+      meta: { ...movedMeta(before, parent, cloned.meta), ...(sources.has(childId) ? { insertion: sources.get(childId)! } : {}) },
     };
   }
   const nextSiblings = [...siblings];
   nextSiblings.splice(groupIndex, 1, ...children);
   const removed = groupRemoval(group);
   const forward: ElementHierarchyPatch = {
-    op: 'set', path: ['elements', group.id, 'hierarchy'], origin,
+    op: 'set',
+    path: ['elements', group.id, 'hierarchy'],
+    origin,
     value: {
-      parent, affected: [group.id, ...children],
-      records: { [group.id]: null, ...moved }, children: { [parent]: nextSiblings },
+      parent,
+      affected: [group.id, ...children],
+      records: { [group.id]: null, ...moved },
+      children: { [parent]: nextSiblings },
       removed: { [group.id]: removed },
     },
   };
   const inverse: ElementHierarchyPatch = {
-    op: 'set', path: ['elements', group.id, 'hierarchy'], origin,
+    op: 'set',
+    path: ['elements', group.id, 'hierarchy'],
+    origin,
     value: {
-      parent, affected: [group.id, ...children],
+      parent,
+      affected: [group.id, ...children],
       records: {
         [group.id]: cloneHierarchyRecord(group),
         ...Object.fromEntries(children.map((id) => [id, cloneHierarchyRecord(doc.elements[id])])),
@@ -191,7 +205,8 @@ export function ungroupPatches(doc: EditDoc, command: UngroupCommand, origin: st
     },
   };
   return {
-    forward: [forward], inverse: [inverse],
+    forward: [forward],
+    inverse: [inverse],
     selection: { kind: 'elements', ids: children, enteredGroup: isCanvasRoot(doc, parent) ? null : parent },
   };
 }

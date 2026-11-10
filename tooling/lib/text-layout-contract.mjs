@@ -9,38 +9,51 @@ export function runTextLayoutContract({ lib, parsed, allElements, check, eq, nea
   const audit = (text, w, h, options = {}) => {
     bodies++;
     const layout = lib.layoutText(text, w, h, options);
-    let valid = Number.isFinite(layout.scale) && layout.scale > 0
-      && Array.isArray(layout.transform) && layout.transform.length === 6
+    let valid =
+      Number.isFinite(layout.scale)
+      && layout.scale > 0
+      && Array.isArray(layout.transform)
+      && layout.transform.length === 6
       && layout.transform.every(Number.isFinite);
     for (const line of layout.lines) {
-      valid &&= Number.isInteger(line.paragraphIndex) && line.paragraphIndex >= 0
+      valid &&=
+        Number.isInteger(line.paragraphIndex)
+        && line.paragraphIndex >= 0
         && line.paragraphIndex < text.paragraphs.length
-        && Number.isInteger(line.lineIndex) && line.lineIndex >= 0
-        && Number.isInteger(line.columnIndex) && line.columnIndex >= 0
-        && [line.x, line.y, line.width, line.height, line.baseline, line.anchorX]
-          .every(Number.isFinite)
-        && line.width >= 0 && line.height >= 0;
+        && Number.isInteger(line.lineIndex)
+        && line.lineIndex >= 0
+        && Number.isInteger(line.columnIndex)
+        && line.columnIndex >= 0
+        && [line.x, line.y, line.width, line.height, line.baseline, line.anchorX].every(Number.isFinite)
+        && line.width >= 0
+        && line.height >= 0;
       for (const segment of line.segments) {
         segments++;
         const para = text.paragraphs[line.paragraphIndex];
         const run = segment.runIndex >= 0 ? para.runs[segment.runIndex] : null;
         let segmentValid = segment.bullet
           ? segment.runIndex === -1 && segment.carets.length === 0
-          : !!run && segment.from >= 0 && segment.to >= segment.from
-            && segment.to <= run.text.length && segment.carets.length >= 1
+          : !!run
+            && segment.from >= 0
+            && segment.to >= segment.from
+            && segment.to <= run.text.length
+            && segment.carets.length >= 1
             && segment.carets[0].offset === segment.from
             && segment.carets.at(-1).offset === segment.to;
         if (!segment.bullet) {
           for (let i = 1; i < segment.carets.length; i++) {
             const a = segment.carets[i - 1];
             const b = segment.carets[i];
-            segmentValid &&= a.offset < b.offset && Number.isFinite(a.x) && Number.isFinite(b.x)
-              && (line.rtl ? a.x >= b.x : a.x <= b.x);
+            segmentValid &&= a.offset < b.offset && Number.isFinite(a.x) && Number.isFinite(b.x) && (line.rtl ? a.x >= b.x : a.x <= b.x);
           }
           if (segment.atomic) segmentValid &&= segment.carets.length === 2;
         }
-        segmentValid &&= Number.isFinite(segment.x) && Number.isFinite(segment.width)
-          && Number.isFinite(segment.naturalWidth) && segment.width >= 0 && segment.naturalWidth >= 0;
+        segmentValid &&=
+          Number.isFinite(segment.x)
+          && Number.isFinite(segment.width)
+          && Number.isFinite(segment.naturalWidth)
+          && segment.width >= 0
+          && segment.naturalWidth >= 0;
         if (segmentValid) validSegments++;
       }
     }
@@ -58,10 +71,8 @@ export function runTextLayoutContract({ lib, parsed, allElements, check, eq, nea
           for (let ci = 0; ci < row.cells.length; ci++) {
             const cell = row.cells[ci];
             if (cell.merged || !cell.text) continue;
-            const w = element.colWidths.slice(ci, ci + cell.colSpan).reduce((sum, value) => sum + value, 0)
-              || element.colWidths[ci] || 0;
-            const h = element.rows.slice(ri, ri + cell.rowSpan).reduce((sum, value) => sum + value.height, 0)
-              || row.height;
+            const w = element.colWidths.slice(ci, ci + cell.colSpan).reduce((sum, value) => sum + value, 0) || element.colWidths[ci] || 0;
+            const h = element.rows.slice(ri, ri + cell.rowSpan).reduce((sum, value) => sum + value.height, 0) || row.height;
             audit(cell.text, w, h, { insets: cell.margins, anchor: cell.vAlign, vert: cell.vert });
           }
         }
@@ -81,8 +92,7 @@ export function runTextLayoutContract({ lib, parsed, allElements, check, eq, nea
   }
   if (!check('找到行盒合成基准文本', !!source)) return;
 
-  const run = { ...source.paragraphs[0].runs[0], text: 'A😀ß', caps: 'all', math: undefined,
-    spacing: undefined, baseline: undefined };
+  const run = { ...source.paragraphs[0].runs[0], text: 'A😀ß', caps: 'all', math: undefined, spacing: undefined, baseline: undefined };
   const synthetic = {
     ...source,
     anchor: 'top',
@@ -95,8 +105,19 @@ export function runTextLayoutContract({ lib, parsed, allElements, check, eq, nea
     columnGap: undefined,
     vert: undefined,
     warp: undefined,
-    paragraphs: [{ ...source.paragraphs[0], marL: 0, indent: 0, bullet: null, bulletImage: null,
-      spaceBefore: 0, spaceAfter: 0, lineHeight: 1, runs: [run] }],
+    paragraphs: [
+      {
+        ...source.paragraphs[0],
+        marL: 0,
+        indent: 0,
+        bullet: null,
+        bulletImage: null,
+        spaceBefore: 0,
+        spaceAfter: 0,
+        lineHeight: 1,
+        runs: [run],
+      },
+    ],
   };
   let measureCalls = 0;
   const monospace = (value) => {
@@ -109,12 +130,13 @@ export function runTextLayoutContract({ lib, parsed, allElements, check, eq, nea
   eq('UTF-16 偏移跳过代理项内部', exactSegment?.carets.map((caret) => caret.offset).join(','), '0,1,3,4');
   eq('全大写展开仍映射回单个源字符', exactSegment?.carets.map((caret) => caret.x).join(','), '0,10,20,40');
   check('行盒实际调用注入测量器', measureCalls > 0, `实际 ${measureCalls}`);
-  const hit = exactSegment.carets.reduce((best, caret) =>
-    Math.abs(caret.x - 19) < Math.abs(best.x - 19) ? caret : best);
+  const hit = exactSegment.carets.reduce((best, caret) => (Math.abs(caret.x - 19) < Math.abs(best.x - 19) ? caret : best));
   eq('字符 x 偏移可做最近光标命中', hit.offset, 3);
   const light = lib.layoutText(synthetic, 200, 100, { measureText: monospace, includeCarets: false });
-  check('轻量行盒可跳过逐字停靠点', light.lines.every((line) =>
-    line.segments.every((segment) => segment.carets.length === 0)));
+  check(
+    '轻量行盒可跳过逐字停靠点',
+    light.lines.every((line) => line.segments.every((segment) => segment.carets.length === 0)),
+  );
 
   if (check('公开无 DOM 的形状随文字改高求解器', typeof lib.fitTextShapeHeight === 'function')) {
     const fit = structuredClone(synthetic);
@@ -125,30 +147,29 @@ export function runTextLayoutContract({ lib, parsed, allElements, check, eq, nea
     fit.paragraphs[0].runs[0].text = 'A\nB';
     const fitHeight = lib.fitTextShapeHeight(fit, 100, { measureText: monospace });
     near('横排 spAutoFit 高度等于上下边距与全部行高之和', fitHeight, 26, 0.001);
-    check('公开行盒显式暴露改高求解使用的溢出判据',
+    check(
+      '公开行盒显式暴露改高求解使用的溢出判据',
       lib.layoutText(fit, 100, 25.9, { measureText: monospace }).overflow === true
-        && lib.layoutText(fit, 100, 26, { measureText: monospace }).overflow === false);
+        && lib.layoutText(fit, 100, 26, { measureText: monospace }).overflow === false,
+    );
 
     const fitColumns = structuredClone(fit);
     fitColumns.columns = 2;
     fitColumns.columnGap = 10;
     fitColumns.paragraphs[0].runs[0].text = 'A\nB\nC\nD';
-    near('两栏 spAutoFit 求可容纳有序行盒的最小高度',
-      lib.fitTextShapeHeight(fitColumns, 100, { measureText: monospace }), 26, 0.001);
+    near('两栏 spAutoFit 求可容纳有序行盒的最小高度', lib.fitTextShapeHeight(fitColumns, 100, { measureText: monospace }), 26, 0.001);
 
     const fitVertical = structuredClone(fit);
     fitVertical.vert = 'vert';
     fitVertical.paragraphs[0].runs[0].text = 'ABCD';
-    near('竖排 spAutoFit 以物理高度扩展逻辑行宽直到不溢出',
-      lib.fitTextShapeHeight(fitVertical, 16, { measureText: monospace }), 48, 0.001);
+    near('竖排 spAutoFit 以物理高度扩展逻辑行宽直到不溢出', lib.fitTextShapeHeight(fitVertical, 16, { measureText: monospace }), 48, 0.001);
   }
 
   const rtl = structuredClone(synthetic);
   rtl.paragraphs[0].rtl = true;
   rtl.paragraphs[0].runs[0].text = 'AB';
   rtl.paragraphs[0].runs[0].caps = 'none';
-  const rtlCarets = lib.layoutText(rtl, 200, 100, { measureText: monospace })
-    .lines[0].segments[0].carets;
+  const rtlCarets = lib.layoutText(rtl, 200, 100, { measureText: monospace }).lines[0].segments[0].carets;
   eq('RTL 光标按阅读方向递减', rtlCarets.map((caret) => caret.x).join(','), '20,10,0');
 
   const broken = structuredClone(synthetic);
@@ -163,11 +184,17 @@ export function runTextLayoutContract({ lib, parsed, allElements, check, eq, nea
   cjk.paragraphs[0].runs[0].size = 20;
   const squeezed = lib.layoutText(cjk, 40, 100, { measureText: monospace });
   check('行盒复用 CJK 标点挤压', squeezed.lines.length === 1 && squeezed.lines[0].squeezed);
-  check('挤压后的逻辑宽度小于自然宽度', squeezed.lines[0].width < squeezed.lines[0].naturalWidth,
-    `${squeezed.lines[0].width}/${squeezed.lines[0].naturalWidth}`);
-  near('挤压行最后光标落在有效行宽',
+  check(
+    '挤压后的逻辑宽度小于自然宽度',
+    squeezed.lines[0].width < squeezed.lines[0].naturalWidth,
+    `${squeezed.lines[0].width}/${squeezed.lines[0].naturalWidth}`,
+  );
+  near(
+    '挤压行最后光标落在有效行宽',
     squeezed.lines[0].segments.at(-1).carets.at(-1).x - squeezed.lines[0].x,
-    squeezed.lines[0].width, 0.01);
+    squeezed.lines[0].width,
+    0.01,
+  );
 
   const columns = structuredClone(synthetic);
   columns.columns = 2;
@@ -176,9 +203,11 @@ export function runTextLayoutContract({ lib, parsed, allElements, check, eq, nea
   const columnLayout = lib.layoutText(columns, 100, 24, { measureText: monospace });
   const columnIds = new Set(columnLayout.lines.map((line) => line.columnIndex));
   check('分栏行盒进入多个物理列', columnIds.has(0) && columnIds.has(1), [...columnIds].join(','));
-  check('第二列 x 坐标位于第一列右侧',
+  check(
+    '第二列 x 坐标位于第一列右侧',
     Math.min(...columnLayout.lines.filter((line) => line.columnIndex === 1).map((line) => line.x))
-      > Math.min(...columnLayout.lines.filter((line) => line.columnIndex === 0).map((line) => line.x)));
+      > Math.min(...columnLayout.lines.filter((line) => line.columnIndex === 0).map((line) => line.x)),
+  );
 
   const vertical = structuredClone(synthetic);
   vertical.vert = 'vert';

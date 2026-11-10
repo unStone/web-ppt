@@ -4,6 +4,6 @@ export default defineConfig({
   build: {
     copyPublicDir: false,
     lib: { entry: 'src/index.ts', fileName: 'react', formats: ['es'] },
-    rollupOptions: { external: ['@web-ppt/editor', 'react', 'react/jsx-runtime'] },
+    rolldownOptions: { external: ['@web-ppt/editor', 'react', 'react/jsx-runtime'] },
   },
 });

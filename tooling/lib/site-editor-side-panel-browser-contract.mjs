@@ -12,8 +12,7 @@ export async function runSiteEditorSidePanelBrowserContract(context) {
     return { names: [...document.querySelectorAll('[data-pane-name]')].map((node) => node.textContent),
       listHeight: list.height, inspectorHeight: inspector.height };
   })()`);
-  if (!layout.names.some((name) => /^(文字|形状) \d+/.test(name))
-    || layout.listHeight < 96 || layout.inspectorHeight < 180) {
+  if (!layout.names.some((name) => /^(文字|形状) \d+/.test(name)) || layout.listHeight < 96 || layout.inspectorHeight < 180) {
     throw new Error(`对象名称或双区高度异常：${JSON.stringify(layout)}`);
   }
   await evaluate(`(() => {
@@ -23,27 +22,34 @@ export async function runSiteEditorSidePanelBrowserContract(context) {
   await waitFor("document.querySelectorAll('[data-search-match]').length > 0", '对象列表查找结果');
   await click('#objectSearchNext');
   await waitFor("!!document.querySelector('[data-search-current][aria-selected=true]')", '查找命中并选择对象');
-  if (!await evaluate("document.querySelector('#objectTaskTab').getAttribute('aria-selected') === 'true'")) {
+  if (!(await evaluate("document.querySelector('#objectTaskTab').getAttribute('aria-selected') === 'true'"))) {
     throw new Error('选择查找结果后未打开对象属性');
   }
   await evaluate(`(() => {
     const search = document.querySelector('#objectSearch');
     search.value = 'no-such-object-123'; search.dispatchEvent(new Event('input', { bubbles: true }));
   })()`);
-  await waitFor("document.querySelector('#objectSearchNext').disabled && document.querySelector('#objectSearchCount').textContent === '没有匹配对象'", '对象查找空结果');
+  await waitFor(
+    "document.querySelector('#objectSearchNext').disabled && document.querySelector('#objectSearchCount').textContent === '没有匹配对象'",
+    '对象查找空结果',
+  );
   await evaluate(`(() => {
     const search = document.querySelector('#objectSearch');
     search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   })()`);
-  if (!await evaluate("document.querySelector('#objectSearch').value === '' && document.querySelectorAll('[data-search-match]').length === 0")) {
+  if (
+    !(await evaluate(
+      "document.querySelector('#objectSearch').value === '' && document.querySelectorAll('[data-search-match]').length === 0",
+    ))
+  ) {
     throw new Error('取消查找后仍保留查询状态');
   }
   await click('#slideTaskTab');
-  if (!await evaluate("!document.querySelector('#slideTaskPanel').hidden && document.querySelector('#objectTaskPanel').hidden")) {
+  if (!(await evaluate("!document.querySelector('#slideTaskPanel').hidden && document.querySelector('#objectTaskPanel').hidden"))) {
     throw new Error('页面任务页签未切换面板');
   }
   await click('#presentTaskTab');
-  if (!await evaluate("!document.querySelector('#presentTaskPanel').hidden && document.querySelector('#slideTaskPanel').hidden")) {
+  if (!(await evaluate("!document.querySelector('#presentTaskPanel').hidden && document.querySelector('#slideTaskPanel').hidden"))) {
     throw new Error('放映任务页签未切换面板');
   }
   const resized = await evaluate(`(() => {

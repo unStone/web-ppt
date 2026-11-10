@@ -21,8 +21,16 @@ export const DENGXIAN_LATIN_METRICS = { boldSizeAdjust: 95.4, underscoreSizeAdju
 export const DENGXIAN_LATIN_FAMILY = 'WebPPT DengXian Latin';
 const DENGXIAN_LATIN_FALLBACK = [`'${DENGXIAN_LATIN_FAMILY}'`, `'Arial'`, `'Helvetica'`, `'Arimo'`, `'Liberation Sans'`];
 const ARIAL_REGULAR = ['Arial', 'ArialMT', 'Helvetica', 'Arimo', 'Arimo-Regular', 'Liberation Sans', 'LiberationSans'];
-const ARIAL_BOLD = ['Arial Bold', 'Arial-BoldMT', 'Helvetica Bold', 'Helvetica-Bold', 'Arimo Bold', 'Arimo-Bold',
-  'Liberation Sans Bold', 'LiberationSans-Bold'];
+const ARIAL_BOLD = [
+  'Arial Bold',
+  'Arial-BoldMT',
+  'Helvetica Bold',
+  'Helvetica-Bold',
+  'Arimo Bold',
+  'Arimo-Bold',
+  'Liberation Sans Bold',
+  'LiberationSans-Bold',
+];
 
 function isDengXian(run: Pick<TextRun, 'fonts'>): boolean {
   return /^(等线|dengxian)$/i.test(run.fonts[0] ?? '');
@@ -35,10 +43,12 @@ export function dengXianLatinFontFaces(): string {
     `@font-face{font-family:'${DENGXIAN_LATIN_FAMILY}';src:${names.map((name) => `local('${name}')`).join(',')};`
     + `font-weight:${weight};${extra}}`;
   // 同字重的面按声明逆序匹配 unicode-range，下划线面必须写在整体面之后。
-  return face(ARIAL_REGULAR, '1 599', '')
+  return (
+    face(ARIAL_REGULAR, '1 599', '')
     + face(ARIAL_BOLD, '600 1000', `size-adjust:${boldSizeAdjust}%;`)
     + face(ARIAL_REGULAR, '1 599', `unicode-range:U+5F;size-adjust:${underscoreSizeAdjust}%;`)
-    + face(ARIAL_BOLD, '600 1000', `unicode-range:U+5F;size-adjust:${underscoreSizeAdjust}%;`);
+    + face(ARIAL_BOLD, '600 1000', `unicode-range:U+5F;size-adjust:${underscoreSizeAdjust}%;`)
+  );
 }
 
 /** 自定义文字宽度测量；返回值是整个字符串含字距后的 px 宽度。 */
@@ -121,12 +131,7 @@ export function invalidateTextMeasureCaches(): void {
   mathCache.clear();
 }
 
-export function measureTextWidth(
-  text: string,
-  run: TextRun,
-  scale: number,
-  measurer?: TextMeasure,
-): number {
+export function measureTextWidth(text: string, run: TextRun, scale: number, measurer?: TextMeasure): number {
   // 数学公式布局自带测量（mathMeasure 用专用数学字体栈），不经外部 measurer——
   // 注入测字（Node 的 withFontMeasurement）遇到公式 run 时走这里，而不是整页拒绝。
   if (run.math?.length) return mathOf(run, scale)?.w ?? 0;

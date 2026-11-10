@@ -16,19 +16,30 @@ mkdirSync(out, { recursive: true });
 const PAGES = Number(process.env.VECTOR_PDF_BENCH_PAGES ?? 200);
 
 const entry = resolve(out, 'bench-entry.mjs');
-writeFileSync(entry, `export {parse} from '@web-ppt/core';
+writeFileSync(
+  entry,
+  `export {parse} from '@web-ppt/core';
 export {presentationToVectorPdf} from '@web-ppt/core/pdf/vector';
 export {createFontProvider,segmentFontText} from '@web-ppt/fonts/glyphs';
-export {createHarfBuzzShaper} from '@web-ppt/fonts/glyphs/harfbuzz';`);
-const api = await bundleBrowser({ root, entry, output: resolve(out, 'bench-contract.mjs'), aliases: [
-  ['@web-ppt/core', resolve(root, 'packages/core/src/index.ts')],
-  ['@web-ppt/core/pdf/vector', resolve(root, 'packages/core/src/pdf/vector.ts')],
-  ['@web-ppt/fonts/glyphs', resolve(root, 'packages/fonts/src/glyphs/index.ts')],
-  ['@web-ppt/fonts/glyphs/harfbuzz', resolve(root, 'packages/fonts/src/glyphs/harfbuzz.ts')],
-]});
+export {createHarfBuzzShaper} from '@web-ppt/fonts/glyphs/harfbuzz';`,
+);
+const api = await bundleBrowser({
+  root,
+  entry,
+  output: resolve(out, 'bench-contract.mjs'),
+  aliases: [
+    ['@web-ppt/core', resolve(root, 'packages/core/src/index.ts')],
+    ['@web-ppt/core/pdf/vector', resolve(root, 'packages/core/src/pdf/vector.ts')],
+    ['@web-ppt/fonts/glyphs', resolve(root, 'packages/fonts/src/glyphs/index.ts')],
+    ['@web-ppt/fonts/glyphs/harfbuzz', resolve(root, 'packages/fonts/src/glyphs/harfbuzz.ts')],
+  ],
+});
 const hb = await import('harfbuzzjs');
 const provider = api.createFontProvider({ loadShaper: async () => api.createHarfBuzzShaper(hb) });
-const face = await provider.register({ id: 'latin', origin: 'explicit', bytes: new Uint8Array(readFileSync('tooling/font-glyph-samples/latin.ttf')) }, { purpose: 'view-print' });
+const face = await provider.register(
+  { id: 'latin', origin: 'explicit', bytes: new Uint8Array(readFileSync('tooling/font-glyph-samples/latin.ttf')) },
+  { purpose: 'view-print' },
+);
 if (!face.ok) throw new Error(`字体注册失败：${face.error}`);
 
 const base = await api.parse(new Uint8Array(readFileSync('fixtures/sample-vector-pdf.pptx')));
@@ -63,4 +74,6 @@ const record = {
   pdfKb: Number((bytes.length / 1024).toFixed(1)),
 };
 writeFileSync(resolve(out, `cost-${PAGES}.json`), `${JSON.stringify(record, null, 2)}\n`);
-console.log(`矢量 PDF ${PAGES} 页：${record.ms}ms（${record.msPerPage}ms/页）· 堆增长 ${record.heapGrowthMb}MB · RSS 增长 ${record.rssGrowthMb}MB · PDF ${record.pdfKb}KB`);
+console.log(
+  `矢量 PDF ${PAGES} 页：${record.ms}ms（${record.msPerPage}ms/页）· 堆增长 ${record.heapGrowthMb}MB · RSS 增长 ${record.rssGrowthMb}MB · PDF ${record.pdfKb}KB`,
+);

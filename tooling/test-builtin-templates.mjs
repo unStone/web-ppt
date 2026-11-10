@@ -17,12 +17,14 @@ const aliases = [
 ];
 const [templates, generate, core, edit] = await Promise.all([
   bundleBrowser({
-    root, aliases,
+    root,
+    aliases,
     entry: join(root, 'packages/edit-core/src/templates/index.ts'),
     output: join(out, 'templates.mjs'),
   }),
   bundleBrowser({
-    root, aliases,
+    root,
+    aliases,
     entry: join(root, 'packages/edit-core/src/generate/index.ts'),
     output: join(out, 'generate.mjs'),
   }),
@@ -32,7 +34,8 @@ const [templates, generate, core, edit] = await Promise.all([
     output: join(out, 'core.mjs'),
   }),
   bundleBrowser({
-    root, aliases,
+    root,
+    aliases,
     entry: join(root, 'packages/edit-core/src/index.ts'),
     output: join(out, 'edit.mjs'),
   }),
@@ -47,7 +50,11 @@ const check = (label, condition, detail = '') => {
 };
 
 await runBuiltinTemplateContract({
-  templates, generate, core, edit, check,
+  templates,
+  generate,
+  core,
+  edit,
+  check,
   sha256: (bytes) => createHash('sha256').update(bytes).digest('hex'),
   saveArtifact: (name, bytes) => {
     const path = join(out, name);
@@ -56,10 +63,11 @@ await runBuiltinTemplateContract({
   },
   renderFingerprint: (file, mode) => {
     const path = isAbsolute(file) ? file : join(out, file);
-    const stdout = execFileSync(process.execPath, [
-      join(root, 'tooling/lib/builtin-template-fingerprint.mjs'),
-      join(out, 'core.mjs'), join(out, 'edit.mjs'), path, mode,
-    ], { cwd: root, encoding: 'utf8' });
+    const stdout = execFileSync(
+      process.execPath,
+      [join(root, 'tooling/lib/builtin-template-fingerprint.mjs'), join(out, 'core.mjs'), join(out, 'edit.mjs'), path, mode],
+      { cwd: root, encoding: 'utf8' },
+    );
     return JSON.parse(stdout);
   },
 });

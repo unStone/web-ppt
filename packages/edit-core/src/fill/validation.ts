@@ -39,7 +39,7 @@ function chartData(chart: TemplateFillChart, page: number): void {
       if (!series.sizes || series.sizes.length !== series.values.length) {
         fail(`${field}.sizes`, `sizes 必须与 ${series.values.length} 个 values 一一对应`);
       }
-      if (series.sizes?.some(value => value !== null && value < 0)) fail(`${field}.sizes`, '气泡尺寸不能为负');
+      if (series.sizes?.some((value) => value !== null && value < 0)) fail(`${field}.sizes`, '气泡尺寸不能为负');
     } else if (series.sizes !== undefined) fail(`${field}.sizes`, '只有气泡图接受 sizes');
   });
 }
@@ -51,9 +51,12 @@ export function prepareOutline(input: unknown): {
   if (!validator(input)) {
     const error = validator.errors?.[0];
     const page = /^\/slides\/(\d+)(?:\/|$)/.exec(error?.instancePath ?? '');
-    throw new TemplateFillError('invalid-outline',
+    throw new TemplateFillError(
+      'invalid-outline',
       `大纲不符合 template-fill Schema：${error?.instancePath || '/'} ${error?.message ?? ''}`,
-      page ? Number(page[1]) + 1 : null, error?.instancePath ?? null);
+      page ? Number(page[1]) + 1 : null,
+      error?.instancePath ?? null,
+    );
   }
   const outline = normalizedOutline(input as TemplateFillOutline);
   const images = new Map<number, PreparedFillImage>();
@@ -70,8 +73,12 @@ export function prepareOutline(input: unknown): {
       }
       images.set(index, { bytes, metadata });
     } catch (error) {
-      throw new TemplateFillError('invalid-image',
-        `第 ${page} 页图片无效：${error instanceof Error ? error.message : String(error)}`, page, 'image');
+      throw new TemplateFillError(
+        'invalid-image',
+        `第 ${page} 页图片无效：${error instanceof Error ? error.message : String(error)}`,
+        page,
+        'image',
+      );
     }
   });
   return { outline, images };

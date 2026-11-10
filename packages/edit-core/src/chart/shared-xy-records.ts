@@ -12,16 +12,19 @@ export interface XYAxisRecords {
   readonly removed?: Readonly<Record<string, unknown>>;
 }
 export type SharedXYRecords = Readonly<Record<string, XYAxisRecords>>;
-export interface XYResource extends InsertedResource { readonly xyRecords?: SharedXYRecords }
+export interface XYResource extends InsertedResource {
+  readonly xyRecords?: SharedXYRecords;
+}
 
 function validateLeaf(family: SharedXYFamily, tail: readonly string[], value: unknown, deleted: boolean): void {
   if (tail[0] === 'removed') {
-    if (tail.length !== 2 || String(Number(tail[1])) !== tail[1] || !family.positions.has(Number(tail[1]))
-      || !deleted && value !== true) throw new Error('共享 XY 删除位置不是来源记录');
+    if (tail.length !== 2 || String(Number(tail[1])) !== tail[1] || !family.positions.has(Number(tail[1])) || (!deleted && value !== true))
+      throw new Error('共享 XY 删除位置不是来源记录');
     return;
   }
   if (tail[0] !== 'insertions') throw new Error('共享 XY 记录字段无效');
-  const id = tail[1]; assertChartIdentity(id, id, '共享 XY 新增点');
+  const id = tail[1];
+  assertChartIdentity(id, id, '共享 XY 新增点');
   if (family.identities.has(id)) throw new Error('共享 XY 新增点与来源身份冲突');
   if (tail[2] === 'cells') {
     if (tail.length !== 4 || String(Number(tail[3])) !== tail[3] || !family.lanes.has(Number(tail[3]))) {
@@ -39,7 +42,12 @@ function validateLeaf(family: SharedXYFamily, tail: readonly string[], value: un
 }
 
 export function validateXYPatch(shared: SharedGroup, patch: DocumentExtensionPatch): void {
-  validateLeaf(sharedXYFamilyByKey(shared, patch.path[5]), patch.path.slice(6), patch.op === 'set' ? patch.value : undefined, patch.op === 'del');
+  validateLeaf(
+    sharedXYFamilyByKey(shared, patch.path[5]),
+    patch.path.slice(6),
+    patch.op === 'set' ? patch.value : undefined,
+    patch.op === 'del',
+  );
 }
 
 export function validateXYRecords(shared: SharedGroup, records: unknown): void {
@@ -50,9 +58,11 @@ export function validateXYRecords(shared: SharedGroup, records: unknown): void {
     for (const [key, value] of Object.entries(raw)) {
       if (++count > MAX_CHART_CELLS) throw new Error('共享 XY 覆盖超过安全上限');
       const tail = [...path, key];
-      const container = tail.length === 1 && ['removed', 'insertions'].includes(key)
-        || tail[0] === 'insertions' && (tail.length === 2 || tail.length === 3 && key === 'cells');
-      if (container) visit(family, value, tail); else validateLeaf(family, tail, value, false);
+      const container =
+        (tail.length === 1 && ['removed', 'insertions'].includes(key))
+        || (tail[0] === 'insertions' && (tail.length === 2 || (tail.length === 3 && key === 'cells')));
+      if (container) visit(family, value, tail);
+      else validateLeaf(family, tail, value, false);
     }
   };
   for (const [key, record] of Object.entries(records)) visit(sharedXYFamilyByKey(shared, key), record, []);
@@ -60,6 +70,8 @@ export function validateXYRecords(shared: SharedGroup, records: unknown): void {
 
 export function xyRecordLayout(family: SharedXYFamily, records: XYAxisRecords) {
   const rows = insertedRows(family, { [family.key]: records.insertions ?? {} });
-  return { ...recordAxisLayout(family, rows, new Set(Object.keys(records.removed ?? {}).map(Number))),
-    key: (lane: number, axis: number) => sharedXYCell(family, lane, axis) };
+  return {
+    ...recordAxisLayout(family, rows, new Set(Object.keys(records.removed ?? {}).map(Number))),
+    key: (lane: number, axis: number) => sharedXYCell(family, lane, axis),
+  };
 }

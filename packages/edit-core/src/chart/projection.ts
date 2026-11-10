@@ -10,9 +10,13 @@ export function chartProjection(doc: EditDoc, id: ElementId) {
   const state = currentChartDatasetState(doc, id);
   if (state.binding.unresolved) throw new Error(state.binding.reason);
   // 数据读取已经验证来源；同步投影期间没有异步换包，不必再读取一次绑定。
-  const part = state.binding.chartPart, source = chartSourceBytes(doc, part)!;
-  return { xml: materializeChartProjectionXml(source, id, state, chartFrameKey(doc, id)),
-    context: chartRenderContext(doc, id, part), part };
+  const part = state.binding.chartPart,
+    source = chartSourceBytes(doc, part)!;
+  return {
+    xml: materializeChartProjectionXml(source, id, state, chartFrameKey(doc, id)),
+    context: chartRenderContext(doc, id, part),
+    part,
+  };
 }
 
 export function projectChartElement(doc: EditDoc, id: ElementId, element: SlideElement): SlideElement {

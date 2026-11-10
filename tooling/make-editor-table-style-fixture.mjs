@@ -10,19 +10,18 @@ const STYLE_ID = '{71A84F42-BA92-4C1E-9EE0-71590D54A071}';
 function cell(row, column) {
   const directText = row === 0 && column === 1;
   const directAppearance = row === 1 && column === 1;
-  const runProperties = directText
-    ? `<a:rPr b="0">${solid('10B981')}</a:rPr>`
-    : '<a:rPr/>';
-  const properties = directAppearance
-    ? `<a:tcPr><a:lnL w="28575">${solid('DC2626')}</a:lnL>${solid('111827')}</a:tcPr>`
-    : '<a:tcPr/>';
-  return `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r>${runProperties}`
-    + `<a:t>${row}:${column}</a:t></a:r></a:p></a:txBody>${properties}</a:tc>`;
+  const runProperties = directText ? `<a:rPr b="0">${solid('10B981')}</a:rPr>` : '<a:rPr/>';
+  const properties = directAppearance ? `<a:tcPr><a:lnL w="28575">${solid('DC2626')}</a:lnL>${solid('111827')}</a:tcPr>` : '<a:tcPr/>';
+  return (
+    `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r>${runProperties}`
+    + `<a:t>${row}:${column}</a:t></a:r></a:p></a:txBody>${properties}</a:tc>`
+  );
 }
 
-const rows = Array.from({ length: 4 }, (_, row) => `<a:tr h="${px(95)}">`
-  + Array.from({ length: 4 }, (_, column) => cell(row, column)).join('')
-  + '</a:tr>').join('\n');
+const rows = Array.from(
+  { length: 4 },
+  (_, row) => `<a:tr h="${px(95)}">` + Array.from({ length: 4 }, (_, column) => cell(row, column)).join('') + '</a:tr>',
+).join('\n');
 const table = `<p:graphicFrame>
 <p:nvGraphicFramePr><p:cNvPr id="${nextShapeId()}" name="六开关表样式"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>
 <p:xfrm><a:off x="${px(150)}" y="${px(120)}"/><a:ext cx="${px(800)}" cy="${px(380)}"/></p:xfrm>
@@ -46,10 +45,14 @@ ${part('lastRow', '22C55E')}${part('firstRow', 'EF4444', '<a:tcTxStyle b="on"><a
 </a:tblStyle></a:tblStyleLst>`;
 
 const bytes = deck({
-  name: 'Editor Table Style', width: 1280, height: 720,
+  name: 'Editor Table Style',
+  width: 1280,
+  height: 720,
   slides: [slideXml(table)],
-  presRels: '<Relationship Id="rId80" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles" Target="tableStyles.xml"/>',
-  extraTypes: '<Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/>',
+  presRels:
+    '<Relationship Id="rId80" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles" Target="tableStyles.xml"/>',
+  extraTypes:
+    '<Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/>',
   extraEntries: [['ppt/tableStyles.xml', tableStyles]],
 });
 

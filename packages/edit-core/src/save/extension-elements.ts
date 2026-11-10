@@ -11,8 +11,17 @@ import { namespacedElement } from './xml-element';
 import { appendDrawingColor } from './drawing-color';
 
 // XML 树的私有 WeakMap 属于创建它的模块实例，扩展必须用树所有者的操作器写入。
-const xml = { findXmlChild, xmlElementChildren, removeXmlChild, insertXmlChildUnchecked,
-  setXmlAttribute, insertXmlInOrder, locateElementHost, namespacedElement, appendDrawingColor };
+const xml = {
+  findXmlChild,
+  xmlElementChildren,
+  removeXmlChild,
+  insertXmlChildUnchecked,
+  setXmlAttribute,
+  insertXmlInOrder,
+  locateElementHost,
+  namespacedElement,
+  appendDrawingColor,
+};
 export type EditElementXml = typeof xml;
 
 export function hasElementExtensionOverrides(record: ElementRecord): boolean {

@@ -43,14 +43,23 @@ export function parseXfrm(x: Element | null): XfrmInfo | null {
 }
 
 export const base = (xf: XfrmInfo): ElementBase => ({
-  x: xf.x, y: xf.y, w: xf.w, h: xf.h, rot: xf.rot, flipH: xf.flipH, flipV: xf.flipV,
+  x: xf.x,
+  y: xf.y,
+  w: xf.w,
+  h: xf.h,
+  rot: xf.rot,
+  flipH: xf.flipH,
+  flipV: xf.flipV,
 });
 
 export function movementLocked(nv: Element | null): boolean {
-  const props = kid(nv, 'cNvSpPr') ?? kid(nv, 'cNvCxnSpPr') ?? kid(nv, 'cNvPicPr')
-    ?? kid(nv, 'cNvGrpSpPr') ?? kid(nv, 'cNvGraphicFramePr');
-  const locks = kid(props, 'spLocks') ?? kid(props, 'cxnSpLocks') ?? kid(props, 'picLocks')
-    ?? kid(props, 'grpSpLocks') ?? kid(props, 'graphicFrameLocks');
+  const props = kid(nv, 'cNvSpPr') ?? kid(nv, 'cNvCxnSpPr') ?? kid(nv, 'cNvPicPr') ?? kid(nv, 'cNvGrpSpPr') ?? kid(nv, 'cNvGraphicFramePr');
+  const locks =
+    kid(props, 'spLocks')
+    ?? kid(props, 'cxnSpLocks')
+    ?? kid(props, 'picLocks')
+    ?? kid(props, 'grpSpLocks')
+    ?? kid(props, 'graphicFrameLocks');
   return boolAttr(locks, 'noMove');
 }
 
@@ -84,10 +93,17 @@ export function editInfoOf(
   if (readonlyLink) editInfo.readonlyLink = true;
   const altText = parseElementAltText(cNvPr);
   if (altText) editInfo.altText = altText;
-  return editInfo.origin || editInfo.placeholder || editInfo.placeholderDirect || editInfo.geom
-    || editInfo.customGeometry || editInfo.editable
-    || editInfo.moveLocked || editInfo.readonlyLink || editInfo.altText
-    ? { editInfo } : {};
+  return editInfo.origin
+    || editInfo.placeholder
+    || editInfo.placeholderDirect
+    || editInfo.geom
+    || editInfo.customGeometry
+    || editInfo.editable
+    || editInfo.moveLocked
+    || editInfo.readonlyLink
+    || editInfo.altText
+    ? { editInfo }
+    : {};
 }
 
 export function withPhClr(env: Env, phClr: string | null): Env {
@@ -148,13 +164,14 @@ export function parseFillElement(el: Element | null, env: Env): Fill | null {
       const target = blipTarget(el, env);
       const metadata = target && !/^https?:/i.test(target) ? env.pkg.imageMetadata(target) : null;
       const dpi = numAttr(el, 'dpi') ?? 0;
-      const physical = metadata ? {
-        sourceWidth: metadata.width * 96 / (dpi > 0 ? dpi : metadata.dpiX),
-        sourceHeight: metadata.height * 96 / (dpi > 0 ? dpi : metadata.dpiY),
-      } : {};
+      const physical = metadata
+        ? {
+            sourceWidth: (metadata.width * 96) / (dpi > 0 ? dpi : metadata.dpiX),
+            sourceHeight: (metadata.height * 96) / (dpi > 0 ? dpi : metadata.dpiY),
+          }
+        : {};
       const alignment = attr(tileEl, 'algn');
-      const tileAlignment = TILE_ALIGNMENTS.has(alignment as ImageTileAlignment)
-        ? alignment as ImageTileAlignment : 'tl';
+      const tileAlignment = TILE_ALIGNMENTS.has(alignment as ImageTileAlignment) ? (alignment as ImageTileAlignment) : 'tl';
       return {
         type: 'image',
         src,
@@ -162,14 +179,14 @@ export function parseFillElement(el: Element | null, env: Env): Fill | null {
         crop: hasCrop ? { l: frac('l'), t: frac('t'), r: frac('r'), b: frac('b') } : undefined,
         tile: tileEl
           ? {
-            sx: (numAttr(tileEl, 'sx') ?? 100000) / 100000,
-            sy: (numAttr(tileEl, 'sy') ?? 100000) / 100000,
-            flip: attr(tileEl, 'flip') ?? 'none',
-            tx: emu(numAttr(tileEl, 'tx') ?? 0),
-            ty: emu(numAttr(tileEl, 'ty') ?? 0),
-            algn: tileAlignment,
-            ...physical,
-          }
+              sx: (numAttr(tileEl, 'sx') ?? 100000) / 100000,
+              sy: (numAttr(tileEl, 'sy') ?? 100000) / 100000,
+              flip: attr(tileEl, 'flip') ?? 'none',
+              tx: emu(numAttr(tileEl, 'tx') ?? 0),
+              ty: emu(numAttr(tileEl, 'ty') ?? 0),
+              algn: tileAlignment,
+              ...physical,
+            }
           : undefined,
       };
     }
@@ -189,11 +206,12 @@ export function parseFillElement(el: Element | null, env: Env): Fill | null {
 function blipTarget(blipFill: Element | null, env: Env): string | null {
   const blip = kid(blipFill, 'blip');
   // PowerPoint 总在 a:blip 上留位图兼容副本；WPS 插入的图标常只写 extLst 里的 asvg:svgBlip。
-  const svgBlip = kids(kid(blip, 'extLst'), 'ext')
-    .map((ext) => kid(ext, 'svgBlip'))
-    .find((node): node is Element => node !== null) ?? null;
+  const svgBlip =
+    kids(kid(blip, 'extLst'), 'ext')
+      .map((ext) => kid(ext, 'svgBlip'))
+      .find((node): node is Element => node !== null) ?? null;
   const rid = attr(blip, 'r:embed') ?? attr(blip, 'r:link') ?? attr(svgBlip, 'r:embed') ?? attr(svgBlip, 'r:link');
-  return rid ? env.rels[rid]?.target ?? null : null;
+  return rid ? (env.rels[rid]?.target ?? null) : null;
 }
 
 export function blipUrl(blipFill: Element | null, env: Env): string | null {
@@ -220,9 +238,16 @@ export function blipFilter(blipFill: Element | null): string | undefined {
 }
 
 const DASH: Record<string, number[]> = {
-  dash: [4, 3], dashDot: [4, 3, 1, 3], dot: [1, 3], lgDash: [8, 3],
-  lgDashDot: [8, 3, 1, 3], lgDashDotDot: [8, 3, 1, 3, 1, 3],
-  sysDash: [3, 3], sysDashDot: [3, 3, 1, 3], sysDashDotDot: [3, 3, 1, 3, 1, 3], sysDot: [1, 1],
+  dash: [4, 3],
+  dashDot: [4, 3, 1, 3],
+  dot: [1, 3],
+  lgDash: [8, 3],
+  lgDashDot: [8, 3, 1, 3],
+  lgDashDotDot: [8, 3, 1, 3, 1, 3],
+  sysDash: [3, 3],
+  sysDashDot: [3, 3, 1, 3],
+  sysDashDotDot: [3, 3, 1, 3, 1, 3],
+  sysDot: [1, 1],
 };
 
 const CAPS: Record<string, Stroke['cap']> = { flat: 'butt', rnd: 'round', sq: 'square' };
@@ -231,7 +256,7 @@ const CAPS: Record<string, Stroke['cap']> = { flat: 'butt', rnd: 'round', sq: 's
 export function parseLnElement(ln: Element | null, env: Env, fallback: Stroke | null): Stroke | null {
   if (!ln) return fallback;
   if (kid(ln, 'noFill')) return null;
-  const width = numAttr(ln, 'w') !== null ? emu(numAttr(ln, 'w')!) : fallback?.width ?? 1;
+  const width = numAttr(ln, 'w') !== null ? emu(numAttr(ln, 'w')!) : (fallback?.width ?? 1);
   const fill = parseFillProps(ln, env);
   let color = fallback?.color ?? null;
   if (fill?.type === 'solid') color = fill.color;
@@ -240,9 +265,7 @@ export function parseLnElement(ln: Element | null, env: Env, fallback: Stroke | 
 
   const dashName = attr(kid(ln, 'prstDash'), 'val');
   const unit = Math.max(width, 1);
-  const dash = dashName
-    ? dashName === 'solid' ? null : (DASH[dashName] ?? [4, 3]).map((m) => m * unit)
-    : fallback?.dash ?? null;
+  const dash = dashName ? (dashName === 'solid' ? null : (DASH[dashName] ?? [4, 3]).map((m) => m * unit)) : (fallback?.dash ?? null);
 
   const head = parseLineEnd(kid(ln, 'headEnd')) ?? fallback?.head;
   const tail = parseLineEnd(kid(ln, 'tailEnd')) ?? fallback?.tail;
@@ -262,7 +285,10 @@ export function styleTextColorLayer(color: string | null): LevelStyles[] {
 }
 
 /** p:style 的主题引用 → 底层样式 */
-export function resolveStyleRefs(style: Element | null, env: Env): { fill: Fill | null; stroke: Stroke | null; fontColor: string | null; effects: ReturnType<typeof parseEffects> } {
+export function resolveStyleRefs(
+  style: Element | null,
+  env: Env,
+): { fill: Fill | null; stroke: Stroke | null; fontColor: string | null; effects: ReturnType<typeof parseEffects> } {
   if (!style) return { fill: null, stroke: null, fontColor: null, effects: undefined };
   const pick = (refName: string, list: Element[]): { el: Element | null; env: Env } => {
     const ref = kid(style, refName);
@@ -290,7 +316,8 @@ const CREATION_SHAPE_TEXT = `<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p
 
 function defaultShapeParts(): { style: Element; text: Element } {
   if (creationShapeParts) return creationShapeParts;
-  const root = parseXml(`<root xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  const root =
+    parseXml(`<root xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
 ${CREATION_SHAPE_STYLE}
 ${CREATION_SHAPE_TEXT}
 </root>`);
@@ -302,21 +329,30 @@ ${CREATION_SHAPE_TEXT}
 export function defaultShapeEditInfo(env: Env): NonNullable<Slide['editInfo']>['defaultShape'] {
   const source = defaultShapeParts();
   const style = resolveStyleRefs(source.style, env);
-  const textTemplate = parseTextBody(source.text, {
-    ctx: env.ctx,
-    fonts: env.theme.fonts,
-    chain: [
-      env.docDefaults, ...styleTextColorLayer(style.fontColor),
-      extractLstStyle(kid(source.text, 'lstStyle'), env.ctx, env.theme.fonts),
-    ],
-    defaultColor: style.fontColor,
-    slideNum: env.slideNum,
-    edit: true,
-  }, true);
+  const textTemplate = parseTextBody(
+    source.text,
+    {
+      ctx: env.ctx,
+      fonts: env.theme.fonts,
+      chain: [
+        env.docDefaults,
+        ...styleTextColorLayer(style.fontColor),
+        extractLstStyle(kid(source.text, 'lstStyle'), env.ctx, env.theme.fonts),
+      ],
+      defaultColor: style.fontColor,
+      slideNum: env.slideNum,
+      edit: true,
+    },
+    true,
+  );
   if (!textTemplate) throw new Error('无法构造新增形状文字模板');
   return {
-    fill: style.fill, stroke: style.stroke, effects: style.effects, textTemplate,
-    styleMarkup: CREATION_SHAPE_STYLE, textBodyMarkup: CREATION_SHAPE_TEXT,
+    fill: style.fill,
+    stroke: style.stroke,
+    effects: style.effects,
+    textTemplate,
+    styleMarkup: CREATION_SHAPE_STYLE,
+    textBodyMarkup: CREATION_SHAPE_TEXT,
   };
 }
 
