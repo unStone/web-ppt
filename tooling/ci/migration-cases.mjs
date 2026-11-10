@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 
 /** 合并阶段从运行时唯一清单取证；不执行迁移脚本，也不让每个 case 加载 TypeScript。 */
 export function readMigrationCaseNames(file) {

@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { join, resolve } from 'node:path';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 
 let importSequence = 0;
 

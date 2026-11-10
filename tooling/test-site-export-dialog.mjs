@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 import { installDomEnv } from './lib/dom-env.mjs';
 
 const { window, dom } = installDomEnv();

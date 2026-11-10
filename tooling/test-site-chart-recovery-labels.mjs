@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 
 const path = 'packages/site/src/editor-chart-recovery-labels.ts';
 const original = readFileSync(path, 'utf8');
