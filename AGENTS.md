@@ -80,6 +80,7 @@
 | **媒体的经典引用可能是 `NULL`** | PowerPoint 2010+ 内嵌 mp3 / mp4 等时，`a:audioFile` / `a:videoFile` 的 `r:link` 常指向 `Target="NULL" TargetMode="External"`，字节只在 `p:extLst` 里 `p14:media` 的 `r:embed` 上。只取经典引用就得到空源（issue #7）。`parseMedia` 按候选顺序取第一个能解析的目标，判定依据是关系的 TargetMode 与部件是否存在，别按字符串 `"NULL"` 特判 |
 | **备注不能只有 notesSlide** | 新增或改写备注必须同时具备 notesMaster、主题、Content-Type、notesSlide 隐式关系与 Presentation 显式目录/关系。缺闭包时 LibreOffice 可容忍，Quick Look 会超时。未编辑旧来源保持字节直通；补关系前先捕获基线，撤销与共享备注分叉才能恢复原包 |
 | **`chart/` 是解析器不是渲染器** | 它读 chart XML 产出 `SlideElement[]`。依赖 `pptx/color`·`text` 是正当复用（chart XML 本身就是 OOXML），不要试图「解耦」——那只会让 DrawingML 颜色解析复制一份 |
+| **TypeScript 7 主包没有 JS API** | `typescript@7` 的主入口只剩版本信息（`ts.sys`、`ts.createSourceFile` 都是 `undefined`），新 API 预计 7.1 才提供。类型检查与声明产出走原生 `tsc`；工具脚本里的语法解析、tsconfig 读取、模块解析一律从官方兼容包 `@typescript/typescript6` 导入。另一个 CLI 差异：命令行传文件时若发现 tsconfig.json 会报 TS5112，需要 `--ignoreConfig` |
 
 ## 分层
 

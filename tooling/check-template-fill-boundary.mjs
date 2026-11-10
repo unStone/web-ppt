@@ -43,6 +43,8 @@ execFileSync(
   [
     join(root, 'node_modules/typescript/bin/tsc'),
     consumer,
+    // TypeScript 7 起命令行传文件时若发现 tsconfig.json 会直接报 TS5112；这里刻意只用显式参数检查独立消费方
+    '--ignoreConfig',
     '--noEmit',
     '--strict',
     '--skipLibCheck',

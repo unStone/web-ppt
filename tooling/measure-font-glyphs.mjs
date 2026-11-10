@@ -1,7 +1,7 @@
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 import { build } from 'vite';
 import { withChartBrowser } from './lib/chart-browser-lab.mjs';
 

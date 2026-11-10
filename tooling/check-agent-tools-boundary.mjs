@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve, join } from 'node:path';
-import ts from 'typescript';
+import ts from '@typescript/typescript6';
 import { moduleClosure } from './lib/module-closure.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -78,6 +78,8 @@ execFileSync(
   [
     join(root, 'node_modules/typescript/bin/tsc'),
     consumer,
+    // TypeScript 7 起命令行传文件时若发现 tsconfig.json 会直接报 TS5112；这里刻意只用显式参数检查独立消费方
+    '--ignoreConfig',
     '--noEmit',
     '--strict',
     '--skipLibCheck',
