@@ -8,12 +8,15 @@
 |---|---|
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo 与编辑器） |
-| `npm run check` | 全仓 TypeScript 类型检查（走源码，不需要先构建） |
+| `npm run check` | 全仓 TypeScript 类型检查与 Biome 静态检查、格式检查（走源码，不需要先构建）；单独跑静态检查用 `npm run lint` |
+| `npm run format` | 按 `biome.jsonc` 重排格式。Biome 对个别成员链的首遍结果不是不动点，`check` 仍报格式差异时再跑一次 |
 | `npm test` | 全部功能测试，分套件命令见 [testing.md §8](testing.md#8-测试套件) |
 | `npm run build` | 构建全部发布包 |
 | `npm run build:site` | 构建官网静态产物 |
 | `npm run verify` | 跨产物一致性：许可证 / 版本 / 链接 / 文档数字与实测比对（`-- --net` 另查外链可达） |
 | `npm run fixtures` | 重新生成全部测试文件（确定性输出） |
+| `npm run api:report` / `npm run api:check` | 构建后更新 / 核对 `packages/*/api/*.api.md` 公开 API 报告；verify 自动执行核对，见 [API 契约](../api/api-stability.md) |
+| `npm run release:version -- X.Y.Z` | 九个发布包改到同一版本并精确锁定包之间的 peer，同步 `package-lock.json` |
 | `npm run test:zip` / `npm run test:zip:dist` | 验证恶意 ZIP、声明与实际大小、名称安全、真实 parse / 保存 / OLE 边界及内存上限；分别走源码与发布产物 |
 | `npm run test:animation` / `npm run test:animation:dist` | 动画统一验收：真实 Chrome 里用 Web Animations seek 断言全部动画效果与切换的中间态（计算样式端点、精确中间帧、painted 几何）；分别走源码与发布产物 |
 | `npm run test:ooxml` | 用 ECMA-376 XSD（xmllint）与 Open XML SDK 双通道校验全部保存产物；先跑 `npm test` 落盘产物，需要 xmllint 与 .NET SDK 8（[测试规范 §7.6](testing.md)） |

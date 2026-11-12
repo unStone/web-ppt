@@ -19,10 +19,19 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
   let panel: CommentsPanel | undefined, host: HTMLElement | undefined;
   let editing: { sync(): void; dispose(): void } | undefined;
   let owner: object | undefined, rendered: Slide['comments'];
-  let include = false, generation = 0;
+  let include = false,
+    generation = 0;
   const reset = () => {
-    generation++; editing?.dispose(); editing = undefined; panel?.dispose(); host?.remove(); panel = undefined; host = undefined;
-    owner = undefined; rendered = undefined; include = false;
+    generation++;
+    editing?.dispose();
+    editing = undefined;
+    panel?.dispose();
+    host?.remove();
+    panel = undefined;
+    host = undefined;
+    owner = undefined;
+    rendered = undefined;
+    include = false;
     button.setAttribute('aria-expanded', 'false');
   };
   signal.addEventListener('abort', reset, { once: true });
@@ -32,12 +41,16 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
     button.disabled = !context;
     if (owner && owner !== context?.owner) reset();
     if (panel && context && rendered !== context.slide.comments) {
-      panel.setSlide(context.slide); rendered = context.slide.comments;
+      panel.setSlide(context.slide);
+      rendered = context.slide.comments;
     }
     editing?.sync();
   };
   const open = async () => {
-    if (host) { reset(); return; }
+    if (host) {
+      reset();
+      return;
+    }
     const context = current();
     if (!context) return;
     owner = context.owner;
@@ -46,12 +59,14 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
     try {
       const { createCommentsPanel } = await import('@web-ppt/viewer-core/comments');
       if (attempt !== generation || current()?.owner !== context.owner) return;
-      host = document.createElement('aside'); host.id = 'commentsPanel';
+      host = document.createElement('aside');
+      host.id = 'commentsPanel';
       host.setAttribute('aria-labelledby', 'commentsTitle');
       host.innerHTML = `<style>#commentsPanel{position:fixed;right:16px;top:108px;width:min(370px,calc(100vw - 64px));max-height:calc(100vh - 155px);overflow:auto;z-index:1000;background:var(--card,#fff);color:var(--ink,#17202a);border:1px solid #ddd;border-radius:12px;padding:18px;box-shadow:0 8px 30px #0002}#commentsPanel header,#commentsPanel footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center}#commentsPanel h2{flex:1;margin:0;font-size:18px}#commentsPanel footer{margin-top:14px}#commentsPanel [role=status]{font-size:13px}</style>
 <header><h2 id="commentsTitle"></h2><button type="button" data-close></button></header><div data-content></div>
 <label><input type="checkbox" data-include-comments><span></span></label><footer></footer><p role="status"></p>`;
-      setText(host.querySelector('h2')!, '批注'); setText(host.querySelector('[data-close]')!, '关闭');
+      setText(host.querySelector('h2')!, '批注');
+      setText(host.querySelector('[data-close]')!, '关闭');
       setText(host.querySelector('label span')!, '导出包含批注');
       host.querySelector<HTMLButtonElement>('[data-close]')!.onclick = reset;
       host.querySelector<HTMLInputElement>('[data-include-comments]')!.onchange = (event) => {
@@ -60,7 +75,8 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
       document.body.append(host);
       panel = createCommentsPanel(host.querySelector('[data-content]')!);
       setText(host.querySelector('[data-comments-empty]')!, '本页没有批注');
-      panel.setSlide(current()!.slide); rendered = current()!.slide.comments;
+      panel.setSlide(current()!.slide);
+      rendered = current()!.slide.comments;
       if (context.editing) {
         const { bindCommentEditing } = await import('./editor-comment-tools');
         if (attempt !== generation || current()?.owner !== context.owner || !host) return;
@@ -68,44 +84,79 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
       }
       const status = host.querySelector<HTMLElement>('[role=status]')!;
       let busy = false;
-      for (const [format, label] of [['png', '导出 PNG'], ['svg', '导出 SVG'], ['zip', '导出图片 ZIP'], ['print', '打印及批注正文']] as const) {
-        const action = document.createElement('button'); action.type = 'button'; action.dataset.commentExport = format;
-        setText(action, label); host.querySelector('footer')!.append(action);
-        action.onclick = () => { void (async () => {
-          const source = current();
-          if (busy || !source) return;
-          busy = true;
-          const target = host;
-          try {
-            setText(status, '正在导出…');
-            const core = await import('@web-ppt/core');
-            const { exportFontOptions } = await import('./export-fonts');
-            if (current()?.owner !== source.owner || host !== target) return;
-            const presentation = source.presentation(), stem = source.name.replace(/\.pptx?$/i, '');
-            // 单页格式只带本页字符集；打印与 ZIP 覆盖整稿
-            const deckFonts = await exportFontOptions(
-              format === 'png' || format === 'svg' ? [source.slide] : presentation.slides);
-            const options = { showComments: include, ...(deckFonts ? { fonts: deckFonts } : {}) };
-            const blob = format === 'png' ? await core.slideToPng(presentation, source.slide, 2, options)
-              : format === 'svg' ? new Blob([await core.slideToSvgFile(presentation, source.slide, undefined, options)], { type: 'image/svg+xml' })
-              : format === 'print' ? new Blob([await core.presentationToPrintableHtml(presentation, options)], { type: 'text/html' })
-              : await (await import('@web-ppt/core/image-zip')).presentationToImageZip(presentation, options);
-            if (current()?.owner !== source.owner || host !== target) return;
-            download(blob, `${stem}${format === 'print' ? '-print.html' : '.' + format}`);
-            setText(status, '导出完成');
-          } catch (error) {
-            if (host === target) setText(status, '导出失败：{detail}', { detail: error instanceof Error ? error.message : String(error) });
-          } finally { busy = false; }
-        })(); };
+      for (const [format, label] of [
+        ['png', '导出 PNG'],
+        ['svg', '导出 SVG'],
+        ['zip', '导出图片 ZIP'],
+        ['print', '打印及批注正文'],
+      ] as const) {
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.dataset.commentExport = format;
+        setText(action, label);
+        host.querySelector('footer')!.append(action);
+        action.onclick = () => {
+          void (async () => {
+            const source = current();
+            if (busy || !source) return;
+            busy = true;
+            const target = host;
+            try {
+              setText(status, '正在导出…');
+              const core = await import('@web-ppt/core');
+              const { exportFontOptions } = await import('./export-fonts');
+              if (current()?.owner !== source.owner || host !== target) return;
+              const presentation = source.presentation(),
+                stem = source.name.replace(/\.pptx?$/i, '');
+              // 单页格式只带本页字符集；打印与 ZIP 覆盖整稿
+              const deckFonts = await exportFontOptions(format === 'png' || format === 'svg' ? [source.slide] : presentation.slides);
+              const options = { showComments: include, ...(deckFonts ? { fonts: deckFonts } : {}) };
+              const blob =
+                format === 'png'
+                  ? await core.slideToPng(presentation, source.slide, 2, options)
+                  : format === 'svg'
+                    ? new Blob([await core.slideToSvgFile(presentation, source.slide, undefined, options)], { type: 'image/svg+xml' })
+                    : format === 'print'
+                      ? new Blob([await core.presentationToPrintableHtml(presentation, options)], { type: 'text/html' })
+                      : await (await import('@web-ppt/core/image-zip')).presentationToImageZip(presentation, options);
+              if (current()?.owner !== source.owner || host !== target) return;
+              download(blob, `${stem}${format === 'print' ? '-print.html' : '.' + format}`);
+              setText(status, '导出完成');
+            } catch (error) {
+              if (host === target)
+                setText(status, '导出失败：{detail}', { detail: error instanceof Error ? error.message : String(error) });
+            } finally {
+              busy = false;
+            }
+          })();
+        };
       }
       button.setAttribute('aria-expanded', 'true');
     } catch (error) {
       if (attempt !== generation) return;
       // 临时加载失败可重试；不阻断文稿打开，也不留下不可关闭的面板。
-      reset(); button.title = error instanceof Error ? error.message : String(error);
-    } finally { sync(); }
+      reset();
+      button.title = error instanceof Error ? error.message : String(error);
+    } finally {
+      sync();
+    }
   };
-  button.addEventListener('click', () => { void open(); }, { signal });
+  button.addEventListener(
+    'click',
+    () => {
+      void open();
+    },
+    { signal },
+  );
   button.setAttribute('aria-expanded', 'false');
-  return { sync, reset, destroy() { controller.abort(); }, get showComments() { return include; } };
+  return {
+    sync,
+    reset,
+    destroy() {
+      controller.abort();
+    },
+    get showComments() {
+      return include;
+    },
+  };
 }

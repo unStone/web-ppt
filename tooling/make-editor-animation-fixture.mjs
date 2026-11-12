@@ -2,7 +2,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deck, label, nextShapeId, nvGrp, px, slideXml } from './lib/ooxml.mjs';
+import { deck, label, nextShapeId, px, slideXml } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
@@ -19,9 +19,10 @@ function shape({ x, y, color, name, text }) {
 }
 
 function behavior({ id, presetID, presetClass, nodeType, target, duration, delay, filter }) {
-  const visibility = presetClass === 'entr' || presetClass === 'exit'
-    ? `<p:set><p:cBhvr><p:cTn id="${id + 1}" dur="1" fill="hold"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="${presetClass === 'exit' ? 'hidden' : 'visible'}"/></p:to></p:set>`
-    : '';
+  const visibility =
+    presetClass === 'entr' || presetClass === 'exit'
+      ? `<p:set><p:cBhvr><p:cTn id="${id + 1}" dur="1" fill="hold"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="${presetClass === 'exit' ? 'hidden' : 'visible'}"/></p:to></p:set>`
+      : '';
   return `<p:par><p:cTn id="${id}" presetID="${presetID}" presetClass="${presetClass}" fill="hold" nodeType="${nodeType}">
 <p:stCondLst><p:cond delay="${delay}"/></p:stCondLst><p:childTnLst>${visibility}
 <p:animEffect transition="${presetClass === 'exit' ? 'out' : 'in'}" filter="${filter}"><p:cBhvr><p:cTn id="${id + 2}" dur="${duration}" fill="hold"/><p:tgtEl><p:spTgt spid="${target}"/></p:tgtEl></p:cBhvr></p:animEffect>
@@ -45,7 +46,11 @@ const firstA = shape({ x: 160, y: 190, color: '2E75B6', name: 'source-a', text: 
 const firstB = shape({ x: 700, y: 390, color: '70AD47', name: 'source-b', text: '来源动画 B' });
 const sourceGroupId = nextShapeId();
 const sourceGroupChild = shape({
-  x: 0, y: 0, color: '5B9BD5', name: 'source-group-child', text: '组内未支持动画',
+  x: 0,
+  y: 0,
+  color: '5B9BD5',
+  name: 'source-group-child',
+  text: '组内未支持动画',
 });
 const sourceGroup = `<p:grpSp><p:nvGrpSpPr><p:cNvPr id="${sourceGroupId}" name="source-group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
 <p:grpSpPr><a:xfrm><a:off x="${px(970)}" y="${px(90)}"/><a:ext cx="${px(230)}" cy="${px(90)}"/><a:chOff x="0" y="0"/><a:chExt cx="${px(420)}" cy="${px(150)}"/></a:xfrm></p:grpSpPr>
@@ -69,9 +74,11 @@ ${motion({ id: 30, target: firstA.id })}
 const choiceTiming = `<p:timing><p:tnLst><p14:anim presetID="999"><p:cBhvr><p:cTn id="91" dur="700"/><p:tgtEl><p:spTgt spid="${firstB.id}"/></p:tgtEl></p:cBhvr></p14:anim></p:tnLst></p:timing>`;
 const timingCarrier = `<mc:AlternateContent><mc:Choice Requires="p14">${choiceTiming}</mc:Choice><mc:Fallback>${sourceTiming}</mc:Fallback></mc:AlternateContent>`;
 const unrelatedMce = `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice Requires="fixture"><fixture:keep/></mc:Choice><mc:Fallback><p:extLst/></mc:Fallback></mc:AlternateContent>`;
-const slide1 = slideXml(`${firstA.xml}${firstB.xml}${sourceGroup}`, '',
-  `xmlns:fixture="urn:web-ppt:animation-fixture" xmlns:mc="${MC}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" mc:Ignorable="fixture p14" fixture:root="keep"`)
-  .replace('</p:sld>', `${timingCarrier}${unrelatedMce}</p:sld>`);
+const slide1 = slideXml(
+  `${firstA.xml}${firstB.xml}${sourceGroup}`,
+  '',
+  `xmlns:fixture="urn:web-ppt:animation-fixture" xmlns:mc="${MC}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" mc:Ignorable="fixture p14" fixture:root="keep"`,
+).replace('</p:sld>', `${timingCarrier}${unrelatedMce}</p:sld>`);
 
 const secondA = shape({ x: 170, y: 210, color: 'ED7D31', name: 'plain-a', text: '无动画 A' });
 const secondB = shape({ x: 690, y: 390, color: '7030A0', name: 'plain-b', text: '无动画 B' });
@@ -101,7 +108,9 @@ const noncanonicalTiming = `<p:timing><p:tnLst><p:par><p:cTn id="92" dur="indefi
 const slide5 = slideXml(fifthA.xml).replace('</p:sld>', `${noncanonicalTiming}</p:sld>`);
 
 const bytes = deck({
-  name: 'Editor Animations', width: 1280, height: 720,
+  name: 'Editor Animations',
+  width: 1280,
+  height: 720,
   slides: [slide1, slide2, slide3, slide4, slide5],
 });
 mkdirSync(join(root, 'fixtures'), { recursive: true });

@@ -14,34 +14,44 @@ installDomEnv();
 const core = await import(`${pathToFileURL(corePath).href}?template=${process.pid}`);
 const edit = await import(`${pathToFileURL(editPath).href}?template=${process.pid}`);
 const presentation = await core.parse(new Uint8Array(readFileSync(file)), {
-  edit: true, keepPackage: true, lazy: false, assets: 'defer',
+  edit: true,
+  keepPackage: true,
+  lazy: false,
+  assets: 'defer',
 });
 const doc = edit.createDoc(presentation, { idPrefix: 'template-fingerprint-' });
 const editor = new edit.Editor(doc);
 if (mode === 'projected') {
-  const title = doc.slides[doc.slideOrder[0]].children.map((id) => doc.elements[id])
-    .find((record) => record.meta.ph?.type === 'ctrTitle');
+  const title = doc.slides[doc.slideOrder[0]].children.map((id) => doc.elements[id]).find((record) => record.meta.ph?.type === 'ctrTitle');
   if (!title) throw new Error('模板指纹找不到标题占位符');
   editor.exec({
-    type: 'EditText', id: title.id,
-    ops: [{
-      type: 'replace', from: { p: 0, r: 0, off: 0 }, to: { p: 0, r: 0, off: 0 },
-      text: '内置模板可编辑',
-    }],
+    type: 'EditText',
+    id: title.id,
+    ops: [
+      {
+        type: 'replace',
+        from: { p: 0, r: 0, off: 0 },
+        to: { p: 0, r: 0, off: 0 },
+        text: '内置模板可编辑',
+      },
+    ],
   });
 }
 const slide = editor.toSlide(doc.slideOrder[0]);
 const visual = (value) => {
   if (!value || typeof value !== 'object') return value;
   if (Array.isArray(value)) return value.map(visual);
-  return Object.fromEntries(Object.entries(value)
-    .filter(([key]) => key !== 'id' && key !== 'editInfo' && key !== 'name')
-    .map(([key, child]) => [key, visual(child)]));
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => key !== 'id' && key !== 'editInfo' && key !== 'name')
+      .map(([key, child]) => [key, visual(child)]),
+  );
 };
 const result = {};
 for (const textMode of ['html', 'svg']) {
   const svg = core.renderSlideToSvg(presentation, visual(slide), {
-    textMode, idPrefix: `template-${textMode}-`,
+    textMode,
+    idPrefix: `template-${textMode}-`,
   });
   result[textMode] = `${svg.length}:${createHash('sha256').update(svg).digest('hex')}`;
 }

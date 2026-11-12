@@ -17,7 +17,8 @@ import { fileURLToPath } from 'node:url';
 import { label, makePng, makeZip, NS, nextShapeId, nvGrp, px, slideXml, solid, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const W = 1280, H = 720;
+const W = 1280,
+  H = 720;
 
 // 版式里的占位符：idx=1 给图片，idx=2 给形状
 const PH_PIC = { x: 80, y: 140, w: 420, h: 300 };
@@ -35,17 +36,22 @@ const phShape = () => `<p:sp>
 <p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/>${label('占位符形状（几何来自版式）', 1200, 'FFFFFF')}</p:txBody>
 </p:sp>`;
 
-const title = (t) => sp({
-  x: 40, y: 40, w: W - 80, h: 60, prst: 'rect', fill: '<a:noFill/>',
-  text: `<a:p><a:r><a:rPr sz="2200" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${t}</a:t></a:r></a:p>`,
-});
+const title = (t) =>
+  sp({
+    x: 40,
+    y: 40,
+    w: W - 80,
+    h: 60,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="2200" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${t}</a:t></a:r></a:p>`,
+  });
 
 const xf = (b) => `<a:xfrm><a:off x="${px(b.x)}" y="${px(b.y)}"/><a:ext cx="${px(b.w)}" cy="${px(b.h)}"/></a:xfrm>`;
 
 const SLIDES = [
   slideXml(title('图片占位符 + 空 spPr → 几何继承自版式') + pic({ ph: '<p:ph idx="1"/>', xfrm: '' })),
-  slideXml(title('图片自带 xfrm → 不受版式影响')
-    + pic({ ph: '<p:ph idx="1"/>', xfrm: xf({ x: 620, y: 200, w: 240, h: 180 }) })),
+  slideXml(title('图片自带 xfrm → 不受版式影响') + pic({ ph: '<p:ph idx="1"/>', xfrm: xf({ x: 620, y: 200, w: 240, h: 180 }) })),
   slideXml(title('形状占位符 + 空 spPr → 形状侧继承') + phShape()),
 ];
 

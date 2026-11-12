@@ -1,6 +1,19 @@
 import type {
-  CellBorders, ElementBase, EmbeddedFont, GroupElement, ImageElement, LineEnd, MediaInfo, Presentation,
-  ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableElement, TextBody,
+  CellBorders,
+  ElementBase,
+  EmbeddedFont,
+  GroupElement,
+  ImageElement,
+  LineEnd,
+  MediaInfo,
+  Presentation,
+  ShapeElement,
+  Slide,
+  SlideComment,
+  SlideElement,
+  Stroke,
+  TableElement,
+  TextBody,
   UnsupportedElement,
 } from '../types';
 import { renderTextBodyToHtml } from './text-html';
@@ -27,8 +40,7 @@ const nextGlobalId = (p: string): string => `${p}${++uid}`;
  * 只保留无歧义的安全字符，其余码点编码；下划线本身也编码，避免两个前缀归一后碰撞。
  */
 function encodeIdPrefix(value: string): string {
-  return value.replace(/^[0-9-]|[^A-Za-z0-9-]/gu,
-    (ch) => `_u${ch.codePointAt(0)!.toString(16)}_`);
+  return value.replace(/^[0-9-]|[^A-Za-z0-9-]/gu, (ch) => `_u${ch.codePointAt(0)!.toString(16)}_`);
 }
 
 // DrawingML srcRect 以十万分数存储；合法编辑值最小可见比例是 1/100000，不能擅自钳到 1%。
@@ -58,7 +70,7 @@ export interface RenderElementOptions {
    * - 'html'（默认）：foreignObject + HTML 排版，屏幕效果最佳、文本可选中
    * - 'svg'：原生 <text> + 自实现断行，用于导出独立 SVG 文件
    *   （foreignObject 只有浏览器认，其他 SVG 渲染器会整块丢失文本）
-  */
+   */
   textMode?: 'html' | 'svg';
   /** 与已安装/嵌入字体同源的测量；HTML 仍由浏览器排版，此回调用于缩放及标点挤压。 */
   measureText?: TextMeasure;
@@ -75,7 +87,7 @@ export interface RenderElementOptions {
    *
    * 'player' 靠 foreignObject 承载，只有浏览器认；而 textMode 为 'svg' 恰恰意味着
    * 产物要脱离浏览器使用（独立 SVG 文件 / 被光栅化），此时一律退回 badge。
-  */
+   */
   media?: 'badge' | 'player';
   /** 编辑器命中所需的稳定结构标记；普通预览与导出默认不携带交互元数据。 */
   includeEditMarkers?: boolean;
@@ -106,9 +118,7 @@ function createCtx(opts: RenderElementOptions): Ctx {
   const localPrefix = opts.idPrefix === undefined ? null : encodeIdPrefix(opts.idPrefix);
   return {
     defs: [],
-    nextId: localPrefix === null
-      ? nextGlobalId
-      : (prefix) => `${localPrefix}${prefix}${++localUid}`,
+    nextId: localPrefix === null ? nextGlobalId : (prefix) => `${localPrefix}${prefix}${++localUid}`,
     textMode,
     measureText: opts.measureText,
     // 'svg' 文本模式是给「交出去的文件」用的，里面不该出现只有浏览器认的 foreignObject
@@ -119,20 +129,18 @@ function createCtx(opts: RenderElementOptions): Ctx {
   };
 }
 
-function presentationLinkResolver(
-  pres: Presentation,
-  slide: Slide,
-): (link: string | undefined) => string | undefined {
+function presentationLinkResolver(pres: Presentation, slide: Slide): (link: string | undefined) => string | undefined {
   const current = pres.slides.indexOf(slide) + 1;
   return (link) => {
     if (!link) return link;
     if (link.startsWith('slide-part:')) {
       try {
         const part = decodeURIComponent(link.slice('slide-part:'.length));
-        const index = pres.slides.findIndex((candidate) =>
-          candidate.editInfo && candidate.editInfo.origin.part === part);
+        const index = pres.slides.findIndex((candidate) => candidate.editInfo && candidate.editInfo.origin.part === part);
         return index < 0 ? link : `slide:${index + 1}`;
-      } catch { return link; }
+      } catch {
+        return link;
+      }
     }
     if (!link.startsWith('slide:')) return link;
     if (link === 'slide:next') return `slide:${current + 1}`;
@@ -147,10 +155,7 @@ function presentationLinkResolver(
  * 渲染一个可独立替换的元素及其 defs。嵌入字体的 `@font-face` 属于页面级资源，
  * 继续由 `renderSlideToSvg` 放在根 defs 中；元素更新只管理这里返回的局部定义。
  */
-export function renderElementToSvg(
-  el: SlideElement,
-  opts: RenderElementOptions = {},
-): RenderElementResult {
+export function renderElementToSvg(el: SlideElement, opts: RenderElementOptions = {}): RenderElementResult {
   const ctx = createCtx(opts);
   return { markup: renderEl(el, ctx), defs: ctx.defs.join('') };
 }
@@ -162,29 +167,36 @@ export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderO
   let bgFill = '#fff';
   try {
     if (slide.background) bgFill = paint(slide.background, ctx, pres.width, pres.height);
-  } catch { /* 保持白底 */ }
+  } catch {
+    /* 保持白底 */
+  }
   const bg = `<rect width="${r(pres.width)}" height="${r(pres.height)}" fill="${bgFill}"/>`;
-  const body = slide.elements.map((el) => renderEl(el, ctx)).join('')
+  const body =
+    slide.elements.map((el) => renderEl(el, ctx)).join('')
     + (opts.showComments ? renderComments(slide.comments, pres.width, pres.height) : '');
 
-  const fontFaces = [...(pres.embeddedFonts ?? []), ...(opts.fontFaces ?? [])]
-    .map((f) => `@font-face{font-family:'${escapeCssString(f.family)}';src:url('${escapeCssString(f.src)}');font-weight:${f.bold ? 700 : 400};font-style:${f.italic ? 'italic' : 'normal'};`
-      + (f.unicodeRange ? `unicode-range:${f.unicodeRange};` : '')
-      + (f.sizeAdjust ? `size-adjust:${f.sizeAdjust}%;` : '')
-      + '}')
-    .join('') + (body.includes(DENGXIAN_LATIN_FAMILY) ? dengXianLatinFontFaces() : '');
+  const fontFaces =
+    [...(pres.embeddedFonts ?? []), ...(opts.fontFaces ?? [])]
+      .map(
+        (f) =>
+          `@font-face{font-family:'${escapeCssString(f.family)}';src:url('${escapeCssString(f.src)}');font-weight:${f.bold ? 700 : 400};font-style:${f.italic ? 'italic' : 'normal'};`
+          + (f.unicodeRange ? `unicode-range:${f.unicodeRange};` : '')
+          + (f.sizeAdjust ? `size-adjust:${f.sizeAdjust}%;` : '')
+          + '}',
+      )
+      .join('') + (body.includes(DENGXIAN_LATIN_FAMILY) ? dengXianLatinFontFaces() : '');
   const styleTag = fontFaces ? `<style>${fontFaces}</style>` : '';
-  const notes = opts.includeNotes && slide.notes
-    ? `<desc>${esc(slide.notes)}</desc>`
-    : '';
+  const notes = opts.includeNotes && slide.notes ? `<desc>${esc(slide.notes)}</desc>` : '';
 
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ` +
-    `viewBox="0 0 ${r(pres.width)} ${r(pres.height)}" ` +
-    `font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">` +
-    notes +
-    `<defs>${styleTag}${ctx.defs.join('')}</defs>` +
-    bg + body + '</svg>'
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" `
+    + `viewBox="0 0 ${r(pres.width)} ${r(pres.height)}" `
+    + `font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">`
+    + notes
+    + `<defs>${styleTag}${ctx.defs.join('')}</defs>`
+    + bg
+    + body
+    + '</svg>'
   );
 }
 
@@ -194,12 +206,7 @@ function wrapEl(el: ElementBase, inner: string, ctx: Ctx): string {
   if (!el.effects || !el.effects.reflection) return `<g transform="${baseTransform(el)}"${filter}>${inner}</g>`;
   const rid = ctx.nextId('rc');
   const body = `<g id="${rid}">${inner}</g>`;
-  return (
-    `<g transform="${baseTransform(el)}">` +
-    reflectionLayer(el, rid, ctx) +
-    (filter ? `<g${filter}>${body}</g>` : body) +
-    '</g>'
-  );
+  return `<g transform="${baseTransform(el)}">` + reflectionLayer(el, rid, ctx) + (filter ? `<g${filter}>${body}</g>` : body) + '</g>';
 }
 
 // ---------------- 线端箭头 ----------------
@@ -220,10 +227,10 @@ function marker(end: LineEnd, color: string, ctx: Ctx, atStart: boolean): string
   const mw = Math.max(1, end.h);
   const mh = Math.max(1, end.w);
   ctx.defs.push(
-    `<marker id="${id}" viewBox="0 0 10 10" refX="${atStart ? 0 : 10}" refY="5" ` +
-    `markerWidth="${r(mw)}" markerHeight="${r(mh)}" markerUnits="strokeWidth" ` +
-    `orient="${atStart ? 'auto-start-reverse' : 'auto'}">` +
-    `<path d="${spec.d}" ${spec.fill ? `fill="${color}"` : `fill="none" stroke="${color}" stroke-width="1.6"`}/></marker>`,
+    `<marker id="${id}" viewBox="0 0 10 10" refX="${atStart ? 0 : 10}" refY="5" `
+      + `markerWidth="${r(mw)}" markerHeight="${r(mh)}" markerUnits="strokeWidth" `
+      + `orient="${atStart ? 'auto-start-reverse' : 'auto'}">`
+      + `<path d="${spec.d}" ${spec.fill ? `fill="${color}"` : `fill="none" stroke="${color}" stroke-width="1.6"`}/></marker>`,
   );
   return `url(#${id})`;
 }
@@ -248,8 +255,7 @@ function strokeAttrs(stroke: Stroke | null | undefined, ctx: Ctx): string {
 // ---------------- 变换 ----------------
 
 function baseTransform(el: ElementBase): string {
-  const rotate = el.rot
-    ? `rotate(${r(el.rot)} ${r(el.x + el.w / 2)} ${r(el.y + el.h / 2)}) ` : '';
+  const rotate = el.rot ? `rotate(${r(el.rot)} ${r(el.x + el.w / 2)} ${r(el.y + el.h / 2)}) ` : '';
   return `${rotate}translate(${r(el.x)} ${r(el.y)})`;
 }
 
@@ -274,10 +280,10 @@ function renderFailure(el: SlideElement, err: unknown): string {
     const msg = err instanceof Error ? err.message : String(err);
     const label = el.name ? `${el.kind} · ${el.name}` : el.kind;
     return (
-      `<g transform="${baseTransform(el)}" data-render-error="1">` +
-      `<title>${esc(label)} 渲染失败：${esc(msg.slice(0, 200))}</title>` +
-      `<rect width="${r(el.w)}" height="${r(el.h)}" fill="rgba(220,38,38,0.06)" ` +
-      `stroke="#dc2626" stroke-width="1" stroke-dasharray="5 4"/></g>`
+      `<g transform="${baseTransform(el)}" data-render-error="1">`
+      + `<title>${esc(label)} 渲染失败：${esc(msg.slice(0, 200))}</title>`
+      + `<rect width="${r(el.w)}" height="${r(el.h)}" fill="rgba(220,38,38,0.06)" `
+      + `stroke="#dc2626" stroke-width="1" stroke-dasharray="5 4"/></g>`
     );
   } catch {
     return '';
@@ -289,11 +295,21 @@ function renderEl(el: SlideElement, ctx: Ctx, parent?: GroupElement): string {
   try {
     const placed = parent ? placeGroupChild(parent, el) : el;
     switch (placed.kind) {
-      case 'shape': out = renderShape(placed, ctx); break;
-      case 'image': out = renderImage(placed, ctx); break;
-      case 'group': out = renderGroup(placed, ctx); break;
-      case 'table': out = renderTable(placed, ctx); break;
-      case 'unsupported': out = renderUnsupported(placed); break;
+      case 'shape':
+        out = renderShape(placed, ctx);
+        break;
+      case 'image':
+        out = renderImage(placed, ctx);
+        break;
+      case 'group':
+        out = renderGroup(placed, ctx);
+        break;
+      case 'table':
+        out = renderTable(placed, ctx);
+        break;
+      case 'unsupported':
+        out = renderUnsupported(placed);
+        break;
     }
   } catch (e) {
     // 组缩放本身无效时外框也算不出，交给组合自己的失败占位。
@@ -309,13 +325,17 @@ function renderEl(el: SlideElement, ctx: Ctx, parent?: GroupElement): string {
 }
 
 function renderShape(el: ShapeElement, ctx: Ctx): string {
-  let inner = '', pathEl: string | undefined;
+  let inner = '',
+    pathEl: string | undefined;
   const d3 = el.scene3d;
   if (el.path) {
     const fillVal = el.openGeom ? 'none' : el.fill ? paint(el.fill, ctx, el.w, el.h) : 'none';
-    const solidBase = el.fill?.type === 'solid' ? el.fill.color
-      : el.fill?.type === 'gradient' && el.fill.stops.length ? el.fill.stops[0].color
-      : 'rgb(128,128,128)';
+    const solidBase =
+      el.fill?.type === 'solid'
+        ? el.fill.color
+        : el.fill?.type === 'gradient' && el.fill.stops.length
+          ? el.fill.stops[0].color
+          : 'rgb(128,128,128)';
 
     // 立体：先画挤出侧面，再画正面，最后叠斜角高光
     if (d3 && !shape3DRenderer) inner += extrusionLayers(el, d3, solidBase);
@@ -330,8 +350,7 @@ function renderShape(el: ShapeElement, ctx: Ctx): string {
     if (d3 && !shape3DRenderer) inner += bevelOverlay(el, d3, solidBase, ctx);
   }
   // use 的实例树不能可靠承载 foreignObject；三维网格正面必须使用可复用的矢量文字。
-  if (el.text) inner += renderText(el.text, el.w, el.h,
-    d3 && shape3DRenderer ? { ...ctx, textMode: 'svg' } : ctx);
+  if (el.text) inner += renderText(el.text, el.w, el.h, d3 && shape3DRenderer ? { ...ctx, textMode: 'svg' } : ctx);
   if (d3 && shape3DRenderer) inner = shape3DRenderer(el, inner, ctx, pathEl);
   return wrapEl(el, inner, ctx);
 }
@@ -347,8 +366,8 @@ function mediaBadge(el: ImageElement, media: MediaInfo): string {
   const cx = el.w / 2;
   const cy = el.h / 2;
   const ring =
-    `<circle cx="${r(cx)}" cy="${r(cy)}" r="${r(rad)}" fill="rgba(17,17,17,0.55)" ` +
-    `stroke="rgba(255,255,255,0.92)" stroke-width="${r(Math.max(1, rad * 0.09))}"/>`;
+    `<circle cx="${r(cx)}" cy="${r(cy)}" r="${r(rad)}" fill="rgba(17,17,17,0.55)" `
+    + `stroke="rgba(255,255,255,0.92)" stroke-width="${r(Math.max(1, rad * 0.09))}"/>`;
 
   let glyph: string;
   if (media.kind === 'audio') {
@@ -356,16 +375,15 @@ function mediaBadge(el: ImageElement, media: MediaInfo): string {
     const u = rad * 0.42;
     const bx = cx - u * 1.15;
     glyph =
-      `<path d="M${r(bx)} ${r(cy - u * 0.42)} H${r(bx + u * 0.62)} L${r(bx + u * 1.5)} ${r(cy - u)} ` +
-      `V${r(cy + u)} L${r(bx + u * 0.62)} ${r(cy + u * 0.42)} H${r(bx)} Z" fill="#fff"/>` +
-      `<path d="M${r(cx + u * 0.65)} ${r(cy - u * 0.6)} A ${r(u * 0.75)} ${r(u * 0.75)} 0 0 1 ${r(cx + u * 0.65)} ${r(cy + u * 0.6)}" ` +
-      `fill="none" stroke="#fff" stroke-width="${r(Math.max(1, u * 0.26))}" stroke-linecap="round"/>` +
-      `<path d="M${r(cx + u * 1.15)} ${r(cy - u * 1.05)} A ${r(u * 1.35)} ${r(u * 1.35)} 0 0 1 ${r(cx + u * 1.15)} ${r(cy + u * 1.05)}" ` +
-      `fill="none" stroke="#fff" stroke-width="${r(Math.max(1, u * 0.26))}" stroke-linecap="round" opacity="0.85"/>`;
+      `<path d="M${r(bx)} ${r(cy - u * 0.42)} H${r(bx + u * 0.62)} L${r(bx + u * 1.5)} ${r(cy - u)} `
+      + `V${r(cy + u)} L${r(bx + u * 0.62)} ${r(cy + u * 0.42)} H${r(bx)} Z" fill="#fff"/>`
+      + `<path d="M${r(cx + u * 0.65)} ${r(cy - u * 0.6)} A ${r(u * 0.75)} ${r(u * 0.75)} 0 0 1 ${r(cx + u * 0.65)} ${r(cy + u * 0.6)}" `
+      + `fill="none" stroke="#fff" stroke-width="${r(Math.max(1, u * 0.26))}" stroke-linecap="round"/>`
+      + `<path d="M${r(cx + u * 1.15)} ${r(cy - u * 1.05)} A ${r(u * 1.35)} ${r(u * 1.35)} 0 0 1 ${r(cx + u * 1.15)} ${r(cy + u * 1.05)}" `
+      + `fill="none" stroke="#fff" stroke-width="${r(Math.max(1, u * 0.26))}" stroke-linecap="round" opacity="0.85"/>`;
   } else {
     const t = rad * 0.46;
-    glyph =
-      `<path d="M${r(cx - t * 0.62)} ${r(cy - t)} L${r(cx + t)} ${r(cy)} L${r(cx - t * 0.62)} ${r(cy + t)} Z" fill="#fff"/>`;
+    glyph = `<path d="M${r(cx - t * 0.62)} ${r(cy - t)} L${r(cx + t)} ${r(cy)} L${r(cx - t * 0.62)} ${r(cy + t)} Z" fill="#fff"/>`;
   }
 
   return `<g aria-hidden="true" pointer-events="none">${mediaTitle(media)}${ring}${glyph}</g>`;
@@ -381,11 +399,13 @@ function mediaTitle(media: MediaInfo): string {
 /** 真实视频播放器：封面帧做 poster，原生控件铺满元素。 */
 function videoPlayer(el: ImageElement, media: MediaInfo): string {
   const style = 'width:100%;height:100%;display:block;object-fit:contain;background:#000';
-  return `<foreignObject x="0" y="0" width="${r(el.w)}" height="${r(el.h)}">`
+  return (
+    `<foreignObject x="0" y="0" width="${r(el.w)}" height="${r(el.h)}">`
     + `<div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%">`
     + `<video controls preload="metadata" src="${esc(media.src ?? '')}"`
     + (el.src ? ` poster="${esc(el.src)}"` : '')
-    + ` style="${style}"></video></div></foreignObject>`;
+    + ` style="${style}"></video></div></foreignObject>`
+  );
 }
 
 /**
@@ -394,10 +414,12 @@ function videoPlayer(el: ImageElement, media: MediaInfo): string {
  * 只为让 <audio> 进入 DOM，播放不需要它占位。
  */
 function audioPlayer(face: string, media: MediaInfo): string {
-  return `<g data-media-toggle="" style="cursor:pointer">${face}`
+  return (
+    `<g data-media-toggle="" style="cursor:pointer">${face}`
     + '<foreignObject width="0" height="0">'
     + `<div xmlns="http://www.w3.org/1999/xhtml"><audio preload="none" src="${esc(media.src ?? '')}"></audio></div>`
-    + '</foreignObject></g>';
+    + '</foreignObject></g>'
+  );
 }
 
 function renderImage(el: ImageElement, ctx: Ctx): string {
@@ -408,8 +430,7 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
     filter = `${filter} url(#${id})`.trim();
   }
   const attrs =
-    (el.alpha !== undefined && el.alpha < 1 ? ` opacity="${r(el.alpha)}"` : '') +
-    (filter ? ` style="filter:${esc(filter)}"` : '');
+    (el.alpha !== undefined && el.alpha < 1 ? ` opacity="${r(el.alpha)}"` : '') + (filter ? ` style="filter:${esc(filter)}"` : '');
 
   let img: string;
   if (!el.src) {
@@ -421,8 +442,8 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
     const id = ctx.nextId('c');
     ctx.defs.push(`<clipPath id="${id}"><rect width="${r(el.w)}" height="${r(el.h)}"/></clipPath>`);
     img =
-      `<g clip-path="url(#${id})"><image href="${esc(el.src)}" x="${r(-el.crop.l * iw)}" y="${r(-el.crop.t * ih)}"` +
-      ` width="${r(iw)}" height="${r(ih)}" preserveAspectRatio="none"${attrs}/></g>`;
+      `<g clip-path="url(#${id})"><image href="${esc(el.src)}" x="${r(-el.crop.l * iw)}" y="${r(-el.crop.t * ih)}"`
+      + ` width="${r(iw)}" height="${r(ih)}" preserveAspectRatio="none"${attrs}/></g>`;
   } else {
     img = `<image href="${esc(el.src)}" width="${r(el.w)}" height="${r(el.h)}" preserveAspectRatio="none"${attrs}/>`;
   }
@@ -446,8 +467,7 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
       img += videoPlayer(el, el.media);
     } else {
       // SVG 只认作为首个子元素的 <title>，不画标识时说明要排在封面之前。
-      img = el.media.kind === 'video' || !el.src || !el.media.src
-        ? img + mediaBadge(el, el.media) : mediaTitle(el.media) + img;
+      img = el.media.kind === 'video' || !el.src || !el.media.src ? img + mediaBadge(el, el.media) : mediaTitle(el.media) + img;
       if (player) img = audioPlayer(img, el.media);
     }
   }
@@ -456,8 +476,7 @@ function renderImage(el: ImageElement, ctx: Ctx): string {
 
 function renderGroup(el: GroupElement, ctx: Ctx): string {
   // frame 的后代来自外部语义投影，数量可变化；编辑 DOM 只把框架本身当成稳定身份。
-  const childCtx = ctx.includeEditMarkers && el.editInfo && el.editInfo.editable === 'frame'
-    ? { ...ctx, includeEditMarkers: null } : ctx;
+  const childCtx = ctx.includeEditMarkers && el.editInfo && el.editInfo.editable === 'frame' ? { ...ctx, includeEditMarkers: null } : ctx;
   // 组变换折算进每个子元素的外框，容器只承担组合自身的翻转；不能对子树整体 scale()。
   const children = el.children.map((child) => renderEl(child, childCtx, el)).join('');
   const marker = ctx.includeEditMarkers ? ' data-edit-group-children="1"' : '';
@@ -492,29 +511,27 @@ function renderTable(el: TableElement, ctx: Ctx): string {
       const b: CellBorders = cell.borders ?? {};
 
       parts.push(
-        `<g${ctx.includeEditMarkers ? ` data-table-cell="${ri}:${ci}"` : ''} transform="translate(${r(x)} ${r(y)})">` +
-        // 原生 SVG 文本不覆盖整格；空白也须命中，但隐藏表格必须让出落点。
-        `<rect width="${r(cw)}" height="${r(ch)}" fill="${fillVal}"${ctx.includeEditMarkers ? ' pointer-events="visibleFill"' : ''}/>` +
-        (cell.text ? renderText(cell.text, cw, ch, ctx, cell.margins, cell.vAlign, cell.vert) : '') +
-        '</g>',
+        `<g${ctx.includeEditMarkers ? ` data-table-cell="${ri}:${ci}"` : ''} transform="translate(${r(x)} ${r(y)})">`
+          // 原生 SVG 文本不覆盖整格；空白也须命中，但隐藏表格必须让出落点。
+          + `<rect width="${r(cw)}" height="${r(ch)}" fill="${fillVal}"${ctx.includeEditMarkers ? ' pointer-events="visibleFill"' : ''}/>`
+          + (cell.text ? renderText(cell.text, cw, ch, ctx, cell.margins, cell.vAlign, cell.vert) : '')
+          + '</g>',
       );
       // 边框单独一层，避免被后续单元格背景遮挡
       lines.push(
-        `<g transform="translate(${r(x)} ${r(y)})">` +
-        borderLine(b.t, 0, 0, cw, 0, ctx) +
-        borderLine(b.b, 0, ch, cw, ch, ctx) +
-        borderLine(b.l, 0, 0, 0, ch, ctx) +
-        borderLine(b.r, cw, 0, cw, ch, ctx) +
-        '</g>',
+        `<g transform="translate(${r(x)} ${r(y)})">`
+          + borderLine(b.t, 0, 0, cw, 0, ctx)
+          + borderLine(b.b, 0, ch, cw, ch, ctx)
+          + borderLine(b.l, 0, 0, 0, ch, ctx)
+          + borderLine(b.r, cw, 0, cw, ch, ctx)
+          + '</g>',
       );
       x += el.colWidths[ci] ?? 0;
     });
     y += row.height;
   });
   const content = parts.join('') + lines.join('');
-  return wrapEl(el, el.flipH || el.flipV
-    ? `<g transform="${flipTransform(el)}">${content}</g>`
-    : content, ctx);
+  return wrapEl(el, el.flipH || el.flipV ? `<g transform="${flipTransform(el)}">${content}</g>` : content, ctx);
 }
 
 // ---------------- 批注标记 ----------------
@@ -533,17 +550,17 @@ function renderComments(comments: SlideComment[] | undefined, W: number, H: numb
     const label = String(c.idx ?? i + 1);
     const tip = [c.author, c.date, c.text].filter(Boolean).join(' · ');
     out.push(
-      `<g class="ppt-comment" data-comment="${esc(label)}" transform="translate(${r(x)} ${r(y)})">` +
-      `<title>${esc(tip)}</title>` +
-      // 气泡本体 + 左下角小尾巴
-      `<path d="M${r(s * 0.16)} 0 H${r(s * 0.84)} A ${r(s * 0.16)} ${r(s * 0.16)} 0 0 1 ${r(s)} ${r(s * 0.16)} ` +
-      `V${r(s * 0.62)} A ${r(s * 0.16)} ${r(s * 0.16)} 0 0 1 ${r(s * 0.84)} ${r(s * 0.78)} ` +
-      `H${r(s * 0.42)} L${r(s * 0.16)} ${r(s)} V${r(s * 0.78)} A ${r(s * 0.16)} ${r(s * 0.16)} 0 0 1 0 ${r(s * 0.62)} ` +
-      `V${r(s * 0.16)} A ${r(s * 0.16)} ${r(s * 0.16)} 0 0 1 ${r(s * 0.16)} 0 Z" ` +
-      `fill="rgb(255,196,60)" stroke="rgba(120,80,0,0.55)" stroke-width="${r(Math.max(0.6, s * 0.045))}"/>` +
-      `<text x="${r(s * 0.5)}" y="${r(s * 0.42)}" text-anchor="middle" dominant-baseline="central" ` +
-      `fill="rgb(60,40,0)" font-size="${r(s * 0.52)}" font-weight="700">${esc(label)}</text>` +
-      '</g>',
+      `<g class="ppt-comment" data-comment="${esc(label)}" transform="translate(${r(x)} ${r(y)})">`
+        + `<title>${esc(tip)}</title>`
+        // 气泡本体 + 左下角小尾巴
+        + `<path d="M${r(s * 0.16)} 0 H${r(s * 0.84)} A ${r(s * 0.16)} ${r(s * 0.16)} 0 0 1 ${r(s)} ${r(s * 0.16)} `
+        + `V${r(s * 0.62)} A ${r(s * 0.16)} ${r(s * 0.16)} 0 0 1 ${r(s * 0.84)} ${r(s * 0.78)} `
+        + `H${r(s * 0.42)} L${r(s * 0.16)} ${r(s)} V${r(s * 0.78)} A ${r(s * 0.16)} ${r(s * 0.16)} 0 0 1 0 ${r(s * 0.62)} `
+        + `V${r(s * 0.16)} A ${r(s * 0.16)} ${r(s * 0.16)} 0 0 1 ${r(s * 0.16)} 0 Z" `
+        + `fill="rgb(255,196,60)" stroke="rgba(120,80,0,0.55)" stroke-width="${r(Math.max(0.6, s * 0.045))}"/>`
+        + `<text x="${r(s * 0.5)}" y="${r(s * 0.42)}" text-anchor="middle" dominant-baseline="central" `
+        + `fill="rgb(60,40,0)" font-size="${r(s * 0.52)}" font-weight="700">${esc(label)}</text>`
+        + '</g>',
     );
   });
   return out.join('');
@@ -551,15 +568,13 @@ function renderComments(comments: SlideComment[] | undefined, W: number, H: numb
 
 function renderUnsupported(el: UnsupportedElement): string {
   const fs = Math.max(10, Math.min(16, el.h / 6));
-  const preview = el.preview
-    ? `<image href="${esc(el.preview)}" width="${r(el.w)}" height="${r(el.h)}" preserveAspectRatio="none"/>`
-    : '';
+  const preview = el.preview ? `<image href="${esc(el.preview)}" width="${r(el.w)}" height="${r(el.h)}" preserveAspectRatio="none"/>` : '';
   return (
-    `<g transform="${baseTransform(el)}">` +
-    preview +
-    `<rect width="${r(el.w)}" height="${r(el.h)}" fill="rgba(127,127,127,0.07)" stroke="#aaa" stroke-dasharray="6 4"/>` +
-    `<text x="${r(el.w / 2)}" y="${r(el.h / 2)}" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="${r(fs)}">${esc(el.label)}</text>` +
-    '</g>'
+    `<g transform="${baseTransform(el)}">`
+    + preview
+    + `<rect width="${r(el.w)}" height="${r(el.h)}" fill="rgba(127,127,127,0.07)" stroke="#aaa" stroke-dasharray="6 4"/>`
+    + `<text x="${r(el.w / 2)}" y="${r(el.h / 2)}" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="${r(fs)}">${esc(el.label)}</text>`
+    + '</g>'
   );
 }
 
@@ -574,15 +589,21 @@ function renderText(
   vAlignOverride?: 'top' | 'middle' | 'bottom',
   vertOverride?: TextBody['vert'],
 ): string {
-  if (t.paragraphs.some((paragraph) => paragraph.runs.some((run) =>
-    run.link?.startsWith('slide-part:') || /^slide:(next|previous|first|last)$/.test(run.link ?? '')))) {
-    t = { ...t, paragraphs: t.paragraphs.map((paragraph) => ({
-      ...paragraph,
-      runs: paragraph.runs.map((run) => {
-        const link = ctx.resolveLink(run.link);
-        return link === run.link ? run : { ...run, link };
-      }),
-    })) };
+  if (
+    t.paragraphs.some((paragraph) =>
+      paragraph.runs.some((run) => run.link?.startsWith('slide-part:') || /^slide:(next|previous|first|last)$/.test(run.link ?? '')),
+    )
+  ) {
+    t = {
+      ...t,
+      paragraphs: t.paragraphs.map((paragraph) => ({
+        ...paragraph,
+        runs: paragraph.runs.map((run) => {
+          const link = ctx.resolveLink(run.link);
+          return link === run.link ? run : { ...run, link };
+        }),
+      })),
+    };
   }
   // 艺术字变形无法用 HTML 排版表达，强制走 SVG 文本路径，保证屏幕与导出一致。
   if (ctx.textMode === 'svg' || warpSupported(t.warp?.preset)) {
@@ -601,7 +622,13 @@ function renderText(
     };
     return renderTextSvg(
       vertOverride && vertOverride !== t.vert ? { ...t, vert: vertOverride } : t,
-      w, h, addDef, marginsOverride, vAlignOverride, !!ctx.includeEditMarkers, ctx.measureText,
+      w,
+      h,
+      addDef,
+      marginsOverride,
+      vAlignOverride,
+      !!ctx.includeEditMarkers,
+      ctx.measureText,
     );
   }
   const html = renderTextBodyToHtml(t, w, h, {

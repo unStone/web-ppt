@@ -3,15 +3,9 @@ import { own } from '../data-validation';
 import { effectiveElement } from '../projection';
 import type { EditDoc } from '../types';
 import type { CommandPatches } from './types';
-import type {
-  ConvertToCustomGeometryCommand, ElementGeometryPatch, ElementPresetGeometryPatch,
-} from './geometry-types';
+import type { ConvertToCustomGeometryCommand, ElementGeometryPatch, ElementPresetGeometryPatch } from './geometry-types';
 
-export function convertToCustomGeometryPatches(
-  doc: EditDoc,
-  command: ConvertToCustomGeometryCommand,
-  origin: string,
-): CommandPatches {
+export function convertToCustomGeometryPatches(doc: EditDoc, command: ConvertToCustomGeometryCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能转换自由形状');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);
@@ -24,20 +18,26 @@ export function convertToCustomGeometryPatches(
   }
   const effective = effectiveElement(doc, command.id);
   if (effective.kind !== 'shape' || !effective.path) throw new Error(`元素没有可物化路径：${command.id}`);
-  const geometry = customGeometryFromSvgPath(
-    effective.path, effective.w, effective.h, effective.openGeom === true,
-  );
+  const geometry = customGeometryFromSvgPath(effective.path, effective.w, effective.h, effective.openGeom === true);
   const geometryPath = ['elements', command.id, 'ovr', 'geometry'] as const;
   const presetPath = ['elements', command.id, 'ovr', 'presetGeometry'] as const;
   // 本地没有覆盖也要广播 tombstone，确保并发预设写入与本事务一起 LWW。
   const presetForward: ElementPresetGeometryPatch[] = [{ op: 'del', path: presetPath, origin }];
   const presetInverse: ElementPresetGeometryPatch[] = hadPresetOverride
-    ? [{
-      op: 'set', path: presetPath,
-      value: structuredClone(record.ovr.presetGeometry!), origin,
-    }] : [];
+    ? [
+        {
+          op: 'set',
+          path: presetPath,
+          value: structuredClone(record.ovr.presetGeometry!),
+          origin,
+        },
+      ]
+    : [];
   const geometryForward: ElementGeometryPatch = {
-    op: 'set', path: geometryPath, value: geometry, origin,
+    op: 'set',
+    path: geometryPath,
+    value: geometry,
+    origin,
   };
   const geometryInverse: ElementGeometryPatch = { op: 'del', path: geometryPath, origin };
   return {

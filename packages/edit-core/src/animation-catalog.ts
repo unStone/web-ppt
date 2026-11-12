@@ -17,10 +17,17 @@ const NONE = Object.freeze([] as const);
 
 /** 编辑目录宁可小而可信；来源中的其他效果仍由 core 播放并原样直通。 */
 export const ANIMATION_EFFECTS = Object.freeze([
-  'appear', 'fade', 'fly', 'wipe', 'zoom', 'dissolve', 'spin', 'grow',
+  'appear',
+  'fade',
+  'fly',
+  'wipe',
+  'zoom',
+  'dissolve',
+  'spin',
+  'grow',
 ] as const satisfies readonly AnimEffect[]);
 
-export type EditableAnimationEffect = typeof ANIMATION_EFFECTS[number];
+export type EditableAnimationEffect = (typeof ANIMATION_EFFECTS)[number];
 export type EntranceExitAnimationEffect = Exclude<EditableAnimationEffect, 'spin' | 'grow'>;
 export type EmphasisAnimationEffect = Extract<EditableAnimationEffect, 'spin' | 'grow'>;
 
@@ -33,8 +40,10 @@ const EFFECTS: Readonly<Record<EditableAnimationEffect, AnimationEffectSpec>> = 
     defaultDirection: 'd',
     preset: 2,
     filter: Object.freeze({
-      l: 'slide(fromLeft)', r: 'slide(fromRight)',
-      u: 'slide(fromTop)', d: 'slide(fromBottom)',
+      l: 'slide(fromLeft)',
+      r: 'slide(fromRight)',
+      u: 'slide(fromTop)',
+      d: 'slide(fromBottom)',
     }),
   },
   wipe: {
@@ -63,9 +72,7 @@ export function animationEffectSpec(effect: AnimEffect): AnimationEffectSpec {
   return spec;
 }
 
-export function animationEffectsForKind(
-  kind: EditableVisualAnimationKind,
-): readonly AnimEffect[] {
+export function animationEffectsForKind(kind: EditableVisualAnimationKind): readonly AnimEffect[] {
   return ANIMATION_EFFECTS.filter((effect) => EFFECTS[effect].kinds.includes(kind));
 }
 

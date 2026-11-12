@@ -7,9 +7,11 @@ dist/
 out/
 corpus/
 .tmp/
+# impeccable 评审工具的本机记录（含本机绝对路径），不属于仓库内容
+.impeccable/
 # .NET 校验工具的构建产物（nuget 还原与编译输出不入库）
 tooling/ooxml-validate/bin/
 tooling/ooxml-validate/obj/
-
+.turbo/
 # hb-subset wasm 由 tooling/sync-font-wasm.mjs 生成，不进 git
 packages/*/public/vendor/

@@ -6,11 +6,14 @@ import { deck, makePng, slideXml, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
-const bulletPng = makePng(12, 12, (x, y) => x === y || x + y === 11
-  ? [220, 38, 38] : [255, 255, 255]);
+const bulletPng = makePng(12, 12, (x, y) => (x === y || x + y === 11 ? [220, 38, 38] : [255, 255, 255]));
 
 const list = sp({
-  x: 100, y: 60, w: 1080, h: 600, name: '项目符号编辑',
+  x: 100,
+  y: 60,
+  w: 1080,
+  h: 600,
+  name: '项目符号编辑',
   lstStyle: `<a:lstStyle><a:lvl1pPr marL="457200" indent="-171450">
 <a:buAutoNum type="arabicPeriod"/><a:defRPr sz="2200"/>
 </a:lvl1pPr></a:lstStyle>`,
@@ -23,7 +26,9 @@ const list = sp({
 });
 
 const bytes = deck({
-  name: 'Editor Bullet', width: 1280, height: 720,
+  name: 'Editor Bullet',
+  width: 1280,
+  height: 720,
   slides: [slideXml(list)],
   slideRelationships: [`<Relationship Id="rIdBullet" Type="${IMAGE_REL}" Target="../media/bullet.png"/>`],
   extraTypes: '<Override PartName="/ppt/media/bullet.png" ContentType="image/png"/>',

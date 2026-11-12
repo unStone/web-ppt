@@ -26,7 +26,8 @@ if (!CHROME) {
   process.exit(0);
 }
 
-const W = 1200, H = 630;
+const W = 1200,
+  H = 630;
 
 // 指标与 README / 官网 hero 保持一致
 const STATS = [
@@ -54,8 +55,10 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   <g font-family="${SANS}">
 ${STATS.map(([n, label], i) => {
   const x = 72 + i * 190;
-  return `    <text x="${x}" y="500" font-size="40" font-weight="650" fill="#e8622c">${n}</text>\n` +
-         `    <text x="${x}" y="530" font-size="17" fill="#8a8a94">${label}</text>`;
+  return (
+    `    <text x="${x}" y="500" font-size="40" font-weight="650" fill="#e8622c">${n}</text>\n`
+    + `    <text x="${x}" y="530" font-size="17" fill="#8a8a94">${label}</text>`
+  );
 }).join('\n')}
   </g>
 
@@ -84,13 +87,24 @@ ${STATS.map(([n, label], i) => {
 const tmp = join(root, 'out/og');
 rmSync(tmp, { recursive: true, force: true });
 mkdirSync(tmp, { recursive: true });
-writeFileSync(join(tmp, 'card.html'),
-  `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden}</style>${svg}`);
+writeFileSync(
+  join(tmp, 'card.html'),
+  `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden}</style>${svg}`,
+);
 
-execFileSync(CHROME, [
-  '--headless', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
-  `--window-size=${W},${H}`, `--screenshot=${join(tmp, 'og.png')}`, join(tmp, 'card.html'),
-], { stdio: 'ignore', timeout: 60_000 });
+execFileSync(
+  CHROME,
+  [
+    '--headless',
+    '--disable-gpu',
+    '--hide-scrollbars',
+    '--force-device-scale-factor=1',
+    `--window-size=${W},${H}`,
+    `--screenshot=${join(tmp, 'og.png')}`,
+    join(tmp, 'card.html'),
+  ],
+  { stdio: 'ignore', timeout: 60_000 },
+);
 
 const out = join(root, 'packages/site/public/og.png');
 mkdirSync(dirname(out), { recursive: true });

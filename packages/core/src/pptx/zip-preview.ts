@@ -7,10 +7,12 @@ import type { ZipReader } from '../zip';
  */
 export function isPreviewDeferredPart(name: string): boolean {
   if (name.endsWith('/')) return false;
-  return /\/(?:media|embeddings)\//i.test(name)
+  return (
+    /\/(?:media|embeddings)\//i.test(name)
     || /^ppt\/slides\/(?:_rels\/)?slide[^/]+$/i.test(name)
     || /^ppt\/(?:notesSlides|comments|charts|diagrams)\//i.test(name)
-    || /^ppt\/vbaProject/i.test(name);
+    || /^ppt\/vbaProject/i.test(name)
+  );
 }
 
 /**

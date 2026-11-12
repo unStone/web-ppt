@@ -26,20 +26,28 @@ export async function runViewerHyperlinkBrowserContract({ Viewer, parse, load })
     }
     anchor.focus();
     const focused = document.activeElement === anchor;
-    const accepted = anchor.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'Enter', code: 'Enter', bubbles: true, cancelable: true,
-    }));
+    const accepted = anchor.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
     if (!focused || accepted || viewer.index !== 2) {
-      throw new Error(`Viewer Enter 路由失败：${JSON.stringify({
-        focused, accepted, index: viewer.index,
-      })}`);
+      throw new Error(
+        `Viewer Enter 路由失败：${JSON.stringify({
+          focused,
+          accepted,
+          index: viewer.index,
+        })}`,
+      );
     }
     viewer.destroy();
     viewer = null;
     const installed = events.filter(([action]) => action === 'add').map(([, type]) => type);
     const removed = events.filter(([action]) => action === 'remove').map(([, type]) => type);
-    if (!installed.includes('click') || !installed.includes('keydown')
-      || !removed.includes('click') || !removed.includes('keydown')) {
+    if (!installed.includes('click') || !installed.includes('keydown') || !removed.includes('click') || !removed.includes('keydown')) {
       throw new Error(`Viewer 链接监听器没有对称释放：${JSON.stringify(events)}`);
     }
   } finally {

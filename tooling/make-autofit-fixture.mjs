@@ -17,7 +17,8 @@ import { fileURLToPath } from 'node:url';
 import { label, makeZip, NS, nvGrp, px, slideXml, solid, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const W = 1280, H = 720;
+const W = 1280,
+  H = 720;
 
 /** 一段够长、在 420×140 的框里按 2000(20pt) 必然溢出的文字 */
 const LONG =
@@ -37,18 +38,35 @@ const SPACED =
   + '<a:p><a:pPr><a:lnSpc><a:spcPts val="2400"/></a:lnSpc></a:pPr>'
   + '<a:r><a:rPr sz="1400"/><a:t>绝对行距 24pt：同样三行，换算方式与百分比行距不同。</a:t></a:r></a:p>';
 
-const page = (title, text, bodyPr) => slideXml(
-  sp({
-    x: 40, y: 60, w: W - 80, h: 60, prst: 'rect', fill: '<a:noFill/>',
-    text: `<a:p><a:r><a:rPr sz="2400" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${title}</a:t></a:r></a:p>`,
-  }) + sp({
-    ...BOX, prst: 'rect', fill: solid('accent1'), name: 'target',
-    bodyPr, text,
-  }) + sp({
-    x: 520, y: 180, w: 400, h: 140, prst: 'rect', fill: '<a:noFill/>',
-    text: label('左侧框 420×140，标称 20pt', 900, '606060'),
-  }),
-);
+const page = (title, text, bodyPr) =>
+  slideXml(
+    sp({
+      x: 40,
+      y: 60,
+      w: W - 80,
+      h: 60,
+      prst: 'rect',
+      fill: '<a:noFill/>',
+      text: `<a:p><a:r><a:rPr sz="2400" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${title}</a:t></a:r></a:p>`,
+    })
+      + sp({
+        ...BOX,
+        prst: 'rect',
+        fill: solid('accent1'),
+        name: 'target',
+        bodyPr,
+        text,
+      })
+      + sp({
+        x: 520,
+        y: 180,
+        w: 400,
+        h: 140,
+        prst: 'rect',
+        fill: '<a:noFill/>',
+        text: label('左侧框 420×140，标称 20pt', 900, '606060'),
+      }),
+  );
 
 const PAGES = [
   ['溢出 + 裸 normAutofit → 应缩小', LONG, '<a:bodyPr><a:normAutofit/></a:bodyPr>'],
@@ -56,8 +74,7 @@ const PAGES = [
   ['溢出 + 无 autofit → 照常溢出', LONG, '<a:bodyPr/>'],
   ['溢出 + 显式 fontScale 50% → 用文件值', LONG, '<a:bodyPr><a:normAutofit fontScale="50000"/></a:bodyPr>'],
   // 极端长文本：想塞进去需要缩到 25% 以下，用来验证下限确实生效
-  ['远超容量 → 缩到 25% 下限为止', LONG.replace('</a:t>', '重复'.repeat(1500) + '</a:t>'),
-    '<a:bodyPr><a:normAutofit/></a:bodyPr>'],
+  ['远超容量 → 缩到 25% 下限为止', LONG.replace('</a:t>', '重复'.repeat(1500) + '</a:t>'), '<a:bodyPr><a:normAutofit/></a:bodyPr>'],
   // 行距：spcPct 是「单倍行距」的百分比，而单倍行距是字体行高（≈1.2em）不是字号。
   // 把 150% 直接当 CSS line-height:1.5 用，每行会矮两成；spcPts 则是绝对点值，
   // 两条必须走不同的换算，放在一页里对照着看。

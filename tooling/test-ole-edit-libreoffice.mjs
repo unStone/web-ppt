@@ -12,36 +12,54 @@ import { countedAssert } from './lib/counted-assert.mjs';
 import { requireSoffice } from './lib/soffice.mjs';
 const { assert, record } = countedAssert('oleLibreOffice');
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { unzipSync, zipSync } from 'fflate';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 
-const root = resolve(import.meta.dirname, '..'), out = join(root, 'out/ole-edit/libreoffice');
+const root = resolve(import.meta.dirname, '..'),
+  out = join(root, 'out/ole-edit/libreoffice');
 mkdirSync(out, { recursive: true });
 const entry = join(root, 'out/ole-edit/entry.mjs');
-writeFileSync(entry, `export * as core from ${JSON.stringify(join(root, 'packages/core/src/index.ts'))};
+writeFileSync(
+  entry,
+  `export * as core from ${JSON.stringify(join(root, 'packages/core/src/index.ts'))};
 export * as edit from ${JSON.stringify(join(root, 'packages/edit-core/src/index.ts'))};
-export * as ole from ${JSON.stringify(join(root, 'packages/edit-core/src/ole/index.ts'))};`);
-const { core, edit, ole } = process.argv.includes('--dist') ? Object.fromEntries(await Promise.all([
-  ['core', 'core/dist/core.js'], ['edit', 'edit-core/dist/edit-core.js'], ['ole', 'edit-core/dist/ole.js'],
-].map(async ([key, file]) => [key, await import(pathToFileURL(join(root, 'packages', file)))])))
-  : await bundleBrowser({ root, entry, output: join(root, 'out/ole-edit/contract.mjs'), aliases: [
-    ['@web-ppt/edit-core/cfb', join(root, 'packages/edit-core/src/cfb/index.ts')],
-    ['@web-ppt/edit-core/xml', join(root, 'packages/edit-core/src/xml/index.ts')],
-    ['@web-ppt/edit-core/opc', join(root, 'packages/edit-core/src/opc/index.ts')],
-    ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
-    ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
-    ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
-  ] });
+export * as ole from ${JSON.stringify(join(root, 'packages/edit-core/src/ole/index.ts'))};`,
+);
+const { core, edit, ole } = process.argv.includes('--dist')
+  ? Object.fromEntries(
+      await Promise.all(
+        [
+          ['core', 'core/dist/core.js'],
+          ['edit', 'edit-core/dist/edit-core.js'],
+          ['ole', 'edit-core/dist/ole.js'],
+        ].map(async ([key, file]) => [key, await import(pathToFileURL(join(root, 'packages', file)))]),
+      ),
+    )
+  : await bundleBrowser({
+      root,
+      entry,
+      output: join(root, 'out/ole-edit/contract.mjs'),
+      aliases: [
+        ['@web-ppt/edit-core/cfb', join(root, 'packages/edit-core/src/cfb/index.ts')],
+        ['@web-ppt/edit-core/xml', join(root, 'packages/edit-core/src/xml/index.ts')],
+        ['@web-ppt/edit-core/opc', join(root, 'packages/edit-core/src/opc/index.ts')],
+        ['@web-ppt/edit-core', join(root, 'packages/edit-core/src/index.ts')],
+        ['@web-ppt/core/geometry', join(root, 'packages/core/src/geometry/index.ts')],
+        ['@web-ppt/core', join(root, 'packages/core/src/index.ts')],
+      ],
+    });
 
 const soffice = requireSoffice();
 
 // ---------------- SDK 编辑并保存 ----------------
 const RUN_TEXT = 'LibreOffice 对照改写';
-const RICH_FIRST = '外部读取器', RICH_SECOND = '往返验证';
-const FONT_COLOR = 'FF0000', FILL_COLOR = 'E2EFDA';
+const RICH_FIRST = '外部读取器',
+  RICH_SECOND = '往返验证';
+const FONT_COLOR = 'FF0000',
+  FILL_COLOR = 'E2EFDA';
 const input = readFileSync(join(root, 'fixtures/sample-ole-edit.pptx'));
 const pres = await core.parse(input, { edit: true, keepPackage: true, lazy: false });
 const editor = new edit.Editor(edit.createDoc(pres, { idPrefix: 'ole-lo-' }));
@@ -54,8 +72,14 @@ for (const item of ole.listEditableOle(editor.doc)) {
     assert.ok(paragraph, '固件提供多 run 段落');
     api.setRun(item.id, paragraph.index, paragraph.runs.length - 1, RUN_TEXT);
   } else {
-    api.setCellStyle(item.id, content.sheets[0].id, 'B2', { font: { bold: true, color: FONT_COLOR, size: 14 }, fill: { color: FILL_COLOR } });
-    api.setCellRichText(item.id, content.sheets[0].id, 'E2', [{ text: RICH_FIRST, bold: true }, { text: RICH_SECOND, italic: true }]);
+    api.setCellStyle(item.id, content.sheets[0].id, 'B2', {
+      font: { bold: true, color: FONT_COLOR, size: 14 },
+      fill: { color: FILL_COLOR },
+    });
+    api.setCellRichText(item.id, content.sheets[0].id, 'E2', [
+      { text: RICH_FIRST, bold: true },
+      { text: RICH_SECOND, italic: true },
+    ]);
   }
 }
 const savedBytes = await editor.save();
@@ -81,11 +105,19 @@ assert.ok(documents.some((d) => d.kind === 'docx') && documents.some((d) => d.ki
 
 /** soffice 转换并等待产物；独立 profile 避免与本机 GUI 实例的锁冲突，显式 filter 名兼容旧版。 */
 function convert(file, format, outdir = out) {
-  execFileSync(soffice, ['-env:UserInstallation=file:///tmp/ole-lo-verify', '--headless', '--norestore',
-    '--convert-to', format, '--outdir', outdir, file], { timeout: 120_000 });
-  const stem = file.split('/').pop().replace(/\.[^.]+$/, '');
+  execFileSync(
+    soffice,
+    ['-env:UserInstallation=file:///tmp/ole-lo-verify', '--headless', '--norestore', '--convert-to', format, '--outdir', outdir, file],
+    { timeout: 120_000 },
+  );
+  const stem = file
+    .split('/')
+    .pop()
+    .replace(/\.[^.]+$/, '');
   const suffix = `.${format.split(':')[0]}`;
-  const produced = readdirSync(outdir).map((f) => join(outdir, f)).find((f) => f.split('/').pop().startsWith(stem) && f.endsWith(suffix) && f !== file);
+  const produced = readdirSync(outdir)
+    .map((f) => join(outdir, f))
+    .find((f) => f.split('/').pop().startsWith(stem) && f.endsWith(suffix) && f !== file);
   if (!produced) throw new Error(`LibreOffice 未产出 ${format}：${file}`);
   return produced;
 }
@@ -115,8 +147,10 @@ function convert(file, format, outdir = out) {
   assert.ok(styles.includes(FILL_COLOR), 'LibreOffice 重写后填充颜色仍在 styles.xml');
   const shared = new TextDecoder().decode(rewritten['xl/sharedStrings.xml'] ?? new Uint8Array());
   assert.ok(shared.includes(RICH_FIRST) && shared.includes(RICH_SECOND), 'LibreOffice 重写后富文本各片段文字仍在 sharedStrings');
-  assert.ok(new RegExp(`<t[^>]*>${RICH_FIRST}</t>`).test(shared) && new RegExp(`<t[^>]*>${RICH_SECOND}</t>`).test(shared),
-    '富文本按片段分别存储（保留 run 边界）');
+  assert.ok(
+    new RegExp(`<t[^>]*>${RICH_FIRST}</t>`).test(shared) && new RegExp(`<t[^>]*>${RICH_SECOND}</t>`).test(shared),
+    '富文本按片段分别存储（保留 run 边界）',
+  );
 }
 
 record();

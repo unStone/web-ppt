@@ -21,15 +21,22 @@ function fill(source: string, params?: Record<string, string>): string {
 
 /** 默认中文写入。独立查看器没有词库，也不能加载站点语言运行时。 */
 const zhCopy: PasswordDialogCopy = {
-  text(target, source, params) { target.textContent = fill(source, params); },
-  attr(target, name, source, params) { target.setAttribute(name, fill(source, params)); },
+  text(target, source, params) {
+    target.textContent = fill(source, params);
+  },
+  attr(target, name, source, params) {
+    target.setAttribute(name, fill(source, params));
+  },
 };
 
 function needsPassword(error: unknown): error is PasswordRequiredError | WrongPasswordError {
   return error instanceof PasswordRequiredError || error instanceof WrongPasswordError;
 }
 
-function buildDialog(name: string, copy: PasswordDialogCopy): {
+function buildDialog(
+  name: string,
+  copy: PasswordDialogCopy,
+): {
   dialog: HTMLDialogElement;
   form: HTMLFormElement;
   input: HTMLInputElement;

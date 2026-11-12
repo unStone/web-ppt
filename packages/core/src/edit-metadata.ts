@@ -6,10 +6,35 @@ export interface TextFontSlots {
   readonly complexScript: string | null;
 }
 
-const COMPLEX_SCRIPT = new RegExp('[' + [
-  'Arabic', 'Hebrew', 'Syriac', 'Thaana', 'Nko', 'Thai', 'Lao', 'Khmer', 'Myanmar', 'Tibetan',
-  'Devanagari', 'Bengali', 'Gurmukhi', 'Gujarati', 'Oriya', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Sinhala',
-].map((script) => `\\p{Script=${script}}`).join('') + ']', 'u');
+const COMPLEX_SCRIPT = new RegExp(
+  '['
+    + [
+      'Arabic',
+      'Hebrew',
+      'Syriac',
+      'Thaana',
+      'Nko',
+      'Thai',
+      'Lao',
+      'Khmer',
+      'Myanmar',
+      'Tibetan',
+      'Devanagari',
+      'Bengali',
+      'Gurmukhi',
+      'Gujarati',
+      'Oriya',
+      'Tamil',
+      'Telugu',
+      'Kannada',
+      'Malayalam',
+      'Sinhala',
+    ]
+      .map((script) => `\\p{Script=${script}}`)
+      .join('')
+    + ']',
+  'u',
+);
 
 /**
  * run 的渲染字体栈。PowerPoint 只对复杂文种字符启用 a:cs 字体；CSS 字体栈不分文种，cs 一旦入栈，

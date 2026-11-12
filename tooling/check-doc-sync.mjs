@@ -44,11 +44,11 @@ const RULES = [
   },
   {
     match: (f) => /^tooling\/(test|check)-[^/]+\.mjs$/.test(f) || f === 'package.json',
-    docs: 'docs/engineering/testing.md（门禁、套件表与断言计数登记）、AGENTS 的断言数（npm test 后实测，verify 会比对）、docs/engineering/development.md 命令表',
+    docs: 'docs/engineering/testing.md（门禁、套件表与断言计数登记，npm test 后实测，verify 会比对）、docs/engineering/development.md 命令表',
   },
   {
     match: (f) => /^test\/snapshots\//.test(f),
-    docs: 'README / README.en / AGENTS / docs/engineering/testing.md 的快照数',
+    docs: 'README / README.en / docs/engineering/testing.md 的快照数',
   },
   {
     match: (f) => /^\.github\/workflows\//.test(f) || f === 'CHANGELOG.md',
@@ -59,10 +59,15 @@ const RULES = [
 const diffArgs = cached ? ['diff', '--cached'] : ['diff', 'HEAD'];
 const changed = new Set([
   ...git(cached ? ['diff', '--cached', '--name-only'] : ['diff', 'HEAD', '--name-only'])
-    .split('\n').filter(Boolean),
+    .split('\n')
+    .filter(Boolean),
   // Stop 模式补上未跟踪文件（untracked 不出现在 diff 里）；pre-commit 只认暂存区
-  ...(cached ? [] : git(['status', '--porcelain']).split('\n').filter(Boolean)
-    .map((line) => line.slice(3).trim())),
+  ...(cached
+    ? []
+    : git(['status', '--porcelain'])
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => line.slice(3).trim())),
 ]);
 
 const hits = [...changed].filter((f) => RULES.some((r) => r.match(f))).sort();
@@ -81,7 +86,8 @@ const message = [
   '本次改动触及需要同步文档的区域，请先判断文档是否需要更新：',
   ...docList.map((d) => `· ${d}`),
   '',
-  '触及的文件：', ...hits.map((f) => `· ${f}`),
+  '触及的文件：',
+  ...hits.map((f) => `· ${f}`),
   '',
   '若对应文档已更新，或改动属于无行为变化的内部调整，重新执行刚才的操作即可通过（同一批文件只提醒一次）。',
 ].join('\n');

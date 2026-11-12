@@ -1,13 +1,21 @@
 import { sortElementChildrenByOrder } from '../element-order';
 import type { EditDoc } from '../types';
 import { applyCommonObjectSlidePatch } from './common-object-slide-patch';
-import { applyElementCropPatch, applyElementImageReplacementPatch, applyImageResourcePatch,
-  isElementCropPatch, isElementImageReplacementPatch, isImageResourcePatch,
+import {
+  applyElementCropPatch,
+  applyElementImageReplacementPatch,
+  applyImageResourcePatch,
+  isElementCropPatch,
+  isElementImageReplacementPatch,
+  isImageResourcePatch,
 } from './element-image-content';
 import { applyElementEffectsPatch, isElementEffectsPatch } from './element-effects';
 import { applyElementFillPatch, isElementFillPatch } from './element-fill';
-import { applyElementGeometryPatch, applyElementPresetGeometryPatch,
-  isElementGeometryPatch, isElementPresetGeometryPatch,
+import {
+  applyElementGeometryPatch,
+  applyElementPresetGeometryPatch,
+  isElementGeometryPatch,
+  isElementPresetGeometryPatch,
 } from './element-geometry';
 import { applyElementHierarchyPatch, isElementHierarchyPatch } from './element-hierarchy';
 import { applyElementInteractionPatch, isElementInteractionPatch } from './element-interaction';
@@ -27,16 +35,18 @@ import { applySlideNotesPatch, isSlideNotesPatch } from './slide-notes';
 import { applySlideOrderPatch, isSlideOrderPatch } from './slide-order';
 import { applySlidePropertyPatch, isSlidePropertyPatch } from './slide-property';
 import { applySlideTreePatch, isSlideTreePatch } from './slide-tree';
-import { applyTableGridPatch, isTableCellPropsPatch, isTableColumnPatch,
-  isTableGridEntryPatch, isTableMergePatch,
+import {
+  applyTableGridPatch,
+  isTableCellPropsPatch,
+  isTableColumnPatch,
+  isTableGridEntryPatch,
+  isTableMergePatch,
 } from './table-grid-patch';
 import { applyTableRowPatch, isTableRowPatch } from './table-row';
 import { applyThemePatch, isThemePatch } from './theme';
 import type { ElementTransformPatch, Patch } from './types';
 import { applyDocumentExtensionPatch, isDocumentExtensionPatch } from '../document-extensions';
-import {
-  applyExtensionPatch, finalizeExtensionPatch, isExtensionPatch,
-} from '../extension-runtime';
+import { applyExtensionPatch, finalizeExtensionPatch, isExtensionPatch } from '../extension-runtime';
 
 export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void {
   const orderParents = new Set<string>();
@@ -46,7 +56,10 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
     if (isElementTreePatch(patch) || isSlideTreePatch(patch) || isElementHierarchyPatch(patch)) {
       doc.elements = { ...doc.elements };
     }
-    if (isDocumentExtensionPatch(patch)) { applyDocumentExtensionPatch(doc, patch); continue; }
+    if (isDocumentExtensionPatch(patch)) {
+      applyDocumentExtensionPatch(doc, patch);
+      continue;
+    }
     if (applyCommonObjectSlidePatch(doc, patch)) continue;
     if (isThemePatch(patch)) applyThemePatch(doc, patch);
     else if (isLayoutPropertyPatch(patch)) applyLayoutPropertyPatch(doc, patch);
@@ -71,20 +84,19 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
     else if (isImageResourcePatch(patch)) applyImageResourcePatch(doc, patch);
     else if (isElementTextPatch(patch)) applyElementTextPatch(doc, patch);
     else if (isTableRowPatch(patch)) applyTableRowPatch(doc, patch);
-    else if (isTableColumnPatch(patch) || isTableGridEntryPatch(patch)
-      || isTableMergePatch(patch) || isTableCellPropsPatch(patch)) applyTableGridPatch(doc, patch);
+    else if (isTableColumnPatch(patch) || isTableGridEntryPatch(patch) || isTableMergePatch(patch) || isTableCellPropsPatch(patch))
+      applyTableGridPatch(doc, patch);
     else if (isElementOrderPatch(patch)) orderParents.add(applyElementOrderValue(doc, patch));
     else if (isElementNamePatch(patch)) applyElementNamePatch(doc, patch);
     else if (isElementInteractionPatch(patch)) applyElementInteractionPatch(doc, patch);
     else if (isExtensionPatch(patch)) {
       applyExtensionPatch(doc, patch);
       extensionTargets.set(`${patch.path[0]}\0${patch.path[1]}\0${patch.path[4]}`, [patch.path[1], patch.path[4], patch.path[0]]);
-    }
-    else applyElementTransformPatch(doc, patch as ElementTransformPatch);
+    } else applyElementTransformPatch(doc, patch as ElementTransformPatch);
   }
   for (const parent of orderParents) {
-    if (doc.slides[parent] || doc.layouts[parent] || doc.masters[parent]
-      || doc.elements[parent]?.src.kind === 'group') sortElementChildrenByOrder(doc, parent);
+    if (doc.slides[parent] || doc.layouts[parent] || doc.masters[parent] || doc.elements[parent]?.src.kind === 'group')
+      sortElementChildrenByOrder(doc, parent);
   }
   for (const [id, namespace, scope] of extensionTargets.values()) {
     finalizeExtensionPatch(doc, id, namespace, scope);

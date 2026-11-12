@@ -6,8 +6,16 @@ export { chartProjection } from './projection';
 export type { ChartDataEditor } from './commands';
 
 export type {
-  ChartCategory, ChartDataBinding, ChartDataset, ChartFormulaBinding, ChartPlotKind,
-  ChartPoint, ChartPointId, ChartSeries, ChartSeriesId, EditableChart,
+  ChartCategory,
+  ChartDataBinding,
+  ChartDataset,
+  ChartFormulaBinding,
+  ChartPlotKind,
+  ChartPoint,
+  ChartPointId,
+  ChartSeries,
+  ChartSeriesId,
+  EditableChart,
 } from './types';
 
 export function listEditableCharts(doc: EditDoc): EditableChart[] {

@@ -19,8 +19,8 @@ function xmlUrl(value: string): string {
 }
 
 function cssUrl(value: string): string {
-  return value.replace(/\\([0-9a-f]{1,6})(?:\r\n|[ \t\r\n\f])?|\\([^\r\n])/gi,(_,hex: string | undefined,char: string) => {
-    const code = hex === undefined ? 0 : Number.parseInt(hex,16);
+  return value.replace(/\\([0-9a-f]{1,6})(?:\r\n|[ \t\r\n\f])?|\\([^\r\n])/gi, (_, hex: string | undefined, char: string) => {
+    const code = hex === undefined ? 0 : Number.parseInt(hex, 16);
     return hex === undefined ? char : String.fromCodePoint(code > 0 && code <= 0x10ffff ? code : 0xfffd);
   });
 }
@@ -62,11 +62,7 @@ function normalizeFamily(family: string): string {
 }
 
 /** 子集化开启才建管线；未开启时导出与字节保持现状 */
-function fontPipeline(
-  pres: Presentation,
-  slides: readonly Slide[],
-  fonts: ExportFontOptions | undefined,
-): FontPipeline | undefined {
+function fontPipeline(pres: Presentation, slides: readonly Slide[], fonts: ExportFontOptions | undefined): FontPipeline | undefined {
   if (!fonts?.subsetter) return undefined;
   const usages = new Map<string, FontUsage>();
   for (const usage of collectFonts(slides)) usages.set(normalizeFamily(usage.family), usage);
@@ -166,16 +162,18 @@ async function inlineEmbeddedFonts(svg: string, pipeline: FontPipeline, strict: 
 /** 把 SVG 中的会话与外链资源替换成 data URI，使其可被 <img> 独立加载。 */
 async function inlineImages(svg: string, strict = false, pipeline?: FontPipeline): Promise<string> {
   const withFonts = pipeline ? await inlineEmbeddedFonts(svg, pipeline, strict) : svg;
-  const encoded = new Map<string,string>();
+  const encoded = new Map<string, string>();
   for (const match of withFonts.matchAll(/<image\b[^>]*\bhref="((?:blob:|https?:\/\/)[^"]+)"/g)) {
-    encoded.set(match[1],xmlUrl(match[1]));
+    encoded.set(match[1], xmlUrl(match[1]));
   }
-  for (const match of withFonts.matchAll(/@font-face\{[^}]*\bsrc:url\((?:'((?:blob:|https?:\/\/)[^']+)'|"((?:blob:|https?:\/\/)[^"]+)"|((?:blob:|https?:\/\/)[^)\s]+))\)/g)) {
+  for (const match of withFonts.matchAll(
+    /@font-face\{[^}]*\bsrc:url\((?:'((?:blob:|https?:\/\/)[^']+)'|"((?:blob:|https?:\/\/)[^"]+)"|((?:blob:|https?:\/\/)[^)\s]+))\)/g,
+  )) {
     const value = match[1] ?? match[2] ?? match[3];
-    encoded.set(value,cssUrl(value));
+    encoded.set(value, cssUrl(value));
   }
   if (!encoded.size) return withFonts;
-  const loads = [...encoded].map(async ([value,url]) => {
+  const loads = [...encoded].map(async ([value, url]) => {
     try {
       const resource = await fetch(url);
       if (!resource.ok) throw new Error(`HTTP ${resource.status}`);
@@ -243,12 +241,16 @@ async function rasterize(
 ): Promise<Blob> {
   browserApi();
   const size = validateRasterSize(pres, options.scale);
-  const svg = await inlineImages(renderSlideToSvg(pres, slide, {
-    textMode,
-    hiddenElements: options.hiddenElements,
-    showComments: options.showComments,
-    fontFaces: options.fonts?.extraFontFaces,
-  }), options.strictResources, pipeline);
+  const svg = await inlineImages(
+    renderSlideToSvg(pres, slide, {
+      textMode,
+      hiddenElements: options.hiddenElements,
+      showComments: options.showComments,
+      fontFaces: options.fonts?.extraFontFaces,
+    }),
+    options.strictResources,
+    pipeline,
+  );
   const image = await loadSvgImage(svg);
   const canvas = document.createElement('canvas');
   canvas.width = size.width;
@@ -306,12 +308,16 @@ function inlineSvgPage(
   hiddenElements: readonly number[] | undefined,
   pipeline: FontPipeline | undefined,
 ): Promise<string> {
-  return inlineImages(renderSlideToSvg(pres, slide, {
-    textMode: 'svg',
-    hiddenElements,
-    showComments: options.showComments,
-    fontFaces: options.fonts?.extraFontFaces,
-  }), false, pipeline);
+  return inlineImages(
+    renderSlideToSvg(pres, slide, {
+      textMode: 'svg',
+      hiddenElements,
+      showComments: options.showComments,
+      fontFaces: options.fonts?.extraFontFaces,
+    }),
+    false,
+    pipeline,
+  );
 }
 
 export interface PrintableOptions extends CommentExportOptions {
@@ -321,10 +327,7 @@ export interface PrintableOptions extends CommentExportOptions {
 }
 
 /** 整份演示导出为可通过浏览器“打印为 PDF”的 HTML。 */
-export async function presentationToPrintableHtml(
-  pres: Presentation,
-  options: PrintableOptions = {},
-): Promise<string> {
+export async function presentationToPrintableHtml(pres: Presentation, options: PrintableOptions = {}): Promise<string> {
   // 整稿一份并集字符集 + 一份跨页缓存：同一字体不逐页重复子集化与 base64
   const pipeline = fontPipeline(pres, pres.slides, options.fonts);
   const jobs: Promise<string>[] = [];

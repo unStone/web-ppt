@@ -1,7 +1,5 @@
 import type { RecoveryFrame } from '@web-ppt/edit-core';
-import type {
-  RecoveryStore, RecoveryStoreAppend, RecoveryStoreJournal, RecoveryStoreReset,
-} from './recovery-store';
+import type { RecoveryStore, RecoveryStoreAppend, RecoveryStoreJournal, RecoveryStoreReset } from './recovery-store';
 import type { WebPptSourceIdentity } from './source-fingerprint';
 
 const DATABASE_VERSION = 1;
@@ -63,16 +61,19 @@ export interface IndexedDbRecoveryStore extends RecoveryStore {
   close(): Promise<void>;
 }
 
-const requestResult = <T>(request: IDBRequest<T>): Promise<T> => new Promise((resolve, reject) => {
-  request.onsuccess = () => resolve(request.result);
-  request.onerror = () => reject(request.error ?? new Error('IndexedDB 请求失败'));
-});
+const requestResult = <T>(request: IDBRequest<T>): Promise<T> =>
+  new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error('IndexedDB 请求失败'));
+  });
 
 const transactionDone = (transaction: IDBTransaction): Promise<void> =>
   new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
     transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB 事务已中止'));
-    transaction.onerror = () => { /* abort 会携带最终错误，避免同一事务重复 rejection。 */ };
+    transaction.onerror = () => {
+      /* abort 会携带最终错误，避免同一事务重复 rejection。 */
+    };
   });
 
 function positiveInteger(value: number, name: string): number {
@@ -89,8 +90,7 @@ function chunkKey(journalKey: string, sequence: number): string {
 }
 
 function assertSource(source: WebPptSourceIdentity): void {
-  if (!source || !/^sha256:[0-9a-f]{64}$/.test(source.fingerprint)
-    || !Number.isSafeInteger(source.byteLength) || source.byteLength < 0) {
+  if (!source || !/^sha256:[0-9a-f]{64}$/.test(source.fingerprint) || !Number.isSafeInteger(source.byteLength) || source.byteLength < 0) {
     throw new Error('恢复日志的源身份无效');
   }
 }
@@ -117,8 +117,7 @@ function validatedChunkFrames(journalKey: string, chunks: ChunkRow[]): RecoveryF
     assertFrames(chunk.frames, after);
     const first = chunk.frames[0].sequence;
     const last = chunk.frames[chunk.frames.length - 1].sequence;
-    if (chunk.key !== chunkKey(journalKey, first)
-      || chunk.firstSequence !== first || chunk.lastSequence !== last) {
+    if (chunk.key !== chunkKey(journalKey, first) || chunk.firstSequence !== first || chunk.lastSequence !== last) {
       throw new Error('恢复分块元数据无效');
     }
     frames.push(...chunk.frames);
@@ -127,19 +126,18 @@ function validatedChunkFrames(journalKey: string, chunks: ChunkRow[]): RecoveryF
   return frames;
 }
 
-function partitionChunks(
-  journalKey: string,
-  frames: readonly RecoveryFrame[],
-  count: number,
-): ChunkRow[] {
+function partitionChunks(journalKey: string, frames: readonly RecoveryFrame[], count: number): ChunkRow[] {
   const size = Math.max(1, Math.ceil(frames.length / count));
   const chunks: ChunkRow[] = [];
   for (let index = 0; index < frames.length; index += size) {
     const group = frames.slice(index, index + size);
     const firstSequence = group[0].sequence;
     chunks.push({
-      key: chunkKey(journalKey, firstSequence), journalKey, firstSequence,
-      lastSequence: group[group.length - 1].sequence, frames: group,
+      key: chunkKey(journalKey, firstSequence),
+      journalKey,
+      firstSequence,
+      lastSequence: group[group.length - 1].sequence,
+      frames: group,
     });
   }
   return chunks;
@@ -197,8 +195,7 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
     const completed = transactionDone(transaction);
     const [row, chunks] = await Promise.all([
       requestResult(transaction.objectStore(JOURNALS).get(key) as IDBRequest<JournalRow | undefined>),
-      requestResult(transaction.objectStore(CHUNKS).index(JOURNAL_INDEX)
-        .getAll(key) as IDBRequest<ChunkRow[]>),
+      requestResult(transaction.objectStore(CHUNKS).index(JOURNAL_INDEX).getAll(key) as IDBRequest<ChunkRow[]>),
       completed,
     ]);
     if (!row) {
@@ -210,26 +207,33 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
     }
     const frames = validatedChunkFrames(key, chunks);
     const lastChunk = chunks[chunks.length - 1];
-    if (typeof row.idPrefix !== 'string'
-      || typeof row.epoch !== 'string' || !row.epoch
-      || frames.length !== row.frameCount || chunks.length !== row.chunkCount
+    if (
+      typeof row.idPrefix !== 'string'
+      || typeof row.epoch !== 'string'
+      || !row.epoch
+      || frames.length !== row.frameCount
+      || chunks.length !== row.chunkCount
       || (frames.length
-        ? frames[frames.length - 1].sequence !== row.lastSequence
-          || lastChunk?.key !== row.lastChunkKey
-        : row.lastSequence !== 0 || row.lastChunkKey !== null)) {
+        ? frames[frames.length - 1].sequence !== row.lastSequence || lastChunk?.key !== row.lastChunkKey
+        : row.lastSequence !== 0 || row.lastChunkKey !== null)
+    ) {
       throw new Error('恢复存储元数据与分块不一致');
     }
     return {
-      version: 1, source: structuredClone(row.source), idPrefix: row.idPrefix, epoch: row.epoch,
-      createdAt: row.createdAt, updatedAt: row.updatedAt,
-      estimatedBytes: row.estimatedBytes, frames: structuredClone(frames),
+      version: 1,
+      source: structuredClone(row.source),
+      idPrefix: row.idPrefix,
+      epoch: row.epoch,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      estimatedBytes: row.estimatedBytes,
+      frames: structuredClone(frames),
     };
   }
 
   async append(request: RecoveryStoreAppend): Promise<void> {
     assertSource(request.source);
-    if (typeof request.idPrefix !== 'string'
-      || typeof request.epoch !== 'string' || !request.epoch) {
+    if (typeof request.idPrefix !== 'string' || typeof request.epoch !== 'string' || !request.epoch) {
       throw new Error('恢复日志身份无效');
     }
     assertFrames(request.frames);
@@ -243,16 +247,13 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
       const journalStore = transaction.objectStore(JOURNALS);
       const chunkStore = transaction.objectStore(CHUNKS);
       const row = await requestResult(journalStore.get(journalKey) as IDBRequest<JournalRow | undefined>);
-      if (!row || row.idPrefix !== request.idPrefix || row.epoch !== request.epoch
-        || row.source.byteLength !== request.source.byteLength) {
+      if (!row || row.idPrefix !== request.idPrefix || row.epoch !== request.epoch || row.source.byteLength !== request.source.byteLength) {
         throw new Error('恢复追加与现有日志身份冲突');
       }
       assertFrames(frames, row.lastSequence);
       if (row.frameCount) {
         if (!row.lastChunkKey) throw new Error('恢复追加前缺少尾分块');
-        const tail = await requestResult(
-          chunkStore.get(row.lastChunkKey) as IDBRequest<ChunkRow | undefined>,
-        );
+        const tail = await requestResult(chunkStore.get(row.lastChunkKey) as IDBRequest<ChunkRow | undefined>);
         const tailFrames = tail ? validatedChunkFrames(journalKey, [tail]) : [];
         if (!tail || tailFrames[tailFrames.length - 1]?.sequence !== row.lastSequence) {
           throw new Error('恢复追加前尾分块元数据不一致');
@@ -261,7 +262,8 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
         throw new Error('空恢复日志元数据不一致');
       }
       const incoming: ChunkRow = {
-        key: chunkKey(journalKey, frames[0].sequence), journalKey,
+        key: chunkKey(journalKey, frames[0].sequence),
+        journalKey,
         firstSequence: frames[0].sequence,
         lastSequence: frames[frames.length - 1].sequence,
         frames,
@@ -271,11 +273,13 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
       let chunkCount = row.chunkCount + 1;
       let lastChunkKey = incoming.key;
       if (chunkCount > this.compactAfterChunks) {
-        const existing = await requestResult(chunkStore.index(JOURNAL_INDEX)
-          .getAll(journalKey) as IDBRequest<ChunkRow[]>);
+        const existing = await requestResult(chunkStore.index(JOURNAL_INDEX).getAll(journalKey) as IDBRequest<ChunkRow[]>);
         const existingFrames = validatedChunkFrames(journalKey, existing);
-        if (existing.length !== row.chunkCount || existingFrames.length !== row.frameCount
-          || existingFrames[existingFrames.length - 1]?.sequence !== row.lastSequence) {
+        if (
+          existing.length !== row.chunkCount
+          || existingFrames.length !== row.frameCount
+          || existingFrames[existingFrames.length - 1]?.sequence !== row.lastSequence
+        ) {
           throw new Error('恢复压缩前分块元数据不一致');
         }
         for (const chunk of existing) chunkStore.delete(chunk.key);
@@ -294,16 +298,26 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
       // 系统时钟可能被校准回拨；日志时间必须保持单调，才能继续作为恢复候选。
       const timestamp = Math.max(row.updatedAt, now);
       journalStore.put({
-        key: journalKey, namespace: this.namespace, source: structuredClone(request.source),
-        idPrefix: request.idPrefix, epoch: request.epoch,
-        createdAt: row.createdAt, updatedAt: timestamp,
-        estimatedBytes, frameCount,
+        key: journalKey,
+        namespace: this.namespace,
+        source: structuredClone(request.source),
+        idPrefix: request.idPrefix,
+        epoch: request.epoch,
+        createdAt: row.createdAt,
+        updatedAt: timestamp,
+        estimatedBytes,
+        frameCount,
         lastSequence: frames[frames.length - 1].sequence,
-        chunkCount, lastChunkKey,
+        chunkCount,
+        lastChunkKey,
       } satisfies JournalRow);
       await completed;
     } catch (error) {
-      try { transaction.abort(); } catch { /* 已中止或已提交。 */ }
+      try {
+        transaction.abort();
+      } catch {
+        /* 已中止或已提交。 */
+      }
       await completed.catch(() => undefined);
       throw error;
     }
@@ -312,8 +326,7 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
 
   async reset(request: RecoveryStoreReset): Promise<void> {
     assertSource(request.source);
-    if (typeof request.idPrefix !== 'string'
-      || typeof request.epoch !== 'string' || !request.epoch) {
+    if (typeof request.idPrefix !== 'string' || typeof request.epoch !== 'string' || !request.epoch) {
       throw new Error('恢复日志身份无效');
     }
     if (request.signal?.aborted) throw request.signal.reason ?? new Error('恢复占位已取消');
@@ -321,7 +334,13 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
     const key = sourceKey(this.namespace, request.source.fingerprint);
     const transaction = database.transaction([JOURNALS, CHUNKS], 'readwrite');
     const completed = transactionDone(transaction);
-    const abort = () => { try { transaction.abort(); } catch { /* 已结束。 */ } };
+    const abort = () => {
+      try {
+        transaction.abort();
+      } catch {
+        /* 已结束。 */
+      }
+    };
     request.signal?.addEventListener('abort', abort, { once: true });
     try {
       const journalStore = transaction.objectStore(JOURNALS);
@@ -332,14 +351,26 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
       const timestamp = this.now();
       if (!Number.isFinite(timestamp)) throw new Error('恢复存储时钟无效');
       journalStore.put({
-        key, namespace: this.namespace, source: structuredClone(request.source),
-        idPrefix: request.idPrefix, epoch: request.epoch,
-        createdAt: timestamp, updatedAt: timestamp, estimatedBytes: 0,
-        frameCount: 0, lastSequence: 0, chunkCount: 0, lastChunkKey: null,
+        key,
+        namespace: this.namespace,
+        source: structuredClone(request.source),
+        idPrefix: request.idPrefix,
+        epoch: request.epoch,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        estimatedBytes: 0,
+        frameCount: 0,
+        lastSequence: 0,
+        chunkCount: 0,
+        lastChunkKey: null,
       } satisfies JournalRow);
       await completed;
     } catch (error) {
-      try { transaction.abort(); } catch { /* 已中止或已提交。 */ }
+      try {
+        transaction.abort();
+      } catch {
+        /* 已中止或已提交。 */
+      }
       await completed.catch(() => undefined);
       throw error;
     } finally {
@@ -372,9 +403,7 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
     };
   }
 
-  async cleanup(
-    preserveFingerprint?: WebPptSourceIdentity['fingerprint'],
-  ): Promise<RecoveryCleanupResult> {
+  async cleanup(preserveFingerprint?: WebPptSourceIdentity['fingerprint']): Promise<RecoveryCleanupResult> {
     const database = await this.activeDatabase();
     const transaction = database.transaction([JOURNALS, CHUNKS], 'readwrite');
     const completed = transactionDone(transaction);
@@ -383,9 +412,9 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
       const chunkStore = transaction.objectStore(CHUNKS);
       const chunkIndex = chunkStore.index(JOURNAL_INDEX);
       const allRows = await requestResult(journalStore.getAll() as IDBRequest<JournalRow[]>);
-      const preserveKey = preserveFingerprint
-        ? sourceKey(this.namespace, preserveFingerprint) : null;
-      const rows = allRows.filter((row) => row.namespace === this.namespace)
+      const preserveKey = preserveFingerprint ? sourceKey(this.namespace, preserveFingerprint) : null;
+      const rows = allRows
+        .filter((row) => row.namespace === this.namespace)
         .sort((left, right) => right.updatedAt - left.updatedAt || left.key.localeCompare(right.key));
       const expiredBefore = this.now() - this.retentionMs;
       const remove = new Set(rows.filter((row) => row.key !== preserveKey && row.updatedAt < expiredBefore));
@@ -413,7 +442,11 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
         estimatedBytesRemoved: removed.reduce((total, row) => total + row.estimatedBytes, 0),
       };
     } catch (error) {
-      try { transaction.abort(); } catch { /* 已中止或已提交。 */ }
+      try {
+        transaction.abort();
+      } catch {
+        /* 已中止或已提交。 */
+      }
       await completed.catch(() => undefined);
       throw error;
     }
@@ -433,21 +466,29 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
         database.createObjectStore(JOURNALS, { keyPath: 'key' });
       }
       if (!database.objectStoreNames.contains(CHUNKS)) {
-        database.createObjectStore(CHUNKS, { keyPath: 'key' })
-          .createIndex(JOURNAL_INDEX, 'journalKey', { unique: false });
+        database.createObjectStore(CHUNKS, { keyPath: 'key' }).createIndex(JOURNAL_INDEX, 'journalKey', { unique: false });
       }
     };
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       let settled = false;
       request.onsuccess = () => {
         if (settled) request.result.close();
-        else { settled = true; resolve(request.result); }
+        else {
+          settled = true;
+          resolve(request.result);
+        }
       };
       request.onerror = () => {
-        if (!settled) { settled = true; reject(request.error ?? new Error('无法打开恢复 IndexedDB')); }
+        if (!settled) {
+          settled = true;
+          reject(request.error ?? new Error('无法打开恢复 IndexedDB'));
+        }
       };
       request.onblocked = () => {
-        if (!settled) { settled = true; reject(new Error('恢复 IndexedDB 升级被其它页面阻塞')); }
+        if (!settled) {
+          settled = true;
+          reject(new Error('恢复 IndexedDB 升级被其它页面阻塞'));
+        }
       };
     });
     database.onversionchange = () => {
@@ -479,15 +520,17 @@ class BrowserIndexedDbRecoveryStore implements IndexedDbRecoveryStore {
       }
       await completed;
     } catch (error) {
-      try { transaction.abort(); } catch { /* 已中止或已提交。 */ }
+      try {
+        transaction.abort();
+      } catch {
+        /* 已中止或已提交。 */
+      }
       await completed.catch(() => undefined);
       throw error;
     }
   }
 }
 
-export function createIndexedDbRecoveryStore(
-  options: IndexedDbRecoveryStoreOptions = {},
-): IndexedDbRecoveryStore {
+export function createIndexedDbRecoveryStore(options: IndexedDbRecoveryStoreOptions = {}): IndexedDbRecoveryStore {
   return new BrowserIndexedDbRecoveryStore(options);
 }

@@ -3,11 +3,7 @@ import { assertImageCrop, canEditImageContent, normalizeImageCrop } from '../ima
 import type { EditDoc } from '../types';
 import type { CommandPatches, ElementCropPatch, SetCropCommand } from './types';
 
-export function setCropPatches(
-  doc: EditDoc,
-  command: SetCropCommand,
-  origin: string,
-): CommandPatches {
+export function setCropPatches(doc: EditDoc, command: SetCropCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能裁剪图片');
   const record = doc.elements[command.id];
   if (!record) throw new Error(`找不到元素：${command.id}`);

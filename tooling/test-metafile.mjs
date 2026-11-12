@@ -28,7 +28,10 @@ let pass = 0;
 const failures = [];
 
 function check(name, cond, detail = '') {
-  if (cond) { pass++; return true; }
+  if (cond) {
+    pass++;
+    return true;
+  }
   failures.push(detail ? `${name} — ${detail}` : name);
   return false;
 }
@@ -40,14 +43,36 @@ function group(title) {
 // ---------------- 字节构造 ----------------
 
 class Buf {
-  constructor() { this.d = []; }
-  u8(v) { this.d.push(v & 0xff); return this; }
-  u16(v) { this.d.push(v & 0xff, (v >>> 8) & 0xff); return this; }
-  i16(v) { return this.u16(v < 0 ? v + 0x10000 : v); }
-  u32(v) { this.d.push(v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff); return this; }
-  i32(v) { return this.u32(v < 0 ? v >>> 0 : v); }
-  f32(v) { const b = new Uint8Array(4); new DataView(b.buffer).setFloat32(0, v, true); return this.raw(b); }
-  raw(a) { for (const v of a) this.d.push(v & 0xff); return this; }
+  constructor() {
+    this.d = [];
+  }
+  u8(v) {
+    this.d.push(v & 0xff);
+    return this;
+  }
+  u16(v) {
+    this.d.push(v & 0xff, (v >>> 8) & 0xff);
+    return this;
+  }
+  i16(v) {
+    return this.u16(v < 0 ? v + 0x10000 : v);
+  }
+  u32(v) {
+    this.d.push(v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff);
+    return this;
+  }
+  i32(v) {
+    return this.u32(v < 0 ? v >>> 0 : v);
+  }
+  f32(v) {
+    const b = new Uint8Array(4);
+    new DataView(b.buffer).setFloat32(0, v, true);
+    return this.raw(b);
+  }
+  raw(a) {
+    for (const v of a) this.d.push(v & 0xff);
+    return this;
+  }
   str16(s, bytes) {
     for (let i = 0; i < bytes / 2; i++) this.u16(i < s.length ? s.charCodeAt(i) : 0);
     return this;
@@ -56,16 +81,26 @@ class Buf {
     for (let i = 0; i < bytes; i++) this.u8(i < s.length ? s.charCodeAt(i) & 0xff : 0);
     return this;
   }
-  pad4() { while (this.d.length % 4) this.d.push(0); return this; }
-  get length() { return this.d.length; }
-  bytes() { return Uint8Array.from(this.d); }
+  pad4() {
+    while (this.d.length % 4) this.d.push(0);
+    return this;
+  }
+  get length() {
+    return this.d.length;
+  }
+  bytes() {
+    return Uint8Array.from(this.d);
+  }
 }
 
 const cat = (...arrs) => {
   const total = arrs.reduce((s, a) => s + a.length, 0);
   const out = new Uint8Array(total);
   let o = 0;
-  for (const a of arrs) { out.set(a, o); o += a.length; }
+  for (const a of arrs) {
+    out.set(a, o);
+    o += a.length;
+  }
   return out;
 };
 
@@ -79,23 +114,30 @@ function er(type, build) {
   const p = new Buf();
   if (build) build(p);
   p.pad4();
-  return new Buf().u32(type).u32(8 + p.length).raw(p.bytes()).bytes();
+  return new Buf()
+    .u32(type)
+    .u32(8 + p.length)
+    .raw(p.bytes())
+    .bytes();
 }
 
 const rectl = (p, l, t, r, b) => p.i32(l).i32(t).i32(r).i32(b);
 
 function emfFile(records, { bw = 400, bh = 300 } = {}) {
-  const body = cat(...records, er(14, (p) => p.u32(0).u32(0).u32(0))); // EMR_EOF
+  const body = cat(
+    ...records,
+    er(14, (p) => p.u32(0).u32(0).u32(0)),
+  ); // EMR_EOF
   const frameW = Math.round((bw / 96) * 2540);
   const frameH = Math.round((bh / 96) * 2540);
   const hdr = new Buf();
   hdr.u32(1).u32(88);
-  rectl(hdr, 0, 0, bw - 1, bh - 1);          // rclBounds
-  rectl(hdr, 0, 0, frameW, frameH);          // rclFrame（0.01mm）
-  hdr.u32(0x464d4520).u32(0x00010000);       // ' EMF' + version
+  rectl(hdr, 0, 0, bw - 1, bh - 1); // rclBounds
+  rectl(hdr, 0, 0, frameW, frameH); // rclFrame（0.01mm）
+  hdr.u32(0x464d4520).u32(0x00010000); // ' EMF' + version
   hdr.u32(88 + body.length).u32(records.length + 2);
-  hdr.u16(16).u16(0).u32(0).u32(0).u32(0);   // nHandles, reserved, description, palette
-  hdr.i32(bw).i32(bh);                       // szlDevice
+  hdr.u16(16).u16(0).u32(0).u32(0).u32(0); // nHandles, reserved, description, palette
+  hdr.i32(bw).i32(bh); // szlDevice
   hdr.i32(Math.round((bw / 96) * 25.4)).i32(Math.round((bh / 96) * 25.4)); // szlMillimeters
   return cat(hdr.bytes(), body);
 }
@@ -107,7 +149,11 @@ function wr(fn, build) {
   const p = new Buf();
   if (build) build(p);
   if (p.length % 2) p.u8(0);
-  return new Buf().u32((6 + p.length) / 2).u16(fn).raw(p.bytes()).bytes();
+  return new Buf()
+    .u32((6 + p.length) / 2)
+    .u16(fn)
+    .raw(p.bytes())
+    .bytes();
 }
 
 /** WMF 矩形参数顺序：bottom, right, top, left */
@@ -136,15 +182,14 @@ function wmfFile(records, { bw = 4000, bh = 3000, inch = 1000 } = {}) {
 // ---------------- DIB 构造 ----------------
 
 function bih(w, h, bpp, { comp = 0, clrUsed = 0, sizeImage = 0 } = {}) {
-  return new Buf().u32(40).i32(w).i32(h).u16(1).u16(bpp)
-    .u32(comp).u32(sizeImage).i32(2835).i32(2835).u32(clrUsed).u32(0);
+  return new Buf().u32(40).i32(w).i32(h).u16(1).u16(bpp).u32(comp).u32(sizeImage).i32(2835).i32(2835).u32(clrUsed).u32(0);
 }
 
 /** 2x2 24 位真彩，自底向上、每行 4 字节对齐 */
 function dib24() {
   const b = bih(2, 2, 24, { sizeImage: 16 });
-  b.raw([0, 0, 255, 0, 255, 0, 0, 0]);       // 底行：红、绿
-  b.raw([255, 0, 0, 255, 255, 255, 0, 0]);   // 顶行：蓝、白
+  b.raw([0, 0, 255, 0, 255, 0, 0, 0]); // 底行：红、绿
+  b.raw([255, 0, 0, 255, 255, 255, 0, 0]); // 顶行：蓝、白
   return b.bytes();
 }
 
@@ -170,9 +215,15 @@ function dib1() {
 /** 只含指定记录的最小 EMF，用于隔离测单个记录的行为 */
 function buildEmfWith(records) {
   return emfFile([
-    er(17, (q) => q.u32(1)),                                            // SETMAPMODE MM_TEXT
-    er(39, (q) => q.u32(1).u32(0).u32(colorref(220, 20, 60)).u32(0)),   // 实心红画刷
-    er(37, (q) => q.u32(1)),                                            // SELECTOBJECT brush
+    er(17, (q) => q.u32(1)), // SETMAPMODE MM_TEXT
+    er(39, (q) =>
+      q
+        .u32(1)
+        .u32(0)
+        .u32(colorref(220, 20, 60))
+        .u32(0),
+    ), // 实心红画刷
+    er(37, (q) => q.u32(1)), // SELECTOBJECT brush
     ...records,
   ]);
 }
@@ -181,102 +232,166 @@ function buildEmf() {
   const recs = [];
   const push = (r) => recs.push(r);
 
-  push(er(17, (p) => p.u32(1)));                                        // SETMAPMODE MM_TEXT
-  push(er(19, (p) => p.u32(2)));                                        // SETPOLYFILLMODE WINDING
+  push(er(17, (p) => p.u32(1))); // SETMAPMODE MM_TEXT
+  push(er(19, (p) => p.u32(2))); // SETPOLYFILLMODE WINDING
 
   // 实心红画刷 + 蓝色虚线笔
-  push(er(39, (p) => p.u32(1).u32(0).u32(colorref(220, 20, 60)).u32(0)));   // CREATEBRUSHINDIRECT
-  push(er(38, (p) => p.u32(2).u32(1).i32(3).i32(0).u32(colorref(20, 60, 220)))); // CREATEPEN PS_DASH w=3
-  push(er(37, (p) => p.u32(1)));                                        // SELECTOBJECT brush
-  push(er(37, (p) => p.u32(2)));                                        // SELECTOBJECT pen
+  push(
+    er(39, (p) =>
+      p
+        .u32(1)
+        .u32(0)
+        .u32(colorref(220, 20, 60))
+        .u32(0),
+    ),
+  ); // CREATEBRUSHINDIRECT
+  push(
+    er(38, (p) =>
+      p
+        .u32(2)
+        .u32(1)
+        .i32(3)
+        .i32(0)
+        .u32(colorref(20, 60, 220)),
+    ),
+  ); // CREATEPEN PS_DASH w=3
+  push(er(37, (p) => p.u32(1))); // SELECTOBJECT brush
+  push(er(37, (p) => p.u32(2))); // SELECTOBJECT pen
 
   // 多边形填充（16 位变体）
-  push(er(86, (p) => {                                                  // EMR_POLYGON16
-    rectl(p, 20, 20, 120, 100);
-    p.u32(3).i16(20).i16(100).i16(70).i16(20).i16(120).i16(100);
-  }));
+  push(
+    er(86, (p) => {
+      // EMR_POLYGON16
+      rectl(p, 20, 20, 120, 100);
+      p.u32(3).i16(20).i16(100).i16(70).i16(20).i16(120).i16(100);
+    }),
+  );
 
   // 空画刷 + 折线描边
-  push(er(37, (p) => p.u32(0x80000005)));                               // SELECTOBJECT NULL_BRUSH
-  push(er(87, (p) => {                                                  // EMR_POLYLINE16
-    rectl(p, 140, 20, 260, 100);
-    p.u32(4).i16(140).i16(100).i16(180).i16(20).i16(220).i16(100).i16(260).i16(20);
-  }));
+  push(er(37, (p) => p.u32(0x80000005))); // SELECTOBJECT NULL_BRUSH
+  push(
+    er(87, (p) => {
+      // EMR_POLYLINE16
+      rectl(p, 140, 20, 260, 100);
+      p.u32(4).i16(140).i16(100).i16(180).i16(20).i16(220).i16(100).i16(260).i16(20);
+    }),
+  );
 
-  push(er(43, (p) => rectl(p, 280, 20, 380, 100)));                     // RECTANGLE
-  push(er(42, (p) => rectl(p, 20, 120, 120, 200)));                     // ELLIPSE
-  push(er(44, (p) => { rectl(p, 140, 120, 260, 200); p.i32(24).i32(24); })); // ROUNDRECT
-  push(er(45, (p) => { rectl(p, 270, 110, 380, 210); p.i32(380).i32(160).i32(325).i32(110); })); // ARC
-  push(er(47, (p) => { rectl(p, 270, 110, 380, 210); p.i32(380).i32(160).i32(325).i32(110); })); // PIE
-  push(er(46, (p) => { rectl(p, 270, 110, 380, 210); p.i32(380).i32(160).i32(325).i32(110); })); // CHORD
+  push(er(43, (p) => rectl(p, 280, 20, 380, 100))); // RECTANGLE
+  push(er(42, (p) => rectl(p, 20, 120, 120, 200))); // ELLIPSE
+  push(
+    er(44, (p) => {
+      rectl(p, 140, 120, 260, 200);
+      p.i32(24).i32(24);
+    }),
+  ); // ROUNDRECT
+  push(
+    er(45, (p) => {
+      rectl(p, 270, 110, 380, 210);
+      p.i32(380).i32(160).i32(325).i32(110);
+    }),
+  ); // ARC
+  push(
+    er(47, (p) => {
+      rectl(p, 270, 110, 380, 210);
+      p.i32(380).i32(160).i32(325).i32(110);
+    }),
+  ); // PIE
+  push(
+    er(46, (p) => {
+      rectl(p, 270, 110, 380, 210);
+      p.i32(380).i32(160).i32(325).i32(110);
+    }),
+  ); // CHORD
 
   // SAVEDC → 世界变换 → 画一个被缩放的矩形 → RESTOREDC
-  push(er(33));                                                         // SAVEDC
+  push(er(33)); // SAVEDC
   push(er(35, (p) => p.f32(0.5).f32(0).f32(0).f32(0.5).f32(10).f32(220))); // SETWORLDTRANSFORM
-  push(er(43, (p) => rectl(p, 0, 0, 200, 100)));                        // RECTANGLE（缩放后）
+  push(er(43, (p) => rectl(p, 0, 0, 200, 100))); // RECTANGLE（缩放后）
   push(er(36, (p) => p.f32(1).f32(0).f32(0).f32(1).f32(20).f32(0).u32(3))); // MODIFYWORLDTRANSFORM RIGHT
   push(er(43, (p) => rectl(p, 0, 0, 100, 60)));
-  push(er(34, (p) => p.i32(-1)));                                       // RESTOREDC
+  push(er(34, (p) => p.i32(-1))); // RESTOREDC
 
   // 路径模式：BEGINPATH … 贝塞尔 … CLOSEFIGURE … ENDPATH … STROKEANDFILLPATH
-  push(er(37, (p) => p.u32(1)));                                        // 重新选中红画刷
-  push(er(59));                                                         // BEGINPATH
-  push(er(27, (p) => p.i32(60).i32(230)));                              // MOVETOEX
-  push(er(54, (p) => p.i32(160).i32(230)));                             // LINETO
-  push(er(88, (p) => {                                                  // POLYBEZIERTO16
-    rectl(p, 160, 230, 260, 290);
-    p.u32(3).i16(200).i16(290).i16(230).i16(200).i16(260).i16(260);
-  }));
-  push(er(61));                                                         // CLOSEFIGURE
-  push(er(60));                                                         // ENDPATH
-  push(er(63));                                                         // STROKEANDFILLPATH
+  push(er(37, (p) => p.u32(1))); // 重新选中红画刷
+  push(er(59)); // BEGINPATH
+  push(er(27, (p) => p.i32(60).i32(230))); // MOVETOEX
+  push(er(54, (p) => p.i32(160).i32(230))); // LINETO
+  push(
+    er(88, (p) => {
+      // POLYBEZIERTO16
+      rectl(p, 160, 230, 260, 290);
+      p.u32(3).i16(200).i16(290).i16(230).i16(200).i16(260).i16(260);
+    }),
+  );
+  push(er(61)); // CLOSEFIGURE
+  push(er(60)); // ENDPATH
+  push(er(63)); // STROKEANDFILLPATH
 
   // 文字：粗体倾斜 + ETO_OPAQUE 背景 + 居中对齐
-  push(er(82, (p) => {                                                  // EXTCREATEFONTINDIRECTW
-    p.u32(3);
-    p.i32(-24).i32(0).i32(0).i32(0).i32(700);
-    p.u8(1).u8(1).u8(0).u8(0).u8(0).u8(0).u8(0).u8(0);
-    p.str16('Georgia', 64);
-  }));
-  push(er(37, (p) => p.u32(3)));                                        // SELECTOBJECT font
-  push(er(24, (p) => p.u32(colorref(10, 90, 160))));                    // SETTEXTCOLOR
-  push(er(25, (p) => p.u32(colorref(250, 240, 200))));                  // SETBKCOLOR
-  push(er(18, (p) => p.u32(2)));                                        // SETBKMODE OPAQUE
-  push(er(22, (p) => p.u32(6)));                                        // SETTEXTALIGN TA_CENTER
-  push(er(84, (p) => {                                                  // EXTTEXTOUTW
-    const text = 'Hello <EMF> & 图元';
-    rectl(p, 200, 250, 400, 290);
-    p.u32(1).f32(1).f32(1);
-    p.i32(300).i32(255);                                                // 参考点
-    p.u32(text.length).u32(76).u32(0x0002);                             // chars / offString / ETO_OPAQUE
-    rectl(p, 200, 250, 400, 290);
-    p.u32(0);                                                           // offDx
-    p.str16(text, text.length * 2);
-  }));
+  push(
+    er(82, (p) => {
+      // EXTCREATEFONTINDIRECTW
+      p.u32(3);
+      p.i32(-24).i32(0).i32(0).i32(0).i32(700);
+      p.u8(1).u8(1).u8(0).u8(0).u8(0).u8(0).u8(0).u8(0);
+      p.str16('Georgia', 64);
+    }),
+  );
+  push(er(37, (p) => p.u32(3))); // SELECTOBJECT font
+  push(er(24, (p) => p.u32(colorref(10, 90, 160)))); // SETTEXTCOLOR
+  push(er(25, (p) => p.u32(colorref(250, 240, 200)))); // SETBKCOLOR
+  push(er(18, (p) => p.u32(2))); // SETBKMODE OPAQUE
+  push(er(22, (p) => p.u32(6))); // SETTEXTALIGN TA_CENTER
+  push(
+    er(84, (p) => {
+      // EXTTEXTOUTW
+      const text = 'Hello <EMF> & 图元';
+      rectl(p, 200, 250, 400, 290);
+      p.u32(1).f32(1).f32(1);
+      p.i32(300).i32(255); // 参考点
+      p.u32(text.length).u32(76).u32(0x0002); // chars / offString / ETO_OPAQUE
+      rectl(p, 200, 250, 400, 290);
+      p.u32(0); // offDx
+      p.str16(text, text.length * 2);
+    }),
+  );
 
   // 位图：STRETCHDIBITS（24 位）与 BITBLT（单色）
-  push(er(81, (p) => {                                                  // STRETCHDIBITS
-    const d = dib24();
-    rectl(p, 20, 240, 60, 280);
-    p.i32(20).i32(240).i32(0).i32(0).i32(2).i32(2);
-    p.u32(80).u32(40).u32(120).u32(d.length - 40);
-    p.u32(0).u32(0x00cc0020);
-    p.i32(40).i32(40);
-    p.raw(d);
-  }));
-  push(er(76, (p) => {                                                  // BITBLT
-    const d = dib1();
-    rectl(p, 340, 240, 390, 280);
-    p.i32(340).i32(240).i32(50).i32(40);
-    p.u32(0x00cc0020).i32(0).i32(0);
-    p.f32(1).f32(0).f32(0).f32(1).f32(0).f32(0);                        // XformSrc
-    p.u32(0).u32(0);
-    p.u32(100).u32(48).u32(148).u32(d.length - 48);
-    p.raw(d);
-  }));
+  push(
+    er(81, (p) => {
+      // STRETCHDIBITS
+      const d = dib24();
+      rectl(p, 20, 240, 60, 280);
+      p.i32(20).i32(240).i32(0).i32(0).i32(2).i32(2);
+      p.u32(80)
+        .u32(40)
+        .u32(120)
+        .u32(d.length - 40);
+      p.u32(0).u32(0x00cc0020);
+      p.i32(40).i32(40);
+      p.raw(d);
+    }),
+  );
+  push(
+    er(76, (p) => {
+      // BITBLT
+      const d = dib1();
+      rectl(p, 340, 240, 390, 280);
+      p.i32(340).i32(240).i32(50).i32(40);
+      p.u32(0x00cc0020).i32(0).i32(0);
+      p.f32(1).f32(0).f32(0).f32(1).f32(0).f32(0); // XformSrc
+      p.u32(0).u32(0);
+      p.u32(100)
+        .u32(48)
+        .u32(148)
+        .u32(d.length - 48);
+      p.raw(d);
+    }),
+  );
 
-  push(er(30, (p) => rectl(p, 0, 0, 400, 300)));                        // INTERSECTCLIPRECT
-  push(er(40, (p) => p.u32(2)));                                        // DELETEOBJECT
+  push(er(30, (p) => rectl(p, 0, 0, 400, 300))); // INTERSECTCLIPRECT
+  push(er(40, (p) => p.u32(2))); // DELETEOBJECT
   return emfFile(recs);
 }
 
@@ -286,76 +401,132 @@ function buildWmf() {
   const recs = [];
   const push = (r) => recs.push(r);
 
-  push(wr(0x0103, (p) => p.u16(8)));                                    // SETMAPMODE MM_ANISOTROPIC
-  push(wr(0x020b, (p) => p.i16(0).i16(0)));                             // SETWINDOWORG (y, x)
-  push(wr(0x020c, (p) => p.i16(3000).i16(4000)));                       // SETWINDOWEXT (y, x)
-  push(wr(0x0106, (p) => p.u16(2)));                                    // SETPOLYFILLMODE WINDING
+  push(wr(0x0103, (p) => p.u16(8))); // SETMAPMODE MM_ANISOTROPIC
+  push(wr(0x020b, (p) => p.i16(0).i16(0))); // SETWINDOWORG (y, x)
+  push(wr(0x020c, (p) => p.i16(3000).i16(4000))); // SETWINDOWEXT (y, x)
+  push(wr(0x0106, (p) => p.u16(2))); // SETPOLYFILLMODE WINDING
 
-  push(wr(0x02fc, (p) => p.u16(0).u32(colorref(30, 160, 80)).u16(0)));  // CREATEBRUSHINDIRECT solid → obj0
-  push(wr(0x02fa, (p) => p.u16(2).i16(20).i16(0).u32(colorref(200, 40, 40)))); // CREATEPENINDIRECT PS_DOT → obj1
-  push(wr(0x012d, (p) => p.u16(0)));                                    // SELECTOBJECT brush
-  push(wr(0x012d, (p) => p.u16(1)));                                    // SELECTOBJECT pen
+  push(
+    wr(0x02fc, (p) =>
+      p
+        .u16(0)
+        .u32(colorref(30, 160, 80))
+        .u16(0),
+    ),
+  ); // CREATEBRUSHINDIRECT solid → obj0
+  push(
+    wr(0x02fa, (p) =>
+      p
+        .u16(2)
+        .i16(20)
+        .i16(0)
+        .u32(colorref(200, 40, 40)),
+    ),
+  ); // CREATEPENINDIRECT PS_DOT → obj1
+  push(wr(0x012d, (p) => p.u16(0))); // SELECTOBJECT brush
+  push(wr(0x012d, (p) => p.u16(1))); // SELECTOBJECT pen
 
-  push(wr(0x0324, (p) => {                                              // POLYGON
-    p.u16(4).i16(200).i16(200).i16(900).i16(200).i16(900).i16(800).i16(200).i16(800);
-  }));
+  push(
+    wr(0x0324, (p) => {
+      // POLYGON
+      p.u16(4).i16(200).i16(200).i16(900).i16(200).i16(900).i16(800).i16(200).i16(800);
+    }),
+  );
 
-  push(wr(0x012d, (p) => p.u16(0x8005)));                               // SELECTOBJECT NULL_BRUSH（库存）
-  push(wr(0x0325, (p) => {                                              // POLYLINE
-    p.u16(4).i16(1100).i16(800).i16(1400).i16(200).i16(1700).i16(800).i16(2000).i16(200);
-  }));
+  push(wr(0x012d, (p) => p.u16(0x8005))); // SELECTOBJECT NULL_BRUSH（库存）
+  push(
+    wr(0x0325, (p) => {
+      // POLYLINE
+      p.u16(4).i16(1100).i16(800).i16(1400).i16(200).i16(1700).i16(800).i16(2000).i16(200);
+    }),
+  );
 
-  push(wr(0x041b, (p) => wrect(p, 2200, 200, 3000, 800)));              // RECTANGLE
-  push(wr(0x0418, (p) => wrect(p, 200, 1000, 1000, 1600)));             // ELLIPSE
-  push(wr(0x061c, (p) => { p.i16(200).i16(200); wrect(p, 1200, 1000, 2000, 1600); })); // ROUNDRECT
-  push(wr(0x081a, (p) => { p.i16(1300).i16(3000).i16(1000).i16(2600); wrect(p, 2200, 1000, 3000, 1600); })); // PIE
-  push(wr(0x0817, (p) => { p.i16(1300).i16(3000).i16(1000).i16(2600); wrect(p, 2200, 1000, 3000, 1600); })); // ARC
-  push(wr(0x0830, (p) => { p.i16(1300).i16(3000).i16(1000).i16(2600); wrect(p, 2200, 1000, 3000, 1600); })); // CHORD
+  push(wr(0x041b, (p) => wrect(p, 2200, 200, 3000, 800))); // RECTANGLE
+  push(wr(0x0418, (p) => wrect(p, 200, 1000, 1000, 1600))); // ELLIPSE
+  push(
+    wr(0x061c, (p) => {
+      p.i16(200).i16(200);
+      wrect(p, 1200, 1000, 2000, 1600);
+    }),
+  ); // ROUNDRECT
+  push(
+    wr(0x081a, (p) => {
+      p.i16(1300).i16(3000).i16(1000).i16(2600);
+      wrect(p, 2200, 1000, 3000, 1600);
+    }),
+  ); // PIE
+  push(
+    wr(0x0817, (p) => {
+      p.i16(1300).i16(3000).i16(1000).i16(2600);
+      wrect(p, 2200, 1000, 3000, 1600);
+    }),
+  ); // ARC
+  push(
+    wr(0x0830, (p) => {
+      p.i16(1300).i16(3000).i16(1000).i16(2600);
+      wrect(p, 2200, 1000, 3000, 1600);
+    }),
+  ); // CHORD
 
-  push(wr(0x0214, (p) => p.i16(1800).i16(200)));                        // MOVETO (y, x)
-  push(wr(0x0213, (p) => p.i16(1900).i16(1200)));                       // LINETO
+  push(wr(0x0214, (p) => p.i16(1800).i16(200))); // MOVETO (y, x)
+  push(wr(0x0213, (p) => p.i16(1900).i16(1200))); // LINETO
 
   // SAVEDC → 改窗口原点 → 画矩形 → RESTOREDC
-  push(wr(0x001e));                                                     // SAVEDC
-  push(wr(0x020b, (p) => p.i16(-400).i16(-200)));                       // SETWINDOWORG
-  push(wr(0x041b, (p) => wrect(p, 2000, 200, 2400, 800)));              // RECTANGLE（被平移）
-  push(wr(0x0127, (p) => p.i16(-1)));                                   // RESTOREDC
-  push(wr(0x041b, (p) => wrect(p, 2000, 200, 2400, 800)));              // 同样的矩形，未平移
+  push(wr(0x001e)); // SAVEDC
+  push(wr(0x020b, (p) => p.i16(-400).i16(-200))); // SETWINDOWORG
+  push(wr(0x041b, (p) => wrect(p, 2000, 200, 2400, 800))); // RECTANGLE（被平移）
+  push(wr(0x0127, (p) => p.i16(-1))); // RESTOREDC
+  push(wr(0x041b, (p) => wrect(p, 2000, 200, 2400, 800))); // 同样的矩形，未平移
 
   // 文字
-  push(wr(0x02fb, (p) => {                                              // CREATEFONTINDIRECT → obj2
-    p.i16(-140).i16(0).i16(0).i16(0).i16(700);
-    p.u8(0).u8(1).u8(0).u8(0).u8(0).u8(0).u8(0).u8(0);
-    p.str8('Verdana', 32);
-  }));
-  push(wr(0x012d, (p) => p.u16(2)));                                    // SELECTOBJECT font
-  push(wr(0x0209, (p) => p.u32(colorref(120, 20, 160))));               // SETTEXTCOLOR
-  push(wr(0x0201, (p) => p.u32(colorref(245, 235, 250))));              // SETBKCOLOR
-  push(wr(0x0102, (p) => p.u16(2)));                                    // SETBKMODE OPAQUE
-  push(wr(0x012e, (p) => p.u16(0)));                                    // SETTEXTALIGN TA_LEFT|TA_TOP
-  push(wr(0x0521, (p) => { const s = 'WMF TextOut'; p.u16(s.length).str8(s, s.length + (s.length & 1)).i16(2200).i16(300); }));
-  push(wr(0x0a32, (p) => {                                              // EXTTEXTOUT with ETO_OPAQUE + dx
-    const s = 'Ext & <out>';
-    p.i16(2400).i16(300);                                               // y, x
-    p.u16(s.length).u16(0x0002);
-    p.i16(300).i16(2400).i16(1600).i16(2560);                           // rect
-    p.str8(s, s.length + (s.length & 1));
-    for (let i = 0; i < s.length; i++) p.i16(90);                       // dx
-  }));
+  push(
+    wr(0x02fb, (p) => {
+      // CREATEFONTINDIRECT → obj2
+      p.i16(-140).i16(0).i16(0).i16(0).i16(700);
+      p.u8(0).u8(1).u8(0).u8(0).u8(0).u8(0).u8(0).u8(0);
+      p.str8('Verdana', 32);
+    }),
+  );
+  push(wr(0x012d, (p) => p.u16(2))); // SELECTOBJECT font
+  push(wr(0x0209, (p) => p.u32(colorref(120, 20, 160)))); // SETTEXTCOLOR
+  push(wr(0x0201, (p) => p.u32(colorref(245, 235, 250)))); // SETBKCOLOR
+  push(wr(0x0102, (p) => p.u16(2))); // SETBKMODE OPAQUE
+  push(wr(0x012e, (p) => p.u16(0))); // SETTEXTALIGN TA_LEFT|TA_TOP
+  push(
+    wr(0x0521, (p) => {
+      const s = 'WMF TextOut';
+      p.u16(s.length)
+        .str8(s, s.length + (s.length & 1))
+        .i16(2200)
+        .i16(300);
+    }),
+  );
+  push(
+    wr(0x0a32, (p) => {
+      // EXTTEXTOUT with ETO_OPAQUE + dx
+      const s = 'Ext & <out>';
+      p.i16(2400).i16(300); // y, x
+      p.u16(s.length).u16(0x0002);
+      p.i16(300).i16(2400).i16(1600).i16(2560); // rect
+      p.str8(s, s.length + (s.length & 1));
+      for (let i = 0; i < s.length; i++) p.i16(90); // dx
+    }),
+  );
 
   // 位图：STRETCHDIB（8 位调色板）
-  push(wr(0x0f43, (p) => {
-    p.u32(0x00cc0020).u16(0);
-    p.i16(4).i16(4).i16(0).i16(0);
-    p.i16(400).i16(400).i16(2700).i16(3400);                            // dh, dw, dy, dx
-    p.raw(dib8());
-  }));
+  push(
+    wr(0x0f43, (p) => {
+      p.u32(0x00cc0020).u16(0);
+      p.i16(4).i16(4).i16(0).i16(0);
+      p.i16(400).i16(400).i16(2700).i16(3400); // dh, dw, dy, dx
+      p.raw(dib8());
+    }),
+  );
 
-  push(wr(0x0416, (p) => wrect(p, 0, 0, 4000, 3000)));                  // INTERSECTCLIPRECT
-  push(wr(0x01f0, (p) => p.u16(1)));                                    // DELETEOBJECT pen
+  push(wr(0x0416, (p) => wrect(p, 0, 0, 4000, 3000))); // INTERSECTCLIPRECT
+  push(wr(0x01f0, (p) => p.u16(1))); // DELETEOBJECT pen
   return wmfFile(recs);
 }
-
 
 // ---------------- PICT 构造 ----------------
 
@@ -367,66 +538,126 @@ function buildWmf() {
 function buildPict() {
   const b = [];
   const u8 = (v) => b.push(v & 0xff);
-  const u16 = (v) => { u8(v >> 8); u8(v); };
+  const u16 = (v) => {
+    u8(v >> 8);
+    u8(v);
+  };
   const i16 = (v) => u16(v < 0 ? v + 0x10000 : v);
-  const rect = (t, l, bo, r) => { i16(t); i16(l); i16(bo); i16(r); };
-  const rgb6 = (r, g, gb) => { u16(r * 257); u16(g * 257); u16(gb * 257); };
-  const align = () => { if ((b.length - 14) % 2) u8(0); };
-  const op = (o) => { align(); u16(o); };
+  const rect = (t, l, bo, r) => {
+    i16(t);
+    i16(l);
+    i16(bo);
+    i16(r);
+  };
+  const rgb6 = (r, g, gb) => {
+    u16(r * 257);
+    u16(g * 257);
+    u16(gb * 257);
+  };
+  const align = () => {
+    if ((b.length - 14) % 2) u8(0);
+  };
+  const op = (o) => {
+    align();
+    u16(o);
+  };
 
-  u16(0);                       // picSize（v2 里不再用）
-  rect(0, 0, 200, 300);         // picFrame
-  u16(0x0011); u16(0x02ff);     // VersionOp + version 2
-  op(0x0c00); for (let i = 0; i < 24; i++) u8(0);   // HeaderOp
+  u16(0); // picSize（v2 里不再用）
+  rect(0, 0, 200, 300); // picFrame
+  u16(0x0011);
+  u16(0x02ff); // VersionOp + version 2
+  op(0x0c00);
+  for (let i = 0; i < 24; i++) u8(0); // HeaderOp
 
-  op(0x0001); u16(10); rect(0, 0, 200, 300);        // Clip
+  op(0x0001);
+  u16(10);
+  rect(0, 0, 200, 300); // Clip
 
-  op(0x001a); rgb6(0xdc, 0x14, 0x3c);               // RGBFgCol
-  op(0x0030); rect(10, 10, 60, 120);                // frameRect
-  op(0x001a); rgb6(0x14, 0x3c, 0xdc);
-  op(0x0031); rect(70, 10, 120, 120);               // paintRect
-  op(0x0050); rect(10, 140, 60, 250);               // frameOval
-  op(0x0051); rect(70, 140, 120, 250);              // paintOval
-  op(0x000b); i16(16); i16(16);                     // OvSize
-  op(0x0040); rect(130, 10, 180, 120);              // frameRoundRect
-  op(0x0020); i16(130); i16(140); i16(180); i16(280); // Line
+  op(0x001a);
+  rgb6(0xdc, 0x14, 0x3c); // RGBFgCol
+  op(0x0030);
+  rect(10, 10, 60, 120); // frameRect
+  op(0x001a);
+  rgb6(0x14, 0x3c, 0xdc);
+  op(0x0031);
+  rect(70, 10, 120, 120); // paintRect
+  op(0x0050);
+  rect(10, 140, 60, 250); // frameOval
+  op(0x0051);
+  rect(70, 140, 120, 250); // paintOval
+  op(0x000b);
+  i16(16);
+  i16(16); // OvSize
+  op(0x0040);
+  rect(130, 10, 180, 120); // frameRoundRect
+  op(0x0020);
+  i16(130);
+  i16(140);
+  i16(180);
+  i16(280); // Line
 
   // 多边形：size(u16) + bbox + 顶点
   op(0x0070);
-  const polyPts = [[130, 140], [150, 200], [175, 150]];
-  u16(2 + 8 + polyPts.length * 4); rect(130, 140, 180, 210);
-  for (const [y, x] of polyPts) { i16(y); i16(x); }
+  const polyPts = [
+    [130, 140],
+    [150, 200],
+    [175, 150],
+  ];
+  u16(2 + 8 + polyPts.length * 4);
+  rect(130, 140, 180, 210);
+  for (const [y, x] of polyPts) {
+    i16(y);
+    i16(x);
+  }
 
-  op(0x000d); u16(18);                              // TxSize
-  op(0x001a); rgb6(0x0a, 0x5a, 0xa0);
-  op(0x0028); i16(195); i16(10);                    // LongText @ (10,195)
+  op(0x000d);
+  u16(18); // TxSize
+  op(0x001a);
+  rgb6(0x0a, 0x5a, 0xa0);
+  op(0x0028);
+  i16(195);
+  i16(10); // LongText @ (10,195)
   const txt = 'PICT <&> 图元';
   const enc = Buffer.from(txt, 'latin1');
-  u8(enc.length); for (const c of enc) u8(c);
+  u8(enc.length);
+  for (const c of enc) u8(c);
 
   // 8 位索引色 PackBitsRect：4×2 棋盘
   op(0x0098);
-  const bw = 4, bh = 2, rowBytes = 8;
+  const bw = 4,
+    bh = 2,
+    rowBytes = 8;
   u16(0x8000 | rowBytes);
-  rect(0, 0, bh, bw);                               // bounds
-  u16(0); u16(0); for (let i = 0; i < 4; i++) u8(0); // pmVersion packType packSize
-  for (let i = 0; i < 8; i++) u8(0);                // hRes/vRes
-  u16(0); u16(8); u16(1); u16(8);                   // pixelType pixelSize cmpCount cmpSize
-  for (let i = 0; i < 4; i++) u8(0);                // planeBytes
-  for (let i = 0; i < 8; i++) u8(0);                // pmTable/pmReserved
-  for (let i = 0; i < 4; i++) u8(0);                // ctSeed
-  u16(0); u16(1);                                   // ctFlags, ctSize = 索引数-1
-  u16(0); rgb6(0xff, 0x00, 0x00);                   // 索引 0 红
-  u16(1); rgb6(0x00, 0x00, 0xff);                   // 索引 1 蓝
-  rect(0, 0, bh, bw); rect(150, 220, 190, 290);     // srcRect / dstRect
-  u16(0);                                           // mode
+  rect(0, 0, bh, bw); // bounds
+  u16(0);
+  u16(0);
+  for (let i = 0; i < 4; i++) u8(0); // pmVersion packType packSize
+  for (let i = 0; i < 8; i++) u8(0); // hRes/vRes
+  u16(0);
+  u16(8);
+  u16(1);
+  u16(8); // pixelType pixelSize cmpCount cmpSize
+  for (let i = 0; i < 4; i++) u8(0); // planeBytes
+  for (let i = 0; i < 8; i++) u8(0); // pmTable/pmReserved
+  for (let i = 0; i < 4; i++) u8(0); // ctSeed
+  u16(0);
+  u16(1); // ctFlags, ctSize = 索引数-1
+  u16(0);
+  rgb6(0xff, 0x00, 0x00); // 索引 0 红
+  u16(1);
+  rgb6(0x00, 0x00, 0xff); // 索引 1 蓝
+  rect(0, 0, bh, bw);
+  rect(150, 220, 190, 290); // srcRect / dstRect
+  u16(0); // mode
   // rowBytes < 8 时不压缩；这里 = 8 走 PackBits，且行长 ≤250 用 u8 长度
   for (let y = 0; y < bh; y++) {
     const row = [0, 1, 0, 1, 0, 1, 0, 1].map((v) => (v + y) & 1);
-    u8(row.length + 1); u8(row.length - 1); for (const v of row) u8(v);
+    u8(row.length + 1);
+    u8(row.length - 1);
+    for (const v of row) u8(v);
   }
 
-  op(0x00ff);                                       // OpEndPic
+  op(0x00ff); // OpEndPic
   return new Uint8Array(b);
 }
 
@@ -471,20 +702,39 @@ function sane(label, svg) {
 
 group('构建');
 const bundle = join(outDir, 'image-bundle.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'packages/core/src/image/index.ts'),
-  '--bundle', '--format=esm', '--platform=node', '--log-level=warning',
-  `--outfile=${bundle}`,
-], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/core/src/image/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=node',
+    '--log-level=warning',
+    `--outfile=${bundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 console.log('esbuild 打包完成 →', bundle);
 
 const { metafileToSvg, detectMetafile, metafileToDataUri } = await import(`file://${bundle}`);
 
-// gdi.ts 单独打包：dibToDataUri 不从 image/index.ts 导出，但测 RLE 需要直接调它
-const gdiBundle = join(outDir, 'gdi-bundle.mjs');
-execFileSync('npx', ['esbuild', join(root, 'packages/core/src/image/gdi.ts'), '--bundle', '--format=esm',
-  '--platform=node', '--log-level=warning', `--outfile=${gdiBundle}`], { cwd: root, stdio: 'inherit' });
-const { dibToDataUri } = await import(`file://${gdiBundle}`);
+// dib.ts 单独打包：dibToDataUri 不从 image/index.ts 导出，但测 RLE 需要直接调它
+const dibBundle = join(outDir, 'dib-bundle.mjs');
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/core/src/image/dib.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=node',
+    '--log-level=warning',
+    `--outfile=${dibBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
+const { dibToDataUri } = await import(`file://${dibBundle}`);
 
 // ---------------- 用例 1：合成 EMF ----------------
 
@@ -514,19 +764,24 @@ if (sane('EMF', emfSvg)) {
   check('EMF：椭圆用贝塞尔近似（4 段 C）', (emfSvg.match(/C/g) || []).length >= 8);
 
   // 世界变换：SETWORLDTRANSFORM 0.5 缩放 + 平移 (10,220) → 矩形应落在 (10,220)-(110,270)
-  check('EMF：SETWORLDTRANSFORM 生效', /<rect x="10" y="220" width="100" height="50"/.test(emfSvg),
-    emfSvg.match(/<rect[^>]*y="2[0-9]{2}"[^>]*>/)?.[0] ?? '未找到');
+  check(
+    'EMF：SETWORLDTRANSFORM 生效',
+    /<rect x="10" y="220" width="100" height="50"/.test(emfSvg),
+    emfSvg.match(/<rect[^>]*y="2[0-9]{2}"[^>]*>/)?.[0] ?? '未找到',
+  );
   // MODIFYWORLDTRANSFORM RIGHTMULTIPLY = 先当前变换再平移 → (0,0) → (10,220) → (30,220)
-  check('EMF：MODIFYWORLDTRANSFORM 生效', /<rect x="30" y="220" width="50" height="30"/.test(emfSvg),
-    emfSvg.match(/<rect x="\d+" y="220"[^>]*>/g)?.join(' ') ?? '未找到');
+  check(
+    'EMF：MODIFYWORLDTRANSFORM 生效',
+    /<rect x="30" y="220" width="50" height="30"/.test(emfSvg),
+    emfSvg.match(/<rect x="\d+" y="220"[^>]*>/g)?.join(' ') ?? '未找到',
+  );
   // RESTOREDC 之后回到 1:1，路径模式的起点应是 (60,230) 原值
   check('EMF：RESTOREDC 还原世界变换', emfSvg.includes('M60 230'));
 
   // viewBox 与默认尺寸
   check('EMF：viewBox 覆盖 rclBounds', /viewBox="0 0 400 300"/.test(emfSvg), emfSvg.slice(0, 220));
   const dim = emfSvg.match(/width="([\d.]+)" height="([\d.]+)"/);
-  check('EMF：默认宽高取 rclFrame（≈400x300）',
-    !!dim && Math.abs(+dim[1] - 400) < 1 && Math.abs(+dim[2] - 300) < 1, dim?.[0] ?? '未找到');
+  check('EMF：默认宽高取 rclFrame（≈400x300）', !!dim && Math.abs(+dim[1] - 400) < 1 && Math.abs(+dim[2] - 300) < 1, dim?.[0] ?? '未找到');
 }
 
 const emfSized = metafileToSvg(emfBytes, { width: 800, height: 600 });
@@ -564,8 +819,11 @@ if (sane('WMF', wmfSvg)) {
   // POLYGON 是 200,200 → 900,800 的矩形轮廓
   check('WMF：POLYGON 坐标正确', wmfSvg.includes('M200 200L900 200L900 800L200 800Z'));
   // SAVEDC 段内窗口原点为 (-200,-400)，矩形应整体偏移 +200/+400
-  check('WMF：SAVEDC 内窗口平移生效', /<rect x="2200" y="600" width="400" height="600"/.test(wmfSvg),
-    wmfSvg.match(/<rect x="2[0-9]{3}" y="[0-9]+"[^>]*>/g)?.join(' ') ?? '');
+  check(
+    'WMF：SAVEDC 内窗口平移生效',
+    /<rect x="2200" y="600" width="400" height="600"/.test(wmfSvg),
+    wmfSvg.match(/<rect x="2[0-9]{3}" y="[0-9]+"[^>]*>/g)?.join(' ') ?? '',
+  );
   // RESTOREDC 之后同一条 RECTANGLE 回到原位
   check('WMF：RESTOREDC 还原窗口原点', /<rect x="2000" y="200" width="400" height="600"/.test(wmfSvg));
   // 库存对象索引 0x8005 = NULL_BRUSH，不应被当成普通槽位
@@ -581,12 +839,26 @@ check('WMF：只给 width 时高度回落默认', /width="1024" height="288"/.te
 group('RLE 压缩位图');
 {
   // 4 色调色板（DIB 调色板是 BGRA 序）
-  const PAL = [[0, 0, 0, 0], [0, 0, 255, 0], [0, 255, 0, 0], [255, 0, 0, 0]];
+  const PAL = [
+    [0, 0, 0, 0],
+    [0, 0, 255, 0],
+    [0, 255, 0, 0],
+    [255, 0, 0, 0],
+  ];
   // 宽度取 5 而非 4：绝对模式的数据字节数变成奇数，才能验到「按字对齐」那一步。
   // 末行两个索引交替：RLE4 编码模式要求两个半字节轮换，全同值的行验不出来。
-  const W = 5, H = 4;
-  const ROWS = [[0, 1, 2, 3, 1], [1, 1, 1, 1, 1], [3, 2, 1, 0, 2], [1, 2, 1, 2, 1]];
-  const pad = (b, len) => { for (let i = 0; i < len; i++) b.raw([0]); return b; };
+  const W = 5,
+    H = 4;
+  const ROWS = [
+    [0, 1, 2, 3, 1],
+    [1, 1, 1, 1, 1],
+    [3, 2, 1, 0, 2],
+    [1, 2, 1, 2, 1],
+  ];
+  const pad = (b, len) => {
+    for (let i = 0; i < len; i++) b.raw([0]);
+    return b;
+  };
   const same = (row) => row.every((v) => v === row[0]);
   const alternating = (row) => row.every((v, i) => v === row[i % 2]);
 
@@ -605,17 +877,16 @@ group('RLE 压缩位图');
     for (const row of ROWS) {
       if (same(row)) b.raw([row.length, row[0]]);
       else pad(b.raw([0, row.length]).raw(row), row.length & 1);
-      b.raw([0, 0]);                                                   // 行结束
+      b.raw([0, 0]); // 行结束
     }
-    b.raw([0, 1]);                                                     // 图结束
+    b.raw([0, 1]); // 图结束
     return b.bytes();
   };
 
   const a8 = dibToDataUri(raw8(), 0, 40, 40 + 16, 8 * H);
   const c8 = dibToDataUri(rle8(), 0, 40, 40 + 16, 1e9);
   if (check('未压缩 8 位可解码', !!a8) && check('BI_RLE8 可解码', !!c8)) {
-    check('RLE8 与未压缩产出逐字节相同', a8 === c8,
-      `raw ${String(a8).slice(0, 46)}… / rle ${String(c8).slice(0, 46)}…`);
+    check('RLE8 与未压缩产出逐字节相同', a8 === c8, `raw ${String(a8).slice(0, 46)}… / rle ${String(c8).slice(0, 46)}…`);
   }
 
   /** 5 个 4 位索引打包成 3 字节 */
@@ -652,8 +923,7 @@ group('RLE 压缩位图');
   const a4 = dibToDataUri(raw4(), 0, 40, 40 + 16, 4 * H);
   const c4 = dibToDataUri(rle4(), 0, 40, 40 + 16, 1e9);
   if (check('未压缩 4 位可解码', !!a4) && check('BI_RLE4 可解码', !!c4)) {
-    check('RLE4 与未压缩产出逐字节相同', a4 === c4,
-      `raw ${String(a4).slice(0, 46)}… / rle ${String(c4).slice(0, 46)}…`);
+    check('RLE4 与未压缩产出逐字节相同', a4 === c4, `raw ${String(a4).slice(0, 46)}… / rle ${String(c4).slice(0, 46)}…`);
   }
 
   // 位深与压缩类型不匹配必须拒绝（RLE8 只配 8 位，RLE4 只配 4 位）
@@ -662,38 +932,71 @@ group('RLE 压缩位图');
 
   // 截断的 RLE 数据不能挂死
   let threw = false;
-  try { dibToDataUri(rle8().slice(0, 40 + 16 + 3), 0, 40, 40 + 16, 1e9); } catch { threw = true; }
+  try {
+    dibToDataUri(rle8().slice(0, 40 + 16 + 3), 0, 40, 40 + 16, 1e9);
+  } catch {
+    threw = true;
+  }
   check('截断的 RLE 数据不抛异常', !threw);
 }
 
 group('EMF 区域裁剪');
 {
   // EMR_EXTSELECTCLIPRGN(75)：cbRgnData + iMode + RGNDATAHEADER + nCount×RECTL
-  const rgn = (mode, rects) => er(75, (p) => {
-    const hdrAndRects = 32 + rects.length * 16;
-    p.u32(hdrAndRects).u32(mode);
-    p.u32(32).u32(1).u32(rects.length).u32(rects.length * 16);   // dwSize/iType/nCount/nRgnSize
-    // rcBound：所有矩形的包围盒
-    rectl(p, Math.min(...rects.map((r2) => r2[0])), Math.min(...rects.map((r2) => r2[1])),
-      Math.max(...rects.map((r2) => r2[2])), Math.max(...rects.map((r2) => r2[3])));
-    for (const [l, t, r2, b] of rects) rectl(p, l, t, r2, b);
-  });
+  const rgn = (mode, rects) =>
+    er(75, (p) => {
+      const hdrAndRects = 32 + rects.length * 16;
+      p.u32(hdrAndRects).u32(mode);
+      p.u32(32)
+        .u32(1)
+        .u32(rects.length)
+        .u32(rects.length * 16); // dwSize/iType/nCount/nRgnSize
+      // rcBound：所有矩形的包围盒
+      rectl(
+        p,
+        Math.min(...rects.map((r2) => r2[0])),
+        Math.min(...rects.map((r2) => r2[1])),
+        Math.max(...rects.map((r2) => r2[2])),
+        Math.max(...rects.map((r2) => r2[3])),
+      );
+      for (const [l, t, r2, b] of rects) rectl(p, l, t, r2, b);
+    });
   /** 一个覆盖整幅画面的实心矩形，用来观察被裁掉多少 */
-  const bigRect = er(43, (p) => { rectl(p, 0, 0, 400, 300); });   // RECTANGLE
+  const bigRect = er(43, (p) => {
+    rectl(p, 0, 0, 400, 300);
+  }); // RECTANGLE
 
   const build = (records) => buildEmfWith(records);
 
   const noClip = metafileToSvg(build([bigRect]));
   const clipped = metafileToSvg(build([rgn(5, [[20, 20, 120, 120]]), bigRect]));
-  const twoRects = metafileToSvg(build([rgn(5, [[20, 20, 120, 120], [200, 40, 300, 140]]), bigRect]));
-  const cleared = metafileToSvg(build([rgn(5, [[20, 20, 120, 120]]), er(75, (p) => { p.u32(0).u32(5); }), bigRect]));
+  const twoRects = metafileToSvg(
+    build([
+      rgn(5, [
+        [20, 20, 120, 120],
+        [200, 40, 300, 140],
+      ]),
+      bigRect,
+    ]),
+  );
+  const cleared = metafileToSvg(
+    build([
+      rgn(5, [[20, 20, 120, 120]]),
+      er(75, (p) => {
+        p.u32(0).u32(5);
+      }),
+      bigRect,
+    ]),
+  );
 
   check('无裁剪时矩形不带 clip-path', !/clip-path="url\(#/.test(noClip ?? ''));
   check('RGN_COPY 单矩形 → 生成 clipPath', /<clipPath id="[^"]*"><rect /.test(clipped ?? ''), (clipped ?? '').slice(0, 160));
   check('矩形被裁剪引用', /<rect[^>]*clip-path="url\(#/.test(clipped ?? ''));
-  check('多矩形区域 → clipPath 里两个 rect',
+  check(
+    '多矩形区域 → clipPath 里两个 rect',
     ((twoRects ?? '').match(/<clipPath[^>]*>(<rect[^>]*\/>){2}<\/clipPath>/) ?? []).length > 0,
-    ((twoRects ?? '').match(/<clipPath[^>]*>[\s\S]{0,140}/) ?? [''])[0]);
+    ((twoRects ?? '').match(/<clipPath[^>]*>[\s\S]{0,140}/) ?? [''])[0],
+  );
   check('cbRgnData=0 且 RGN_COPY → 清除裁剪', !/clip-path="url\(#/.test(cleared ?? ''));
 
   // OR / XOR / DIFF 需要区域布尔运算，SVG 裁剪表达不了；宁可不裁也别裁错
@@ -711,7 +1014,11 @@ const cases = [
 for (const [name, b] of cases) {
   let r;
   let threw = false;
-  try { r = metafileToSvg(b); } catch { threw = true; }
+  try {
+    r = metafileToSvg(b);
+  } catch {
+    threw = true;
+  }
   check(`非图元文件「${name}」不抛异常且返回 null`, !threw && r === null);
   check(`detectMetafile「${name}」→ null`, detectMetafile(b) === null);
 }
@@ -725,7 +1032,9 @@ for (const src of [emfBytes, wmfBytes]) {
       const r = metafileToSvg(src.subarray(0, len));
       if (r === null || (typeof r === 'string' && !/NaN|undefined/.test(r) && xmlError(r) === null)) truncOk++;
       else truncThrew++;
-    } catch { truncThrew++; }
+    } catch {
+      truncThrew++;
+    }
   }
 }
 check('截断样本全部安全（无异常 / 无 NaN / XML 良构）', truncThrew === 0, `失败 ${truncThrew} / 通过 ${truncOk}`);
@@ -741,7 +1050,9 @@ for (let i = 0; i < 400; i++) {
   try {
     const r = metafileToSvg(b);
     if (r !== null && (/NaN|undefined/.test(r) || xmlError(r) !== null)) fuzzBad++;
-  } catch { fuzzBad++; }
+  } catch {
+    fuzzBad++;
+  }
 }
 check('随机破坏 400 例全部安全', fuzzBad === 0, `异常/脏输出 ${fuzzBad} 例`);
 
@@ -757,8 +1068,10 @@ function convert(fmt) {
   if (!SOFFICE || !existsSync(srcPptx)) return null;
   const tmp = join(outDir, fmt);
   mkdirSync(tmp, { recursive: true });
-  execFileSync(SOFFICE, ['--headless', '--norestore', '--convert-to', fmt, '--outdir', tmp, srcPptx],
-    { stdio: 'ignore', timeout: 300_000 });
+  execFileSync(SOFFICE, ['--headless', '--norestore', '--convert-to', fmt, '--outdir', tmp, srcPptx], {
+    stdio: 'ignore',
+    timeout: 300_000,
+  });
   const hit = readdirSync(tmp).find((f) => f.endsWith(`.${fmt}`));
   if (!hit) return null;
   renameSync(join(tmp, hit), target);
@@ -768,10 +1081,20 @@ function convert(fmt) {
 if (!SOFFICE) {
   console.log('  未安装 LibreOffice，跳过真实样本（不计入失败）');
 } else {
-  for (const [fmt, kind] of [['emf', 'emf'], ['wmf', 'wmf']]) {
+  for (const [fmt, kind] of [
+    ['emf', 'emf'],
+    ['wmf', 'wmf'],
+  ]) {
     let file = null;
-    try { file = convert(fmt); } catch (e) { console.log(`  ${fmt} 转换失败：${e.message.slice(0, 120)}`); }
-    if (!file) { console.log(`  ${fmt} 样本不可用，跳过`); continue; }
+    try {
+      file = convert(fmt);
+    } catch (e) {
+      console.log(`  ${fmt} 转换失败：${e.message.slice(0, 120)}`);
+    }
+    if (!file) {
+      console.log(`  ${fmt} 样本不可用，跳过`);
+      continue;
+    }
     const bytes = new Uint8Array(readFileSync(file));
     check(`真实 ${fmt}：detectMetafile → ${kind}`, detectMetafile(bytes) === kind, String(detectMetafile(bytes)));
 
@@ -788,8 +1111,10 @@ if (!SOFFICE) {
     check(`真实 ${fmt}：解出文本`, texts > 0, `text=${texts}`);
     check(`真实 ${fmt}：输出尺寸为请求值`, /width="1280" height="720"/.test(svg));
     check(`真实 ${fmt}：坐标落在 viewBox 内`, coordsInRange(svg), '存在明显越界坐标');
-    console.log(`  ${fmt}: ${(bytes.length / 1024).toFixed(0)}KB → ${(svg.length / 1024).toFixed(0)}KB SVG，` +
-      `path=${paths} rect=${rects} text=${texts} image=${countTag(svg, 'image')}，${ms}ms`);
+    console.log(
+      `  ${fmt}: ${(bytes.length / 1024).toFixed(0)}KB → ${(svg.length / 1024).toFixed(0)}KB SVG，`
+        + `path=${paths} rect=${rects} text=${texts} image=${countTag(svg, 'image')}，${ms}ms`,
+    );
   }
 }
 
@@ -809,7 +1134,6 @@ function coordsInRange(svg) {
   return outliers / Math.max(1, nums.length) < 0.02;
 }
 
-
 // ---------------- 用例：合成 PICT ----------------
 
 group('合成 PICT');
@@ -828,8 +1152,7 @@ if (sane('PICT', pictSvg)) {
   check('PICT：paint 动作用前景色 #143cdc', pictSvg.includes('#143cdc'));
   check('PICT：描边色 #dc143c', pictSvg.includes('#dc143c'));
   check('PICT：文字色 #0a5aa0', pictSvg.includes('fill="#0a5aa0"'));
-  check('PICT：PackBits 位图 → PNG data URI',
-    /xlink:href="data:image\/png;base64,[A-Za-z0-9+/=]{20,}"/.test(pictSvg));
+  check('PICT：PackBits 位图 → PNG data URI', /xlink:href="data:image\/png;base64,[A-Za-z0-9+/=]{20,}"/.test(pictSvg));
   check('PICT：椭圆用贝塞尔近似', (pictSvg.match(/C/g) || []).length >= 8);
   // 画布尺寸取自 picFrame
   check('PICT：viewBox 取自 picFrame', /viewBox="0 0 300 200"/.test(pictSvg), (pictSvg.match(/viewBox="[^"]*"/) || [])[0]);
@@ -838,7 +1161,11 @@ if (sane('PICT', pictSvg)) {
 // 大端读错就会把长度读成天文数字，整条流当场错位——这是最容易犯的错
 {
   const swapped = pictBytes.slice();
-  for (let i = 14; i + 1 < swapped.length; i += 2) { const t = swapped[i]; swapped[i] = swapped[i + 1]; swapped[i + 1] = t; }
+  for (let i = 14; i + 1 < swapped.length; i += 2) {
+    const t = swapped[i];
+    swapped[i] = swapped[i + 1];
+    swapped[i + 1] = t;
+  }
   const svg = metafileToSvg(swapped);
   check('PICT：字节序打乱后不产生脏路径', svg === null || !/NaN|Infinity/.test(svg.replace(/data:[^"]*/g, 'd')));
 }

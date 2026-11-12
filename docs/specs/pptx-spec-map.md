@@ -51,7 +51,8 @@ flowchart LR
 | OPC 包读取、内容类型、关系 | Part 2 | `pptx/package-reader.ts` | `edit-core/opc/`（补丁引擎）、`save/` |
 | 演示结构（sldIdLst、sldSz、分节） | Part 1 §19 | `pptx/parser.ts`、`sections.ts` | `edit-core/sections.ts`、`slide-size.ts` |
 | 母版 / 版式 / 占位符继承链 | §19（sldMaster / sldLayout / ph） | `slide-inheritance.ts`、`layout-catalog.ts`、`layout-reparse.ts` | `edit-core/layout.ts`、`master.ts`、设计画布 |
-| 形状树（sp / pic / graphicFrame / grpSp / cxnSp） | §19 spTree | `pptx/parser.ts` | `types.ts` → `render/svg.ts` |
+| 形状树（sp / pic / grpSp / cxnSp / contentPart） | §19 spTree | `pptx/shapes.ts`；变换、填充、描边与样式引用在 `pptx/shape-props.ts` | `types.ts` → `render/svg.ts` |
+| graphicFrame（表格 / 图表 / SmartArt / OLE 分派） | §19 graphicFrame | `pptx/graphic-frame.ts` | `types.ts` → `render/svg.ts` |
 | 预设几何（prstGeom + avLst）与自定义几何（custGeom） | §20–21 DrawingML 几何 | `pptx/geometry.ts`（OOXML 读取） | `geometry/`（187 预设求值，零依赖）、`edit-core/preset-geometry.ts` |
 | 填充 / 渐变 / 图案 / 主题色变换（shade/tint） | DrawingML 填充 | `pptx/color.ts` | `render/fill.ts`（线性 RGB 变换） |
 | 效果（阴影 / 发光 / 柔化 / 倒影） | DrawingML 效果 | `pptx/effects.ts` | `render/effect-svg.ts`、`three-d/` |
@@ -61,13 +62,13 @@ flowchart LR
 | 经典图表（c:chartSpace） | DrawingML Charts | `chart/`（hook 注入的第四条链路） | `edit-core/chart/`、`chart-design/`、`chart-shared/` |
 | 现代图表（cx:chartSpace） | **[MS-ODRAWXML]** | `chart-ex/`、`chart-ex.ts`（hook 注入） | `edit-core/chart-ex/` |
 | SmartArt / diagram | DrawingML Diagram | `pptx/diagram.ts` | `edit-core/smartart/` |
-| 媒体（视频 / 音频 / 海报） | §19 + MS-ODRAWXML media 扩展 | `pptx/parser.ts` 媒体关系 | `edit-core/media/`、`viewer-core/video/` |
+| 媒体（视频 / 音频 / 海报） | §19 + MS-ODRAWXML media 扩展 | `pptx/shapes.ts` 的 `parseMedia` | `edit-core/media/`、`viewer-core/video/` |
 | 切换（p:transition）与动画（p:timing） | §19 | `transition.ts`、`animation.ts`、`animation-timing.ts` | `viewer-core/playback.ts`、`edit-core/slide-animation.ts` |
 | 备注（notesSlide / notesMaster） | §19 | `pptx/parser.ts` | `edit-core/notes-part.ts`、`slide-notes.ts` |
 | OMML 数学公式（m: 命名空间） | Part 1 OMML 章节 | `pptx/omml.ts` | `render/math-svg.ts`（结构化排版） |
 | mc:AlternateContent 协商 | Part 3 | `markup-compatibility.ts`、`shape-compatibility.ts`、`compatibility-source.ts` | 回退保真（见 §5 陷阱） |
 | 嵌入字体（embeddedFontLst + fntdata） | §19（容器语义在实现层） | `font/eot.ts`（EOT 剥壳） | `fonts` 包、Worker 字形（见 §5） |
-| OLE 嵌入（oleObject + VML 预览） | §19 + **Part 4 VML** | `pptx/parser.ts` | `edit-core/ole/` |
+| OLE 嵌入（oleObject + VML 预览） | §19 + **Part 4 VML** | `pptx/graphic-frame.ts` | `edit-core/ole/` |
 | OLE 对象 / OPC 加密包装 | [MS-OFFCRYPTO] | `crypto/ooxml.ts`（AES-ECB / 敏捷 AES-CBC） | 密码打开（`PasswordRequiredError`） |
 | EMF / WMF / PICT 图片解码 | [MS-EMF] [MS-WMF] / PICT | `image/` | `render/image-fill.ts` |
 | 图片效果 / 3D / EMF+ | [MS-ODRAWXML] 相关扩展 | `advanced-rendering.ts`、`emf-plus.ts`、`three-d.ts`（按需） | 官网自动加载 |
@@ -89,7 +90,7 @@ flowchart LR
 | 图表 XML 本身就是 OOXML | `chart/` 复用 `pptx/color` 是正当的（chart XML 是 DrawingML），不是分层违规 | 同上 |
 | 有预览图 ≠ 回退已生效 | `mc:AlternateContent` 的 Fallback 分支解析器可能拿 Choice 的占位当成功结果，两条路径都丢图——2026-09-05 实测纠正 | [兼容回退票据](../wayfinder/ppt-data-fidelity/tickets/008-alternate-content-fallback.md) |
 | Strict / Transitional 混存 | 真实文件几乎全为 Transitional；保存写 Transitional 才是 PowerPoint 兼容路径 | 本仓库实现约定 |
-| VML 只在 Part 4 | OLE 预览图是 VML（Transitional 遗留），解析它不代表支持完整 VML | `pptx/parser.ts` |
+| VML 只在 Part 4 | OLE 预览图是 VML（Transitional 遗留），解析它不代表支持完整 VML | `pptx/graphic-frame.ts` |
 | LibreOffice 不是规范实现 | ground truth 对照只用于横向比较；它自己的近似（图表画法、空字符串省略）不能当 oracle | [pitfalls](../engineering/pitfalls.md) |
 
 ## 6. 开发场景索引
@@ -97,7 +98,7 @@ flowchart LR
 | 要做的功能 | 先读 | 参照实现 |
 |---|---|---|
 | 新切换 / 动画效果 | ECMA-376-1 §19 的 transition/timing 元素 + p14 扩展页 | `pptx/transition.ts`、`viewer-core/playback.ts` |
-| 新图表类型 | DrawingML Charts 章节（c:）或 MS-ODRAWXML（cx:） | `chart/plots.ts`、`chart-ex/` |
+| 新图表类型 | DrawingML Charts 章节（c:）或 MS-ODRAWXML（cx:） | `chart/plots*.ts`（标记与标签在 `chart/plot-marks.ts`）、`chart-ex/` |
 | 新填充 / 效果 | DrawingML 填充与效果章节 | `pptx/color.ts`、`render/fill.ts` |
 | 新预设形状 | 已全集（187 个），只需调 `geometry/` | `geometry/` |
 | 写入新 part / 关系 | ECMA-376-2（OPC） | `edit-core/opc/`、`save/` |

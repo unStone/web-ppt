@@ -33,7 +33,10 @@ let pass = 0;
 const failures = [];
 
 const check = (name, cond, detail = '') => {
-  if (cond) { pass++; return true; }
+  if (cond) {
+    pass++;
+    return true;
+  }
   failures.push(detail ? `${name} — ${detail}` : name);
   return false;
 };
@@ -52,69 +55,167 @@ const { blobs } = installDomEnv();
 
 const bundle = join(outDir, 'src-bundle.mjs');
 group('构建');
-execFileSync('npx', ['esbuild', join(root, 'packages/core/src/index.ts'), '--bundle', '--format=esm', '--platform=browser',
-  '--log-level=error', `--outfile=${bundle}`], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/core/src/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    `--outfile=${bundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 console.log(`  esbuild 打包完成 → ${bundle}`);
 
 const lib = await import(`file://${bundle}?t=${Date.now()}`);
 
 const imageZip = await (async () => {
   const output = join(outDir, 'image-zip-bundle.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/core/src/image-zip.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error',
-    // 测的是源码入口，不能偷偷依赖上一次构建遗留的 dist；CI 的干净 checkout 没有它。
-    `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-    `--outfile=${output}`], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'packages/core/src/image-zip.ts'),
+      '--bundle',
+      '--format=esm',
+      '--platform=browser',
+      '--log-level=error',
+      // 测的是源码入口，不能偷偷依赖上一次构建遗留的 dist；CI 的干净 checkout 没有它。
+      `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+      `--outfile=${output}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return import(`file://${output}?t=${Date.now()}`);
 })();
 
 // viewer-core 是独立包，把 `web-ppt` 重定向到刚打好的 core 产物，避免依赖 dist
 const viewerBundle = join(outDir, 'viewer-core-bundle.mjs');
-execFileSync('npx', ['esbuild', join(root, 'packages/viewer-core/src/index.ts'), '--bundle', '--format=esm',
-  '--platform=browser', '--log-level=error', `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-  `--outfile=${viewerBundle}`], { cwd: root, stdio: 'inherit' });
+execFileSync(
+  'npx',
+  [
+    'esbuild',
+    join(root, 'packages/viewer-core/src/index.ts'),
+    '--bundle',
+    '--format=esm',
+    '--platform=browser',
+    '--log-level=error',
+    `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+    `--outfile=${viewerBundle}`,
+  ],
+  { cwd: root, stdio: 'inherit' },
+);
 const viewerLib = await import(`file://${viewerBundle}?t=${Date.now()}`);
 const geo = await (async () => {
   const g = join(outDir, 'geo-bundle.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/core/src/pptx/geometry.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error', `--outfile=${g}`], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'packages/core/src/pptx/geometry.ts'),
+      '--bundle',
+      '--format=esm',
+      '--platform=browser',
+      '--log-level=error',
+      `--outfile=${g}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return import(`file://${g}?t=${Date.now()}`);
 })();
 
 const escher = await (async () => {
   const e = join(outDir, 'escher-bundle.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/core/src/ppt/escher.ts'), '--bundle', '--format=esm',
-    '--platform=neutral', '--log-level=error', `--outfile=${e}`], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'packages/core/src/ppt/escher.ts'),
+      '--bundle',
+      '--format=esm',
+      '--platform=neutral',
+      '--log-level=error',
+      `--outfile=${e}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return import(`file://${e}?t=${Date.now()}`);
 })();
 
 const crypto = await (async () => {
   const c = join(outDir, 'crypto-bundle.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/core/src/crypto/primitives.ts'), '--bundle', '--format=esm',
-    '--platform=neutral', '--log-level=error', `--outfile=${c}`], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'packages/core/src/crypto/primitives.ts'),
+      '--bundle',
+      '--format=esm',
+      '--platform=neutral',
+      '--log-level=error',
+      `--outfile=${c}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return import(`file://${c}?t=${Date.now()}`);
 })();
 
 // fonts 是独立包，把 @web-ppt/core 重定向到刚打好的源码产物，避免依赖 dist
 const fontsLib = await (async () => {
   const f = join(outDir, 'fonts-bundle.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/fonts/src/index.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error', `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
-    `--outfile=${f}`], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'packages/fonts/src/index.ts'),
+      '--bundle',
+      '--format=esm',
+      '--platform=browser',
+      '--log-level=error',
+      `--alias:@web-ppt/core=${join(root, 'packages/core/src/index.ts')}`,
+      `--outfile=${f}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return import(`file://${f}?t=${Date.now()}`);
 })();
 
 const colorMod = await (async () => {
   const c = join(outDir, 'color-bundle.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/core/src/pptx/color.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error', `--outfile=${c}`], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'packages/core/src/pptx/color.ts'),
+      '--bundle',
+      '--format=esm',
+      '--platform=browser',
+      '--log-level=error',
+      `--outfile=${c}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return import(`file://${c}?t=${Date.now()}`);
 })();
 
 const animationMod = await (async () => {
   const output = join(outDir, 'animation-bundle.mjs');
-  execFileSync('npx', ['esbuild', join(root, 'packages/core/src/pptx/animation.ts'), '--bundle', '--format=esm',
-    '--platform=browser', '--log-level=error', `--outfile=${output}`], { cwd: root, stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'packages/core/src/pptx/animation.ts'),
+      '--bundle',
+      '--format=esm',
+      '--platform=browser',
+      '--log-level=error',
+      `--outfile=${output}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
   return import(`file://${output}?t=${Date.now()}`);
 })();
 
@@ -152,20 +253,82 @@ function allElements(pres) {
 group('几何');
 {
   const NAMES = [
-    'rect', 'roundRect', 'ellipse', 'triangle', 'diamond', 'hexagon', 'octagon', 'star5', 'star8',
-    'donut', 'noSmoking', 'pie', 'chord', 'arc', 'blockArc', 'cloud', 'heart', 'sun', 'moon',
-    'can', 'cube', 'bevel', 'frame', 'plaque', 'teardrop', 'smileyFace', 'gear6', 'funnel',
-    'rightArrow', 'leftRightArrow', 'quadArrow', 'bentArrow', 'uturnArrow', 'circularArrow',
-    'curvedRightArrow', 'curvedLeftArrow', 'curvedUpArrow', 'curvedDownArrow',
-    'mathPlus', 'mathMultiply', 'mathNotEqual', 'leftBracket', 'bracePair', 'ribbon', 'wave',
-    'wedgeEllipseCallout', 'cloudCallout', 'flowChartProcess', 'flowChartMagneticDrum',
-    'flowChartSummingJunction', 'actionButtonSound', 'chartX', 'line', 'bentConnector3',
-    'bentUpArrow', 'leftUpArrow', 'leftCircularArrow', 'leftRightCircularArrow', 'swooshArrow',
-    'quadArrowCallout', 'upDownArrowCallout', 'pieWedge', 'ellipseRibbon', 'ellipseRibbon2',
-    'leftRightRibbon', 'cornerTabs', 'squareTabs', 'plaqueTabs', 'lineInv',
-    'flowChartOfflineStorage', 'accentCallout3', 'accentBorderCallout1', 'borderCallout3',
+    'rect',
+    'roundRect',
+    'ellipse',
+    'triangle',
+    'diamond',
+    'hexagon',
+    'octagon',
+    'star5',
+    'star8',
+    'donut',
+    'noSmoking',
+    'pie',
+    'chord',
+    'arc',
+    'blockArc',
+    'cloud',
+    'heart',
+    'sun',
+    'moon',
+    'can',
+    'cube',
+    'bevel',
+    'frame',
+    'plaque',
+    'teardrop',
+    'smileyFace',
+    'gear6',
+    'funnel',
+    'rightArrow',
+    'leftRightArrow',
+    'quadArrow',
+    'bentArrow',
+    'uturnArrow',
+    'circularArrow',
+    'curvedRightArrow',
+    'curvedLeftArrow',
+    'curvedUpArrow',
+    'curvedDownArrow',
+    'mathPlus',
+    'mathMultiply',
+    'mathNotEqual',
+    'leftBracket',
+    'bracePair',
+    'ribbon',
+    'wave',
+    'wedgeEllipseCallout',
+    'cloudCallout',
+    'flowChartProcess',
+    'flowChartMagneticDrum',
+    'flowChartSummingJunction',
+    'actionButtonSound',
+    'chartX',
+    'line',
+    'bentConnector3',
+    'bentUpArrow',
+    'leftUpArrow',
+    'leftCircularArrow',
+    'leftRightCircularArrow',
+    'swooshArrow',
+    'quadArrowCallout',
+    'upDownArrowCallout',
+    'pieWedge',
+    'ellipseRibbon',
+    'ellipseRibbon2',
+    'leftRightRibbon',
+    'cornerTabs',
+    'squareTabs',
+    'plaqueTabs',
+    'lineInv',
+    'flowChartOfflineStorage',
+    'accentCallout3',
+    'accentBorderCallout1',
+    'borderCallout3',
   ];
-  const W = 200, H = 120;
+  const W = 200,
+    H = 120;
   let bounded = 0;
   for (const name of NAMES) {
     // 遍历多组调节值与极端尺寸，确保任何输入都不产生脏路径
@@ -183,7 +346,12 @@ group('几何');
   eq('全部形状均在安全范围内', bounded, NAMES.length * 5);
 
   // 极端尺寸
-  for (const [w, h] of [[0, 0], [1, 1], [0.01, 5000], [5000, 0.01]]) {
+  for (const [w, h] of [
+    [0, 0],
+    [1, 1],
+    [0.01, 5000],
+    [5000, 0.01],
+  ]) {
     const g = geo.presetGeom('star5', w, h, {});
     check(`极端尺寸 ${w}x${h} 不产生脏值`, !BAD.test(g.d), g.d.slice(0, 40));
   }
@@ -199,37 +367,192 @@ group('几何');
   // 规范全覆盖：presetGeom 对未知名字静默退化成矩形，不报错也不进 unsupported，
   // 少一个预设就是无声画错。这里把 ECMA-376 的 187 个名字全列出来当闸门。
   const SPEC_PRESETS = [
-    'accentBorderCallout1', 'accentBorderCallout2', 'accentBorderCallout3', 'accentCallout1', 'accentCallout2', 'accentCallout3',
-    'actionButtonBackPrevious', 'actionButtonBeginning', 'actionButtonBlank', 'actionButtonDocument', 'actionButtonEnd', 'actionButtonForwardNext',
-    'actionButtonHelp', 'actionButtonHome', 'actionButtonInformation', 'actionButtonMovie', 'actionButtonReturn', 'actionButtonSound',
-    'arc', 'bentArrow', 'bentConnector2', 'bentConnector3', 'bentConnector4', 'bentConnector5',
-    'bentUpArrow', 'bevel', 'blockArc', 'borderCallout1', 'borderCallout2', 'borderCallout3',
-    'bracePair', 'bracketPair', 'callout1', 'callout2', 'callout3', 'can',
-    'chartPlus', 'chartStar', 'chartX', 'chevron', 'chord', 'circularArrow',
-    'cloud', 'cloudCallout', 'corner', 'cornerTabs', 'cube', 'curvedConnector2',
-    'curvedConnector3', 'curvedConnector4', 'curvedConnector5', 'curvedDownArrow', 'curvedLeftArrow', 'curvedRightArrow',
-    'curvedUpArrow', 'decagon', 'diagStripe', 'diamond', 'dodecagon', 'donut',
-    'doubleWave', 'downArrow', 'downArrowCallout', 'ellipse', 'ellipseRibbon', 'ellipseRibbon2',
-    'flowChartAlternateProcess', 'flowChartCollate', 'flowChartConnector', 'flowChartDecision', 'flowChartDelay', 'flowChartDisplay',
-    'flowChartDocument', 'flowChartExtract', 'flowChartInputOutput', 'flowChartInternalStorage', 'flowChartMagneticDisk', 'flowChartMagneticDrum',
-    'flowChartMagneticTape', 'flowChartManualInput', 'flowChartManualOperation', 'flowChartMerge', 'flowChartMultidocument', 'flowChartOfflineStorage',
-    'flowChartOffpageConnector', 'flowChartOnlineStorage', 'flowChartOr', 'flowChartPredefinedProcess', 'flowChartPreparation', 'flowChartProcess',
-    'flowChartPunchedCard', 'flowChartPunchedTape', 'flowChartSort', 'flowChartSummingJunction', 'flowChartTerminator', 'foldedCorner',
-    'frame', 'funnel', 'gear6', 'gear9', 'halfFrame', 'heart',
-    'heptagon', 'hexagon', 'homePlate', 'horizontalScroll', 'irregularSeal1', 'irregularSeal2',
-    'leftArrow', 'leftArrowCallout', 'leftBrace', 'leftBracket', 'leftCircularArrow', 'leftRightArrow',
-    'leftRightArrowCallout', 'leftRightCircularArrow', 'leftRightRibbon', 'leftRightUpArrow', 'leftUpArrow', 'lightningBolt',
-    'line', 'lineInv', 'mathDivide', 'mathEqual', 'mathMinus', 'mathMultiply',
-    'mathNotEqual', 'mathPlus', 'moon', 'noSmoking', 'nonIsoscelesTrapezoid', 'notchedRightArrow',
-    'octagon', 'parallelogram', 'pentagon', 'pie', 'pieWedge', 'plaque',
-    'plaqueTabs', 'plus', 'quadArrow', 'quadArrowCallout', 'rect', 'ribbon',
-    'ribbon2', 'rightArrow', 'rightArrowCallout', 'rightBrace', 'rightBracket', 'round1Rect',
-    'round2DiagRect', 'round2SameRect', 'roundRect', 'rtTriangle', 'smileyFace', 'snip1Rect',
-    'snip2DiagRect', 'snip2SameRect', 'snipRoundRect', 'squareTabs', 'star10', 'star12',
-    'star16', 'star24', 'star32', 'star4', 'star5', 'star6',
-    'star7', 'star8', 'straightConnector1', 'stripedRightArrow', 'sun', 'swooshArrow',
-    'teardrop', 'trapezoid', 'triangle', 'upArrow', 'upArrowCallout', 'upDownArrow',
-    'upDownArrowCallout', 'uturnArrow', 'verticalScroll', 'wave', 'wedgeEllipseCallout', 'wedgeRectCallout',
+    'accentBorderCallout1',
+    'accentBorderCallout2',
+    'accentBorderCallout3',
+    'accentCallout1',
+    'accentCallout2',
+    'accentCallout3',
+    'actionButtonBackPrevious',
+    'actionButtonBeginning',
+    'actionButtonBlank',
+    'actionButtonDocument',
+    'actionButtonEnd',
+    'actionButtonForwardNext',
+    'actionButtonHelp',
+    'actionButtonHome',
+    'actionButtonInformation',
+    'actionButtonMovie',
+    'actionButtonReturn',
+    'actionButtonSound',
+    'arc',
+    'bentArrow',
+    'bentConnector2',
+    'bentConnector3',
+    'bentConnector4',
+    'bentConnector5',
+    'bentUpArrow',
+    'bevel',
+    'blockArc',
+    'borderCallout1',
+    'borderCallout2',
+    'borderCallout3',
+    'bracePair',
+    'bracketPair',
+    'callout1',
+    'callout2',
+    'callout3',
+    'can',
+    'chartPlus',
+    'chartStar',
+    'chartX',
+    'chevron',
+    'chord',
+    'circularArrow',
+    'cloud',
+    'cloudCallout',
+    'corner',
+    'cornerTabs',
+    'cube',
+    'curvedConnector2',
+    'curvedConnector3',
+    'curvedConnector4',
+    'curvedConnector5',
+    'curvedDownArrow',
+    'curvedLeftArrow',
+    'curvedRightArrow',
+    'curvedUpArrow',
+    'decagon',
+    'diagStripe',
+    'diamond',
+    'dodecagon',
+    'donut',
+    'doubleWave',
+    'downArrow',
+    'downArrowCallout',
+    'ellipse',
+    'ellipseRibbon',
+    'ellipseRibbon2',
+    'flowChartAlternateProcess',
+    'flowChartCollate',
+    'flowChartConnector',
+    'flowChartDecision',
+    'flowChartDelay',
+    'flowChartDisplay',
+    'flowChartDocument',
+    'flowChartExtract',
+    'flowChartInputOutput',
+    'flowChartInternalStorage',
+    'flowChartMagneticDisk',
+    'flowChartMagneticDrum',
+    'flowChartMagneticTape',
+    'flowChartManualInput',
+    'flowChartManualOperation',
+    'flowChartMerge',
+    'flowChartMultidocument',
+    'flowChartOfflineStorage',
+    'flowChartOffpageConnector',
+    'flowChartOnlineStorage',
+    'flowChartOr',
+    'flowChartPredefinedProcess',
+    'flowChartPreparation',
+    'flowChartProcess',
+    'flowChartPunchedCard',
+    'flowChartPunchedTape',
+    'flowChartSort',
+    'flowChartSummingJunction',
+    'flowChartTerminator',
+    'foldedCorner',
+    'frame',
+    'funnel',
+    'gear6',
+    'gear9',
+    'halfFrame',
+    'heart',
+    'heptagon',
+    'hexagon',
+    'homePlate',
+    'horizontalScroll',
+    'irregularSeal1',
+    'irregularSeal2',
+    'leftArrow',
+    'leftArrowCallout',
+    'leftBrace',
+    'leftBracket',
+    'leftCircularArrow',
+    'leftRightArrow',
+    'leftRightArrowCallout',
+    'leftRightCircularArrow',
+    'leftRightRibbon',
+    'leftRightUpArrow',
+    'leftUpArrow',
+    'lightningBolt',
+    'line',
+    'lineInv',
+    'mathDivide',
+    'mathEqual',
+    'mathMinus',
+    'mathMultiply',
+    'mathNotEqual',
+    'mathPlus',
+    'moon',
+    'noSmoking',
+    'nonIsoscelesTrapezoid',
+    'notchedRightArrow',
+    'octagon',
+    'parallelogram',
+    'pentagon',
+    'pie',
+    'pieWedge',
+    'plaque',
+    'plaqueTabs',
+    'plus',
+    'quadArrow',
+    'quadArrowCallout',
+    'rect',
+    'ribbon',
+    'ribbon2',
+    'rightArrow',
+    'rightArrowCallout',
+    'rightBrace',
+    'rightBracket',
+    'round1Rect',
+    'round2DiagRect',
+    'round2SameRect',
+    'roundRect',
+    'rtTriangle',
+    'smileyFace',
+    'snip1Rect',
+    'snip2DiagRect',
+    'snip2SameRect',
+    'snipRoundRect',
+    'squareTabs',
+    'star10',
+    'star12',
+    'star16',
+    'star24',
+    'star32',
+    'star4',
+    'star5',
+    'star6',
+    'star7',
+    'star8',
+    'straightConnector1',
+    'stripedRightArrow',
+    'sun',
+    'swooshArrow',
+    'teardrop',
+    'trapezoid',
+    'triangle',
+    'upArrow',
+    'upArrowCallout',
+    'upDownArrow',
+    'upDownArrowCallout',
+    'uturnArrow',
+    'verticalScroll',
+    'wave',
+    'wedgeEllipseCallout',
+    'wedgeRectCallout',
     'wedgeRoundRectCallout',
   ];
   {
@@ -241,9 +564,14 @@ group('几何');
   // .ppt 的 MSO 调节值不是 OOXML 的 100000 制，曾因此画出满屏飞线。
   {
     let seed = 20240818;
-    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const rnd = () => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed / 0x7fffffff;
+    };
     const WILD = [-1e9, -100000, -1, 0, 1, 21600, 100000, 1e6, 2147483647, 0.5, 1e12];
-    let cases = 0, escaped = 0, dirty = 0;
+    let cases = 0,
+      escaped = 0,
+      dirty = 0;
     for (const name of NAMES) {
       for (let k = 0; k < 12; k++) {
         const pick = () => WILD[Math.floor(rnd() * WILD.length)];
@@ -252,7 +580,10 @@ group('几何');
         const h = [0, 1, 30, 120, 3000][Math.floor(rnd() * 5)];
         const g = geo.presetGeom(name, w, h, adj);
         cases++;
-        if (BAD.test(g.d)) { dirty++; continue; }
+        if (BAD.test(g.d)) {
+          dirty++;
+          continue;
+        }
         const nums = (g.d.match(NUM) || []).map(Number);
         if (!nums.length) continue;
         const max = Math.max(...nums.map(Math.abs));
@@ -264,7 +595,8 @@ group('几何');
   }
 
   // custGeom 公式求值
-  const dom = new globalThis.DOMParser().parseFromString(`
+  const dom = new globalThis.DOMParser().parseFromString(
+    `
     <a:custGeom xmlns:a="urn:a">
       <a:avLst><a:gd name="adj" fmla="val 50000"/></a:avLst>
       <a:gdLst>
@@ -278,7 +610,9 @@ group('几何');
         <a:lnTo><a:pt x="100" y="100"/></a:lnTo>
         <a:close/>
       </a:path></a:pathLst>
-    </a:custGeom>`, 'application/xml').documentElement;
+    </a:custGeom>`,
+    'application/xml',
+  ).documentElement;
   const cg = geo.custGeomPath(dom, 200, 100);
   check('custGeom 解析成功', cg !== null);
   if (cg) {
@@ -345,18 +679,22 @@ for (const fx of FIXTURES) {
   const els = allElements(pres);
   check(`${fx.file} 有元素`, els.length > 0, `实际 ${els.length}`);
 
-  let badPath = 0, badBox = 0, badText = 0;
+  let badPath = 0,
+    badBox = 0,
+    badText = 0;
   for (const el of els) {
     if (!Number.isFinite(el.x) || !Number.isFinite(el.y) || !Number.isFinite(el.w) || !Number.isFinite(el.h)) badBox++;
     if (el.kind === 'shape' && el.path && BAD.test(el.path)) badPath++;
-    const bodies = el.kind === 'shape' ? [el.text]
-      : el.kind === 'table' ? el.rows.flatMap((r) => r.cells.map((c) => c.text)) : [];
+    const bodies = el.kind === 'shape' ? [el.text] : el.kind === 'table' ? el.rows.flatMap((r) => r.cells.map((c) => c.text)) : [];
     for (const t of bodies) {
       if (!t) continue;
       // Schema 必填字段齐全，渲染层才敢直接取用
       if (!Array.isArray(t.paragraphs) || typeof t.fontScale !== 'number' || !Array.isArray(t.insets)) badText++;
       for (const p of t.paragraphs) {
-        if (!Array.isArray(p.runs)) { badText++; continue; }
+        if (!Array.isArray(p.runs)) {
+          badText++;
+          continue;
+        }
         for (const r of p.runs) {
           if (typeof r.text !== 'string' || !Number.isFinite(r.size) || typeof r.color !== 'string') badText++;
         }
@@ -377,11 +715,16 @@ group('渲染');
 runGroupTransformContract({ lib, parsed, check, eq, near });
 for (const [name, pres] of parsed) {
   for (const textMode of ['html', 'svg']) {
-    let structErr = 0, dangling = 0, dupIds = 0;
+    let structErr = 0,
+      dangling = 0,
+      dupIds = 0;
     for (const slide of pres.slides) {
       const svg = lib.renderSlideToSvg(pres, slide, { textMode });
       const { error } = parseXml(svg);
-      if (error) { structErr++; continue; }
+      if (error) {
+        structErr++;
+        continue;
+      }
       // 引用完整性：url(#x) 必须能在同一份 SVG 里找到 id="x"
       const ids = new Set((svg.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1)));
       const idList = (svg.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1));
@@ -401,8 +744,7 @@ for (const [name, pres] of parsed) {
   // 两条文本路径必须真的不同：原生路径渲染出 <text> 时，屏幕路径必须走 foreignObject；
   // 纯图形页两边都没有文本，断言随之放行
   const screenSvg = lib.renderSlideToSvg(pres, pres.slides[0]);
-  check(`${name} 屏幕路径有文本时走 foreignObject`,
-    !/<text[\s>]/.test(exportSvg) || screenSvg.includes('<foreignObject'));
+  check(`${name} 屏幕路径有文本时走 foreignObject`, !/<text[\s>]/.test(exportSvg) || screenSvg.includes('<foreignObject'));
 }
 
 // 默认模式下同一页渲染两次，id 不能重复（缩略图与主视图同时在 DOM 里的场景）；
@@ -421,8 +763,10 @@ for (const [name, pres] of parsed) {
     const stableA = lib.renderSlideToSvg(pres, pres.slides[4], { idPrefix: 'editor-slide-5-' });
     const stableB = lib.renderSlideToSvg(pres, pres.slides[4], { idPrefix: 'editor-slide-5-' });
     eq('显式 idPrefix 让同一页渲染结果确定', stableB, stableA);
-    check('显式 idPrefix 进入全部 defs id',
-      (stableA.match(/\sid="([^"]+)"/g) || []).every((s) => s.startsWith(' id="editor-slide-5-')));
+    check(
+      '显式 idPrefix 进入全部 defs id',
+      (stableA.match(/\sid="([^"]+)"/g) || []).every((s) => s.startsWith(' id="editor-slide-5-')),
+    );
 
     const thumb = lib.renderSlideToSvg(pres, pres.slides[4], { idPrefix: 'thumb-slide-5-' });
     const thumbIds = (thumb.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1));
@@ -439,7 +783,10 @@ for (const [name, pres] of parsed) {
 // 元素输出必须能原样嵌回整页：编辑器只替换脏元素时不能走另一套渲染逻辑。
 group('元素级渲染');
 {
-  let total = 0, exact = 0, valid = 0, dangling = 0;
+  let total = 0,
+    exact = 0,
+    valid = 0,
+    dangling = 0;
   const kinds = new Set();
   for (const [name, pres] of parsed) {
     for (let page = 0; page < pres.slides.length; page++) {
@@ -458,8 +805,9 @@ group('元素级渲染');
           const wholeDefs = whole.slice(defsStart, defsEnd);
           if (whole.endsWith(`${part.markup}</svg>`) && wholeDefs.endsWith(part.defs)) exact++;
 
-          const fragment = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">` +
-            `<defs>${part.defs}</defs>${part.markup}</svg>`;
+          const fragment =
+            `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">`
+            + `<defs>${part.defs}</defs>${part.markup}</svg>`;
           if (!parseXml(fragment).error) valid++;
           const ids = new Set((fragment.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1)));
           for (const ref of fragment.match(/url\(#([^)]+)\)/g) || []) {
@@ -469,15 +817,19 @@ group('元素级渲染');
       }
     }
   }
-  check('元素级覆盖全部类型', ['shape', 'image', 'group', 'table', 'unsupported']
-    .every((kind) => kinds.has(kind)), [...kinds].join(','));
+  check(
+    '元素级覆盖全部类型',
+    ['shape', 'image', 'group', 'table', 'unsupported'].every((kind) => kinds.has(kind)),
+    [...kinds].join(','),
+  );
   check('元素级测试实际覆盖大量元素', total > 500, `实际 ${total}`);
   eq('元素 markup/defs 原样组成单元素页面', exact, total);
   eq('元素 fragment 全部是合法 SVG', valid, total);
   eq('元素 fragment 无悬空 defs 引用', dangling, 0);
 
   const pres = parsed.get('showcase.pptx');
-  const withDefs = pres?.slides.flatMap((slide) => slide.elements)
+  const withDefs = pres?.slides
+    .flatMap((slide) => slide.elements)
     .find((el) => lib.renderElementToSvg(el, { idPrefix: 'probe-' }).defs.length > 0);
   if (check('找到包含 defs 的元素', !!withDefs)) {
     const stableA = lib.renderElementToSvg(withDefs, { idPrefix: 'editor-element-1-' });
@@ -490,11 +842,11 @@ group('元素级渲染');
     const globalA = lib.renderElementToSvg(withDefs);
     const globalB = lib.renderElementToSvg(withDefs);
     const globalIds = new Set((globalA.defs.match(/\sid="([^"]+)"/g) || []).map((s) => s.slice(5, -1)));
-    eq('默认元素渲染仍用全局唯一 id',
-      (globalB.defs.match(/\sid="([^"]+)"/g) || []).filter((s) => globalIds.has(s.slice(5, -1))).length, 0);
+    eq('默认元素渲染仍用全局唯一 id', (globalB.defs.match(/\sid="([^"]+)"/g) || []).filter((s) => globalIds.has(s.slice(5, -1))).length, 0);
   }
 
-  const groupEl = pres?.slides.flatMap((slide) => slide.elements)
+  const groupEl = pres?.slides
+    .flatMap((slide) => slide.elements)
     .find((el) => el.kind === 'group' && el.children.some((child) => child.id !== undefined));
   if (check('找到带身份子节点的组', !!groupEl)) {
     const target = groupEl.children.find((child) => child.id !== undefined);
@@ -505,20 +857,25 @@ group('元素级渲染');
   const mediaPres = parsed.get('sample-media.pptx');
   let mediaEl = null;
   for (const slide of mediaPres?.slides ?? []) {
-    walkElements(slide.elements, (el) => { if (!mediaEl && el.kind === 'image' && el.media?.src) mediaEl = el; });
+    walkElements(slide.elements, (el) => {
+      if (!mediaEl && el.kind === 'image' && el.media?.src) mediaEl = el;
+    });
   }
   if (check('找到可播放媒体元素', !!mediaEl)) {
     const player = lib.renderElementToSvg(mediaEl, { media: 'player', textMode: 'html', idPrefix: 'player-' });
     check('元素级屏幕路径可输出真实播放器', /<(?:video|audio)\b/.test(player.markup));
     const portable = lib.renderElementToSvg(mediaEl, { media: 'player', textMode: 'svg', idPrefix: 'portable-' });
-    check('元素级可移植路径强制退回 badge', !portable.markup.includes('<foreignObject')
-      && !/<(?:video|audio)\b/.test(portable.markup));
+    check('元素级可移植路径强制退回 badge', !portable.markup.includes('<foreignObject') && !/<(?:video|audio)\b/.test(portable.markup));
   }
 
   const shape = pres?.slides.flatMap((slide) => slide.elements).find((el) => el.kind === 'shape');
   if (shape) {
     const bad = { ...shape };
-    Object.defineProperty(bad, 'path', { get() { throw new Error('元素入口隔离'); } });
+    Object.defineProperty(bad, 'path', {
+      get() {
+        throw new Error('元素入口隔离');
+      },
+    });
     check('元素级渲染保留错误隔离', lib.renderElementToSvg(bad).markup.includes('data-render-error="1"'));
   }
 
@@ -539,14 +896,21 @@ group('元素级渲染');
 group('HTML 文本渲染');
 {
   if (check('公开 renderTextBodyToHtml', typeof lib.renderTextBodyToHtml === 'function')) {
-    let bodies = 0, validBodies = 0, markedBodies = 0, previewCases = 0, exactPreview = 0;
+    let bodies = 0,
+      validBodies = 0,
+      markedBodies = 0,
+      previewCases = 0,
+      exactPreview = 0;
     const auditBody = (t, w, h, opts, previewMarkup) => {
       bodies++;
       const marked = lib.renderTextBodyToHtml(t, w, h, opts);
       if (!parseXml(marked).error) validBodies++;
       const runs = t.paragraphs.reduce((sum, p) => sum + p.runs.length, 0);
-      if ((marked.match(/\sdata-p="\d+"/g) || []).length === t.paragraphs.length
-        && (marked.match(/\sdata-r="\d+\.\d+"/g) || []).length === runs) markedBodies++;
+      if (
+        (marked.match(/\sdata-p="\d+"/g) || []).length === t.paragraphs.length
+        && (marked.match(/\sdata-r="\d+\.\d+"/g) || []).length === runs
+      )
+        markedBodies++;
       if (!t.warp && previewMarkup.includes('<foreignObject')) {
         previewCases++;
         const plain = lib.renderTextBodyToHtml(t, w, h, { ...opts, includeEditMarkers: false });
@@ -556,8 +920,7 @@ group('HTML 文本渲染');
     for (const pres of parsed.values()) {
       for (const el of allElements(pres)) {
         if (el.kind === 'shape' && el.text) {
-          auditBody(el.text, el.w, el.h, {},
-            lib.renderElementToSvg(el, { textMode: 'html', idPrefix: 'text-audit-' }).markup);
+          auditBody(el.text, el.w, el.h, {}, lib.renderElementToSvg(el, { textMode: 'html', idPrefix: 'text-audit-' }).markup);
         } else if (el.kind === 'table') {
           const tableMarkup = lib.renderElementToSvg(el, { textMode: 'html', idPrefix: 'cell-audit-' }).markup;
           for (let ri = 0; ri < el.rows.length; ri++) {
@@ -565,10 +928,8 @@ group('HTML 文本渲染');
             for (let ci = 0; ci < row.cells.length; ci++) {
               const cell = row.cells[ci];
               if (cell.merged || !cell.text) continue;
-              const w = el.colWidths.slice(ci, ci + cell.colSpan).reduce((a, b) => a + b, 0)
-                || el.colWidths[ci] || 0;
-              const h = el.rows.slice(ri, ri + cell.rowSpan).reduce((a, b) => a + b.height, 0)
-                || row.height;
+              const w = el.colWidths.slice(ci, ci + cell.colSpan).reduce((a, b) => a + b, 0) || el.colWidths[ci] || 0;
+              const h = el.rows.slice(ri, ri + cell.rowSpan).reduce((a, b) => a + b.height, 0) || row.height;
               auditBody(cell.text, w, h, { insets: cell.margins, anchor: cell.vAlign, vert: cell.vert }, tableMarkup);
             }
           }
@@ -584,8 +945,12 @@ group('HTML 文本渲染');
 
     let textEl = null;
     for (const pres of parsed.values()) {
-      textEl = allElements(pres).find((el) => el.kind === 'shape' && el.text
-        && lib.renderElementToSvg(el, { textMode: 'html', idPrefix: 'text-probe-' }).markup.includes('<foreignObject'));
+      textEl = allElements(pres).find(
+        (el) =>
+          el.kind === 'shape'
+          && el.text
+          && lib.renderElementToSvg(el, { textMode: 'html', idPrefix: 'text-probe-' }).markup.includes('<foreignObject'),
+      );
       if (textEl) break;
     }
 
@@ -598,13 +963,14 @@ group('HTML 文本渲染');
 
       const editable = lib.renderTextBodyToHtml(textEl.text, textEl.w, textEl.h);
       const runCount = textEl.text.paragraphs.reduce((sum, p) => sum + p.runs.length, 0);
-      eq('编辑 HTML 的段落身份完整', (editable.match(/\sdata-p="\d+"/g) || []).length,
-        textEl.text.paragraphs.length);
+      eq('编辑 HTML 的段落身份完整', (editable.match(/\sdata-p="\d+"/g) || []).length, textEl.text.paragraphs.length);
       eq('编辑 HTML 的 run 身份完整', (editable.match(/\sdata-r="\d+\.\d+"/g) || []).length, runCount);
       check('编辑 HTML 暴露有效 autofit 比例', /\sdata-font-scale="(?:0|[1-9]\d*)(?:\.\d+)?"/.test(editable));
       check('编辑 HTML 标明 autofit 模式', /\sdata-autofit="(?:none|normal|shape)"/.test(editable));
-      check('编辑标记不改变排版 CSS',
-        editable.replace(/\sdata-(?:p|r|font-scale|autofit|empty|bullet)="[^"]*"|\scontenteditable="false"/g, '') === plain);
+      check(
+        '编辑标记不改变排版 CSS',
+        editable.replace(/\sdata-(?:p|r|font-scale|autofit|empty|bullet)="[^"]*"|\scontenteditable="false"/g, '') === plain,
+      );
 
       const columns = structuredClone(textEl.text);
       columns.columns = 2;
@@ -614,8 +980,7 @@ group('HTML 文本渲染');
 
       const cjk = structuredClone(textEl.text);
       cjk.wrap = true;
-      cjk.paragraphs = [{ ...cjk.paragraphs[0], marL: 0, indent: 0,
-        runs: [{ ...cjk.paragraphs[0].runs[0], text: '「中文，标点。」' }] }];
+      cjk.paragraphs = [{ ...cjk.paragraphs[0], marL: 0, indent: 0, runs: [{ ...cjk.paragraphs[0].runs[0], text: '「中文，标点。」' }] }];
       let squeezed = '';
       for (let width = 20; width <= 240 && !squeezed.includes('margin-'); width++) {
         squeezed = lib.renderTextBodyToHtml(cjk, width, textEl.h);
@@ -623,12 +988,10 @@ group('HTML 文本渲染');
       check('HTML 文本继续使用 CJK 标点挤压', squeezed.includes('margin-'), squeezed.slice(0, 240));
 
       const empty = structuredClone(textEl.text);
-      empty.paragraphs = [{ ...empty.paragraphs[0], bullet: '•', bulletImage: null,
-        runs: [{ ...empty.paragraphs[0].runs[0], text: '' }] }];
+      empty.paragraphs = [{ ...empty.paragraphs[0], bullet: '•', bulletImage: null, runs: [{ ...empty.paragraphs[0].runs[0], text: '' }] }];
       const emptyHtml = lib.renderTextBodyToHtml(empty, textEl.w, textEl.h);
       check('空 run 可与占位 NBSP 区分', emptyHtml.includes('data-empty="true"'));
-      check('项目符号与正文可被反解器区分且不可直接编辑',
-        emptyHtml.includes('data-bullet="true" contenteditable="false"'));
+      check('项目符号与正文可被反解器区分且不可直接编辑', emptyHtml.includes('data-bullet="true" contenteditable="false"'));
 
       const hostile = structuredClone(empty);
       hostile.paragraphs[0].bulletImage = 'x" onerror="globalThis.pwned=1';
@@ -643,28 +1006,32 @@ group('HTML 文本渲染');
       const safeParsed = parseXml(safe);
       check('HTML 文本对任意模型字符串保持结构合法', !safeParsed.error, safeParsed.error ?? '');
       check('文本与样式不能注入 HTML 节点', !safe.includes('<script>') && !safe.includes('<img src=x'));
-      check('危险协议不生成可点击链接',
-        ![...safeParsed.doc.getElementsByTagName('a')].some((a) => /^javascript:/i.test(a.getAttribute('href') ?? '')));
-      const safeNative = lib.renderElementToSvg(
-        { ...textEl, text: hostile }, { textMode: 'svg', idPrefix: 'safe-native-link-' },
-      ).markup;
+      check(
+        '危险协议不生成可点击链接',
+        ![...safeParsed.doc.getElementsByTagName('a')].some((a) => /^javascript:/i.test(a.getAttribute('href') ?? '')),
+      );
+      const safeNative = lib.renderElementToSvg({ ...textEl, text: hostile }, { textMode: 'svg', idPrefix: 'safe-native-link-' }).markup;
       const safeNativeParsed = parseXml(`<svg xmlns="http://www.w3.org/2000/svg">${safeNative}</svg>`);
-      check('原生 SVG 文字同样拒绝危险协议',
-        safeNative.includes('data-unsafe-href=') && !safeNative.includes('<a href="javascript:')
-        && !safeNativeParsed.error
-        && ![...safeNativeParsed.doc.getElementsByTagName('*')]
-          .some((element) => element.hasAttribute('onmouseover')),
-      safeNative.slice(0, 500));
+      check(
+        '原生 SVG 文字同样拒绝危险协议',
+        safeNative.includes('data-unsafe-href=')
+          && !safeNative.includes('<a href="javascript:')
+          && !safeNativeParsed.error
+          && ![...safeNativeParsed.doc.getElementsByTagName('*')].some((element) => element.hasAttribute('onmouseover')),
+        safeNative.slice(0, 500),
+      );
       const linkedNativeBody = structuredClone(textEl.text);
       linkedNativeBody.paragraphs[0].runs[0].link = 'https://example.com/native-run';
       const linkedNative = lib.renderElementToSvg(
-        { ...textEl, text: linkedNativeBody }, { textMode: 'svg', idPrefix: 'native-run-link-' },
+        { ...textEl, text: linkedNativeBody },
+        { textMode: 'svg', idPrefix: 'native-run-link-' },
       ).markup;
-      check('原生 SVG 保留 run 级外链与新窗口隔离',
+      check(
+        '原生 SVG 保留 run 级外链与新窗口隔离',
         linkedNative.includes('<a href="https://example.com/native-run" target="_blank" rel="noopener noreferrer">')
-        && linkedNative.includes('<tspan'));
-      check('图片项目符号不能注入事件属性',
-        ![...safeParsed.doc.getElementsByTagName('*')].some((el) => el.hasAttribute('onerror')));
+          && linkedNative.includes('<tspan'),
+      );
+      check('图片项目符号不能注入事件属性', ![...safeParsed.doc.getElementsByTagName('*')].some((el) => el.hasAttribute('onerror')));
 
       const oldDocument = globalThis.document;
       globalThis.document = undefined;
@@ -676,7 +1043,9 @@ group('HTML 文本渲染');
       }
     }
 
-    const table = parsed.get('showcase.pptx')?.slides.flatMap((slide) => slide.elements)
+    const table = parsed
+      .get('showcase.pptx')
+      ?.slides.flatMap((slide) => slide.elements)
       .find((el) => el.kind === 'table');
     if (check('找到表格文本覆盖用例', !!table)) {
       let cellCase = null;
@@ -731,17 +1100,28 @@ group('文本样式');
     // 标题走母版 titleStyle 继承，应显著大于标签
     const titleRun = runs.find((r) => r.text.includes('预设形状库'));
     check('标题字号来自继承链', titleRun && titleRun.size > 20, titleRun ? String(titleRun.size) : '未找到');
-    check('颜色已解析为 css', runs.every((r) => /^rgba?\(/.test(r.color)));
+    check(
+      '颜色已解析为 css',
+      runs.every((r) => /^rgba?\(/.test(r.color)),
+    );
   }
 
   // 主题色变换：accent1 = 4472C4，lumMod 75% 应变暗
   const pres2 = parsed.get('showcase.pptx');
   if (pres2) {
     const fills = [];
-    walkElements(pres2.slides[1].elements, (e) => { if (e.kind === 'shape' && e.fill) fills.push(e.fill); });
+    walkElements(pres2.slides[1].elements, (e) => {
+      if (e.kind === 'shape' && e.fill) fills.push(e.fill);
+    });
     check('效果页有填充', fills.length > 0);
-    check('存在渐变填充', fills.some((f) => f.type === 'gradient'));
-    check('存在图案填充', fills.some((f) => f.type === 'pattern'));
+    check(
+      '存在渐变填充',
+      fills.some((f) => f.type === 'gradient'),
+    );
+    check(
+      '存在图案填充',
+      fills.some((f) => f.type === 'pattern'),
+    );
     const alpha = fills.filter((f) => f.type === 'solid' && /rgba/.test(f.color));
     check('存在半透明填充', alpha.length > 0);
   }
@@ -753,8 +1133,19 @@ group('段落内容');
 {
   const textMod = await (async () => {
     const t = join(outDir, 'text-bundle.mjs');
-    execFileSync('npx', ['esbuild', join(root, 'packages/core/src/pptx/text.ts'), '--bundle', '--format=esm',
-      '--platform=browser', '--log-level=error', `--outfile=${t}`], { cwd: root, stdio: 'inherit' });
+    execFileSync(
+      'npx',
+      [
+        'esbuild',
+        join(root, 'packages/core/src/pptx/text.ts'),
+        '--bundle',
+        '--format=esm',
+        '--platform=browser',
+        '--log-level=error',
+        `--outfile=${t}`,
+      ],
+      { cwd: root, stdio: 'inherit' },
+    );
     return import(`file://${t}?t=${Date.now()}`);
   })();
 
@@ -766,30 +1157,35 @@ group('段落内容');
     return textMod.parseTextBody(el, {
       ctx: { theme: {}, clrMap: {} },
       fonts: { major: { latin: null, ea: null }, minor: { latin: null, ea: null } },
-      chain: [], slideNum: 1,
+      chain: [],
+      slideNum: 1,
     });
   };
   const flat = (body) => body.paragraphs.map((p) => p.runs.map((r) => r.text).join(''));
 
   // 回归：OMML 公式曾被静默丢弃，整段只剩前半句
-  const math = parse('<a:p><a:r><a:t>面积 = </a:t></a:r>' +
-    '<m:oMath><m:sSup><m:e><m:r><m:t>πr</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup></m:oMath></a:p>');
+  const math = parse(
+    '<a:p><a:r><a:t>面积 = </a:t></a:r>'
+      + '<m:oMath><m:sSup><m:e><m:r><m:t>πr</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup></m:oMath></a:p>',
+  );
   // 线性文本带上 ^ / _ / √ 等结构标记，比单纯拼接 m:t 更可读，搜索也更准
   eq('OMML 公式转为线性文本', flat(math)[0], '面积 = πr^2');
 
   // 回归：段落内的 mc:AlternateContent 曾整段跳过
-  const alt = parse('<a:p><mc:AlternateContent><mc:Choice Requires="a14"><a:r><a:t>新版内容</a:t></a:r></mc:Choice>' +
-    '<mc:Fallback><a:r><a:t>兼容内容</a:t></a:r></mc:Fallback></mc:AlternateContent></a:p>');
+  const alt = parse(
+    '<a:p><mc:AlternateContent><mc:Choice Requires="a14"><a:r><a:t>新版内容</a:t></a:r></mc:Choice>'
+      + '<mc:Fallback><a:r><a:t>兼容内容</a:t></a:r></mc:Fallback></mc:AlternateContent></a:p>',
+  );
   eq('AlternateContent 取 Choice 分支', flat(alt)[0], '新版内容');
 
   // 复杂脚本字体：cs 必须进字体栈，否则阿拉伯语等会拿到拉丁字体
   const cs = parse('<a:p><a:r><a:rPr><a:latin typeface="Calibri"/><a:cs typeface="Arial Unicode MS"/></a:rPr><a:t>مرحبا</a:t></a:r></a:p>');
-  check('cs 字体进入字体栈', cs.paragraphs[0].runs[0].fonts.includes('Arial Unicode MS'),
-    JSON.stringify(cs.paragraphs[0].runs[0].fonts));
+  check('cs 字体进入字体栈', cs.paragraphs[0].runs[0].fonts.includes('Arial Unicode MS'), JSON.stringify(cs.paragraphs[0].runs[0].fonts));
 
   // normAutofit 的行距压缩对默认行距也要生效
-  const af = parse('<a:bodyPr><a:normAutofit fontScale="70000" lnSpcReduction="10000"/></a:bodyPr>' +
-    '<a:p><a:r><a:t>压缩行距</a:t></a:r></a:p>');
+  const af = parse(
+    '<a:bodyPr><a:normAutofit fontScale="70000" lnSpcReduction="10000"/></a:bodyPr>' + '<a:p><a:r><a:t>压缩行距</a:t></a:r></a:p>',
+  );
   near('lnSpcReduction 作用于默认行距', af.paragraphs[0].lineHeight, 1.1, 0.01);
 }
 
@@ -804,8 +1200,11 @@ group('主题色变换');
     tint: { 20: [232, 235, 244], 40: [207, 213, 233], 60: [176, 187, 222], 80: [136, 156, 209] },
   };
   const ctx = { theme: { accent1: '4472C4' }, clrMap: {} };
-  const mk = (mod, v) => new globalThis.DOMParser().parseFromString(
-    `<a:schemeClr xmlns:a="u" val="accent1"><a:${mod} val="${v * 1000}"/></a:schemeClr>`, 'application/xml').documentElement;
+  const mk = (mod, v) =>
+    new globalThis.DOMParser().parseFromString(
+      `<a:schemeClr xmlns:a="u" val="accent1"><a:${mod} val="${v * 1000}"/></a:schemeClr>`,
+      'application/xml',
+    ).documentElement;
 
   let worst = 0;
   for (const mod of ['shade', 'tint']) {
@@ -826,65 +1225,107 @@ group('图片与资源');
   const pngMetadata = lib.readImageMetadata(makePng(96, 54, () => [1, 2, 3], 120));
   const bmpMetadata = lib.readImageMetadata(makeBmp(24, 12, () => [4, 5, 6], 144));
   const jpegMetadata = lib.readImageMetadata(makeExifJpeg(600, 300, 300, 150));
-  check('图片元数据按魔数读取 PNG/BMP 像素与物理分辨率',
-    pngMetadata?.width === 96 && pngMetadata.height === 54
+  check(
+    '图片元数据按魔数读取 PNG/BMP 像素与物理分辨率',
+    pngMetadata?.width === 96
+      && pngMetadata.height === 54
       && Math.abs(pngMetadata.dpiX - 120) < 0.02
-      && bmpMetadata?.width === 24 && bmpMetadata.height === 12
-      && Math.abs(bmpMetadata.dpiX - 144) < 0.02);
-  check('无 JFIF 的 JPEG 从 EXIF TIFF IFD 读取双轴物理分辨率',
-    jpegMetadata?.width === 600 && jpegMetadata.height === 300
-      && jpegMetadata.dpiX === 300 && jpegMetadata.dpiY === 150);
+      && bmpMetadata?.width === 24
+      && bmpMetadata.height === 12
+      && Math.abs(bmpMetadata.dpiX - 144) < 0.02,
+  );
+  check(
+    '无 JFIF 的 JPEG 从 EXIF TIFF IFD 读取双轴物理分辨率',
+    jpegMetadata?.width === 600 && jpegMetadata.height === 300 && jpegMetadata.dpiX === 300 && jpegMetadata.dpiY === 150,
+  );
   const imageSource = 'data:image/png;base64,AA==';
   const stretchSlide = { background: { type: 'image', src: imageSource }, elements: [] };
-  const stretchSvg = lib.renderSlideToSvg({
-    width: 160, height: 90, slides: [stretchSlide], source: 'pptx',
-  }, stretchSlide);
-  check('图片拉伸填充不擅自保持宽高比',
-    /<image[^>]*preserveAspectRatio="none"/.test(stretchSvg)
-      && !stretchSvg.includes('preserveAspectRatio="xMidYMid slice"'));
+  const stretchSvg = lib.renderSlideToSvg(
+    {
+      width: 160,
+      height: 90,
+      slides: [stretchSlide],
+      source: 'pptx',
+    },
+    stretchSlide,
+  );
+  check(
+    '图片拉伸填充不擅自保持宽高比',
+    /<image[^>]*preserveAspectRatio="none"/.test(stretchSvg) && !stretchSvg.includes('preserveAspectRatio="xMidYMid slice"'),
+  );
   const tiledSlide = {
     background: {
-      type: 'image', src: imageSource, crop: { l: 0.2, t: 0.1, r: 0.1, b: 0.2 },
+      type: 'image',
+      src: imageSource,
+      crop: { l: 0.2, t: 0.1, r: 0.1, b: 0.2 },
       tile: { sx: 0.5, sy: 0.75, flip: 'xy' },
-    }, elements: [],
+    },
+    elements: [],
   };
-  const tiledSvg = lib.renderSlideToSvg({
-    width: 160, height: 90, slides: [tiledSlide], source: 'pptx',
-  }, tiledSlide);
-  check('平铺图片逐格应用裁剪并按 x/y 交替翻转',
+  const tiledSvg = lib.renderSlideToSvg(
+    {
+      width: 160,
+      height: 90,
+      slides: [tiledSlide],
+      source: 'pptx',
+    },
+    tiledSlide,
+  );
+  check(
+    '平铺图片逐格应用裁剪并按 x/y 交替翻转',
     /<image[^>]*x="-/.test(tiledSvg)
       && tiledSvg.includes('scale(-1 1)')
       && tiledSvg.includes('scale(1 -1)')
-      && tiledSvg.includes('scale(-1 -1)'));
+      && tiledSvg.includes('scale(-1 -1)'),
+  );
   const physicalTileSlide = {
     background: {
-      type: 'image', src: imageSource,
+      type: 'image',
+      src: imageSource,
       tile: {
-        sx: 0.65, sy: 0.8, flip: 'xy', tx: 10, ty: -2, algn: 'ctr',
-        sourceWidth: 96, sourceHeight: 54,
+        sx: 0.65,
+        sy: 0.8,
+        flip: 'xy',
+        tx: 10,
+        ty: -2,
+        algn: 'ctr',
+        sourceWidth: 96,
+        sourceHeight: 54,
       },
-    }, elements: [],
+    },
+    elements: [],
   };
-  const physicalTileSvg = lib.renderSlideToSvg({
-    width: 1280, height: 720, slides: [physicalTileSlide], source: 'pptx',
-  }, physicalTileSlide, { idPrefix: 'physical-tile-' });
-  check('平铺首块按来源图片物理尺寸、对齐和 EMU 偏移定位',
-    /<pattern\b[^>]*\bx="618\.8"[^>]*\by="336\.4"[^>]*\bwidth="124\.8"[^>]*\bheight="86\.4"/.test(physicalTileSvg));
+  const physicalTileSvg = lib.renderSlideToSvg(
+    {
+      width: 1280,
+      height: 720,
+      slides: [physicalTileSlide],
+      source: 'pptx',
+    },
+    physicalTileSlide,
+    { idPrefix: 'physical-tile-' },
+  );
+  check(
+    '平铺首块按来源图片物理尺寸、对齐和 EMU 偏移定位',
+    /<pattern\b[^>]*\bx="618\.8"[^>]*\by="336\.4"[^>]*\bwidth="124\.8"[^>]*\bheight="86\.4"/.test(physicalTileSvg),
+  );
 
   const pres = parsed.get('showcase.pptx');
   if (pres) {
     // 回归：srcRect 早期只在 p:pic 上生效，形状的图片填充不裁剪
     const fills = [];
-    for (const s of pres.slides) walkElements(s.elements, (e) => {
-      if (e.kind === 'shape' && e.fill?.type === 'image') fills.push(e.fill);
-    });
+    for (const s of pres.slides)
+      walkElements(s.elements, (e) => {
+        if (e.kind === 'shape' && e.fill?.type === 'image') fills.push(e.fill);
+      });
     check('存在形状图片填充', fills.length > 0, `实际 ${fills.length}`);
     const cropped = fills.filter((f) => f.crop && (f.crop.l || f.crop.t || f.crop.r || f.crop.b));
-    check('形状图片填充支持 srcRect 裁剪', cropped.length > 0,
-      `${fills.length} 个填充中 0 个带裁剪`);
+    check('形状图片填充支持 srcRect 裁剪', cropped.length > 0, `${fills.length} 个填充中 0 个带裁剪`);
     if (cropped.length) {
-      const svg = lib.renderSlideToSvg(pres, pres.slides.find((s) =>
-        s.elements.some((e) => e.kind === 'shape' && e.fill?.type === 'image' && e.fill.crop)) ?? pres.slides[4]);
+      const svg = lib.renderSlideToSvg(
+        pres,
+        pres.slides.find((s) => s.elements.some((e) => e.kind === 'shape' && e.fill?.type === 'image' && e.fill.crop)) ?? pres.slides[4],
+      );
       check('裁剪在渲染中生效（image 带负偏移）', /<image[^>]*x="-/.test(svg));
     }
 
@@ -909,16 +1350,23 @@ group('图片与资源');
 
 group('动画 / 切换');
 {
-  const wideEffects = Array.from({ length: 4200 }, (_, index) =>
-    `<p:par><p:cTn id="${index + 1}" presetID="10" presetClass="entr" nodeType="clickEffect" dur="500"><p:childTnLst><p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${index + 5001}" dur="500"/><p:tgtEl><p:spTgt spid="1"/></p:tgtEl></p:cBhvr></p:animEffect></p:childTnLst></p:cTn></p:par>`).join('');
-  const wideXml = parseXml(`<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:tnLst>${wideEffects}</p:tnLst></p:timing></p:sld>`);
+  const wideEffects = Array.from(
+    { length: 4200 },
+    (_, index) =>
+      `<p:par><p:cTn id="${index + 1}" presetID="10" presetClass="entr" nodeType="clickEffect" dur="500"><p:childTnLst><p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${index + 5001}" dur="500"/><p:tgtEl><p:spTgt spid="1"/></p:tgtEl></p:cBhvr></p:animEffect></p:childTnLst></p:cTn></p:par>`,
+  ).join('');
+  const wideXml = parseXml(
+    `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:tnLst>${wideEffects}</p:tnLst></p:timing></p:sld>`,
+  );
   const wideStart = performance.now();
   const wideTiming = animationMod.parseSlideTiming(wideXml.doc.documentElement, 1280, 720);
   const wideElapsed = performance.now() - wideStart;
-  check('超宽 timing 超过预算后停止解析且标记只读', wideTiming.readonly
-    && !wideTiming.animations, `${wideTiming.animations?.length ?? 0} steps`);
-  check('超宽 timing 预算避免主线程长时间遍历', wideElapsed < 100,
-    `${wideElapsed.toFixed(1)}ms`);
+  check(
+    '超宽 timing 超过预算后停止解析且标记只读',
+    wideTiming.readonly && !wideTiming.animations,
+    `${wideTiming.animations?.length ?? 0} steps`,
+  );
+  check('超宽 timing 预算避免主线程长时间遍历', wideElapsed < 100, `${wideElapsed.toFixed(1)}ms`);
 
   let canonicalId = 0;
   const nextCanonicalId = () => ++canonicalId;
@@ -931,15 +1379,24 @@ group('动画 / 切换');
   }).join('');
   const rootId = nextCanonicalId();
   const mainId = nextCanonicalId();
-  const canonicalXml = parseXml(`<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:tnLst><p:par><p:cTn id="${rootId}" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="${mainId}" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${canonicalEffects}</p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing></p:sld>`);
+  const canonicalXml = parseXml(
+    `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:tnLst><p:par><p:cTn id="${rootId}" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="${mainId}" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${canonicalEffects}</p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing></p:sld>`,
+  );
   const canonicalTiming = animationMod.parseSlideTiming(canonicalXml.doc.documentElement, 1280, 720);
-  check('预算按唯一 DOM 节点计数，不误伤 90 步规范时间线',
+  check(
+    '预算按唯一 DOM 节点计数，不误伤 90 步规范时间线',
     !canonicalTiming.readonly && canonicalTiming.animations?.length === 90,
-    `${canonicalTiming.animations?.length ?? 0} steps / readonly=${canonicalTiming.readonly}`);
+    `${canonicalTiming.animations?.length ?? 0} steps / readonly=${canonicalTiming.readonly}`,
+  );
 
-  const revealTiming = (filter, presetID, subtype) => animationMod.parseSlideTiming(parseXml(
-    `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:cTn presetID="${presetID}" presetClass="entr" presetSubtype="${subtype}" nodeType="clickEffect" dur="500"><p:animEffect transition="in" filter="${filter}"><p:cBhvr><p:tgtEl><p:spTgt spid="2"/></p:tgtEl></p:cBhvr></p:animEffect></p:cTn></p:timing></p:sld>`,
-  ).doc.documentElement, 1280, 720).animations?.[0];
+  const revealTiming = (filter, presetID, subtype) =>
+    animationMod.parseSlideTiming(
+      parseXml(
+        `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:cTn presetID="${presetID}" presetClass="entr" presetSubtype="${subtype}" nodeType="clickEffect" dur="500"><p:animEffect transition="in" filter="${filter}"><p:cBhvr><p:tgtEl><p:spTgt spid="2"/></p:tgtEl></p:cBhvr></p:animEffect></p:cTn></p:timing></p:sld>`,
+      ).doc.documentElement,
+      1280,
+      720,
+    ).animations?.[0];
   const blindsStep = revealTiming('blinds(horizontal)', 3, 10);
   const boxStep = revealTiming('box(in)', 4, 16);
   const circleStep = revealTiming('circle(in)', 6, 16);
@@ -948,34 +1405,46 @@ group('动画 / 切换');
   eq('圆形光圈保留形状和收缩方向', circleStep && `${circleStep.effect}/${circleStep.dir}`, 'circle/in');
   const revealFrames = (step) => viewerLib.framesFor(step);
   const blindsFrames = revealFrames(blindsStep);
-  check('水平百叶窗由六条独立蒙版从上沿展开',
+  check(
+    '水平百叶窗由六条独立蒙版从上沿展开',
     blindsFrames.from.maskImage.split('linear-gradient').length === 7
       && blindsFrames.from.maskSize.startsWith('100% 0%')
       && blindsFrames.from.maskPosition.includes('left 0% top 16.667%'),
-    blindsFrames.from.maskSize);
-  check('百叶窗终态铺满对象', blindsFrames.to.maskSize.includes('100% 16.667%')
-    && blindsFrames.to.maskOrigin === 'fill-box',
-    blindsFrames.to.maskSize);
+    blindsFrames.from.maskSize,
+  );
+  check(
+    '百叶窗终态铺满对象',
+    blindsFrames.to.maskSize.includes('100% 16.667%') && blindsFrames.to.maskOrigin === 'fill-box',
+    blindsFrames.to.maskSize,
+  );
   const verticalBlinds = revealFrames({ ...blindsStep, dir: 'vert' });
-  check('垂直百叶窗按竖条从左沿展开', verticalBlinds.from.maskSize.startsWith('0% 100%')
-    && verticalBlinds.from.maskPosition.includes('left 16.667% top 0%')
-    && verticalBlinds.to.maskSize.includes('16.667% 100%'),
-    verticalBlinds.from.maskSize);
+  check(
+    '垂直百叶窗按竖条从左沿展开',
+    verticalBlinds.from.maskSize.startsWith('0% 100%')
+      && verticalBlinds.from.maskPosition.includes('left 16.667% top 0%')
+      && verticalBlinds.to.maskSize.includes('16.667% 100%'),
+    verticalBlinds.from.maskSize,
+  );
   const boxFrames = revealFrames(boxStep);
-  check('盒状向内从四边揭开，字形不缩放',
+  check(
+    '盒状向内从四边揭开，字形不缩放',
     boxFrames.from.maskSize === '100% 0%, 100% 0%, 0% 100%, 0% 100%'
       && boxFrames.to.maskSize === '100% 50%, 100% 50%, 50% 100%, 50% 100%'
       && boxFrames.from.clipPath === undefined
       && boxFrames.from.transform === undefined,
-    boxFrames.from.maskSize);
+    boxFrames.from.maskSize,
+  );
   const boxOut = revealFrames({ ...boxStep, dir: 'out' });
   eq('盒状向外从中心矩形扩大', boxOut.from.clipPath, 'inset(50% 50% 50% 50%) fill-box');
   eq('盒状退出是入场的反向揭开', viewerLib.framesFor({ ...boxStep, kind: 'exit' }).from.maskSize, boxFrames.to.maskSize);
   const plainZoom = revealFrames({ ...boxStep, dir: undefined });
   eq('没有盒状方向的缩放从零放大', plainZoom.from.transform, 'scale(0)');
   const circleFrames = revealFrames(circleStep);
-  check('圆形光圈使用可见的图形蒙版而非缩放', circleFrames.from.maskImage.includes('data:image/svg+xml')
-    && circleFrames.from.transform === undefined, circleFrames.from.maskImage);
+  check(
+    '圆形光圈使用可见的图形蒙版而非缩放',
+    circleFrames.from.maskImage.includes('data:image/svg+xml') && circleFrames.from.transform === undefined,
+    circleFrames.from.maskImage,
+  );
   const effectsFixture = await lib.parse(load('sample-animation-effects.pptx'), { lazy: false });
   const effectMatrix = [
     ['appear', 'fade', 'fly', 'fly', 'wipe', 'zoom', 'zoom', 'zoom'],
@@ -988,26 +1457,27 @@ group('动画 / 切换');
   ];
   eq('动画效果固件完整解析七页', effectsFixture.slides.length, effectMatrix.length);
   for (let index = 0; index < effectMatrix.length; index++) {
-    eq(`第 ${index + 1} 页逐个保留 PowerPoint 效果`,
+    eq(
+      `第 ${index + 1} 页逐个保留 PowerPoint 效果`,
       effectsFixture.slides[index]?.animations?.map((step) => step.effect).join(','),
-      effectMatrix[index].join(','));
+      effectMatrix[index].join(','),
+    );
   }
   const variant = (page, index) => effectsFixture.slides[page].animations[index];
   eq('劈裂保留向内竖向子类型', variant(3, 1).dir, 'in-vert');
   eq('轮盘保留八轮辐子类型', variant(3, 5).dir, '8');
   eq('放大旋转读取 OOXML 的终态角度', variant(3, 6).rotation?.to, 90);
-  eq('放大旋转终态保留对象旋转', viewerLib.settledDeclaration(variant(3, 6))?.transform,
-    'scale(1) rotate(90deg)');
-  check('随机条由 128 条独立细线遮掩对象',
-    revealFrames(variant(1, 4)).from.maskImage.split('linear-gradient').length === 129);
-  check('十字向内从四角独立揭开',
+  eq('放大旋转终态保留对象旋转', viewerLib.settledDeclaration(variant(3, 6))?.transform, 'scale(1) rotate(90deg)');
+  check('随机条由 128 条独立细线遮掩对象', revealFrames(variant(1, 4)).from.maskImage.split('linear-gradient').length === 129);
+  check(
+    '十字向内从四角独立揭开',
     revealFrames(variant(2, 6)).from.maskImage.split('linear-gradient').length === 5
-      && revealFrames(variant(2, 6)).from.maskSize === '0% 0%, 0% 0%, 0% 0%, 0% 0%');
+      && revealFrames(variant(2, 6)).from.maskSize === '0% 0%, 0% 0%, 0% 0%, 0% 0%',
+  );
   eq('真正缩放不误判为盒状', variant(0, 5).dir, undefined);
   eq('包含 slide 子滤镜的上浮保留预设效果', variant(4, 0).effect, 'float');
   eq('随机效果按文件记录的具体 fade 滤镜播放', variant(4, 5).effect, 'fade');
-  eq('伸展读取文件里的实际双轴起始比例',
-    viewerLib.framesFor(variant(4, 3)).from.transform, 'scale(0.2)');
+  eq('伸展读取文件里的实际双轴起始比例', viewerLib.framesFor(variant(4, 3)).from.transform, 'scale(0.2)');
   // PowerPoint 的伸展只写 ppt_x/ppt_y/ppt_w/ppt_h，方向全靠子类型：10 从中线水平展开，其余钉在对应边。
   const stretchFrame = (index) => {
     const frames = viewerLib.framesFor(variant(6, index));
@@ -1020,18 +1490,28 @@ group('动画 / 切换');
   eq('伸展自右侧钉住右边', stretchFrame(4), 'scaleX(0)@right center/1→scaleX(1)');
   eq('挥舞保留竖轴与横轴子类型', `${variant(6, 5).dir}/${variant(6, 6).dir}`, 'vert/horz');
   const stretchExit = viewerLib.framesFor(variant(6, 7));
-  eq('伸展退场缩回同一条底边',
+  eq(
+    '伸展退场缩回同一条底边',
     `${stretchExit.from.transform}→${stretchExit.to.transform}@${stretchExit.to.transformOrigin}`,
-    'scaleY(1)→scaleY(0)@center bottom');
-  eq('透明度强调使用 PowerPoint 默认的 50%',
-    viewerLib.framesFor(variant(5, 5)).to.opacity, 0.5);
-  check('棋盘、轮盘和光圈播放时使用不同裁剪几何',
-    new Set([variant(1, 2), variant(3, 4), variant(2, 2)].map((step) =>
-      `${viewerLib.framesFor(step).to.maskImage}/${viewerLib.framesFor(step).to.maskSize}`)).size === 3);
+    'scaleY(1)→scaleY(0)@center bottom',
+  );
+  eq('透明度强调使用 PowerPoint 默认的 50%', viewerLib.framesFor(variant(5, 5)).to.opacity, 0.5);
+  check(
+    '棋盘、轮盘和光圈播放时使用不同裁剪几何',
+    new Set(
+      [variant(1, 2), variant(3, 4), variant(2, 2)].map(
+        (step) => `${viewerLib.framesFor(step).to.maskImage}/${viewerLib.framesFor(step).to.maskSize}`,
+      ),
+    ).size === 3,
+  );
   effectsFixture.dispose?.();
-  const paragraphBox = animationMod.parseSlideTiming(parseXml(
-    `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:cTn presetID="4" presetClass="entr" presetSubtype="16" nodeType="clickEffect" dur="2000"><p:animEffect transition="in" filter="box(in)"><p:cBhvr><p:tgtEl><p:spTgt spid="3"><p:txEl><p:pRg st="0" end="0"/></p:txEl></p:spTgt></p:tgtEl></p:cBhvr></p:animEffect></p:cTn></p:timing></p:sld>`,
-  ).doc.documentElement, 1280, 720).animations?.[0];
+  const paragraphBox = animationMod.parseSlideTiming(
+    parseXml(
+      `<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:timing><p:cTn presetID="4" presetClass="entr" presetSubtype="16" nodeType="clickEffect" dur="2000"><p:animEffect transition="in" filter="box(in)"><p:cBhvr><p:tgtEl><p:spTgt spid="3"><p:txEl><p:pRg st="0" end="0"/></p:txEl></p:spTgt></p:tgtEl></p:cBhvr></p:animEffect></p:cTn></p:timing></p:sld>`,
+    ).doc.documentElement,
+    1280,
+    720,
+  ).animations?.[0];
   eq('盒状段落目标保留段落区间', paragraphBox && `${paragraphBox.paragraphRange?.start}-${paragraphBox.paragraphRange?.end}`, '0-0');
 
   const pres = parsed.get('showcase.pptx');
@@ -1040,7 +1520,10 @@ group('动画 / 切换');
     check('每页都有切换效果', withTrans.length >= 7, `实际 ${withTrans.length}`);
     const types = new Set(withTrans.map((s) => s.transition.type));
     check('切换类型多样', types.size >= 5, [...types].join(','));
-    check('切换时长在合理区间', withTrans.every((s) => s.transition.durationMs >= 80 && s.transition.durationMs <= 5000));
+    check(
+      '切换时长在合理区间',
+      withTrans.every((s) => s.transition.durationMs >= 80 && s.transition.durationMs <= 5000),
+    );
 
     // p14 / p159 扩展切换：PowerPoint 写在 mc:AlternateContent 里，
     // Choice 放新效果、Fallback 放老版本能认的。取错分支就会静默退化成 fade。
@@ -1048,19 +1531,53 @@ group('动画 / 切换');
     for (const want of ['ripple', 'conveyor', 'prism', 'morph']) {
       check(`识别 p14/p159 切换 ${want}`, byType.has(want), [...byType.keys()].join(','));
     }
-    check('取 Choice 分支而非 Fallback', byType.get('ripple')?.durationMs === 1400,
-      String(byType.get('ripple')?.durationMs));
+    check('取 Choice 分支而非 Fallback', byType.get('ripple')?.durationMs === 1400, String(byType.get('ripple')?.durationMs));
     eq('morph 粒度', byType.get('morph')?.morphBy, 'byObject');
     eq('p14 切换保留方向', byType.get('conveyor')?.dir, 'l');
 
     // 每种切换都必须能产出关键帧，且不含脏值——新增 20 个类型最容易在这里翻车
     const ALL_TRANS = [
-      'none', 'fade', 'cut', 'push', 'pull', 'cover', 'wipe', 'split', 'zoom', 'dissolve',
-      'checker', 'blinds', 'comb', 'wheel', 'circle', 'diamond', 'plus', 'wedge',
-      'newsflash', 'randomBar', 'strips',
-      'vortex', 'switch', 'flip', 'ripple', 'honeycomb', 'glitter', 'warp', 'flythrough',
-      'flash', 'shred', 'reveal', 'wheelReverse', 'ferris', 'gallery', 'conveyor', 'pan',
-      'doors', 'window', 'prism', 'morph',
+      'none',
+      'fade',
+      'cut',
+      'push',
+      'pull',
+      'cover',
+      'wipe',
+      'split',
+      'zoom',
+      'dissolve',
+      'checker',
+      'blinds',
+      'comb',
+      'wheel',
+      'circle',
+      'diamond',
+      'plus',
+      'wedge',
+      'newsflash',
+      'randomBar',
+      'strips',
+      'vortex',
+      'switch',
+      'flip',
+      'ripple',
+      'honeycomb',
+      'glitter',
+      'warp',
+      'flythrough',
+      'flash',
+      'shred',
+      'reveal',
+      'wheelReverse',
+      'ferris',
+      'gallery',
+      'conveyor',
+      'pan',
+      'doors',
+      'window',
+      'prism',
+      'morph',
     ];
     {
       const tf = viewerLib.transitionFrames;
@@ -1079,9 +1596,10 @@ group('动画 / 切换');
       check('切换效果视觉上互不相同', seen.size >= 24, `仅 ${seen.size} 种不同关键帧`);
       const cutIn = tf({ type: 'cut', durationMs: 600 }, true);
       const cutOut = tf({ type: 'cut', durationMs: 600 }, false);
-      check('切出在切点前保留旧页且新页不可见',
-        cutIn[0].opacity === 0 && cutIn[1].opacity === 0
-          && cutOut[0].opacity === 1 && cutOut[1].opacity === 1);
+      check(
+        '切出在切点前保留旧页且新页不可见',
+        cutIn[0].opacity === 0 && cutIn[1].opacity === 0 && cutOut[0].opacity === 1 && cutOut[1].opacity === 1,
+      );
     }
 
     const anim = pres.slides.find((s) => s.animations?.length);
@@ -1090,33 +1608,40 @@ group('动画 / 切换');
       const motion = anim.animations.filter((a) => a.kind === 'motion');
       eq('入场动画条数', entr.length, 5);
       // 回归：曾把 <p:set dur="1"> 误当成动画时长，导致全部退化成 60ms
-      check('动画时长取自 animEffect 而非 p:set',
+      check(
+        '动画时长取自 animEffect 而非 p:set',
         entr.every((a) => a.durationMs === 600),
-        entr.map((a) => a.durationMs).join(','));
+        entr.map((a) => a.durationMs).join(','),
+      );
       // 回归：slide(fromLeft) 的方向曾被映射反
       const fly = anim.animations.find((a) => a.effect === 'fly');
       check('飞入方向映射正确', fly && fly.dir === 'l', fly ? fly.dir : '无 fly');
-      check('逐次点击分批', anim.animations.map((a) => a.clickGroup).join(',') === '0,1,2,3,4,5,6,7',
-        anim.animations.map((a) => a.clickGroup).join(','));
+      check(
+        '逐次点击分批',
+        anim.animations.map((a) => a.clickGroup).join(',') === '0,1,2,3,4,5,6,7',
+        anim.animations.map((a) => a.clickGroup).join(','),
+      );
 
       // 运动路径
       eq('运动路径动画条数', motion.length, 2);
       for (const m of motion) {
-        check(`运动路径 ${m.target} 有有效折线`, (m.motionPath?.length ?? 0) >= 2
-          && m.motionPath.length <= 256, `${m.motionPath?.length}`);
-        check(`运动路径 ${m.target} 起点归零`,
-          m.motionPath[0][0] === 0 && m.motionPath[0][1] === 0, JSON.stringify(m.motionPath?.[0]));
+        check(`运动路径 ${m.target} 有有效折线`, (m.motionPath?.length ?? 0) >= 2 && m.motionPath.length <= 256, `${m.motionPath?.length}`);
+        check(`运动路径 ${m.target} 起点归零`, m.motionPath[0][0] === 0 && m.motionPath[0][1] === 0, JSON.stringify(m.motionPath?.[0]));
         check(`运动路径 ${m.target} 无脏值`, !BAD.test(JSON.stringify(m.motionPath)));
       }
       // 闭合路径（Z）必须回到原点
       const closed = motion.find((m) => m.target === 707);
-      check('闭合路径终点回到起点',
+      check(
+        '闭合路径终点回到起点',
         closed && Math.hypot(...closed.motionPath[closed.motionPath.length - 1]) < 1,
-        closed ? JSON.stringify(closed.motionPath[closed.motionPath.length - 1]) : '无');
+        closed ? JSON.stringify(closed.motionPath[closed.motionPath.length - 1]) : '无',
+      );
       // 三次曲线要真被折线化，否则闭合路径会退化成一条直线来回
-      check('曲线路径不是直线',
+      check(
+        '曲线路径不是直线',
         closed && closed.motionPath.some(([, y]) => Math.abs(y) > 20),
-        closed ? String(Math.max(...closed.motionPath.map(([, y]) => Math.abs(y)))) : '无');
+        closed ? String(Math.max(...closed.motionPath.map(([, y]) => Math.abs(y)))) : '无',
+      );
       // 动画目标必须能在渲染结果里定位到
       const svg = lib.renderSlideToSvg(pres, anim);
       for (const a of anim.animations) {
@@ -1165,10 +1690,15 @@ group('SmartArt');
       eq(`第 ${idx + 1} 页节点文本`, textsOf(g).join('|'), texts.join('|'));
       // 盒子不能重叠也不能跑出画框——验收结构对得上，不要求与 PPT 像素一致
       const boxes = g.children.filter((e) => e.text);
-      check(`第 ${idx + 1} 页节点在画框内`,
+      check(
+        `第 ${idx + 1} 页节点在画框内`,
         boxes.every((b) => b.x >= -1 && b.y >= -1 && b.x + b.w <= g.w + 1 && b.y + b.h <= g.h + 1),
-        boxes.map((b) => `${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)}`).join(' '));
-      check(`第 ${idx + 1} 页节点尺寸有效`, boxes.every((b) => b.w > 1 && b.h > 1));
+        boxes.map((b) => `${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)}`).join(' '),
+      );
+      check(
+        `第 ${idx + 1} 页节点尺寸有效`,
+        boxes.every((b) => b.w > 1 && b.h > 1),
+      );
       check(`第 ${idx + 1} 页节点各有配色`, new Set(boxes.map((b) => b.fill?.color)).size >= Math.min(boxes.length, 3));
     }
 
@@ -1178,11 +1708,18 @@ group('SmartArt');
       eq('组织结构节点文本', textsOf(org).join('|'), 'CEO|研发|市场|前端|后端');
       const lines = org.children.filter((e) => e.openGeom);
       eq('父子连线数', lines.length, 4);
-      check('连线只描边不填充', lines.every((l) => l.fill === null && l.stroke));
+      check(
+        '连线只描边不填充',
+        lines.every((l) => l.fill === null && l.stroke),
+      );
       // CEO 在最上层
       const boxes = org.children.filter((e) => e.text);
       const ceo = boxes[0];
-      check('根节点在最上方', boxes.every((b) => b === ceo || b.y >= ceo.y), `${ceo.y}`);
+      check(
+        '根节点在最上方',
+        boxes.every((b) => b === ceo || b.y >= ceo.y),
+        `${ceo.y}`,
+      );
     }
 
     // matrix1→snake：2×2 网格应出现两行两列，不能塌成单行线性
@@ -1199,14 +1736,19 @@ group('SmartArt');
     const radial = groupOf(7);
     if (check('径向页排出 group', radial?.kind === 'group')) {
       const boxes = radial.children.filter((e) => e.text);
-      const cx = radial.w / 2, cy = radial.h / 2;
+      const cx = radial.w / 2,
+        cy = radial.h / 2;
       const dist = (b) => {
-        const dx = b.x + b.w / 2 - cx, dy = b.y + b.h / 2 - cy;
+        const dx = b.x + b.w / 2 - cx,
+          dy = b.y + b.h / 2 - cy;
         return Math.hypot(dx, dy);
       };
       const center = boxes[0];
-      check('径向中心最近', boxes.slice(1).every((b) => dist(b) > dist(center) + 1),
-        boxes.map((b) => Math.round(dist(b))).join(','));
+      check(
+        '径向中心最近',
+        boxes.slice(1).every((b) => dist(b) > dist(center) + 1),
+        boxes.map((b) => Math.round(dist(b))).join(','),
+      );
     }
 
     // 数据模型里的 parTrans / sibTrans / presOf 是噪声，混进树里会让节点翻倍
@@ -1243,10 +1785,18 @@ group('数学公式 OMML');
     const byName = new Map(mathRuns.map(([n, r]) => [n, r]));
     // 每种结构必须解析成对应的节点类型，退化成 run（纯文本）就说明解析没接住
     const WANT = [
-      ['math-分式', 'frac'], ['math-根式', 'rad'], ['math-n 次根', 'rad'],
-      ['math-上下标', 'script'], ['math-求和', 'nary'], ['math-积分', 'nary'],
-      ['math-括号自适应', 'delim'], ['math-多参数括号', 'delim'], ['math-矩阵', 'delim'],
-      ['math-重音', 'acc'], ['math-极限', 'lim'], ['math-嵌套分式', 'frac'],
+      ['math-分式', 'frac'],
+      ['math-根式', 'rad'],
+      ['math-n 次根', 'rad'],
+      ['math-上下标', 'script'],
+      ['math-求和', 'nary'],
+      ['math-积分', 'nary'],
+      ['math-括号自适应', 'delim'],
+      ['math-多参数括号', 'delim'],
+      ['math-矩阵', 'delim'],
+      ['math-重音', 'acc'],
+      ['math-极限', 'lim'],
+      ['math-嵌套分式', 'frac'],
     ];
     for (const [name, kind] of WANT) {
       const run = byName.get(name);
@@ -1262,8 +1812,10 @@ group('数学公式 OMML');
     eq('多参数括号的定界符', byName.get('math-多参数括号').math[0].beg, '[');
     eq('矩阵行数', byName.get('math-矩阵').math[0].items[0][0].rows.length, 2);
     eq('矩阵列数', byName.get('math-矩阵').math[0].items[0][0].rows[0].length, 2);
-    check('嵌套分式的分母里还有分式',
-      byName.get('math-嵌套分式').math[0].den.some((n) => n.kind === 'frac'));
+    check(
+      '嵌套分式的分母里还有分式',
+      byName.get('math-嵌套分式').math[0].den.some((n) => n.kind === 'frac'),
+    );
 
     // 线性文本仍然可搜索——公式不该让 slideText 变哑
     const txt = lib.slideText(pres.slides[0]);
@@ -1285,7 +1837,9 @@ group('数学公式 OMML');
 
     // 行内混排：公式与正文在同一行，行高要被公式撑开
     const inlineEl = [];
-    walkElements(pres.slides[0].elements, (el) => { if (el.name === 'inline') inlineEl.push(el); });
+    walkElements(pres.slides[0].elements, (el) => {
+      if (el.name === 'inline') inlineEl.push(el);
+    });
     if (check('存在行内混排的形状', inlineEl.length === 1)) {
       const runs = inlineEl[0].text.paragraphs[0].runs;
       eq('行内段落的 run 数', runs.length, 5);
@@ -1304,9 +1858,14 @@ group('加密文档');
 
   // 原语必须与 Node 的实现逐字节一致——这里错一位，后面全是"密码错误"
   {
-    let bad = 0, cases = 0;
-    for (const [fn, algo] of [[crypto.sha1, 'sha1'], [crypto.sha256, 'sha256'],
-      [crypto.sha384, 'sha384'], [crypto.sha512, 'sha512']]) {
+    let bad = 0,
+      cases = 0;
+    for (const [fn, algo] of [
+      [crypto.sha1, 'sha1'],
+      [crypto.sha256, 'sha256'],
+      [crypto.sha384, 'sha384'],
+      [crypto.sha512, 'sha512'],
+    ]) {
       // 覆盖补位边界：正好一块、差一字节、跨块
       for (const len of [0, 1, 55, 56, 63, 64, 111, 112, 127, 128, 1000]) {
         const buf = Buffer.alloc(len, 0xa5);
@@ -1339,7 +1898,10 @@ group('加密文档');
   const plain = load('sample.pptx');
 
   // 老式 .ppt 的 RC4 CryptoAPI —— 与 OOXML 加密是完全不同的两套方案
-  for (const [file, keyBits] of [['sample-ppt-encrypted.ppt', 40], ['sample-ppt-encrypted-56.ppt', 56]]) {
+  for (const [file, keyBits] of [
+    ['sample-ppt-encrypted.ppt', 40],
+    ['sample-ppt-encrypted-56.ppt', 56],
+  ]) {
     const bytes = load(file);
     if (!check(`${file} 存在`, !!bytes)) continue;
 
@@ -1349,23 +1911,32 @@ group('加密文档');
     check(`${file} 解密后取到文本`, txt.includes('RC4 CryptoAPI'), txt.slice(0, 50));
 
     let err = null;
-    try { await lib.parse(bytes, { password: 'nope' }); } catch (e) { err = e; }
+    try {
+      await lib.parse(bytes, { password: 'nope' });
+    } catch (e) {
+      err = e;
+    }
     eq(`${file} 密码错抛 WrongPasswordError`, err && err.name, 'WrongPasswordError');
 
     err = null;
-    try { await lib.parse(bytes); } catch (e) { err = e; }
+    try {
+      await lib.parse(bytes);
+    } catch (e) {
+      err = e;
+    }
     eq(`${file} 缺密码抛 PasswordRequiredError`, err && err.name, 'PasswordRequiredError');
     // 回归：判据在 Current User 流的 headerToken 上。不看这一处就只会得到
     // 「.ppt 中未找到幻灯片」——POI 语料里 5 个加密文件全被这样误诊过
-    check(`${file} 缺密码时诊断为「已加密」而非「找不到幻灯片」`,
-      err && /已加密/.test(err.message), err && err.message);
+    check(`${file} 缺密码时诊断为「已加密」而非「找不到幻灯片」`, err && /已加密/.test(err.message), err && err.message);
     void keyBits;
   }
   // 40 位密钥要补零到 128 位、56 位按原长度用；规则搞反了口令校验就过不了。
   // 两个固件唯一的差别就是密钥长度，同时绿才说明两条分支都对
 
-  for (const [file, scheme] of [['sample-encrypted-agile.pptx', 'agile'],
-    ['sample-encrypted-standard.pptx', 'standard']]) {
+  for (const [file, scheme] of [
+    ['sample-encrypted-agile.pptx', 'agile'],
+    ['sample-encrypted-standard.pptx', 'standard'],
+  ]) {
     const bytes = load(file);
     if (!check(`${file} 存在`, !!bytes)) continue;
 
@@ -1374,17 +1945,24 @@ group('加密文档');
 
     const pres = await lib.parse(bytes, { password: PW });
     eq(`${file} 解密后页数`, pres.slides.length, 3);
-    check(`${file} 解密后能取到文本`, lib.slideText(pres.slides[0]).includes('Web PPT'),
-      lib.slideText(pres.slides[0]).slice(0, 40));
+    check(`${file} 解密后能取到文本`, lib.slideText(pres.slides[0]).includes('Web PPT'), lib.slideText(pres.slides[0]).slice(0, 40));
     eq(`${file} 加密方案识别`, lib.encryptionScheme(readEncryptionInfo(bytes)), scheme);
 
     // 密码错与文件坏必须能区分开：前者可以提示重输，后者不能
     let err = null;
-    try { await lib.parse(bytes, { password: 'not-the-password' }); } catch (e) { err = e; }
+    try {
+      await lib.parse(bytes, { password: 'not-the-password' });
+    } catch (e) {
+      err = e;
+    }
     eq(`${file} 密码错抛 WrongPasswordError`, err && err.name, 'WrongPasswordError');
 
     err = null;
-    try { await lib.parse(bytes); } catch (e) { err = e; }
+    try {
+      await lib.parse(bytes);
+    } catch (e) {
+      err = e;
+    }
     eq(`${file} 缺密码抛 PasswordRequiredError`, err && err.name, 'PasswordRequiredError');
     check(`${file} 不给密码时提示明确`, err && /密码/.test(err.message), err && err.message);
   }
@@ -1394,9 +1972,7 @@ group('加密文档');
     const dec = await lib.parse(load('sample-encrypted-agile.pptx'), { password: PW });
     const ref = await lib.parse(plain);
     eq('解密结果与明文原件页数一致', dec.slides.length, ref.slides.length);
-    eq('解密结果与明文原件文本一致',
-      dec.slides.map((s) => lib.slideText(s)).join('|'),
-      ref.slides.map((s) => lib.slideText(s)).join('|'));
+    eq('解密结果与明文原件文本一致', dec.slides.map((s) => lib.slideText(s)).join('|'), ref.slides.map((s) => lib.slideText(s)).join('|'));
   }
 }
 
@@ -1426,12 +2002,27 @@ group('立体效果');
   const pres = parsed.get('showcase.pptx');
   if (pres) {
     const d3 = [];
-    for (const s of pres.slides) walkElements(s.elements, (e) => { if (e.scene3d) d3.push(e); });
+    for (const s of pres.slides)
+      walkElements(s.elements, (e) => {
+        if (e.scene3d) d3.push(e);
+      });
     check('解析出立体形状', d3.length >= 6, `实际 ${d3.length}`);
-    check('挤出深度为正', d3.every((e) => !e.scene3d.extrusion || e.scene3d.extrusion > 0));
-    check('存在斜角', d3.some((e) => e.scene3d.bevelTop > 0));
-    check('存在轮廓线', d3.some((e) => e.scene3d.contourWidth > 0));
-    check('存在视角旋转', d3.some((e) => e.scene3d.rotY !== undefined));
+    check(
+      '挤出深度为正',
+      d3.every((e) => !e.scene3d.extrusion || e.scene3d.extrusion > 0),
+    );
+    check(
+      '存在斜角',
+      d3.some((e) => e.scene3d.bevelTop > 0),
+    );
+    check(
+      '存在轮廓线',
+      d3.some((e) => e.scene3d.contourWidth > 0),
+    );
+    check(
+      '存在视角旋转',
+      d3.some((e) => e.scene3d.rotY !== undefined),
+    );
   }
 }
 
@@ -1441,7 +2032,10 @@ group('表格');
 {
   const collect = (pres) => {
     const out = [];
-    for (const s of pres.slides) walkElements(s.elements, (e) => { if (e.kind === 'table') out.push(e); });
+    for (const s of pres.slides)
+      walkElements(s.elements, (e) => {
+        if (e.kind === 'table') out.push(e);
+      });
     return out;
   };
   const px = parsed.get('showcase.pptx');
@@ -1453,14 +2047,20 @@ group('表格');
       const head = t.rows[0].cells.map((c) => c.text?.paragraphs.map((p) => p.runs.map((r) => r.text).join('')).join('') ?? '');
       eq('pptx 表头首格', head[0], '功能模块');
       check('表头加粗来自 tableStyles', t.rows[0].cells[0].text.paragraphs[0].runs[0].b === true);
-      check('存在合并单元格', t.rows.some((r) => r.cells.some((c) => c.merged || c.colSpan > 1)));
+      check(
+        '存在合并单元格',
+        t.rows.some((r) => r.cells.some((c) => c.merged || c.colSpan > 1)),
+      );
       check('单元格有边距', Array.isArray(t.rows[0].cells[0].margins));
       const plainMarkup = lib.renderElementToSvg(t, { idPrefix: 'plain-table-' }).markup;
       const editMarkup = lib.renderElementToSvg(t, {
-        idPrefix: 'edit-table-', includeEditMarkers: true,
+        idPrefix: 'edit-table-',
+        includeEditMarkers: true,
       }).markup;
-      check('单元格命中身份仅由编辑调用显式开启且不污染普通预览',
-        !plainMarkup.includes('data-table-cell=') && editMarkup.includes('data-table-cell="0:0"'));
+      check(
+        '单元格命中身份仅由编辑调用显式开启且不污染普通预览',
+        !plainMarkup.includes('data-table-cell=') && editMarkup.includes('data-table-cell="0:0"'),
+      );
 
       // 回归：DrawingML 的单元格边框覆盖标签是 a:lnL/lnR/lnT/lnB，
       // 曾误拼成 lnLeft/lnRight 导致该分支从不触发，自定义边框被静默丢弃。
@@ -1470,8 +2070,11 @@ group('表格');
         const b = c.borders;
         return b && [b.l, b.r, b.t, b.b].some((s) => s && /237,\s*125,\s*49/.test(s.color));
       });
-      check('单元格级自定义边框已生效', custom.length > 0,
-        `未找到橙色边框；各边框色 ${JSON.stringify([...new Set(allCells.flatMap((c) => [c.borders?.l?.color, c.borders?.t?.color]).filter(Boolean))].slice(0, 4))}`);
+      check(
+        '单元格级自定义边框已生效',
+        custom.length > 0,
+        `未找到橙色边框；各边框色 ${JSON.stringify([...new Set(allCells.flatMap((c) => [c.borders?.l?.color, c.borders?.t?.color]).filter(Boolean))].slice(0, 4))}`,
+      );
       const thick = allCells.some((c) => [c.borders?.l, c.borders?.r, c.borders?.t, c.borders?.b].some((s) => s && s.width > 1.6));
       check('自定义边框线宽已生效', thick);
     }
@@ -1485,16 +2088,20 @@ group('表格');
     const cellW = editorTable.colWidths[3];
     const cellH = editorTable.rows[1].height;
     const scale = lib.layoutText(autofitCell.text, cellW, cellH, {
-      insets: autofitCell.margins, vert: autofitCell.vert, includeCarets: false,
+      insets: autofitCell.margins,
+      vert: autofitCell.vert,
+      includeCarets: false,
     }).scale;
     const fontSize = Math.round(autofitCell.text.paragraphs[0].runs[0].size * scale * 100) / 100;
     const svgMarkup = lib.renderElementToSvg(editorTable, {
-      textMode: 'svg', idPrefix: 'autofit-cell-',
+      textMode: 'svg',
+      idPrefix: 'autofit-cell-',
     }).markup;
-    check('竖排表格单元格的静态 SVG 与编辑面共用边距覆盖和有效缩放',
-      autofitCell.vert === 'vert270' && svgMarkup.includes('rotate(-90)')
-        && svgMarkup.includes(`font-size="${fontSize}"`),
-    `scale=${scale} fontSize=${fontSize}`);
+    check(
+      '竖排表格单元格的静态 SVG 与编辑面共用边距覆盖和有效缩放',
+      autofitCell.vert === 'vert270' && svgMarkup.includes('rotate(-90)') && svgMarkup.includes(`font-size="${fontSize}"`),
+      `scale=${scale} fontSize=${fontSize}`,
+    );
   }
   // 回归：.ppt 的表格由「底色矩形 + 文字框」两层合并后再按网格还原
   const pp = parsed.get('showcase.ppt');
@@ -1517,7 +2124,12 @@ group('.ppt 二进制');
   // 线性 shade：fillAngle 的符号和 fillFocus 决定首尾色（与 LibreOffice ImportGradientColor 对照）。
   const fix16 = (degrees) => Math.round(degrees * 65536) >>> 0;
   const shade = (angle, focus) => {
-    const simple = new Map([[384, 7], [385, 0x0000ff], [387, 0xff0000], [447, 0x100010]]);
+    const simple = new Map([
+      [384, 7],
+      [385, 0x0000ff],
+      [387, 0xff0000],
+      [447, 0x100010],
+    ]);
     if (angle !== undefined) simple.set(395, fix16(angle));
     if (focus !== undefined) simple.set(396, focus >>> 0);
     const fill = escher.shapeFill({ simple, complex: new Map() }, [], () => null);
@@ -1539,11 +2151,15 @@ group('.ppt 二进制');
     const unsupportedPpt = await lib.parse(unsupportedBytes, { edit: true, lazy: false });
     const unknownShape = unsupportedPpt.slides[0]?.elements[0];
     const ole = unsupportedPpt.slides[1]?.elements[0];
-    check('ppt 未知 MSOSPT 与 OLE 均降级为如实标记的框架对象',
-      unsupportedPpt.slides.length === 2 && unknownShape?.kind === 'unsupported'
+    check(
+      'ppt 未知 MSOSPT 与 OLE 均降级为如实标记的框架对象',
+      unsupportedPpt.slides.length === 2
+        && unknownShape?.kind === 'unsupported'
         && unknownShape.label.includes('MSOSPT 300')
         && lib.renderElementToSvg(unknownShape).markup.includes('MSOSPT 300')
-        && ole?.kind === 'unsupported' && ole.label.includes('OLE'));
+        && ole?.kind === 'unsupported'
+        && ole.label.includes('OLE'),
+    );
     unsupportedPpt.dispose?.();
   }
   const pres = parsed.get('showcase.ppt');
@@ -1569,16 +2185,19 @@ group('.ppt 二进制');
   if (chartPpt) {
     const previews = [];
     const oleFrames = [];
-    for (const s of chartPpt.slides) walkElements(s.elements, (e) => {
-      if (e.kind === 'image') previews.push(e.src);
-      if (e.kind === 'unsupported' && e.preview) {
-        previews.push(e.preview);
-        if (e.label.includes('OLE')) oleFrames.push(e);
-      }
-    });
-    check('ppt 图表保留静态预览且 OLE 语义降为框架对象',
+    for (const s of chartPpt.slides)
+      walkElements(s.elements, (e) => {
+        if (e.kind === 'image') previews.push(e.src);
+        if (e.kind === 'unsupported' && e.preview) {
+          previews.push(e.preview);
+          if (e.label.includes('OLE')) oleFrames.push(e);
+        }
+      });
+    check(
+      'ppt 图表保留静态预览且 OLE 语义降为框架对象',
       previews.length >= 9 && oleFrames.length >= 9,
-      `预览 ${previews.length} · OLE frame ${oleFrames.length}`);
+      `预览 ${previews.length} · OLE frame ${oleFrames.length}`,
+    );
     const svgImgs = previews.filter((src) => src.startsWith('data:image/svg+xml'));
     check('EMF 已解码为 SVG', svgImgs.length >= 9, `实际 ${svgImgs.length}`);
     // 回归：BLIP 里的图元数据是 DEFLATE 压缩的，不解压会得到乱码
@@ -1595,9 +2214,14 @@ group('图元文件');
   const pres = parsed.get('sample-metafile.pptx');
   if (pres) {
     const imgs = [];
-    walkElements(pres.slides[0].elements, (e) => { if (e.kind === 'image') imgs.push(e); });
+    walkElements(pres.slides[0].elements, (e) => {
+      if (e.kind === 'image') imgs.push(e);
+    });
     eq('EMF 与 WMF 各一张', imgs.length, 2);
-    check('两张都解码成 SVG', imgs.every((i) => i.src.startsWith('data:image/svg+xml')));
+    check(
+      '两张都解码成 SVG',
+      imgs.every((i) => i.src.startsWith('data:image/svg+xml')),
+    );
     for (const img of imgs) {
       const decoded = decodeURIComponent(img.src.split(',')[1] ?? '');
       const { error } = parseXml(decoded);
@@ -1613,7 +2237,9 @@ group('图表');
 {
   const pres = parsed.get('sample-chart.pptx');
   if (pres) {
-    let charts = 0, unsupported = 0, texts = 0;
+    let charts = 0,
+      unsupported = 0,
+      texts = 0;
     for (const s of pres.slides) {
       walkElements(s.elements, (e) => {
         if (e.kind === 'group' && e.name === '图表') charts++;
@@ -1639,7 +2265,10 @@ for (const [name, pres] of parsed) {
   if (pres) {
     const hit = pres.slides.findIndex((s) => lib.slideText(s).includes('预设形状库'));
     eq('搜索命中首页', hit, 0);
-    check('备注计入可搜索文本', pres.slides.some((s) => lib.slideText(s).includes('等轴测')));
+    check(
+      '备注计入可搜索文本',
+      pres.slides.some((s) => lib.slideText(s).includes('等轴测')),
+    );
   }
 }
 
@@ -1662,22 +2291,34 @@ group('惰性解析');
     }
     eq('逐页文本一致', same, eager.slides.length);
 
-    const countEls = (s) => { let n = 0; walkElements(s.elements, () => n++); return n; };
+    const countEls = (s) => {
+      let n = 0;
+      walkElements(s.elements, () => n++);
+      return n;
+    };
     const diff = eager.slides.filter((s, i) => countEls(s) !== countEls(lazy.slides[i]));
     eq('逐页元素数一致', diff.length, 0);
 
     // 数组语义：map / forEach / 展开 / JSON 都要正常
     check('map 可用', lazy.slides.map((s) => s.elements.length).length === eager.slides.length);
     check('展开运算符可用', [...lazy.slides].length === eager.slides.length);
-    check('渲染结果一致', lib.renderSlideToSvg(lazy, lazy.slides[0], { textMode: 'svg' })
-      === lib.renderSlideToSvg(eager, eager.slides[0], { textMode: 'svg' }));
+    check(
+      '渲染结果一致',
+      lib.renderSlideToSvg(lazy, lazy.slides[0], { textMode: 'svg' }) === lib.renderSlideToSvg(eager, eager.slides[0], { textMode: 'svg' }),
+    );
 
-    // 缓存：同一页取两次必须是同一个对象
+    // 缓存：同一页取两次必须是同一个对象（slides[2] 是惰性 getter，两次读取各触发一次）
+    // biome-ignore lint/suspicious/noSelfCompare: 比较的是两次 getter 调用的返回值
     check('同页重复访问返回同一对象', lazy.slides[2] === lazy.slides[2]);
 
     // 全量模式下应可结构化克隆（Worker 传输的前提）
     let cloned = false;
-    try { structuredClone(eager.slides[0]); cloned = true; } catch { /* 记录失败 */ }
+    try {
+      structuredClone(eager.slides[0]);
+      cloned = true;
+    } catch {
+      /* 记录失败 */
+    }
     check('全量解析结果可结构化克隆', cloned);
   }
 }
@@ -1694,46 +2335,70 @@ group('编辑解析');
     const combined = await lib.parse(bytes, { edit: true, keepPackage: true, lazy: false });
 
     check('默认解析不暴露原包', !Object.hasOwn(plain, 'package'));
-    check('默认页不携带编辑元数据', plain.slides.every((s) => !Object.hasOwn(s, 'editInfo')));
-    check('默认元素不携带编辑元数据', allElements(plain).every((e) => !Object.hasOwn(e, 'editInfo')));
+    check(
+      '默认页不携带编辑元数据',
+      plain.slides.every((s) => !Object.hasOwn(s, 'editInfo')),
+    );
+    check(
+      '默认元素不携带编辑元数据',
+      allElements(plain).every((e) => !Object.hasOwn(e, 'editInfo')),
+    );
 
     check('edit 模式不隐式保留原包', !Object.hasOwn(editable, 'package'));
-    check('edit 模式记录每页 part', editable.slides.every((s, i) =>
-      s.editInfo?.origin.part === `ppt/slides/slide${i + 1}.xml`));
+    check(
+      'edit 模式记录每页 part',
+      editable.slides.every((s, i) => s.editInfo?.origin.part === `ppt/slides/slide${i + 1}.xml`),
+    );
     const identified = allElements(editable).filter((e) => e.id !== undefined);
-    check('edit 模式记录全部有 id 元素的回写锚点', identified.length > 0
-      && identified.every((e) => e.editInfo?.origin?.spid === e.id && !!e.editInfo.origin.part));
-    check('edit 模式保留占位符身份', identified.some((e) => !!e.editInfo?.placeholder?.type));
-    const inheritedGeom = identified.find((e) => e.kind === 'shape'
-      && e.editInfo?.placeholder?.idx === '2');
+    check(
+      'edit 模式记录全部有 id 元素的回写锚点',
+      identified.length > 0 && identified.every((e) => e.editInfo?.origin?.spid === e.id && !!e.editInfo.origin.part),
+    );
+    check(
+      'edit 模式保留占位符身份',
+      identified.some((e) => !!e.editInfo?.placeholder?.type),
+    );
+    const inheritedGeom = identified.find((e) => e.kind === 'shape' && e.editInfo?.placeholder?.idx === '2');
     eq('edit 模式保留占位符继承的预设几何', inheritedGeom?.editInfo?.geom?.preset, 'roundRect');
-    const inheritedPictureGeom = identified.find((e) => e.kind === 'image'
-      && e.editInfo?.placeholder?.idx === '1');
+    const inheritedPictureGeom = identified.find((e) => e.kind === 'image' && e.editInfo?.placeholder?.idx === '1');
     eq('edit 模式保留图片占位符继承的预设几何', inheritedPictureGeom?.editInfo?.geom?.preset, 'rect');
 
     let renderSame = true;
     for (let i = 0; i < plain.slides.length; i++) {
       const opts = { textMode: 'svg', idPrefix: `edit-contract-${i}-` };
-      if (normalizeSvg(lib.renderSlideToSvg(plain, plain.slides[i], opts))
-        !== normalizeSvg(lib.renderSlideToSvg(editable, editable.slides[i], opts))) renderSame = false;
+      if (
+        normalizeSvg(lib.renderSlideToSvg(plain, plain.slides[i], opts))
+        !== normalizeSvg(lib.renderSlideToSvg(editable, editable.slides[i], opts))
+      )
+        renderSame = false;
     }
     check('编辑元数据不改变预览结果', renderSame);
 
     check('keepPackage 暴露只读 OPC 句柄', kept.package?.format === 'pptx');
     check('keepPackage 零拷贝保留原始 ZIP 字节', kept.package?.bytes === bytes);
     check('keepPackage 暴露解压 part', !!kept.package?.parts['ppt/presentation.xml']);
-    check('keepPackage 不隐式添加编辑元数据', allElements(kept).every((e) => !Object.hasOwn(e, 'editInfo')));
-    check('edit + keepPackage 可联合启用', combined.package?.format === 'pptx'
-      && combined.slides.every((s) => !!s.editInfo?.origin.part));
-    check('联合模式的元素锚点指向真实 part', allElements(combined)
-      .filter((e) => !!e.editInfo?.origin)
-      .every((e) => !!combined.package?.parts[e.editInfo.origin.part]));
+    check(
+      'keepPackage 不隐式添加编辑元数据',
+      allElements(kept).every((e) => !Object.hasOwn(e, 'editInfo')),
+    );
+    check('edit + keepPackage 可联合启用', combined.package?.format === 'pptx' && combined.slides.every((s) => !!s.editInfo?.origin.part));
+    check(
+      '联合模式的元素锚点指向真实 part',
+      allElements(combined)
+        .filter((e) => !!e.editInfo?.origin)
+        .every((e) => !!combined.package?.parts[e.editInfo.origin.part]),
+    );
     const handle = kept.package;
     kept.dispose?.();
     check('dispose 标记 OPC 句柄已释放', handle?.disposed === true);
     eq('dispose 释放原始 ZIP 字节', handle?.bytes.length, 0);
     eq('dispose 释放解压 part', Object.keys(handle?.parts ?? {}).length, 0);
-    try { kept.dispose?.(); pass++; } catch (e) { failures.push(`dispose 可重复调用 — ${String(e)}`); }
+    try {
+      kept.dispose?.();
+      pass++;
+    } catch (e) {
+      failures.push(`dispose 可重复调用 — ${String(e)}`);
+    }
     combined.dispose?.();
   }
 
@@ -1741,29 +2406,49 @@ group('编辑解析');
   if (pptBytes) {
     const legacy = await lib.parse(pptBytes, { edit: true, keepPackage: true });
     check('.ppt 不暴露伪 OPC 包', !Object.hasOwn(legacy, 'package'));
-    check('.ppt 不伪造 OOXML 回写锚点', allElements(legacy).every((e) => !e.editInfo?.origin));
-    const legacyShape = allElements(legacy)
-      .find((e) => e.kind === 'shape' && !!e.editInfo?.geom?.preset);
+    check(
+      '.ppt 不伪造 OOXML 回写锚点',
+      allElements(legacy).every((e) => !e.editInfo?.origin),
+    );
+    const legacyShape = allElements(legacy).find((e) => e.kind === 'shape' && !!e.editInfo?.geom?.preset);
     if (check('.ppt 编辑模式保留格式无关的预设几何', !!legacyShape)) {
-      eq('.ppt 的预设几何可由公共入口复现',
+      eq(
+        '.ppt 的预设几何可由公共入口复现',
         lib.resolveGeomPath(legacyShape.editInfo.geom, legacyShape.w, legacyShape.h).d,
-        legacyShape.path);
+        legacyShape.path,
+      );
     }
-    const legacyBlobImages = allElements(legacy)
-      .filter((element) => element.kind === 'image' && element.src.startsWith('blob:'));
+    const legacyBlobImages = allElements(legacy).filter((element) => element.kind === 'image' && element.src.startsWith('blob:'));
     const legacyAssets = legacy.editInfo?.assets ?? [];
-    check('.ppt 编辑模式保留栅格图的 URL、类型与原始字节', legacyBlobImages.length > 0
-      && legacyAssets.length > 0
-      && legacyBlobImages.every((image) => legacyAssets.some((asset) =>
-        asset.url === image.src && asset.mime.startsWith('image/') && asset.bytes.length > 0)));
+    check(
+      '.ppt 编辑模式保留栅格图的 URL、类型与原始字节',
+      legacyBlobImages.length > 0
+        && legacyAssets.length > 0
+        && legacyBlobImages.every((image) =>
+          legacyAssets.some((asset) => asset.url === image.src && asset.mime.startsWith('image/') && asset.bytes.length > 0),
+        ),
+    );
     const legacyUrls = legacyAssets.map((asset) => asset.url);
-    check('.ppt 位图 URL 在释放前有效', legacyUrls.every((url) => blobs.has(url)));
+    check(
+      '.ppt 位图 URL 在释放前有效',
+      legacyUrls.every((url) => blobs.has(url)),
+    );
     legacy.dispose?.();
-    check('.ppt dispose 释放全部位图 URL', legacyUrls.every((url) => !blobs.has(url)));
-    try { legacy.dispose?.(); pass++; } catch (e) { failures.push(`.ppt dispose 可重复调用 — ${String(e)}`); }
+    check(
+      '.ppt dispose 释放全部位图 URL',
+      legacyUrls.every((url) => !blobs.has(url)),
+    );
+    try {
+      legacy.dispose?.();
+      pass++;
+    } catch (e) {
+      failures.push(`.ppt dispose 可重复调用 — ${String(e)}`);
+    }
   }
 
-  let anchored = 0, missingAnchor = 0, missingPart = 0;
+  let anchored = 0,
+    missingAnchor = 0,
+    missingPart = 0;
   for (const fx of FIXTURES.filter((x) => x.source === 'pptx')) {
     const fixtureBytes = load(fx.file);
     if (!fixtureBytes) continue;
@@ -1786,8 +2471,7 @@ group('编辑解析');
     const plain = await lib.parse(geomBytes, { lazy: false });
     const editable = await lib.parse(geomBytes, { edit: true, lazy: false });
     const shapes = allElements(editable).filter((e) => e.kind === 'shape');
-    const adjusted = shapes.find((e) => e.editInfo?.geom?.preset === 'roundRect'
-      && e.editInfo.geom.adj.adj === 10000);
+    const adjusted = shapes.find((e) => e.editInfo?.geom?.preset === 'roundRect' && e.editInfo.geom.adj.adj === 10000);
     if (check('edit 模式保留显式 preset + adj', !!adjusted)) {
       const spec = adjusted.editInfo.geom;
       const current = lib.resolveGeomPath(spec, adjusted.w, adjusted.h);
@@ -1795,8 +2479,7 @@ group('编辑解析');
       eq('resolveGeomPath 复现开放路径语义', current.open || undefined, adjusted.openGeom);
       const resized = lib.resolveGeomPath(spec, adjusted.w * 1.75, adjusted.h * 0.6);
       check('改变宽高会重算而非复用烘焙路径', resized.d !== adjusted.path);
-      eq('根入口与 geometry 子入口重算一致', resized.d,
-        geo.resolveGeomPath(spec, adjusted.w * 1.75, adjusted.h * 0.6).d);
+      eq('根入口与 geometry 子入口重算一致', resized.d, geo.resolveGeomPath(spec, adjusted.w * 1.75, adjusted.h * 0.6).d);
     }
 
     const custom = shapes.find((e) => e.name === 'CustGeomFormula' || e.name === 'CustGeom');
@@ -1805,8 +2488,11 @@ group('编辑解析');
     let renderSame = true;
     for (let i = 0; i < plain.slides.length; i++) {
       const opts = { textMode: 'svg', idPrefix: `edit-geom-${i}-` };
-      if (normalizeSvg(lib.renderSlideToSvg(plain, plain.slides[i], opts))
-        !== normalizeSvg(lib.renderSlideToSvg(editable, editable.slides[i], opts))) renderSame = false;
+      if (
+        normalizeSvg(lib.renderSlideToSvg(plain, plain.slides[i], opts))
+        !== normalizeSvg(lib.renderSlideToSvg(editable, editable.slides[i], opts))
+      )
+        renderSame = false;
     }
     check('几何编辑元数据不改变全类型预览', renderSame);
     plain.dispose?.();
@@ -1819,23 +2505,25 @@ group('编辑解析');
   if (bytes) {
     const plain = await lib.parse(bytes, { lazy: false });
     const editable = await lib.parse(bytes, { edit: true, lazy: false });
-    const named = (presentation, name) => allElements(presentation)
-      .find((element) => element.kind === 'shape' && element.name === name);
+    const named = (presentation, name) => allElements(presentation).find((element) => element.kind === 'shape' && element.name === name);
     const plainInherited = named(plain, '继承文字框属性');
     const editInherited = named(editable, '继承文字框属性');
     const explicitNormal = named(plain, '自动适应-缩小');
-    check('默认解析不携带文字框编辑来源', !!plainInherited?.text
-      && !Object.hasOwn(plainInherited.text, 'editInfo'));
-    check('edit 解析用紧凑位集保留 bodyPr 直设与版式/母版回退',
+    check('默认解析不携带文字框编辑来源', !!plainInherited?.text && !Object.hasOwn(plainInherited.text, 'editInfo'));
+    check(
+      'edit 解析用紧凑位集保留 bodyPr 直设与版式/母版回退',
       editInherited?.text?.editInfo?.direct === 255
         && editInherited.text.editInfo.inherited?.anchor === 'middle'
         && JSON.stringify(editInherited.text.editInfo.inherited?.insets) === '[21,22,13,14]'
-        && editInherited.text.editInfo.inherited?.autoFitNormal === true);
-    check('显式 fontScale 的 normAutofit 仍投影为 normal 而不重复求解',
+        && editInherited.text.editInfo.inherited?.autoFitNormal === true,
+    );
+    check(
+      '显式 fontScale 的 normAutofit 仍投影为 normal 而不重复求解',
       explicitNormal?.text?.autoFitNormal === true
         && explicitNormal.text.autoFitCompute !== true
         && explicitNormal.text.fontScale === 0.82
-        && lib.layoutText(explicitNormal.text, explicitNormal.w, explicitNormal.h).autoFit === 'normal');
+        && lib.layoutText(explicitNormal.text, explicitNormal.w, explicitNormal.h).autoFit === 'normal',
+    );
   }
 }
 
@@ -1845,16 +2533,32 @@ group('xml-lite');
 {
   const liteMod = await (async () => {
     const f = join(outDir, 'xml-lite.mjs');
-    execFileSync('npx', ['esbuild', join(root, 'packages/core/src/xml-lite.ts'), '--bundle', '--format=esm',
-      '--platform=browser', '--log-level=error', `--outfile=${f}`], { cwd: root, stdio: 'inherit' });
+    execFileSync(
+      'npx',
+      [
+        'esbuild',
+        join(root, 'packages/core/src/xml-lite.ts'),
+        '--bundle',
+        '--format=esm',
+        '--platform=browser',
+        '--log-level=error',
+        `--outfile=${f}`,
+      ],
+      { cwd: root, stdio: 'inherit' },
+    );
     return import(`file://${f}?t=${Date.now()}`);
   })();
 
   // 与原生 DOMParser 的结构必须等价——Worker 里换用它，结果不能有差别
   const sig = (el, depth = 0) => {
     if (depth > 8) return '';
-    const attrs = Array.from(el.attributes ?? []).map((a) => `${a.name}=${a.value}`).sort().join(',');
-    const kids = Array.from(el.children ?? []).map((c) => sig(c, depth + 1)).join('');
+    const attrs = Array.from(el.attributes ?? [])
+      .map((a) => `${a.name}=${a.value}`)
+      .sort()
+      .join(',');
+    const kids = Array.from(el.children ?? [])
+      .map((c) => sig(c, depth + 1))
+      .join('');
     return `${el.localName}[${attrs}](${kids})`;
   };
 
@@ -1878,7 +2582,8 @@ group('xml-lite');
     const { unzipSync } = await import('fflate');
     const files = unzipSync(bytes);
     const dec = new TextDecoder();
-    let ok = 0, total = 0;
+    let ok = 0,
+      total = 0;
     for (const k of Object.keys(files).filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f))) {
       total++;
       const x = dec.decode(files[k]);
@@ -1889,21 +2594,27 @@ group('xml-lite');
     eq(`真实 slide XML 结构等价（${total} 个）`, ok, total);
   }
 
-  check('畸形输入抛可读 Error', (() => {
-    try { liteMod.parseXmlLite('not xml at all'); return false; }
-    catch (e) { return e instanceof Error && !!e.message; }
-  })());
+  check(
+    '畸形输入抛可读 Error',
+    (() => {
+      try {
+        liteMod.parseXmlLite('not xml at all');
+        return false;
+      } catch (e) {
+        return e instanceof Error && !!e.message;
+      }
+    })(),
+  );
 
-  const deepXml = (depth) => '<q:r xmlns:q="urn:deep">' + '<q:n>'.repeat(depth)
-    + '</q:n>'.repeat(depth) + '</q:r>';
+  const deepXml = (depth) => '<q:r xmlns:q="urn:deep">' + '<q:n>'.repeat(depth) + '</q:n>'.repeat(depth) + '</q:r>';
   const started = performance.now();
   const deep = liteMod.parseXmlLite(deepXml(8000));
   const elapsed = performance.now() - started;
-  check('深层 XML 命名空间解析保持线性且不递归查询父链',
-    deep.namespaceURI === 'urn:deep'
-      && deep.firstElementChild?.lookupNamespaceURI('q') === 'urn:deep'
-      && elapsed < 250,
-  `${elapsed.toFixed(1)}ms`);
+  check(
+    '深层 XML 命名空间解析保持线性且不递归查询父链',
+    deep.namespaceURI === 'urn:deep' && deep.firstElementChild?.lookupNamespaceURI('q') === 'urn:deep' && elapsed < 250,
+    `${elapsed.toFixed(1)}ms`,
+  );
 }
 
 // ---------------- 12. 查看器交互 ----------------
@@ -1923,7 +2634,10 @@ group('查看器');
     if (check('存在含超链接的页', linkPage >= 0)) {
       const v = new viewerLib.Viewer(box, pres, { index: linkPage });
       const calls = [];
-      v.onLinkClick = (h) => { calls.push(h); return false; };
+      v.onLinkClick = (h) => {
+        calls.push(h);
+        return false;
+      };
 
       // 内部跳页不应触发 onLinkClick
       const jump = box.querySelector('[data-slide]');
@@ -1937,7 +2651,9 @@ group('查看器');
       const keyboardJump = box.querySelector('[data-slide]');
       if (check('内部跳页节点可被键盘聚焦', keyboardJump?.getAttribute('tabindex') === '0')) {
         const event = new globalThis.window.KeyboardEvent('keydown', {
-          key: 'Enter', bubbles: true, cancelable: true,
+          key: 'Enter',
+          bubbles: true,
+          cancelable: true,
         });
         keyboardJump.dispatchEvent(event);
         check('Viewer Enter 阻止无 href 的默认行为', event.defaultPrevented);
@@ -1948,7 +2664,10 @@ group('查看器');
       // 外链应触发回调；返回 true 时阻止默认行为
       const v2 = new viewerLib.Viewer(box, pres, { index: linkPage });
       const got = [];
-      v2.onLinkClick = (h) => { got.push(h); return true; };
+      v2.onLinkClick = (h) => {
+        got.push(h);
+        return true;
+      };
       const ext = box.querySelector('a[href]');
       if (check('渲染出外链节点', !!ext)) {
         const ev = new globalThis.window.MouseEvent('click', { bubbles: true, cancelable: true });
@@ -1986,8 +2705,7 @@ group('查看器');
         const thumb = vt.renderSlide(animIdx);
         check('缩略图烘进终态隐藏', thumb.includes('visibility:hidden'));
         for (const id of lib.staticHidden(pres.slides[animIdx])) {
-          check(`缩略图隐藏了退场元素 ${id}`,
-            new RegExp(`data-el="${id}" style="visibility:hidden`).test(thumb), thumb.slice(0, 200));
+          check(`缩略图隐藏了退场元素 ${id}`, new RegExp(`data-el="${id}" style="visibility:hidden`).test(thumb), thumb.slice(0, 200));
         }
         check('主视图不烘隐藏（交给 applyVisibility）', !vt.slideSvg(animIdx).includes('visibility:hidden'));
         vt.destroy();
@@ -2000,18 +2718,45 @@ group('查看器');
     // 就是这么漏出来的。
     {
       const grouped = {
-        width: 1280, height: 720, source: 'pptx',
-        slides: [{
-          background: null,
-          elements: [{
-            kind: 'group', id: 7, x: 0, y: 0, w: 100, h: 100, rot: 0, flipH: false, flipV: false,
-            children: [{
-              kind: 'shape', id: 5, x: 0, y: 0, w: 50, h: 50, rot: 0, flipH: false, flipV: false,
-              path: 'M0 0L50 0L50 50Z', fill: { type: 'solid', color: '#000' }, stroke: null, text: null,
-            }],
-          }],
-          animations: [{ target: 7, kind: 'exit', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 }],
-        }],
+        width: 1280,
+        height: 720,
+        source: 'pptx',
+        slides: [
+          {
+            background: null,
+            elements: [
+              {
+                kind: 'group',
+                id: 7,
+                x: 0,
+                y: 0,
+                w: 100,
+                h: 100,
+                rot: 0,
+                flipH: false,
+                flipV: false,
+                children: [
+                  {
+                    kind: 'shape',
+                    id: 5,
+                    x: 0,
+                    y: 0,
+                    w: 50,
+                    h: 50,
+                    rot: 0,
+                    flipH: false,
+                    flipV: false,
+                    path: 'M0 0L50 0L50 50Z',
+                    fill: { type: 'solid', color: '#000' },
+                    stroke: null,
+                    text: null,
+                  },
+                ],
+              },
+            ],
+            animations: [{ target: 7, kind: 'exit', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 }],
+          },
+        ],
       };
       const host = globalThis.document.createElement('div');
       globalThis.document.body.appendChild(host);
@@ -2029,20 +2774,33 @@ group('查看器');
     // 退场需要先播完整个效果，再进入隐藏终态；切换未结束时点击只作用于新页。
     {
       const step = {
-        target: 705, kind: 'exit', clickGroup: 0, trigger: 'click', effect: 'fade',
-        delayMs: 0, durationMs: 600,
+        target: 705,
+        kind: 'exit',
+        clickGroup: 0,
+        trigger: 'click',
+        effect: 'fade',
+        delayMs: 0,
+        durationMs: 600,
       };
       const slide = { ...pres.slides[6], animations: [step] };
       const host = globalThis.document.createElement('div');
       globalThis.document.body.appendChild(host);
-      const exitViewer = new viewerLib.Viewer(host, { ...pres, slides: [slide] }, {
-        animate: true, textMode: 'svg',
-      });
+      const exitViewer = new viewerLib.Viewer(
+        host,
+        { ...pres, slides: [slide] },
+        {
+          animate: true,
+          textMode: 'svg',
+        },
+      );
       const exiting = host.querySelector('[data-el="705"]');
       let resolveExit;
       exiting.animate = () => ({
-        finished: new Promise((resolve) => { resolveExit = resolve; }),
-        finish() {}, cancel() {},
+        finished: new Promise((resolve) => {
+          resolveExit = resolve;
+        }),
+        finish() {},
+        cancel() {},
       });
       exitViewer.playNextAnimation();
       check('退场播放期间元素仍可见', exiting.style.visibility !== 'hidden');
@@ -2054,25 +2812,35 @@ group('查看器');
 
       const nativeAnimate = globalThis.window.HTMLElement.prototype.animate;
       globalThis.window.HTMLElement.prototype.animate = () => ({
-        finished: new Promise(() => {}), cancel() {},
+        finished: new Promise(() => {}),
+        cancel() {},
       });
       try {
         const incoming = { ...slide, transition: { type: 'fade', durationMs: 60 } };
-        const switching = new viewerLib.Viewer(host, { ...pres, slides: [slide, incoming] }, {
-          animate: true, textMode: 'svg',
-        });
+        const switching = new viewerLib.Viewer(
+          host,
+          { ...pres, slides: [slide, incoming] },
+          {
+            animate: true,
+            textMode: 'svg',
+          },
+        );
         switching.goTo(1);
         const outgoingNode = host.firstElementChild.querySelector('[data-el="705"]');
         const incomingNode = host.lastElementChild.querySelector('[data-el="705"]');
         let oldCalls = 0;
         let newCalls = 0;
-        outgoingNode.animate = () => { oldCalls++; return { finished: Promise.resolve(), cancel() {} }; };
-        incomingNode.animate = () => { newCalls++; return { finished: Promise.resolve(), cancel() {} }; };
+        outgoingNode.animate = () => {
+          oldCalls++;
+          return { finished: Promise.resolve(), cancel() {} };
+        };
+        incomingNode.animate = () => {
+          newCalls++;
+          return { finished: Promise.resolve(), cancel() {} };
+        };
         switching.playNextAnimation();
-        check('页面切换期间元素动画只作用于新页', oldCalls === 0 && newCalls === 1,
-          `旧页 ${oldCalls} 次，新页 ${newCalls} 次`);
-        check('页面切换期间旧页可见性不受新页影响',
-          outgoingNode.style.visibility !== 'hidden');
+        check('页面切换期间元素动画只作用于新页', oldCalls === 0 && newCalls === 1, `旧页 ${oldCalls} 次，新页 ${newCalls} 次`);
+        check('页面切换期间旧页可见性不受新页影响', outgoingNode.style.visibility !== 'hidden');
         switching.destroy();
       } finally {
         globalThis.window.HTMLElement.prototype.animate = nativeAnimate;
@@ -2109,11 +2877,14 @@ group('健壮性');
   if (base) {
     // 截断：从 5% 到 95% 各切一刀
     for (let pct = 5; pct <= 95; pct += 10) {
-      cases.push([`截断至 ${pct}%`, base.slice(0, Math.floor(base.length * pct / 100))]);
+      cases.push([`截断至 ${pct}%`, base.slice(0, Math.floor((base.length * pct) / 100))]);
     }
     // 随机字节破坏
     let seed = 7;
-    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const rnd = () => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed / 0x7fffffff;
+    };
     for (let k = 0; k < 30; k++) {
       const copy = base.slice();
       for (let i = 0; i < 40; i++) copy[Math.floor(rnd() * copy.length)] = Math.floor(rnd() * 256);
@@ -2124,10 +2895,13 @@ group('健壮性');
   const pptBase = load('showcase.ppt');
   if (pptBase) {
     for (let pct = 10; pct <= 90; pct += 20) {
-      cases.push([`.ppt 截断至 ${pct}%`, pptBase.slice(0, Math.floor(pptBase.length * pct / 100))]);
+      cases.push([`.ppt 截断至 ${pct}%`, pptBase.slice(0, Math.floor((pptBase.length * pct) / 100))]);
     }
     let seed = 99;
-    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const rnd = () => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed / 0x7fffffff;
+    };
     for (let k = 0; k < 20; k++) {
       const copy = pptBase.slice();
       for (let i = 0; i < 30; i++) copy[Math.floor(rnd() * copy.length)] = Math.floor(rnd() * 256);
@@ -2142,7 +2916,11 @@ group('健壮性');
   cases.push(['纯文本', new TextEncoder().encode('this is not a presentation at all')]);
   cases.push(['全零 4KB', new Uint8Array(4096)]);
 
-  let crashed = 0, hung = 0, partial = 0, ok = 0, rejected = 0;
+  let crashed = 0,
+    hung = 0,
+    partial = 0,
+    ok = 0,
+    rejected = 0;
   for (const [name, bytes] of cases) {
     let pres = null;
     const t0 = Date.now();
@@ -2158,7 +2936,10 @@ group('健壮性');
       rejected++;
       continue;
     }
-    if (Date.now() - t0 > 15000) { hung++; failures.push(`健壮性 ${name} — 耗时过长`); }
+    if (Date.now() - t0 > 15000) {
+      hung++;
+      failures.push(`健壮性 ${name} — 耗时过长`);
+    }
 
     // 解析成功就必须是完整可渲染的结构
     if (!pres || !Array.isArray(pres.slides) || !Number.isFinite(pres.width) || !Number.isFinite(pres.height)) {
@@ -2193,8 +2974,7 @@ group('健壮性');
       // 把某个形状的几何改成会让 presetGeom 收到非法输入的形式，
       // 期望：该形状降级，其余元素数量不变
       check('形状级失败不影响同页其它元素', total > 200, `第 1 页仅 ${total} 个元素`);
-      const broken = p.slides.flatMap((s) => s.elements.filter(
-        (e) => e.kind === 'unsupported' && /解析失败/.test(e.label)));
+      const broken = p.slides.flatMap((s) => s.elements.filter((e) => e.kind === 'unsupported' && /解析失败/.test(e.label)));
       eq('正常文件不应出现解析失败占位', broken.length, 0);
     }
   }
@@ -2214,9 +2994,13 @@ group('健壮性');
       const nm = 'EncryptedPackage';
       buf.fill(0, off, off + 64);
       Buffer.from(nm, 'utf16le').copy(buf, off);
-      buf.writeUInt16LE((nm.length + 1) * 2, off + 64);   // nameLen 含结尾 NUL
+      buf.writeUInt16LE((nm.length + 1) * 2, off + 64); // nameLen 含结尾 NUL
       let msg = '';
-      try { await lib.parse(new Uint8Array(buf)); } catch (e) { msg = e.message; }
+      try {
+        await lib.parse(new Uint8Array(buf));
+      } catch (e) {
+        msg = e.message;
+      }
       check('加密文件报「已加密」而非「文件损坏」', msg.includes('已加密'), `实际：${msg}`);
     }
   }
@@ -2229,7 +3013,13 @@ group('健壮性');
 group('播放引擎');
 {
   const mk = (target, kind, clickGroup, trigger = 'click') => ({
-    target, kind, clickGroup, trigger, effect: 'fade', delayMs: 0, durationMs: 500,
+    target,
+    kind,
+    clickGroup,
+    trigger,
+    effect: 'fade',
+    delayMs: 0,
+    durationMs: 500,
   });
 
   // 分批：同一 clickGroup 的步骤归为一批
@@ -2253,8 +3043,15 @@ group('播放引擎');
     const player = {
       currentTime: 7,
       paused: true,
-      play() { calls.push('play'); this.paused = false; return Promise.resolve(); },
-      pause() { calls.push('pause'); this.paused = true; },
+      play() {
+        calls.push('play');
+        this.paused = false;
+        return Promise.resolve();
+      },
+      pause() {
+        calls.push('pause');
+        this.paused = true;
+      },
     };
     const visualNode = {
       style: {},
@@ -2262,7 +3059,7 @@ group('播放引擎');
       querySelectorAll: () => [],
     };
     const mediaNode = { querySelector: () => player };
-    const container = { querySelector: (selector) => selector.includes('101') ? visualNode : mediaNode };
+    const container = { querySelector: (selector) => (selector.includes('101') ? visualNode : mediaNode) };
     const handle = viewerLib.playGroup(container, steps);
     eq('afterPrev 音频不会抢在前一效果之前播放', calls.length, 0);
     await handle.finished;
@@ -2281,9 +3078,7 @@ group('播放引擎');
   check('播完第一批后 11 仍隐藏', h1.has(11));
   const h3 = viewerLib.hiddenBefore(g2, 3);
   check('退场播完后 10 隐藏', h3.has(10), [...h3].join(','));
-  const repeated = viewerLib.groupSteps([
-    mk(12, 'entrance', 0), mk(12, 'exit', 1), mk(12, 'entrance', 2),
-  ]);
+  const repeated = viewerLib.groupSteps([mk(12, 'entrance', 0), mk(12, 'exit', 1), mk(12, 'entrance', 2)]);
   check('重复入场不提前隐藏第一次入场的终态', !viewerLib.hiddenBefore(repeated, 1).has(12));
   check('两次入场之间的退场仍保持隐藏', viewerLib.hiddenBefore(repeated, 2).has(12));
   check('第二次入场后重新显示', !viewerLib.hiddenBefore(repeated, 3).has(12));
@@ -2298,8 +3093,7 @@ group('播放引擎');
     // 只有入场动画会在播放前隐藏元素；运动路径的形状一直可见，
     // 因此隐藏数是「尚未播到的入场批次数」+「已播的退场目标数」，不是「剩余批次数」
     const entrGroups = real.map((g) => g.some((x) => x.kind === 'entrance'));
-    const exitedBy = (upTo) =>
-      new Set(real.slice(0, upTo).flatMap((g) => g.filter((x) => x.kind === 'exit').map((x) => x.target)));
+    const exitedBy = (upTo) => new Set(real.slice(0, upTo).flatMap((g) => g.filter((x) => x.kind === 'exit').map((x) => x.target)));
     for (let i = 0; i <= real.length; i++) {
       const want = entrGroups.slice(i).filter(Boolean).length + exitedBy(i).size;
       eq(`播完 ${i} 批后隐藏 ${want} 个`, viewerLib.hiddenBefore(real, i).size, want);
@@ -2313,14 +3107,15 @@ group('播放引擎');
     const stat = lib.staticHidden(anim);
     eq('静态终态只隐藏退场的 705', [...stat].join(','), '705');
     check('入场元素在终态都现身', ![701, 702, 703, 704].some((id) => stat.has(id)));
-    check('与演示模式终点一致',
-      [...stat].sort().join(',') === [...viewerLib.hiddenBefore(real, real.length)].sort().join(','));
-    check('与演示模式起点不同（进全屏该跳一次）',
-      [...stat].sort().join(',') !== [...viewerLib.hiddenBefore(real, 0)].sort().join(','));
+    check('与演示模式终点一致', [...stat].sort().join(',') === [...viewerLib.hiddenBefore(real, real.length)].sort().join(','));
+    check('与演示模式起点不同（进全屏该跳一次）', [...stat].sort().join(',') !== [...viewerLib.hiddenBefore(real, 0)].sort().join(','));
     check('无动画的页静态隐藏集为空', lib.staticHidden(pres.slides[0]).size === 0);
     // 全员退场的收尾页：终态一片空白，那还不如全画出来
     const allGone = {
-      elements: [{ kind: 'shape', id: 1 }, { kind: 'shape', id: 2 }],
+      elements: [
+        { kind: 'shape', id: 1 },
+        { kind: 'shape', id: 2 },
+      ],
       animations: [
         { target: 1, kind: 'exit', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 },
         { target: 2, kind: 'exit', clickGroup: 1, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 },
@@ -2329,27 +3124,38 @@ group('播放引擎');
     eq('终态清空整页时退回全部可见', lib.staticHidden(allGone).size, 0);
     // 只有入场动画的页（最常见）：终态就是全部可见
     const onlyEnter = {
-      elements: [{ kind: 'shape', id: 1 }, { kind: 'shape', id: 2 }],
+      elements: [
+        { kind: 'shape', id: 1 },
+        { kind: 'shape', id: 2 },
+      ],
       animations: [{ target: 1, kind: 'entrance', clickGroup: 0, trigger: 'click', effect: 'fade', delayMs: 0, durationMs: 1 }],
     };
     eq('只有入场时终态全可见', lib.staticHidden(onlyEnter).size, 0);
     // 缩略图没有后续的 applyVisibility，隐藏状态必须烘进 SVG
-    check('缩略图渲染烘进终态隐藏',
-      lib.renderSlideToSvg(pres, anim, { hiddenElements: [...stat] }).includes('visibility:hidden'));
+    check('缩略图渲染烘进终态隐藏', lib.renderSlideToSvg(pres, anim, { hiddenElements: [...stat] }).includes('visibility:hidden'));
 
     // morph 按 data-el 在前后两页之间配对
     {
       const rect = (x, y, w, h) => ({ left: x, top: y, width: w, height: h });
       const mkLayer = (defs) => ({
-        querySelectorAll: () => defs.map(([id, r]) => ({
-          getAttribute: () => id,
-          getBoundingClientRect: () => r,
-          style: {},
-          animate: () => ({ finished: Promise.resolve(), finish() {} }),
-        })),
+        querySelectorAll: () =>
+          defs.map(([id, r]) => ({
+            getAttribute: () => id,
+            getBoundingClientRect: () => r,
+            style: {},
+            animate: () => ({ finished: Promise.resolve(), finish() {} }),
+          })),
       });
-      const outL = mkLayer([['10', rect(0, 0, 100, 50)], ['11', rect(0, 0, 10, 10)], ['99', rect(5, 5, 20, 20)]]);
-      const inL = mkLayer([['10', rect(200, 100, 300, 150)], ['11', rect(0, 0, 0, 0)], ['12', rect(0, 0, 40, 40)]]);
+      const outL = mkLayer([
+        ['10', rect(0, 0, 100, 50)],
+        ['11', rect(0, 0, 10, 10)],
+        ['99', rect(5, 5, 20, 20)],
+      ]);
+      const inL = mkLayer([
+        ['10', rect(200, 100, 300, 150)],
+        ['11', rect(0, 0, 0, 0)],
+        ['12', rect(0, 0, 40, 40)],
+      ]);
       const pairs = viewerLib.morphPairs(outL, inL);
       eq('morph 只配对两页都有的元素', pairs.length, 1);
       eq('morph 配对到正确的 id', pairs[0].node.getAttribute(), '10');
@@ -2367,12 +3173,14 @@ group('播放引擎');
       const never = { finished: new Promise(() => {}), finish() {} };
       const mkNode = () => ({ style: {}, animate: () => never, querySelectorAll: () => [] });
       let removed = false;
-      const outgoing = { ...mkNode(), remove: () => { removed = true; } };
+      const outgoing = {
+        ...mkNode(),
+        remove: () => {
+          removed = true;
+        },
+      };
       const done = viewerLib.playTransition(outgoing, mkNode(), { type: 'fade', durationMs: 100 });
-      const raced = await Promise.race([
-        done.then(() => 'resolved'),
-        new Promise((r) => setTimeout(() => r('hung'), 2000)),
-      ]);
+      const raced = await Promise.race([done.then(() => 'resolved'), new Promise((r) => setTimeout(() => r('hung'), 2000))]);
       eq('动画永不结束时切换仍会收尾', raced, 'resolved');
       check('超时后旧图层被移除', removed);
     }
@@ -2381,25 +3189,32 @@ group('播放引擎');
     // 否则路径只会取首末两点连成直线、且被入场用的 ease 带偏速度
     {
       const calls = [];
-      const fakeNode = { style: {}, animate: (frames, opts) => {
-        calls.push({ frames, opts });
-        return { finished: Promise.resolve(), finish() {} };
-      } };
+      const fakeNode = {
+        style: {},
+        animate: (frames, opts) => {
+          calls.push({ frames, opts });
+          return { finished: Promise.resolve(), finish() {} };
+        },
+      };
       const fakeContainer = { querySelector: () => fakeNode };
       const mstep = anim.animations.find((a) => a.kind === 'motion');
       viewerLib.playGroup(fakeContainer, [mstep]);
       eq('运动路径铺成多关键帧', calls[0]?.frames.length, mstep.motionPath.length);
       eq('运动路径走线性缓动', calls[0]?.opts.easing, 'linear');
-      check('关键帧是 translate',
-        /^translate\(-?[\d.]+px, -?[\d.]+px\)$/.test(calls[0].frames[1].transform),
-        calls[0].frames[1].transform);
+      check('关键帧是 translate', /^translate\(-?[\d.]+px, -?[\d.]+px\)$/.test(calls[0].frames[1].transform), calls[0].frames[1].transform);
 
       calls.length = 0;
-      viewerLib.playGroup(fakeContainer, [{
-        ...mstep, motionPath: [[0, 0], [10, 0], [40, 0]],
-      }]);
-      eq('非等距路径按累计弧长分配关键帧时间',
-        calls[0]?.frames.map((frame) => frame.offset).join('|'), '0|0.25|1');
+      viewerLib.playGroup(fakeContainer, [
+        {
+          ...mstep,
+          motionPath: [
+            [0, 0],
+            [10, 0],
+            [40, 0],
+          ],
+        },
+      ]);
+      eq('非等距路径按累计弧长分配关键帧时间', calls[0]?.frames.map((frame) => frame.offset).join('|'), '0|0.25|1');
 
       calls.length = 0;
       viewerLib.playGroup(fakeContainer, [anim.animations.find((a) => a.kind === 'entrance')]);
@@ -2407,24 +3222,46 @@ group('播放引擎');
       check('入场动画不走线性缓动', calls[0]?.opts.easing !== 'linear', calls[0]?.opts.easing);
 
       calls.length = 0;
-      viewerLib.playGroup(fakeContainer, [{
-        target: 1, kind: 'entrance', effect: 'appear', trigger: 'click',
-        delayMs: 0, durationMs: 500, clickGroup: 0,
-      }]);
+      viewerLib.playGroup(fakeContainer, [
+        {
+          target: 1,
+          kind: 'entrance',
+          effect: 'appear',
+          trigger: 'click',
+          delayMs: 0,
+          durationMs: 500,
+          clickGroup: 0,
+        },
+      ]);
       eq('appear 入场在起点阶跃而不伪装成 fade', calls[0]?.opts.easing, 'steps(1, start)');
       calls.length = 0;
-      viewerLib.playGroup(fakeContainer, [{
-        target: 1, kind: 'exit', effect: 'appear', trigger: 'click',
-        delayMs: 0, durationMs: 500, clickGroup: 0,
-      }]);
+      viewerLib.playGroup(fakeContainer, [
+        {
+          target: 1,
+          kind: 'exit',
+          effect: 'appear',
+          trigger: 'click',
+          delayMs: 0,
+          durationMs: 500,
+          clickGroup: 0,
+        },
+      ]);
       eq('appear 退场在终点阶跃并对齐保存语义', calls[0]?.opts.easing, 'steps(1, end)');
 
       // 挥舞的宽度是 #ppt_w*sin(2.5*pi*$)：0.2 处正面最宽，0.6 处背面最宽（镜像），终点回到原宽。
       calls.length = 0;
-      viewerLib.playGroup(fakeContainer, [{
-        target: 1, kind: 'entrance', effect: 'swivel', dir: 'vert', trigger: 'click',
-        delayMs: 0, durationMs: 1000, clickGroup: 0,
-      }]);
+      viewerLib.playGroup(fakeContainer, [
+        {
+          target: 1,
+          kind: 'entrance',
+          effect: 'swivel',
+          dir: 'vert',
+          trigger: 'click',
+          delayMs: 0,
+          durationMs: 1000,
+          clickGroup: 0,
+        },
+      ]);
       const swivel = calls[0]?.frames ?? [];
       const swivelAt = (offset) => swivel.find((frame) => Math.abs(frame.offset - offset) < 1e-9)?.transform;
       eq('挥舞按 sin 轨迹铺 41 帧并线性推进', `${swivel.length}/${calls[0]?.opts.easing}`, '41/linear');
@@ -2432,13 +3269,23 @@ group('播放引擎');
       eq('挥舞 0.6 处转到背面最宽', swivelAt(0.6), 'scaleX(-1)');
       eq('挥舞终点回到原宽且完全不透明', `${swivelAt(1)}/${swivel.at(-1)?.opacity}`, 'scaleX(1)/1');
       calls.length = 0;
-      viewerLib.playGroup(fakeContainer, [{
-        target: 1, kind: 'exit', effect: 'swivel', dir: 'horz', trigger: 'click',
-        delayMs: 0, durationMs: 1000, clickGroup: 0,
-      }]);
-      eq('横向挥舞退场改变高度，倒放到透明零高',
+      viewerLib.playGroup(fakeContainer, [
+        {
+          target: 1,
+          kind: 'exit',
+          effect: 'swivel',
+          dir: 'horz',
+          trigger: 'click',
+          delayMs: 0,
+          durationMs: 1000,
+          clickGroup: 0,
+        },
+      ]);
+      eq(
+        '横向挥舞退场改变高度，倒放到透明零高',
         `${calls[0]?.frames[0].transform}/${calls[0]?.frames.at(-1).transform}/${calls[0]?.frames.at(-1).opacity}`,
-        'scaleY(1)/scaleY(0)/0');
+        'scaleY(1)/scaleY(0)/0',
+      );
 
       const textCalls = [];
       const host = document.createElement('div');
@@ -2448,15 +3295,24 @@ group('播放引擎');
       };
       fakeNode.querySelectorAll = () => [host];
       calls.length = 0;
-      viewerLib.playGroup(fakeContainer, [{
-        target: 1, kind: 'entrance', effect: 'blinds', dir: 'horz', trigger: 'click',
-        delayMs: 0, durationMs: 500, clickGroup: 0,
-      }]);
+      viewerLib.playGroup(fakeContainer, [
+        {
+          target: 1,
+          kind: 'entrance',
+          effect: 'blinds',
+          dir: 'horz',
+          trigger: 'click',
+          delayMs: 0,
+          durationMs: 500,
+          clickGroup: 0,
+        },
+      ]);
       eq('形状节点按 fill-box 绘制蒙版', calls[0]?.frames[0].maskOrigin, 'fill-box');
-      check('foreignObject 文本使用对应的 border-box 蒙版',
-        textCalls[0]?.frames[0].maskImage === calls[0]?.frames[0].maskImage
-          && textCalls[0]?.frames[0].maskOrigin === 'border-box',
-        textCalls[0]?.frames[0].maskOrigin);
+      check(
+        'foreignObject 文本使用对应的 border-box 蒙版',
+        textCalls[0]?.frames[0].maskImage === calls[0]?.frames[0].maskImage && textCalls[0]?.frames[0].maskOrigin === 'border-box',
+        textCalls[0]?.frames[0].maskOrigin,
+      );
 
       const paragraphCalls = [];
       const outerCalls = [];
@@ -2465,7 +3321,17 @@ group('播放引擎');
       paragraph.textContent = '213';
       textRoot.appendChild(paragraph);
       paragraph.getBoundingClientRect = () => ({
-        x: 0, y: 0, left: 0, top: 0, width: 100, height: 100, right: 100, bottom: 100, toJSON() { return {}; },
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        width: 100,
+        height: 100,
+        right: 100,
+        bottom: 100,
+        toJSON() {
+          return {};
+        },
       });
       paragraph.animate = (frames, opts) => {
         paragraphCalls.push({ frames, opts });
@@ -2477,7 +3343,17 @@ group('播放引擎');
         return { finished: Promise.resolve(), finish() {} };
       };
       const ink = {
-        x: 30, y: 10, left: 30, top: 10, width: 40, height: 20, right: 70, bottom: 30, toJSON() { return {}; },
+        x: 30,
+        y: 10,
+        left: 30,
+        top: 10,
+        width: 40,
+        height: 20,
+        right: 70,
+        bottom: 30,
+        toJSON() {
+          return {};
+        },
       };
       const previousRange = document.createRange;
       document.createRange = () => ({ selectNodeContents() {}, getBoundingClientRect: () => ink });
@@ -2487,29 +3363,47 @@ group('播放引擎');
         return [outer];
       };
       try {
-        viewerLib.playGroup(fakeContainer, [{
-          target: 3, kind: 'entrance', effect: 'zoom', dir: 'in', trigger: 'click',
-          delayMs: 0, durationMs: 2000, clickGroup: 1, paragraphRange: { start: 0, end: 0 },
-        }]);
+        viewerLib.playGroup(fakeContainer, [
+          {
+            target: 3,
+            kind: 'entrance',
+            effect: 'zoom',
+            dir: 'in',
+            trigger: 'click',
+            delayMs: 0,
+            durationMs: 2000,
+            clickGroup: 1,
+            paragraphRange: { start: 0, end: 0 },
+          },
+        ]);
       } finally {
         document.createRange = previousRange;
       }
-      check('盒状段落的四边蒙版围绕文字墨迹框展开',
+      check(
+        '盒状段落的四边蒙版围绕文字墨迹框展开',
         paragraphCalls[0]?.frames[0].maskSize === '40% 0%, 40% 0%, 0% 20%, 0% 20%'
           && paragraphCalls[0].frames[1].maskSize === '40% 10.02%, 40% 10.02%, 20.04% 20%, 20.04% 20%'
           && paragraphCalls[0].frames[0].maskOrigin === 'border-box'
           && outerCalls.length === 0,
-        paragraphCalls[0]?.frames[0].maskSize);
+        paragraphCalls[0]?.frames[0].maskSize,
+      );
     }
-    check('全部动画目标都在 SVG 里', anim.animations.every((a) => svg.includes(`data-el="${a.target}"`)));
+    check(
+      '全部动画目标都在 SVG 里',
+      anim.animations.every((a) => svg.includes(`data-el="${a.target}"`)),
+    );
   }
 
   // 自动换片
   const withAdv = { transition: { type: 'fade', durationMs: 500, advanceAfterMs: 3000 } };
   eq('读出自动换片延迟', viewerLib.autoAdvanceMs(withAdv), 3000);
-  eq('0ms 自动换片是合法配置', viewerLib.autoAdvanceMs({
-    transition: { type: 'fade', durationMs: 500, advanceAfterMs: 0 },
-  }), 0);
+  eq(
+    '0ms 自动换片是合法配置',
+    viewerLib.autoAdvanceMs({
+      transition: { type: 'fade', durationMs: 500, advanceAfterMs: 0 },
+    }),
+    0,
+  );
   eq('无自动换片返回 null', viewerLib.autoAdvanceMs({ transition: { type: 'fade', durationMs: 500 } }), null);
   eq('无切换返回 null', viewerLib.autoAdvanceMs({}), null);
 }
@@ -2524,10 +3418,12 @@ group('嵌入字体');
   if (check('嵌入字体固件已解析', !!pres)) {
     const fonts = pres.embeddedFonts ?? [];
     eq('未注入解码器时只还原得出 3 个', fonts.length, 3);
-    check('全部挂在同一个 typeface 上', fonts.every((f) => f.family === 'WebPPT Embedded'),
-      fonts.map((f) => f.family).join(','));
-    eq('丢掉的正是 MTX 压缩的那个（italic）',
-      fonts.map((f) => `${f.bold ? 'b' : '-'}${f.italic ? 'i' : '-'}`).join(' '), '-- b- bi');
+    check(
+      '全部挂在同一个 typeface 上',
+      fonts.every((f) => f.family === 'WebPPT Embedded'),
+      fonts.map((f) => f.family).join(','),
+    );
+    eq('丢掉的正是 MTX 压缩的那个（italic）', fonts.map((f) => `${f.bold ? 'b' : '-'}${f.italic ? 'i' : '-'}`).join(' '), '-- b- bi');
 
     // 还原出来的必须是真 sfnt：EOT 头剥干净了，异或也解开了
     const raw = new Map(fonts.map((f) => [`${f.bold}|${f.italic}`, blobs.get(f.src)]));
@@ -2543,26 +3439,35 @@ group('嵌入字体');
     if (bold) {
       const want = makeTtf({ family: 'WebPPT Embedded', style: 'Bold', bold: true, italic: false });
       const got = new Uint8Array(await bold.arrayBuffer());
-      check('异或解开后与原始 TTF 逐字节一致',
+      check(
+        '异或解开后与原始 TTF 逐字节一致',
         got.length === want.length && got.every((b, i) => b === want[i]),
-        `${got.length}B vs ${want.length}B`);
+        `${got.length}B vs ${want.length}B`,
+      );
     }
 
     // 注入解码器后压缩的那个才回来；解码器拿到的是**整份 EOT**，
     // 不是切出来的载荷 —— mtx-decompressor 的 eotToTtf 才能直接注册
     let handed = null;
     check('默认没有字体解码器', lib.hasFontDecoder() === false);
-    lib.setFontDecoder((eot) => { handed = eot; return Uint8Array.of(0, 1, 0, 0, 1, 2, 3, 4); });
+    lib.setFontDecoder((eot) => {
+      handed = eot;
+      return Uint8Array.of(0, 1, 0, 0, 1, 2, 3, 4);
+    });
     try {
       check('注册后 hasFontDecoder 为真', lib.hasFontDecoder() === true);
       const withDec = await lib.parse(load('sample-embedfont.pptx'));
       eq('注入解码器后四个都在', (withDec.embeddedFonts ?? []).length, 4);
-      check('解码器收到的是完整 EOT 容器',
+      check(
+        '解码器收到的是完整 EOT 容器',
         !!handed && handed[0] === 0x7c && handed[34] === 0x4c && handed[35] === 0x50,
-        handed ? `头 ${[...handed.slice(0, 4)].join(',')}，magic ${handed[34]},${handed[35]}` : '未被调用');
+        handed ? `头 ${[...handed.slice(0, 4)].join(',')}，magic ${handed[34]},${handed[35]}` : '未被调用',
+      );
 
       // 解码器抛错只该丢这一个字体，不该让整份文件解析失败
-      lib.setFontDecoder(() => { throw new Error('boom'); });
+      lib.setFontDecoder(() => {
+        throw new Error('boom');
+      });
       const thrown = await lib.parse(load('sample-embedfont.pptx'));
       eq('解码器抛错时退回 3 个', (thrown.embeddedFonts ?? []).length, 3);
     } finally {
@@ -2585,21 +3490,31 @@ group('字体统计');
   if (check('固件已解析', !!pres)) {
     const all = lib.collectFonts(pres.slides);
     check('统计得到字体', all.length > 0, `实际 ${all.length}`);
-    check('按用量从多到少排序', all.every((u, i) => i === 0 || all[i - 1].count >= u.count));
+    check(
+      '按用量从多到少排序',
+      all.every((u, i) => i === 0 || all[i - 1].count >= u.count),
+    );
     for (const u of all) {
       check(`${u.family} 字符集非空`, u.chars.length > 0);
       check(`${u.family} 字符已去重`, new Set(u.chars).size === u.chars.length);
-      check(`${u.family} 字符按码位升序`,
-        [...u.chars].every((c, i) => i === 0 || u.chars.codePointAt(i - 1) < c.codePointAt(0)));
+      check(
+        `${u.family} 字符按码位升序`,
+        [...u.chars].every((c, i) => i === 0 || u.chars.codePointAt(i - 1) < c.codePointAt(0)),
+      );
       check(`${u.family} 至少一种字重`, u.styles.length > 0);
     }
 
     // 逐页统计必须是整份统计的子集——查看器就是靠这个只加载当前页要的字体
     const page1 = lib.collectFonts([pres.slides[0]]);
     const whole = new Map(all.map((u) => [u.family, u.chars]));
-    check('单页统计是整份的子集',
-      page1.every((u) => whole.has(u.family) && [...u.chars].every((c) => whole.get(u.family).includes(c))));
-    check('单页字符数不多于整份', page1.every((u) => u.chars.length <= whole.get(u.family).length));
+    check(
+      '单页统计是整份的子集',
+      page1.every((u) => whole.has(u.family) && [...u.chars].every((c) => whole.get(u.family).includes(c))),
+    );
+    check(
+      '单页字符数不多于整份',
+      page1.every((u) => u.chars.length <= whole.get(u.family).length),
+    );
 
     // run 里不写 a:latin 时要落到主题的 minorFont，而不是「没有字体」。
     // 少了这一层，渲染会掉到 CSS 通用回退上，字宽和 PowerPoint 对不齐。
@@ -2617,8 +3532,13 @@ group('字体替换');
 {
   // 拉丁一栏必须是度量兼容的那几个——它们的前进宽度与原字体逐字相等，
   // 断行才会和 PowerPoint 对齐。挑错替代品的话，SSIM 看着还行，行尾全错。
-  const METRIC = [['Calibri', 'Carlito'], ['Cambria', 'Caladea'], ['Arial', 'Arimo'],
-    ['Times New Roman', 'Tinos'], ['Courier New', 'Cousine']];
+  const METRIC = [
+    ['Calibri', 'Carlito'],
+    ['Cambria', 'Caladea'],
+    ['Arial', 'Arimo'],
+    ['Times New Roman', 'Tinos'],
+    ['Courier New', 'Cousine'],
+  ];
   for (const [from, to] of METRIC) {
     const sub = fontsLib.substituteFor(from);
     eq(`${from} → ${to}`, sub?.family, to);
@@ -2637,31 +3557,38 @@ group('字体替换');
     check(`${f} 不做替换`, fontsLib.substituteFor(f) === null);
   }
   check('表里没有的字体返回 null', fontsLib.substituteFor('Some Unknown Face') === null);
-  eq('overrides 优先于内置表',
-    fontsLib.substituteFor('Calibri', { calibri: { family: 'X', metricCompatible: false, cjk: false } })?.family, 'X');
+  eq(
+    'overrides 优先于内置表',
+    fontsLib.substituteFor('Calibri', { calibri: { family: 'X', metricCompatible: false, cjk: false } })?.family,
+    'X',
+  );
 
   // 每个替代字体都得有对应的 fontsource 包，否则 loadFontsFor 会静默取不到
   const targets = new Set(Object.values(fontsLib.SUBSTITUTIONS).flatMap((s) => [s.family, s.latinFamily].filter(Boolean)));
   for (const t of targets) {
     check(`${t} 有钉死版本的来源`, !!fontsLib.PACKAGES[t], Object.keys(fontsLib.PACKAGES).join(','));
-    check(`${t} 版本号是精确值`, /^\d+\.\d+\.\d+$/.test(fontsLib.PACKAGES[t]?.version ?? ''),
-      fontsLib.PACKAGES[t]?.version);
+    check(`${t} 版本号是精确值`, /^\d+\.\d+\.\d+$/.test(fontsLib.PACKAGES[t]?.version ?? ''), fontsLib.PACKAGES[t]?.version);
   }
-  check('CSS 地址按字重与斜体拼',
+  check(
+    'CSS 地址按字重与斜体拼',
     fontsLib.cssUrl('Carlito', 700, true) === 'https://cdn.jsdelivr.net/npm/@fontsource/carlito@5.3.0/700-italic.css',
-    fontsLib.cssUrl('Carlito', 700, true));
+    fontsLib.cssUrl('Carlito', 700, true),
+  );
   check('未知家族没有 CSS 地址', fontsLib.cssUrl('Nope', 400, false) === null);
   check('自定义基址生效', fontsLib.cssUrl('Carlito', 400, false, 'https://x/y')?.startsWith('https://x/y/'));
 
   // 字重要就近取包里真有的那一档：霞鹜文楷没有 400，直接请求会 404
-  check('霞鹜文楷 400 就近取到 300 或 500',
+  check(
+    '霞鹜文楷 400 就近取到 300 或 500',
     /\/(300|500)\.css$/.test(fontsLib.cssUrl('LXGW WenKai', 400, false) ?? ''),
-    fontsLib.cssUrl('LXGW WenKai', 400, false));
-  check('中文没有真斜体时退回正体',
+    fontsLib.cssUrl('LXGW WenKai', 400, false),
+  );
+  check(
+    '中文没有真斜体时退回正体',
     fontsLib.cssUrl('Noto Sans SC', 400, true) === 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.0/400.css',
-    fontsLib.cssUrl('Noto Sans SC', 400, true));
-  check('拉丁有真斜体就用真斜体',
-    fontsLib.cssUrl('Tinos', 700, true)?.endsWith('/700-italic.css'), fontsLib.cssUrl('Tinos', 700, true));
+    fontsLib.cssUrl('Noto Sans SC', 400, true),
+  );
+  check('拉丁有真斜体就用真斜体', fontsLib.cssUrl('Tinos', 700, true)?.endsWith('/700-italic.css'), fontsLib.cssUrl('Tinos', 700, true));
   // 拼出来的地址只能落在包声明的档位上，否则就是 404
   for (const [family, p] of Object.entries(fontsLib.PACKAGES)) {
     for (const want of [400, 700]) {
@@ -2681,9 +3608,10 @@ group('字体替换');
     const doc = globalThis.document;
     const off = await fontsLib.loadFontsFor(usage, { document: doc, skipInstalled: false, cjk: false });
     eq('显式关掉时跳过中文', off[0]?.status, 'skipped-cjk');
-    const latin = await fontsLib.loadFontsFor(
-      [{ family: 'Wingdings', styles: [{ bold: false, italic: false }], chars: 'ab', count: 2 }],
-      { document: doc, skipInstalled: false });
+    const latin = await fontsLib.loadFontsFor([{ family: 'Wingdings', styles: [{ bold: false, italic: false }], chars: 'ab', count: 2 }], {
+      document: doc,
+      skipInstalled: false,
+    });
     eq('符号字体不做替换', latin[0]?.status, 'unmapped');
   }
 
@@ -2705,8 +3633,8 @@ group('字体替换');
   }
 
   // @font-face 改写：家族名换成原字体名、相对路径绝对化、src 前面补 local()
-  const css = `@font-face {\n  font-family: 'Noto Sans SC';\n  src: url(./files/a.woff2) format('woff2');\n` +
-    `  unicode-range: U+4e00-9fff;\n}`;
+  const css =
+    `@font-face {\n  font-family: 'Noto Sans SC';\n  src: url(./files/a.woff2) format('woff2');\n` + `  unicode-range: U+4e00-9fff;\n}`;
   const out = fontsLib.rewriteFontFaceCss(css, '微软雅黑', 'https://cdn.example/npm/pkg@1.0.0/400.css');
   check('家族名改写成原字体名', out.includes("font-family: '微软雅黑'"), out);
   check('相对路径已绝对化', out.includes('url(https://cdn.example/npm/pkg@1.0.0/files/a.woff2)'), out);
@@ -2720,13 +3648,21 @@ group('字体替换');
     const styles = [];
     const probe = {
       font: '',
-      measureText() { return { width: this.font.includes('等线') && styles.length ? 110 : 100 }; },
+      measureText() {
+        return { width: this.font.includes('等线') && styles.length ? 110 : 100 };
+      },
     };
     const doc = {
-      createElement: (tag) => tag === 'canvas' ? { getContext: () => probe } : {
-        dataset: {}, textContent: '',
-        remove() { styles.splice(styles.indexOf(this), 1); },
-      },
+      createElement: (tag) =>
+        tag === 'canvas'
+          ? { getContext: () => probe }
+          : {
+              dataset: {},
+              textContent: '',
+              remove() {
+                styles.splice(styles.indexOf(this), 1);
+              },
+            },
       head: { appendChild: (style) => styles.push(style) },
       fonts: { load: async () => [] },
       querySelectorAll: () => [...styles],
@@ -2734,9 +3670,10 @@ group('字体替换');
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async (url) => ({
       ok: true,
-      text: async () => `@font-face { font-family: '${url.includes('/arimo') ? 'Arimo' : 'Noto Sans SC'}'; `
+      text: async () =>
+        `@font-face { font-family: '${url.includes('/arimo') ? 'Arimo' : 'Noto Sans SC'}'; `
         + `font-weight: ${url.includes('/700.css') ? 700 : 400}; `
-        + "src: url(./files/a.woff2); unicode-range: U+0000-024F,U+2000-206F; }",
+        + 'src: url(./files/a.woff2); unicode-range: U+0000-024F,U+2000-206F; }',
     });
     try {
       const first = await fontsLib.loadFontsFor(
@@ -2745,15 +3682,20 @@ group('字体替换');
       );
       eq('等线混合字形注册成功', first[0]?.status, 'substituted');
       eq('等线分两条字体声明', styles.length, 2);
-      check('西文替身覆盖在 CJK 声明之后',
-        styles[0]?.textContent.includes('noto-sans-sc')
-        && styles[1]?.textContent.includes('/arimo'), styles);
-      check('两条声明沿用原家族名', styles.every((s) => s.textContent.includes("font-family: '等线'")), styles);
+      check(
+        '西文替身覆盖在 CJK 声明之后',
+        styles[0]?.textContent.includes('noto-sans-sc') && styles[1]?.textContent.includes('/arimo'),
+        styles,
+      );
+      check(
+        '两条声明沿用原家族名',
+        styles.every((s) => s.textContent.includes("font-family: '等线'")),
+        styles,
+      );
       check('西文声明包含英文撇号', styles[1]?.textContent.includes('U+2000-206F'), styles[1]);
       const boldLatin = styles[1]?.textContent ?? '';
       check('粗体西文按实测整体缩放', boldLatin.includes('size-adjust: 95.4%'), boldLatin);
-      check('粗体西文另有只含下划线的缩放面',
-        /unicode-range: U\+5F;?\s*size-adjust: 74\.6%/.test(boldLatin), boldLatin);
+      check('粗体西文另有只含下划线的缩放面', /unicode-range: U\+5F;?\s*size-adjust: 74\.6%/.test(boldLatin), boldLatin);
       check('缩放过的西文面不让 local(等线) 抢先命中', !boldLatin.includes("local('等线')"), boldLatin);
       const nextPage = await fontsLib.loadFontsFor(
         [{ family: '等线', styles: [{ bold: false, italic: false }], chars: 'I’m 中文', count: 6 }],
@@ -2761,13 +3703,17 @@ group('字体替换');
       );
       eq('后续页面的常规字重没有被网页字体误判为系统字体', nextPage[0]?.status, 'substituted');
       eq('后续页面补齐中西文常规字重', styles.length, 4);
-      check('后续常规字重的西文仍覆盖在 CJK 之后',
-        styles[2]?.textContent.includes('font-weight: 400')
-        && styles[3]?.textContent.includes('/arimo'), styles);
+      check(
+        '后续常规字重的西文仍覆盖在 CJK 之后',
+        styles[2]?.textContent.includes('font-weight: 400') && styles[3]?.textContent.includes('/arimo'),
+        styles,
+      );
       const regularLatin = styles[3]?.textContent ?? '';
-      check('常规体西文不整体缩放、只缩下划线',
-        !regularLatin.includes('size-adjust: 95.4%')
-        && /unicode-range: U\+5F;?\s*size-adjust: 74\.6%/.test(regularLatin), regularLatin);
+      check(
+        '常规体西文不整体缩放、只缩下划线',
+        !regularLatin.includes('size-adjust: 95.4%') && /unicode-range: U\+5F;?\s*size-adjust: 74\.6%/.test(regularLatin),
+        regularLatin,
+      );
     } finally {
       fontsLib.unloadFonts({ document: doc });
       globalThis.fetch = originalFetch;
@@ -2818,22 +3764,42 @@ group('字体替换');
       const issues = [];
       const faces = await fontsLib.exportFontFaces(usages, { base, onIssue: (i) => issues.push(i) });
       eq('命中与等线西文共 4 张脸', faces.length, 4, JSON.stringify(faces.map((f) => f.unicodeRange)));
-      check('脸顶着原字体名', faces.every((f) => ['黑体', '等线'].includes(f.family)));
-      check('切片以 data URI 内联',
+      check(
+        '脸顶着原字体名',
+        faces.every((f) => ['黑体', '等线'].includes(f.family)),
+      );
+      check(
+        '切片以 data URI 内联',
         faces[0]?.src === `data:font/woff2;base64,${Buffer.from(woff2(1)).toString('base64')}`
-        && faces[1]?.src === `data:font/woff2;base64,${Buffer.from(woff2(2)).toString('base64')}`,
-        faces.map((f) => f.src.slice(0, 40)).join(' | '));
+          && faces[1]?.src === `data:font/woff2;base64,${Buffer.from(woff2(2)).toString('base64')}`,
+        faces.map((f) => f.src.slice(0, 40)).join(' | '),
+      );
       check('unicode-range 规范化为大写', faces[0]?.unicodeRange === 'U+4E00-4FFF' && faces[1]?.unicodeRange === 'U+5000-5FFF');
       check('未命中的切片不下载', !requested.some((u) => u.includes('cjk-c')));
-      check('命中的 404 切片被跳过', requested.some((u) => u.includes('cjk-d'))
-        && faces.filter((f) => f.family === '黑体').length === 2);
-      eq('CSS 取不到报告 css-unavailable', issues.some((i) => i.family === '宋体' && i.reason === 'css-unavailable'), true);
-      eq('切片取不到报告 slice-unavailable', issues.some((i) => i.family === '黑体' && i.reason === 'slice-unavailable'), true);
+      check('命中的 404 切片被跳过', requested.some((u) => u.includes('cjk-d')) && faces.filter((f) => f.family === '黑体').length === 2);
+      eq(
+        'CSS 取不到报告 css-unavailable',
+        issues.some((i) => i.family === '宋体' && i.reason === 'css-unavailable'),
+        true,
+      );
+      eq(
+        '切片取不到报告 slice-unavailable',
+        issues.some((i) => i.family === '黑体' && i.reason === 'slice-unavailable'),
+        true,
+      );
       const dengxianLatin = faces.filter((f) => f.family === '等线');
-      check('粗体西文整体缩放', dengxianLatin.some((f) => f.sizeAdjust === 95.4 && f.unicodeRange === 'U+0000-024F'));
-      check('下划线单独成脸再缩放', dengxianLatin.some((f) => f.unicodeRange === 'U+5F' && f.sizeAdjust === 74.6));
-      check('下划线面排在同字重整体面之后',
-        dengxianLatin.findIndex((f) => f.unicodeRange === 'U+5F') > dengxianLatin.findIndex((f) => f.unicodeRange === 'U+0000-024F'));
+      check(
+        '粗体西文整体缩放',
+        dengxianLatin.some((f) => f.sizeAdjust === 95.4 && f.unicodeRange === 'U+0000-024F'),
+      );
+      check(
+        '下划线单独成脸再缩放',
+        dengxianLatin.some((f) => f.unicodeRange === 'U+5F' && f.sizeAdjust === 74.6),
+      );
+      check(
+        '下划线面排在同字重整体面之后',
+        dengxianLatin.findIndex((f) => f.unicodeRange === 'U+5F') > dengxianLatin.findIndex((f) => f.unicodeRange === 'U+0000-024F'),
+      );
       const again = await fontsLib.exportFontFaces(usages, { base });
       eq('两次导出脸集完全一致', JSON.stringify(again), JSON.stringify(faces));
       const noCjk = await fontsLib.exportFontFaces(usages.slice(0, 1), { base, cjk: false });
@@ -2888,18 +3854,27 @@ group('WPS 互操作');
     const csRuns = byName('cs 字体')?.text?.paragraphs[0]?.runs ?? [];
     eq('拉丁文字不把 cs 字体放进字体栈', csRuns[0]?.fonts.join('|'), '微软雅黑');
     eq('复杂文种文字保留 cs 字体', csRuns[1]?.fonts.join('|'), '微软雅黑|Arial Black');
-    eq('bgRef 1001 取 bgFillStyleLst 第 1 项', JSON.stringify(interop.slides[0].background),
-      JSON.stringify({ type: 'solid', color: 'rgb(255,255,255)' }));
+    eq(
+      'bgRef 1001 取 bgFillStyleLst 第 1 项',
+      JSON.stringify(interop.slides[0].background),
+      JSON.stringify({ type: 'solid', color: 'rgb(255,255,255)' }),
+    );
 
     const icon = byName('仅 SVG 图标');
     eq('只有 svgBlip 的图片解析为图片', icon?.kind, 'image');
     check('svgBlip 图片取到 SVG 部件', typeof icon?.src === 'string' && icon.src.length > 0, icon?.src);
 
     // 尾尖在左上方：底座落在上边 2/12–5/12（x 40–100），不再从下边穿过整个框。
-    check('圆角标注的尾巴从上边伸出', byName('尾尖朝上的圆角标注')?.path?.includes('L 40 0 L 39.427 -25.67 L 100 0'),
-      byName('尾尖朝上的圆角标注')?.path);
-    check('矩形标注的尾巴从右边伸出', byName('尾尖朝右的矩形标注')?.path?.includes('L 200 16.667 L 250 40 L 200 41.667'),
-      byName('尾尖朝右的矩形标注')?.path);
+    check(
+      '圆角标注的尾巴从上边伸出',
+      byName('尾尖朝上的圆角标注')?.path?.includes('L 40 0 L 39.427 -25.67 L 100 0'),
+      byName('尾尖朝上的圆角标注')?.path,
+    );
+    check(
+      '矩形标注的尾巴从右边伸出',
+      byName('尾尖朝右的矩形标注')?.path?.includes('L 200 16.667 L 250 40 L 200 41.667'),
+      byName('尾尖朝右的矩形标注')?.path,
+    );
     const grouped = lib.renderSlideToSvg(interop, interop.slides[0], { textMode: 'html' });
     const callout = grouped.slice(grouped.indexOf('data-el="103"'));
     const tip = callout.match(/<path d="M [^"]*?L ([\d.]+) 0 L ([\d.]+) (-[\d.]+) L ([\d.]+) 0/);
@@ -2915,24 +3890,34 @@ group('CJK 标点挤压');
   if (check('中英文混排固件已解析', !!apostrophe)) {
     const html = lib.renderSlideToSvg(apostrophe, apostrophe.slides[0], { textMode: 'html' });
     check('中文标点仍可按全角挤压', html.includes('margin-right:-0.5em'));
-    check('英语撇号不挤进后续字母',
-      !html.includes('<span style="margin-right:-0.5em">’</span>'), html.slice(0, 600));
-    check('等线缺字时西文先落到合成字族与 Arial 度量族',
-      html.includes("font-family:'等线','WebPPT DengXian Latin','Arial','Helvetica'"), html.slice(0, 600));
+    check('英语撇号不挤进后续字母', !html.includes('<span style="margin-right:-0.5em">’</span>'), html.slice(0, 600));
+    check(
+      '等线缺字时西文先落到合成字族与 Arial 度量族',
+      html.includes("font-family:'等线','WebPPT DengXian Latin','Arial','Helvetica'"),
+      html.slice(0, 600),
+    );
     const native = lib.renderSlideToSvg(apostrophe, apostrophe.slides[0], { textMode: 'svg' });
     check('独立 SVG 保留英语撇号', native.includes('I’m ready.'));
-    check('独立 SVG 与 HTML 使用同一等线兜底',
-      native.includes("font-family=\"'等线','WebPPT DengXian Latin','Arial','Helvetica'"), native.slice(0, 600));
+    check(
+      '独立 SVG 与 HTML 使用同一等线兜底',
+      native.includes("font-family=\"'等线','WebPPT DengXian Latin','Arial','Helvetica'"),
+      native.slice(0, 600),
+    );
     // 缺等线时的合成字族与 @web-ppt/fonts 的替换路径必须是同一组实测参数。
     const faces = html.match(/<style>(.*?)<\/style>/s)?.[1] ?? '';
     const adjust = fontsLib.substituteFor('等线')?.latinSizeAdjust;
     check('页面声明等线合成字族', faces.includes("font-family:'WebPPT DengXian Latin'"), faces);
     check('合成字族粗体缩放与字体包一致', faces.includes(`font-weight:600 1000;size-adjust:${adjust?.bold}%;`), faces);
-    check('合成字族下划线缩放与字体包一致',
-      (faces.match(new RegExp(`unicode-range:U\\+5F;size-adjust:${adjust?.underscore}%;`, 'g')) ?? []).length === 2, faces);
+    check(
+      '合成字族下划线缩放与字体包一致',
+      (faces.match(new RegExp(`unicode-range:U\\+5F;size-adjust:${adjust?.underscore}%;`, 'g')) ?? []).length === 2,
+      faces,
+    );
     const plain = parsed.get('sample.pptx');
-    check('没有等线的页面不声明合成字族',
-      !lib.renderSlideToSvg(plain, plain.slides[0], { textMode: 'html' }).includes('WebPPT DengXian Latin'));
+    check(
+      '没有等线的页面不声明合成字族',
+      !lib.renderSlideToSvg(plain, plain.slides[0], { textMode: 'html' }).includes('WebPPT DengXian Latin'),
+    );
   }
   // 汉字和全角标点都占一整格，一行放不下时 PowerPoint 会把标点的空半格挤掉。
   // 不做这件事就会多断出一行 —— 换字体救不了，所有中文字体的格子一样大。
@@ -2940,15 +3925,35 @@ group('CJK 标点挤压');
   globalThis.document.body.appendChild(box);
 
   const mk = (text, w, size = 46.2) => ({
-    kind: 'shape', x: 0, y: 0, w, h: 200, rot: 0, flipH: false, flipV: false, path: null,
-    fill: null, stroke: null,
+    kind: 'shape',
+    x: 0,
+    y: 0,
+    w,
+    h: 200,
+    rot: 0,
+    flipH: false,
+    flipV: false,
+    path: null,
+    fill: null,
+    stroke: null,
     text: {
-      anchor: 'top', insets: [4.8, 9.6, 4.8, 9.6], wrap: true, fontScale: 1,
-      paragraphs: [{
-        align: 'left', lvl: 0, marL: 0, indent: 0, bullet: null, lineHeight: null,
-        spaceBefore: 0, spaceAfter: 0,
-        runs: [{ text, b: false, i: false, u: false, strike: false, size, color: '#000', fonts: ['黑体'] }],
-      }],
+      anchor: 'top',
+      insets: [4.8, 9.6, 4.8, 9.6],
+      wrap: true,
+      fontScale: 1,
+      paragraphs: [
+        {
+          align: 'left',
+          lvl: 0,
+          marL: 0,
+          indent: 0,
+          bullet: null,
+          lineHeight: null,
+          spaceBefore: 0,
+          spaceAfter: 0,
+          runs: [{ text, b: false, i: false, u: false, strike: false, size, color: '#000', fonts: ['黑体'] }],
+        },
+      ],
     },
   });
   const pres = { width: 1280, height: 720, source: 'pptx', slides: [] };
@@ -2987,7 +3992,11 @@ group('CJK 标点挤压');
       eq('dx 长度等于字符数', vals.length, 8);
       // 逗号在下标 3，位移落在它后面那个字上；半格 = 46.2 / 2
       near('逗号后的字左移半格', vals[4], -23.1, 0.1);
-      check('其余字符不动', vals.filter((v, i) => i !== 4).every((v) => v === 0), dx[1]);
+      check(
+        '其余字符不动',
+        vals.filter((v, i) => i !== 4).every((v) => v === 0),
+        dx[1],
+      );
     }
   }
 
@@ -2996,8 +4005,11 @@ group('CJK 标点挤压');
     const wide = svgOf(mk('数一数画一画', 200, 40));
     const latin = svgOf(mk('nnnnnn', 200, 40));
     // 同样 6 个字符，中文该比拉丁宽得多；宽度差异体现在断行上
-    check('中文按整格估算', (wide.match(/<text /g) ?? []).length >= (latin.match(/<text /g) ?? []).length,
-      `中文 ${(wide.match(/<text /g) ?? []).length} 行 vs 拉丁 ${(latin.match(/<text /g) ?? []).length} 行`);
+    check(
+      '中文按整格估算',
+      (wide.match(/<text /g) ?? []).length >= (latin.match(/<text /g) ?? []).length,
+      `中文 ${(wide.match(/<text /g) ?? []).length} 行 vs 拉丁 ${(latin.match(/<text /g) ?? []).length} 行`,
+    );
   }
 
   // 完整规则：连续标点对与行首行尾的无条件挤压（放得下也收）；断行判定仍按全角
@@ -3005,10 +4017,11 @@ group('CJK 标点挤压');
     // 「他说：『好。』」7 字 277.2px、可用 880.8px 放得下：
     // 『与：相邻收左半格；』与。相邻且在行尾收右半格；：与。的前驱都是汉字不收
     const pairHtml = html(mk('他说：『好。』', 900));
-    check('连续标点对在 HTML 无条件收相邻侧',
-      (pairHtml.match(/margin-left:-0\.5em/g) ?? []).length === 1
-      && (pairHtml.match(/margin-right:-0\.5em/g) ?? []).length === 1,
-      pairHtml.slice(0, 400));
+    check(
+      '连续标点对在 HTML 无条件收相邻侧',
+      (pairHtml.match(/margin-left:-0\.5em/g) ?? []).length === 1 && (pairHtml.match(/margin-right:-0\.5em/g) ?? []).length === 1,
+      pairHtml.slice(0, 400),
+    );
     const pairNative = svgOf(mk('他说：『好。』', 900));
     const pairDx = /dx="([^"]+)"/.exec(pairNative);
     check('连续标点对在原生路径输出 dx', !!pairDx, pairNative.slice(0, 300));
@@ -3016,28 +4029,31 @@ group('CJK 标点挤压');
       const vals = pairDx[1].split(' ').map(Number);
       eq('dx 长度等于字符数', vals.length, 7);
       near('『左移半格', vals[3], -23.1, 0.1);
-      check('其余字符不动', vals.filter((_, i) => i !== 3).every((v) => v === 0), pairDx[1]);
+      check(
+        '其余字符不动',
+        vals.filter((_, i) => i !== 3).every((v) => v === 0),
+        pairDx[1],
+      );
     }
   }
   {
     // 行首开标点：8 字 369.6px、可用 236.8px → 第一行 5 字，第二行「（注）」行首收左半格
     const native = svgOf(mk('甲甲甲甲乙（注）', 256));
     const dxLists = [...native.matchAll(/dx="([^"]+)"/g)].map((m) => m[1].split(' ').map(Number));
-    check('行首开标点收左半格',
-      dxLists.length === 1 && dxLists[0][0] === -23.1 && dxLists[0].length === 3,
-      JSON.stringify(dxLists));
+    check('行首开标点收左半格', dxLists.length === 1 && dxLists[0][0] === -23.1 && dxLists[0].length === 3, JSON.stringify(dxLists));
   }
   {
     // 行尾句读放得下也收右半格：不出 dx，收进行有效宽度（对齐与光标计算用）
     const loose = lib.layoutText(mk('甲甲甲甲甲。', 900).text, 900, 200);
     const line = loose.lines.at(-1);
-    check('行尾句读收进行宽',
+    check(
+      '行尾句读收进行宽',
       !!line && line.squeezed === false && Math.abs(line.naturalWidth - line.width - 23.1) < 0.1,
-      JSON.stringify(line && { w: line.width, nw: line.naturalWidth, s: line.squeezed }));
+      JSON.stringify(line && { w: line.width, nw: line.naturalWidth, s: line.squeezed }),
+    );
     const plain = lib.layoutText(mk('甲甲甲甲甲', 900).text, 900, 200);
     const pl = plain.lines.at(-1);
-    check('无标点行宽零收缩', !!pl && pl.width === pl.naturalWidth,
-      JSON.stringify(pl && { w: pl.width, nw: pl.naturalWidth }));
+    check('无标点行宽零收缩', !!pl && pl.width === pl.naturalWidth, JSON.stringify(pl && { w: pl.width, nw: pl.naturalWidth }));
   }
   {
     // 「放不下才挤」不回归：全角超宽、挤掉句读半格后放得下 → squeezed
@@ -3058,13 +4074,15 @@ group('headless 状态机');
     const pending = new Map();
     const delays = [];
     let serial = 0;
-    globalThis.setTimeout = ((callback, delay) => {
+    globalThis.setTimeout = (callback, delay) => {
       const id = ++serial;
       delays.push(delay);
       pending.set(id, callback);
       return id;
-    });
-    globalThis.clearTimeout = ((id) => { pending.delete(id); });
+    };
+    globalThis.clearTimeout = (id) => {
+      pending.delete(id);
+    };
     const fire = () => {
       const entry = pending.entries().next().value;
       if (!entry) return false;
@@ -3072,13 +4090,15 @@ group('headless 状态机');
       entry[1]();
       return true;
     };
-    const timedState = (advanceAfterMs) => new viewerLib.PresentationState({
-      width: 960, height: 540,
-      slides: [
-        { elements: [], transition: { type: 'fade', durationMs: 500, advanceAfterMs } },
-        { elements: [] },
-      ],
-    }, { autoAdvance: true });
+    const timedState = (advanceAfterMs) =>
+      new viewerLib.PresentationState(
+        {
+          width: 960,
+          height: 540,
+          slides: [{ elements: [], transition: { type: 'fade', durationMs: 500, advanceAfterMs } }, { elements: [] }],
+        },
+        { autoAdvance: true },
+      );
     try {
       const zero = timedState(0);
       zero.scheduleAutoAdvance();
@@ -3087,17 +4107,17 @@ group('headless 状态机');
 
       const max = timedState(0x7fffffff);
       max.scheduleAutoAdvance();
-      check('2^31-1ms 使用单个最大安全计时器',
-        delays.at(-1) === 0x7fffffff && fire() && max.index === 1);
+      check('2^31-1ms 使用单个最大安全计时器', delays.at(-1) === 0x7fffffff && fire() && max.index === 1);
       max.destroy();
 
       const overflow = timedState(0x80000000);
       overflow.scheduleAutoAdvance();
       const overflowStart = delays.length;
       const firstOverflow = delays.at(-1) === 0x7fffffff && fire() && overflow.index === 0;
-      check('2^31ms 分成最大安全延迟与剩余 1ms',
-        firstOverflow && delays.length === overflowStart + 1 && delays.at(-1) === 1
-          && fire() && overflow.index === 1);
+      check(
+        '2^31ms 分成最大安全延迟与剩余 1ms',
+        firstOverflow && delays.length === overflowStart + 1 && delays.at(-1) === 1 && fire() && overflow.index === 1,
+      );
       overflow.destroy();
 
       const uintMax = timedState(0xffffffff);
@@ -3107,9 +4127,11 @@ group('headless 状态机');
         chunks.push(delays.at(-1));
         fire();
       }
-      check('unsignedInt 最大延迟分三段且不会提前翻页',
+      check(
+        'unsignedInt 最大延迟分三段且不会提前翻页',
         chunks.join(',') === '2147483647,2147483647,1' && uintMax.index === 1,
-      chunks.join(','));
+        chunks.join(','),
+      );
       uintMax.destroy();
     } finally {
       globalThis.setTimeout = nativeSetTimeout;
@@ -3159,7 +4181,9 @@ group('headless 状态机');
 
     // 缩放有上下限，且同值不广播
     const zoomEvents = [];
-    const offZoom = st.subscribe((c) => { if (c.type === 'zoom') zoomEvents.push(c.zoom); });
+    const offZoom = st.subscribe((c) => {
+      if (c.type === 'zoom') zoomEvents.push(c.zoom);
+    });
     st.setZoom(2);
     eq('缩放生效', st.zoom, 2);
     st.setZoom(2);
@@ -3181,13 +4205,16 @@ group('headless 状态机');
     eq('无匹配返回空', st.search('zzz_不存在的词_zzz').length, 0);
 
     const notesPresentation = await lib.parse(load('sample-editor-notes.pptx'), {
-      lazy: false, assets: 'defer',
+      lazy: false,
+      assets: 'defer',
     });
     const notesState = new St(notesPresentation, {});
-    check('viewer 投影逐字公开备注并可全文搜索',
+    check(
+      'viewer 投影逐字公开备注并可全文搜索',
       notesState.slide.notes === '来源第一段\n\n来源第三段\n'
         && notesState.search('来源第三段').join(',') === '0'
-        && notesState.search('页脚不得进入备注正文').length === 0);
+        && notesState.search('页脚不得进入备注正文').length === 0,
+    );
     notesPresentation.dispose?.();
 
     // 内部跳转链接解析
@@ -3207,8 +4234,7 @@ group('headless 状态机');
       const hp = parsed.get(file);
       if (!check(`${file} 已解析`, !!hp)) continue;
 
-      eq(`${file} 隐藏标记`, JSON.stringify(hp.slides.map((s2) => !!s2.hidden)),
-        JSON.stringify([false, true, true, false, true]));
+      eq(`${file} 隐藏标记`, JSON.stringify(hp.slides.map((s2) => !!s2.hidden)), JSON.stringify([false, true, true, false, true]));
 
       const skip = new St(hp, { skipHidden: true });
       skip.next();
@@ -3239,8 +4265,7 @@ group('headless 状态机');
   }
 
   // 动画批次由状态机推进，播放交给 UI
-  const animPres = [...parsed.values()].find((p) =>
-    p.slides.some((s2) => (s2.animations?.length ?? 0) > 1));
+  const animPres = [...parsed.values()].find((p) => p.slides.some((s2) => (s2.animations?.length ?? 0) > 1));
   const animIdx = animPres ? animPres.slides.findIndex((s2) => (s2.animations?.length ?? 0) > 1) : -1;
   if (check('固件中存在多步动画页', animIdx >= 0)) {
     const St = viewerLib.PresentationState;
@@ -3283,8 +4308,13 @@ group('headless 状态机');
 
       // 上一步先退回一批。合成文稿只借真实页的形状，批次自己写死，避免固件改组数把契约带跑。
       const step = (target, kind, clickGroup) => ({
-        target, kind, clickGroup, trigger: 'click', effect: kind === 'emphasis' ? 'grow' : 'fade',
-        delayMs: 0, durationMs: 10,
+        target,
+        kind,
+        clickGroup,
+        trigger: 'click',
+        effect: kind === 'emphasis' ? 'grow' : 'fade',
+        delayMs: 0,
+        durationMs: 10,
       });
       const deck = {
         ...animPres,
@@ -3306,8 +4336,10 @@ group('headless 状态机');
       eq('上一步留在本页', back.index, 2);
       eq('上一步退回一批', back.animationDone, 0);
       check('退回后入场重新隐藏', back.hiddenElementIds.has(3));
-      check('退回发 settle 而不是换页', seen.some((change) => change.type === 'animation' && change.settle)
-        && !seen.some((change) => change.type === 'slide'));
+      check(
+        '退回发 settle 而不是换页',
+        seen.some((change) => change.type === 'animation' && change.settle) && !seen.some((change) => change.type === 'slide'),
+      );
       back.prev();
       eq('开头再按上一步跳过隐藏页', back.index, 0);
       eq('上一页落在终态', back.animationDone, back.animationTotal);
@@ -3334,10 +4366,19 @@ group('headless 状态机');
       const settled = viewerLib.settledDeclaration;
       eq('入场终态不另写样式', settled(step(1, 'entrance', 0)), null);
       eq('强调放大停在结束帧', settled({ ...step(9, 'emphasis', 0), effect: 'grow' }).transform, 'scale(1.25)');
-      eq('路径终态取折线终点', settled({
-        ...step(4, 'motion', 0), kind: 'motion', effect: 'path',
-        motionPath: [[0, 0], [30, 40]],
-      }).transform, 'translate(30px, 40px)');
+      eq(
+        '路径终态取折线终点',
+        settled({
+          ...step(4, 'motion', 0),
+          kind: 'motion',
+          effect: 'path',
+          motionPath: [
+            [0, 0],
+            [30, 40],
+          ],
+        }).transform,
+        'translate(30px, 40px)',
+      );
     }
     st.destroy();
   }
@@ -3362,12 +4403,11 @@ group('文本自动缩放');
     check('显式 fontScale 不走自算', flagOf(3).autoFitCompute !== true, `实际 ${flagOf(3).autoFitCompute}`);
     eq('显式 fontScale 原样保留', flagOf(3).fontScale, 0.5);
 
-    const nominal = sizeOf(2);            // 无 autofit：标称字号
+    const nominal = sizeOf(2); // 无 autofit：标称字号
     check('溢出 + 裸 normAutofit → 缩小', sizeOf(0) < nominal * 0.95, `${sizeOf(0)} vs 标称 ${nominal}`);
     check('缩放不低于 25% 下限', sizeOf(0) >= nominal * 0.25);
     // 第 5 页的文本远超容量，缩放会一路压到下限；再低就没法读了
-    check('极端长文本停在 25% 下限', Math.abs(sizeOf(4) - nominal * 0.25) < 0.5,
-      `${sizeOf(4)} vs 下限 ${nominal * 0.25}`);
+    check('极端长文本停在 25% 下限', Math.abs(sizeOf(4) - nominal * 0.25) < 0.5, `${sizeOf(4)} vs 下限 ${nominal * 0.25}`);
     eq('放得下 + 裸 normAutofit → 不缩', sizeOf(1), nominal);
     eq('无 autofit → 照常溢出不缩', sizeOf(2), nominal);
     check('显式 fontScale 50% 生效', Math.abs(sizeOf(3) - nominal * 0.5) < 0.5, `${sizeOf(3)} vs ${nominal * 0.5}`);
@@ -3401,8 +4441,11 @@ group('占位符几何继承');
 
     // 形状侧的继承原本就支持，这里防回归
     const shapes = pp.slides[2].elements.filter((e) => e.kind === 'shape');
-    check('形状占位符也继承几何', shapes.some((e) => box(e) === '560,140 340×300'),
-      shapes.map(box).join(' | '));
+    check(
+      '形状占位符也继承几何',
+      shapes.some((e) => box(e) === '560,140 340×300'),
+      shapes.map(box).join(' | '),
+    );
   }
 }
 
@@ -3427,9 +4470,11 @@ group('导出路径的分栏');
       const [pt2, , , pl2] = el.text.insets;
       void pt2;
       const colW = (el.w - pl2 * 2 - el.text.columnGap) / 2;
-      check('右栏偏移 = 左栏 + 栏宽 + 栏间距',
+      check(
+        '右栏偏移 = 左栏 + 栏宽 + 栏间距',
         Math.abs(xs[1] - (xs[0] + colW + el.text.columnGap)) < 1.5,
-        `${xs[1]} vs ${xs[0] + colW + el.text.columnGap}`);
+        `${xs[1]} vs ${xs[0] + colW + el.text.columnGap}`,
+      );
     }
   }
 }
@@ -3445,14 +4490,23 @@ group('媒体源回退');
     const embedded = (spid, kind, part, mime) => {
       const el = bySpid.get(spid);
       const asset = el?.media.src ? fallback.package.assets[el.media.src] : undefined;
-      check(`${el?.name ?? spid} → ${part}`, el?.media.kind === kind && el.media.mime === mime
-        && el.media.external === undefined && asset?.sourcePart === part && asset.mime === mime,
-      JSON.stringify({ media: el?.media, sourcePart: asset?.sourcePart }));
+      check(
+        `${el?.name ?? spid} → ${part}`,
+        el?.media.kind === kind
+          && el.media.mime === mime
+          && el.media.external === undefined
+          && asset?.sourcePart === part
+          && asset.mime === mime,
+        JSON.stringify({ media: el?.media, sourcePart: asset?.sourcePart }),
+      );
     };
     const external = (spid, kind, url) => {
       const el = bySpid.get(spid);
-      check(`${el?.name ?? spid} → ${url}`, el?.media.kind === kind && el.media.src === url
-        && el.media.external === true, JSON.stringify(el?.media));
+      check(
+        `${el?.name ?? spid} → ${url}`,
+        el?.media.kind === kind && el.media.src === url && el.media.external === true,
+        JSON.stringify(el?.media),
+      );
     };
     embedded(10, 'audio', 'ppt/media/media1.wav', 'audio/wav');
     embedded(11, 'video', 'ppt/media/media2.mp4', 'video/mp4');
@@ -3479,22 +4533,25 @@ group('媒体播放器');
   const mp = parsed.get('sample-media.pptx');
   // timing 媒体节点（cMediaNode）的播放语义按 spid 回填：volume / mute / loop / clickGroup
   const first = mp.slides[0];
-  const playbackEls = first.elements.filter(e => e.kind === 'image' && e.media?.playback);
+  const playbackEls = first.elements.filter((e) => e.kind === 'image' && e.media?.playback);
   eq('timing 媒体回填数量', playbackEls.length, 2);
-  const tone = playbackEls.find(e => e.media.spid === 502);
-  check('配音跟随首组且音量 80%',
-    tone && Math.abs(tone.media.playback.volume - 0.8) < 1e-9
-      && tone.media.playback.loop === false && tone.media.playback.clickGroup === 0,
-    JSON.stringify(tone?.media.playback));
-  const silent = playbackEls.find(e => e.media.spid === 505);
-  check('clickEffect 头媒体独立成组且静音循环',
-    silent && silent.media.playback.volume === 0
-      && silent.media.playback.loop === true && silent.media.playback.clickGroup === 1,
-    JSON.stringify(silent?.media.playback));
-  check('全部媒体元素带 spid 关联键',
-    mp.slides[0].elements.every(e => e.kind !== 'image' || !e.media || typeof e.media.spid === 'number'));
-  const withMedia = mp && mp.slides.findIndex((s2) =>
-    s2.elements.some((e) => e.media?.src));
+  const tone = playbackEls.find((e) => e.media.spid === 502);
+  check(
+    '配音跟随首组且音量 80%',
+    tone && Math.abs(tone.media.playback.volume - 0.8) < 1e-9 && tone.media.playback.loop === false && tone.media.playback.clickGroup === 0,
+    JSON.stringify(tone?.media.playback),
+  );
+  const silent = playbackEls.find((e) => e.media.spid === 505);
+  check(
+    'clickEffect 头媒体独立成组且静音循环',
+    silent && silent.media.playback.volume === 0 && silent.media.playback.loop === true && silent.media.playback.clickGroup === 1,
+    JSON.stringify(silent?.media.playback),
+  );
+  check(
+    '全部媒体元素带 spid 关联键',
+    mp.slides[0].elements.every((e) => e.kind !== 'image' || !e.media || typeof e.media.spid === 'number'),
+  );
+  const withMedia = mp && mp.slides.findIndex((s2) => s2.elements.some((e) => e.media?.src));
   if (check('存在带可播放源的媒体', withMedia >= 0)) {
     const page = mp.slides[withMedia];
     const badge = lib.renderSlideToSvg(mp, page);
@@ -3503,13 +4560,15 @@ group('媒体播放器');
 
     // 默认渲染里 foreignObject 本来就有（HTML 文本路径用它），要看的是播放器元素
     check('默认不嵌播放器', !/<video|<audio/.test(badge));
-    check('player 模式嵌入真实播放器',
-      /<video[^>]+controls/.test(player) || /<audio[^>]+controls/.test(player));
+    check('player 模式嵌入真实播放器', /<video[^>]+controls/.test(player) || /<audio[^>]+controls/.test(player));
     check('player 模式用封面帧做 poster', !player.includes('<video') || /poster="/.test(player));
 
     // 关键约束：'svg' 文本模式的产物要脱离浏览器使用，不能含只有浏览器认的 foreignObject
-    check('导出路径强制退回 badge，无 foreignObject', !exported.includes('<foreignObject'),
-      exported.slice(exported.indexOf('<foreignObject'), exported.indexOf('<foreignObject') + 60));
+    check(
+      '导出路径强制退回 badge，无 foreignObject',
+      !exported.includes('<foreignObject'),
+      exported.slice(exported.indexOf('<foreignObject'), exported.indexOf('<foreignObject') + 60),
+    );
     check('导出路径仍保留播放标识', exported.includes('<circle'));
   }
 
@@ -3523,8 +4582,11 @@ group('媒体播放器');
     check('无封面的音频保留播放标识', badgeOf(faceless, 'badge').includes('<circle'));
     const facedPlayer = badgeOf(faced, 'player');
     check('player 模式音频不显示原生控件', /<audio\b/.test(facedPlayer) && !/<audio[^>]+controls/.test(facedPlayer));
-    check('player 模式音频封面是点击目标', /<g data-media-toggle=""[^>]*><title>音频<\/title><image /.test(facedPlayer),
-      facedPlayer.slice(0, 300));
+    check(
+      'player 模式音频封面是点击目标',
+      /<g data-media-toggle=""[^>]*><title>音频<\/title><image /.test(facedPlayer),
+      facedPlayer.slice(0, 300),
+    );
     check('不画标识的音频仍保留类型说明', badgeOf(faced, 'badge').includes('<title>音频</title>'));
 
     const index = mp.slides.findIndex((s) => s.elements.includes(faced));
@@ -3537,8 +4599,15 @@ group('媒体播放器');
       const calls = [];
       let paused = true;
       Object.defineProperty(audio, 'paused', { get: () => paused });
-      audio.play = () => { calls.push('play'); paused = false; return Promise.resolve(); };
-      audio.pause = () => { calls.push('pause'); paused = true; };
+      audio.play = () => {
+        calls.push('play');
+        paused = false;
+        return Promise.resolve();
+      };
+      audio.pause = () => {
+        calls.push('pause');
+        paused = true;
+      };
       const click = () => {
         const event = new globalThis.window.MouseEvent('click', { bubbles: true, cancelable: true });
         face.querySelector('image').dispatchEvent(event);
@@ -3558,14 +4627,21 @@ group('.ppt 的组与自动编号');
 {
   const sp2 = parsed.get('showcase.ppt');
   if (check('showcase.ppt 已解析', !!sp2)) {
-    let groups = 0, maxDepth = 0, autonum = 0;
-    const walk = (els, d) => { for (const e of els ?? []) {
-      if (e.kind === 'group') { groups++; maxDepth = Math.max(maxDepth, d + 1); }
-      for (const q of e.text?.paragraphs ?? []) {
-        if (q.bullet && /^[0-9a-zA-Z]+[.)]/.test(q.bullet)) autonum++;
+    let groups = 0,
+      maxDepth = 0,
+      autonum = 0;
+    const walk = (els, d) => {
+      for (const e of els ?? []) {
+        if (e.kind === 'group') {
+          groups++;
+          maxDepth = Math.max(maxDepth, d + 1);
+        }
+        for (const q of e.text?.paragraphs ?? []) {
+          if (q.bullet && /^[0-9a-zA-Z]+[.)]/.test(q.bullet)) autonum++;
+        }
+        walk(e.children, d + 1);
       }
-      walk(e.children, d + 1);
-    } };
+    };
     for (const s2 of sp2.slides) walk(s2.elements, 0);
 
     // 这两条 README 曾经记成「未实现；嵌套组会被展平」，实测都是错的
@@ -3584,7 +4660,12 @@ group('OLE 对象预览图');
 
     // 预览图存在旧式 VML 部件里：oleObj@spid → v:shape → v:imagedata → 媒体
     check('可解码的预览图渲染成图片', !!p1 && !!p1.src, p1 ? String(p1.src) : '没解出图片');
-    if (p1) eq('图片沿用 graphicFrame 的框', `${Math.round(p1.x)},${Math.round(p1.y)} ${Math.round(p1.w)}×${Math.round(p1.h)}`, '120,160 460×300');
+    if (p1)
+      eq(
+        '图片沿用 graphicFrame 的框',
+        `${Math.round(p1.x)},${Math.round(p1.y)} ${Math.round(p1.w)}×${Math.round(p1.h)}`,
+        '120,160 460×300',
+      );
 
     // 认不出的格式（Mac 存的 PICT 之类）宁可给占位框，也别塞一张裂图
     check('认不出的预览格式退回占位框', !!p2, '第 2 页没有占位元素');
@@ -3595,8 +4676,11 @@ group('OLE 对象预览图');
     const p3 = op.slides[2].elements.find((e) => e.kind === 'image');
     check('内嵌 p:pic 的预览渲染成图片', !!p3 && !!p3.src, p3 ? String(p3.src) : '没解出图片');
     if (p3) {
-      eq('p:pic 预览沿用 graphicFrame 的框',
-        `${Math.round(p3.x)},${Math.round(p3.y)} ${Math.round(p3.w)}×${Math.round(p3.h)}`, '120,160 460×300');
+      eq(
+        'p:pic 预览沿用 graphicFrame 的框',
+        `${Math.round(p3.x)},${Math.round(p3.y)} ${Math.round(p3.w)}×${Math.round(p3.h)}`,
+        '120,160 460×300',
+      );
       check('p:pic 走的是自己的图，不是 VML 那张', p3.src !== p1?.src, `${p3.src} vs ${p1?.src}`);
     }
   }
@@ -3612,7 +4696,11 @@ group('渲染错误隔离');
 
     // 注入一个访问即抛的元素，模拟畸形形状
     const bad = { kind: 'shape', x: 10, y: 20, w: 120, h: 60, rot: 0, flipH: false, flipV: false, name: '坏形状' };
-    Object.defineProperty(bad, 'path', { get() { throw new Error('注入的渲染错误'); } });
+    Object.defineProperty(bad, 'path', {
+      get() {
+        throw new Error('注入的渲染错误');
+      },
+    });
     const svg = lib.renderSlideToSvg(sc, { ...page, elements: [bad, ...page.elements] });
 
     check('失败元素标记为 data-render-error', svg.includes('data-render-error="1"'));
@@ -3625,9 +4713,17 @@ group('渲染错误隔离');
 
     // 背景解析失败只该丢背景
     const badBg = { ...page };
-    Object.defineProperty(badBg, 'background', { get() { throw new Error('背景炸了'); } });
+    Object.defineProperty(badBg, 'background', {
+      get() {
+        throw new Error('背景炸了');
+      },
+    });
     let bgSvg = null;
-    try { bgSvg = lib.renderSlideToSvg(sc, badBg); } catch { /* 期望不抛 */ }
+    try {
+      bgSvg = lib.renderSlideToSvg(sc, badBg);
+    } catch {
+      /* 期望不抛 */
+    }
     check('背景渲染失败不影响整页', !!bgSvg && bgSvg.includes('<svg'));
     check('背景失败时退回白底', !!bgSvg && bgSvg.includes('fill="#fff"'));
   }
@@ -3646,15 +4742,23 @@ group('导出光栅化');
     let encodeFails = 0;
 
     globalThis.Image = class {
-      set src(v) { srcs.push(v); queueMicrotask(() => this.onload && this.onload()); }
+      set src(v) {
+        srcs.push(v);
+        queueMicrotask(() => this.onload && this.onload());
+      }
     };
     doc.createElement = (tag) => {
       if (tag !== 'canvas') return realCreate(tag);
       return {
-        width: 0, height: 0,
+        width: 0,
+        height: 0,
         getContext: () => ({ fillStyle: '', font: '', fillRect() {}, drawImage() {}, measureText: (s2) => ({ width: s2.length * 8 }) }),
         toDataURL() {
-          if (encodeFails-- > 0) { const e = new Error('tainted'); e.name = 'SecurityError'; throw e; }
+          if (encodeFails-- > 0) {
+            const e = new Error('tainted');
+            e.name = 'SecurityError';
+            throw e;
+          }
           return `data:image/png;base64,${btoa('png')}`;
         },
       };
@@ -3662,12 +4766,10 @@ group('导出光栅化');
 
     try {
       await lib.slideToPng(sc, page, 1);
-      check('导出用 data: URI 加载 SVG', srcs.length === 1 && srcs[0].startsWith('data:image/svg+xml'),
-        String(srcs[0]).slice(0, 40));
+      check('导出用 data: URI 加载 SVG', srcs.length === 1 && srcs[0].startsWith('data:image/svg+xml'), String(srcs[0]).slice(0, 40));
       // blob: 会让含 foreignObject 的 SVG 污染画布，data: 不会
       check('导出不再经 blob: URL', !srcs.some((u) => u.startsWith('blob:')));
-      check('默认走 html 文本模式（与屏幕预览同一套排版）',
-        decodeURIComponent(srcs[0] || '').includes('<foreignObject'));
+      check('默认走 html 文本模式（与屏幕预览同一套排版）', decodeURIComponent(srcs[0] || '').includes('<foreignObject'));
 
       // 引擎仍判污染时应自动退回自绘文本，而不是让导出失败
       srcs.length = 0;
@@ -3675,8 +4777,7 @@ group('导出光栅化');
       const blob = await lib.slideToPng(sc, page, 1);
       check('画布被判污染时导出仍成功', !!blob);
       eq('污染回退渲染了两次', srcs.length, 2);
-      check('回退产物不含 foreignObject',
-        !decodeURIComponent(srcs[1] || '').includes('<foreignObject'));
+      check('回退产物不含 foreignObject', !decodeURIComponent(srcs[1] || '').includes('<foreignObject'));
     } finally {
       globalThis.Image = realImage;
       doc.createElement = realCreate;
@@ -3699,7 +4800,8 @@ group('foreignObject 缩放探测');
     const vs = new viewerLib.Viewer(box, pres, { textMode: 'svg' });
     check('text:svg 改用原生 <text>', !vs.slideSvg(0).includes('<foreignObject'));
     check('text:svg 仍渲染出文本', /<text[\s>]/.test(vs.slideSvg(0)));
-    vh.destroy(); vs.destroy();
+    vh.destroy();
+    vs.destroy();
     box.remove();
   }
 }
@@ -3714,22 +4816,27 @@ group('动画分步打印');
     // hiddenElements 直接把可见性固化进静态产物
     const mid = [...lib.hiddenBefore(groups, 1)];
     const svg = lib.renderSlideToSvg(pres, anim, { hiddenElements: mid });
-    check('隐藏的元素带 visibility:hidden',
-      mid.every((id) => new RegExp(`data-el="${id}" style="visibility:hidden;`).test(svg)));
+    check(
+      '隐藏的元素带 visibility:hidden',
+      mid.every((id) => new RegExp(`data-el="${id}" style="visibility:hidden;`).test(svg)),
+    );
     const shown = anim.animations.map((a) => a.target).filter((t) => !mid.includes(t));
-    check('未隐藏的元素不带 visibility:hidden',
+    check(
+      '未隐藏的元素不带 visibility:hidden',
       shown.every((id) => new RegExp(`data-el="${id}" style="(?!visibility:hidden)`).test(svg)),
-      `可见目标 ${shown.join(',')}`);
-    check('不传 hiddenElements 时不产生 visibility',
-      !lib.renderSlideToSvg(pres, anim).includes('visibility:hidden'));
+      `可见目标 ${shown.join(',')}`,
+    );
+    check('不传 hiddenElements 时不产生 visibility', !lib.renderSlideToSvg(pres, anim).includes('visibility:hidden'));
 
     const plain = await lib.presentationToPrintableHtml(pres);
     const stepped = await lib.presentationToPrintableHtml(pres, { animationSteps: true });
     const count = (h) => (h.match(/class="pg"/g) || []).length;
     eq('默认一页一张', count(plain), pres.slides.length);
     // 有动画的页展开成 n+1 张（初始态 + 每批播完）
-    const extra = pres.slides.reduce((n, x) => n + (lib.groupSteps(x.animations).length
-      ? lib.groupSteps(x.animations).length + 1 - 1 : 0), 0);
+    const extra = pres.slides.reduce(
+      (n, x) => n + (lib.groupSteps(x.animations).length ? lib.groupSteps(x.animations).length + 1 - 1 : 0),
+      0,
+    );
     eq('分步后页数按点击批次展开', count(stepped), pres.slides.length + extra);
     check('分步产物里出现了 visibility:hidden', stepped.includes('visibility:hidden'));
     check('分步产物仍不含 foreignObject', !stepped.includes('<foreignObject'));
@@ -3764,16 +4871,24 @@ group('渲染快照');
           written++;
           continue;
         }
-        if (!existsSync(path)) { missing++; continue; }
+        if (!existsSync(path)) {
+          missing++;
+          continue;
+        }
         const expected = readFileSync(path, 'utf8');
-        if (expected === actual) { pass++; continue; }
+        if (expected === actual) {
+          pass++;
+          continue;
+        }
 
         // 只报首个差异行，避免刷屏
         const a = expected.split('\n');
         const b = actual.split('\n');
         let line = 0;
         while (line < a.length && line < b.length && a[line] === b[line]) line++;
-        drifted.push(`${name} 第 ${line + 1} 行\n      基线: ${(a[line] ?? '<缺失>').slice(0, 110)}\n      实际: ${(b[line] ?? '<缺失>').slice(0, 110)}`);
+        drifted.push(
+          `${name} 第 ${line + 1} 行\n      基线: ${(a[line] ?? '<缺失>').slice(0, 110)}\n      实际: ${(b[line] ?? '<缺失>').slice(0, 110)}`,
+        );
       }
     }
   }
@@ -3796,19 +4911,41 @@ group('导出字体子集化');
 {
   // 最小文稿：两页共用「黑体」，嵌入字体里再塞一个没用到的 Calibri
   const mkText = (text, family) => ({
-    kind: 'shape', x: 0, y: 0, w: 400, h: 100, rot: 0, flipH: false, flipV: false, path: null,
-    fill: null, stroke: null,
+    kind: 'shape',
+    x: 0,
+    y: 0,
+    w: 400,
+    h: 100,
+    rot: 0,
+    flipH: false,
+    flipV: false,
+    path: null,
+    fill: null,
+    stroke: null,
     text: {
-      anchor: 'top', insets: [0, 0, 0, 0], wrap: true, fontScale: 1,
-      paragraphs: [{
-        align: 'left', lvl: 0, marL: 0, indent: 0, bullet: null, lineHeight: null,
-        spaceBefore: 0, spaceAfter: 0,
-        runs: [{ text, b: false, i: false, u: false, strike: false, size: 24, color: '#000', fonts: [family] }],
-      }],
+      anchor: 'top',
+      insets: [0, 0, 0, 0],
+      wrap: true,
+      fontScale: 1,
+      paragraphs: [
+        {
+          align: 'left',
+          lvl: 0,
+          marL: 0,
+          indent: 0,
+          bullet: null,
+          lineHeight: null,
+          spaceBefore: 0,
+          spaceAfter: 0,
+          runs: [{ text, b: false, i: false, u: false, strike: false, size: 24, color: '#000', fonts: [family] }],
+        },
+      ],
     },
   });
   const pres = {
-    width: 960, height: 540, source: 'pptx',
+    width: 960,
+    height: 540,
+    source: 'pptx',
     slides: [
       { background: null, elements: [mkText('你好世界', '黑体')] },
       { background: null, elements: [mkText('字体切割', '黑体')] },
@@ -3821,20 +4958,31 @@ group('导出字体子集化');
   // sfnt 魔数开头，让按魔数判定 MIME 的路径走到 font/ttf
   const heti = new Uint8Array([0, 1, 0, 0, ...Array(120).fill(65)]);
   const cali = new Uint8Array([0, 1, 0, 0, ...Array(60).fill(66)]);
-  const resources = new Map([['blob:node/heti', heti], ['blob:node/cali', cali]]);
-  const realFetch = globalThis.fetch, realReader = globalThis.FileReader;
+  const resources = new Map([
+    ['blob:node/heti', heti],
+    ['blob:node/cali', cali],
+  ]);
+  const realFetch = globalThis.fetch,
+    realReader = globalThis.FileReader;
   globalThis.FileReader = class {
     readAsDataURL(blob) {
-      blob.arrayBuffer().then((buf) => {
-        this.result = `data:${blob.type};base64,${Buffer.from(buf).toString('base64')}`;
-        this.onload && this.onload();
-      }, (err) => this.onerror && this.onerror({ error: err }));
+      blob.arrayBuffer().then(
+        (buf) => {
+          this.result = `data:${blob.type};base64,${Buffer.from(buf).toString('base64')}`;
+          this.onload && this.onload();
+        },
+        (err) => this.onerror && this.onerror({ error: err }),
+      );
     }
   };
   globalThis.fetch = async (url) => {
     const bytes = resources.get(String(url));
     if (!bytes) return { ok: false, status: 404 };
-    return { ok: true, arrayBuffer: async () => bytes.slice().buffer, blob: async () => new globalThis.Blob([bytes], { type: 'font/ttf' }) };
+    return {
+      ok: true,
+      arrayBuffer: async () => bytes.slice().buffer,
+      blob: async () => new globalThis.Blob([bytes], { type: 'font/ttf' }),
+    };
   };
   const base64 = (bytes) => Buffer.from(bytes).toString('base64');
   const subsetBytes = new Uint8Array([9, 9, 9, 9, 7, 7]);
@@ -3848,13 +4996,18 @@ group('导出字体子集化');
     check('默认产物不携带 unicode-range', !plain.includes('unicode-range'));
 
     // 开启子集化：有用量家族按字符集子集，未用家族整脸剔除
-    const seen = [], fallbacks = [];
+    const seen = [],
+      fallbacks = [];
     const subsetter = {
-      subset: async (input) => { seen.push(input); return { ok: true, bytes: subsetBytes, mime: 'font/ttf' }; },
+      subset: async (input) => {
+        seen.push(input);
+        return { ok: true, bytes: subsetBytes, mime: 'font/ttf' };
+      },
       dispose() {},
     };
-    const out = await lib.slideToSvgFile(pres, pres.slides[0], undefined,
-      { fonts: { subsetter, onFontFallback: (f, r) => fallbacks.push([f, r]) } });
+    const out = await lib.slideToSvgFile(pres, pres.slides[0], undefined, {
+      fonts: { subsetter, onFontFallback: (f, r) => fallbacks.push([f, r]) },
+    });
     check('子集化产物使用子集字节', out.includes(`data:font/ttf;base64,${base64(subsetBytes)}`));
     check('未用家族整脸剔除', !out.includes('blob:node/cali') && !out.includes('Calibri'));
     eq('子集化只处理有用量家族', seen.length, 1);
@@ -3871,35 +5024,48 @@ group('导出字体子集化');
       subset: async () => ({ ok: false, reason: 'subset-failed' }),
       dispose() {},
     };
-    const out2 = await lib.slideToSvgFile(pres, pres.slides[0], undefined,
-      { fonts: { subsetter: failing, onFontFallback: (f, r) => fallbacks2.push([f, r]) } });
+    const out2 = await lib.slideToSvgFile(pres, pres.slides[0], undefined, {
+      fonts: { subsetter: failing, onFontFallback: (f, r) => fallbacks2.push([f, r]) },
+    });
     check('引擎失败回退整字体', out2.includes(`data:font/ttf;base64,${base64(heti)}`));
     eq('失败回调收到 subset-failed', fallbacks2[0]?.[1], 'subset-failed');
     const throwing = {
-      subset: async () => { throw new Error('wasm 崩了'); },
+      subset: async () => {
+        throw new Error('wasm 崩了');
+      },
       dispose() {},
     };
-    const out3 = await lib.slideToSvgFile(pres, pres.slides[0], undefined,
-      { fonts: { subsetter: throwing, onFontFallback: (f, r) => fallbacks2.push([f, r]) } });
+    const out3 = await lib.slideToSvgFile(pres, pres.slides[0], undefined, {
+      fonts: { subsetter: throwing, onFontFallback: (f, r) => fallbacks2.push([f, r]) },
+    });
     check('引擎抛错也回退整字体', out3.includes(`data:font/ttf;base64,${base64(heti)}`));
-    check('抛错报告 subsetter-error', fallbacks2.some(([, r]) => r === 'subsetter-error'));
+    check(
+      '抛错报告 subsetter-error',
+      fallbacks2.some(([, r]) => r === 'subsetter-error'),
+    );
 
     // 打印整稿：并集字符集、跨页只子集化一次、两页共用同一 data URI
     const printSeen = [];
     const printSubsetter = {
-      subset: async (input) => { printSeen.push(input); return { ok: true, bytes: subsetBytes, mime: 'font/ttf' }; },
+      subset: async (input) => {
+        printSeen.push(input);
+        return { ok: true, bytes: subsetBytes, mime: 'font/ttf' };
+      },
       dispose() {},
     };
     const html = await lib.presentationToPrintableHtml(pres, { fonts: { subsetter: printSubsetter } });
     eq('打印整稿同字体只子集一次', printSeen.length, 1);
     eq('打印用并集字符集', printSeen[0].chars, sortedChars('你好世界字体切割'));
-    eq('两页共用同一份子集 data URI',
-      html.split(`data:font/ttf;base64,${base64(subsetBytes)}`).length - 1, 2);
+    eq('两页共用同一份子集 data URI', html.split(`data:font/ttf;base64,${base64(subsetBytes)}`).length - 1, 2);
     check('打印不含未用家族', !html.includes('blob:node/cali'));
 
     // 追加脸集（替代字体切片）：随导出进入并携带 unicode-range / size-adjust
     const out4 = await lib.slideToSvgFile(pres, pres.slides[0], undefined, {
-      fonts: { extraFontFaces: [{ family: '楷体', src: 'data:font/woff2;base64,AA==', bold: false, italic: false, unicodeRange: 'U+4E00-9FA5', sizeAdjust: 95.4 }] },
+      fonts: {
+        extraFontFaces: [
+          { family: '楷体', src: 'data:font/woff2;base64,AA==', bold: false, italic: false, unicodeRange: 'U+4E00-9FA5', sizeAdjust: 95.4 },
+        ],
+      },
     });
     check('追加脸进入导出', out4.includes("font-family:'楷体'") && out4.includes('unicode-range:U+4E00-9FA5;'));
     check('追加脸带 size-adjust', out4.includes('size-adjust:95.4%;'));
@@ -3910,20 +5076,26 @@ group('导出字体子集化');
     const realCreate = doc.createElement.bind(doc);
     const srcs = [];
     globalThis.Image = class {
-      set src(v) { srcs.push(v); queueMicrotask(() => this.onload && this.onload()); }
+      set src(v) {
+        srcs.push(v);
+        queueMicrotask(() => this.onload && this.onload());
+      }
     };
     doc.createElement = (tag) => {
       if (tag !== 'canvas') return realCreate(tag);
       return {
-        width: 0, height: 0,
+        width: 0,
+        height: 0,
         getContext: () => ({ fillStyle: '', font: '', fillRect() {}, drawImage() {}, measureText: (s) => ({ width: s.length * 8 }) }),
         toDataURL: () => `data:image/png;base64,${btoa('png')}`,
       };
     };
     try {
       await lib.slideToPng(pres, pres.slides[0], 1, { fonts: { subsetter } });
-      check('PNG 导出同样吃到子集',
-        srcs[0] !== undefined && decodeURIComponent(srcs[0]).includes(`data:font/ttf;base64,${base64(subsetBytes)}`));
+      check(
+        'PNG 导出同样吃到子集',
+        srcs[0] !== undefined && decodeURIComponent(srcs[0]).includes(`data:font/ttf;base64,${base64(subsetBytes)}`),
+      );
     } finally {
       globalThis.Image = realImage;
       doc.createElement = realCreate;

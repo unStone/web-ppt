@@ -1,982 +1,29 @@
-import { inkStrokes } from '../ink/render';
-import { PLACEHOLDER_DIRECT_BITS, placeholderDirectFlags } from '../edit-metadata';
-import { PLACEHOLDER_TYPE_EQUIVALENTS } from '../placeholder-match';
-import type {
-  EmbeddedFont, ElementBase, Fill, GroupElement, ImageElement, ImageTileAlignment, MediaInfo,
-  Presentation, ShapeElement, Slide, SlideComment, SlideElement, Stroke, TextBody,
-  UnsupportedElement,
-} from '../types';
-import type { PlaceholderDirectFlags } from '../edit-metadata';
-import { attr, boolAttr, emu, kid, kids, numAttr, parseXml, walk } from '../xml';
-import { getChartParser } from '../chart/hook';
-import { childColor, parseColor } from './color';
-import { parse3D, parseEffects, parseLineEnd } from './effects';
+/**
+ * .pptx 解析入口：演示文稿包 → 幻灯片 / 版式 / 母版目录 → 统一 Schema。
+ * 形状树见 shapes.ts，graphicFrame 见 graphic-frame.ts，共用属性见 shape-props.ts，批注见 comments.ts。
+ */
+import type { EmbeddedFont, Fill, Presentation, Slide, SlideElement, TextBody } from '../types';
+import { attr, boolAttr, emu, kid, kids, numAttr, walk } from '../xml';
+import { childColor } from './color';
 import { parseSlideTiming, parseTransition } from './animation';
-import { custGeomPath, customGeometryModel, parseAdjustments, presetGeom } from './geometry';
-import { extractLstStyle, parseTextBody, TextEnv } from './text';
-import type { LevelStyles } from './text';
 import { completeTextTemplateLevels } from './text-template';
-import {
-  buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram,
-} from './diagram';
 import type { AssetMode, DeferredAsset } from './asset-store';
 import type { ZipLimitOptions } from '../zip';
-import {
-  layoutCatalogPaths, layoutPlaceholderTemplate, masterCatalogPaths,
-} from './layout-catalog';
-import { hyperlinkOf, resolveLink } from './hyperlink';
-import {
-  Env, findPh, masterInheritance, relByType, Rels, slideInheritance, SlideInheritance,
-} from './slide-inheritance';
+import { layoutCatalogPaths, layoutPlaceholderTemplate, masterCatalogPaths } from './layout-catalog';
+import { Env, masterInheritance, relByType, Rels, slideInheritance, SlideInheritance } from './slide-inheritance';
 import type { SharedDocDefaults } from './slide-inheritance';
 import { Pkg } from './package-reader';
-import { defaultTableEditInfo, parseTable, tableStyleCatalog } from './table-style';
-import { parseElementAltText } from './alt-text';
+import { defaultTableEditInfo, tableStyleCatalog } from './table-style';
 import { parseSections } from './sections';
 import { parseThemeCatalog } from './theme-catalog';
-import { parseCompatibleShapes } from './shape-compatibility';
-import { compatibilityAssets, releaseCompatibilitySource, retainCompatibilitySource } from './compatibility-source';
+import { compatibilityAssets, releaseCompatibilitySource } from './compatibility-source';
+import { TABLE_FORMAT_READER, defaultShapeEditInfo, parseFillElement, parseFillProps, withPhClr } from './shape-props';
+import { parseShapeTree } from './shapes';
+import { AuthorInfo, parseCommentAuthors, parseSlideComments } from './comments';
 
 export type { AssetMode, DeferredAsset } from './asset-store';
 
-/** 音视频容器 → MIME；未知扩展名按媒体类型给个兜底值 */
-const MEDIA_MIME: Record<string, string> = {
-  mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
-  ogv: 'video/ogg', avi: 'video/x-msvideo', wmv: 'video/x-ms-wmv', mpg: 'video/mpeg', mpeg: 'video/mpeg',
-  mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', wma: 'audio/x-ms-wma',
-  ogg: 'audio/ogg', oga: 'audio/ogg', aac: 'audio/aac', mid: 'audio/midi', midi: 'audio/midi',
-};
-
-// ---------------- 变换 ----------------
-
-interface XfrmInfo extends ElementBase {
-  chX: number;
-  chY: number;
-  chW: number;
-  chH: number;
-}
-
-function parseXfrm(x: Element | null): XfrmInfo | null {
-  if (!x) return null;
-  const off = kid(x, 'off');
-  const ext = kid(x, 'ext');
-  const chOff = kid(x, 'chOff');
-  const chExt = kid(x, 'chExt');
-  return {
-    x: emu(numAttr(off, 'x')),
-    y: emu(numAttr(off, 'y')),
-    w: emu(numAttr(ext, 'cx')),
-    h: emu(numAttr(ext, 'cy')),
-    rot: (numAttr(x, 'rot') ?? 0) / 60000,
-    flipH: boolAttr(x, 'flipH'),
-    flipV: boolAttr(x, 'flipV'),
-    chX: emu(numAttr(chOff, 'x')),
-    chY: emu(numAttr(chOff, 'y')),
-    chW: emu(numAttr(chExt, 'cx')),
-    chH: emu(numAttr(chExt, 'cy')),
-  };
-}
-
-const base = (xf: XfrmInfo): ElementBase => ({
-  x: xf.x, y: xf.y, w: xf.w, h: xf.h, rot: xf.rot, flipH: xf.flipH, flipV: xf.flipV,
-});
-
-function movementLocked(nv: Element | null): boolean {
-  const props = kid(nv, 'cNvSpPr') ?? kid(nv, 'cNvCxnSpPr') ?? kid(nv, 'cNvPicPr')
-    ?? kid(nv, 'cNvGrpSpPr') ?? kid(nv, 'cNvGraphicFramePr');
-  const locks = kid(props, 'spLocks') ?? kid(props, 'cxnSpLocks') ?? kid(props, 'picLocks')
-    ?? kid(props, 'grpSpLocks') ?? kid(props, 'graphicFrameLocks');
-  return boolAttr(locks, 'noMove');
-}
-
-function editInfoOf(
-  env: Env,
-  cNvPr: Element | null,
-  ph: Element | null = null,
-  geom?: NonNullable<ElementBase['editInfo']>['geom'],
-  editable?: NonNullable<ElementBase['editInfo']>['editable'],
-  moveLocked = false,
-  readonlyLink = false,
-  placeholderDirect: PlaceholderDirectFlags = placeholderDirectFlags(0),
-  customGeometry?: NonNullable<ElementBase['editInfo']>['customGeometry'],
-): Partial<Pick<ElementBase, 'editInfo'>> {
-  if (!env.edit) return {};
-  const spid = numAttr(cNvPr, 'id');
-  const editInfo: NonNullable<ElementBase['editInfo']> = {};
-  if (spid !== null) editInfo.origin = { part: env.partPath, spid };
-  if (ph) {
-    const idx = attr(ph, 'idx');
-    editInfo.placeholder = {
-      type: attr(ph, 'type') ?? 'obj',
-      ...(idx === null ? {} : { idx }),
-    };
-  }
-  if (geom) editInfo.geom = geom;
-  if (customGeometry) editInfo.customGeometry = customGeometry;
-  if (ph && placeholderDirect) editInfo.placeholderDirect = placeholderDirect;
-  if (editable) editInfo.editable = editable;
-  if (moveLocked) editInfo.moveLocked = true;
-  if (readonlyLink) editInfo.readonlyLink = true;
-  const altText = parseElementAltText(cNvPr);
-  if (altText) editInfo.altText = altText;
-  return editInfo.origin || editInfo.placeholder || editInfo.placeholderDirect || editInfo.geom
-    || editInfo.customGeometry || editInfo.editable
-    || editInfo.moveLocked || editInfo.readonlyLink || editInfo.altText
-    ? { editInfo } : {};
-}
-
-function withPhClr(env: Env, phClr: string | null): Env {
-  return phClr ? { ...env, ctx: { ...env.ctx, phClr } } : env;
-}
-
-// ---------------- 填充 / 描边 ----------------
-
-const FILL_TAGS = ['noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill'];
-
-function placeholderDirectBits(spPr: Element | null, style: Element | null): PlaceholderDirectFlags {
-  let bits = 0;
-  if (kid(spPr, 'xfrm')) bits |= PLACEHOLDER_DIRECT_BITS.transform;
-  if (kid(spPr, 'prstGeom') || kid(spPr, 'custGeom')) bits |= PLACEHOLDER_DIRECT_BITS.geometry;
-  if (FILL_TAGS.some((tag) => !!kid(spPr, tag))) bits |= PLACEHOLDER_DIRECT_BITS.fill;
-  if (kid(spPr, 'ln')) bits |= PLACEHOLDER_DIRECT_BITS.stroke;
-  if (kid(spPr, 'effectLst') || kid(spPr, 'effectDag')) bits |= PLACEHOLDER_DIRECT_BITS.effects;
-  if (style) bits |= PLACEHOLDER_DIRECT_BITS.style;
-  return placeholderDirectFlags(bits);
-}
-const TILE_ALIGNMENTS = new Set<ImageTileAlignment>(['tl', 't', 'tr', 'l', 'ctr', 'r', 'bl', 'b', 'br']);
-
-function parseFillProps(container: Element | null, env: Env): Fill | null {
-  if (!container) return null;
-  for (const tag of FILL_TAGS) {
-    const el = kid(container, tag);
-    if (el) return parseFillElement(el, env);
-  }
-  return null;
-}
-
-function parseFillElement(el: Element | null, env: Env): Fill | null {
-  if (!el) return null;
-  switch (el.localName) {
-    case 'noFill':
-      return { type: 'none' };
-    case 'solidFill':
-      return { type: 'solid', color: childColor(el, env.ctx) ?? 'rgb(0,0,0)' };
-    case 'gradFill': {
-      const stops = kids(kid(el, 'gsLst'), 'gs')
-        .map((gs) => ({ pos: (numAttr(gs, 'pos') ?? 0) / 100000, color: childColor(gs, env.ctx) ?? 'rgb(0,0,0)' }))
-        .sort((a, b) => a.pos - b.pos);
-      if (!stops.length) return null;
-      const path = kid(el, 'path');
-      if (path) return { type: 'gradient', angle: 0, stops, radial: true };
-      const lin = kid(el, 'lin');
-      return { type: 'gradient', angle: lin ? (numAttr(lin, 'ang') ?? 0) / 60000 : 90, stops };
-    }
-    case 'blipFill': {
-      const src = blipUrl(el, env);
-      if (!src) return { type: 'none' };
-      const tileEl = kid(el, 'tile');
-      const alphaMod = numAttr(kid(kid(el, 'blip'), 'alphaModFix'), 'amt');
-      // srcRect 不只出现在 p:pic 上——形状的图片填充同样可以裁剪
-      const srcRect = kid(el, 'srcRect');
-      const frac = (name: string): number => (numAttr(srcRect, name) ?? 0) / 100000;
-      const hasCrop = !!srcRect && ['l', 't', 'r', 'b'].some((name) => attr(srcRect, name) !== null);
-      const target = blipTarget(el, env);
-      const metadata = target && !/^https?:/i.test(target) ? env.pkg.imageMetadata(target) : null;
-      const dpi = numAttr(el, 'dpi') ?? 0;
-      const physical = metadata ? {
-        sourceWidth: metadata.width * 96 / (dpi > 0 ? dpi : metadata.dpiX),
-        sourceHeight: metadata.height * 96 / (dpi > 0 ? dpi : metadata.dpiY),
-      } : {};
-      const alignment = attr(tileEl, 'algn');
-      const tileAlignment = TILE_ALIGNMENTS.has(alignment as ImageTileAlignment)
-        ? alignment as ImageTileAlignment : 'tl';
-      return {
-        type: 'image',
-        src,
-        alpha: alphaMod !== null ? alphaMod / 100000 : undefined,
-        crop: hasCrop ? { l: frac('l'), t: frac('t'), r: frac('r'), b: frac('b') } : undefined,
-        tile: tileEl
-          ? {
-            sx: (numAttr(tileEl, 'sx') ?? 100000) / 100000,
-            sy: (numAttr(tileEl, 'sy') ?? 100000) / 100000,
-            flip: attr(tileEl, 'flip') ?? 'none',
-            tx: emu(numAttr(tileEl, 'tx') ?? 0),
-            ty: emu(numAttr(tileEl, 'ty') ?? 0),
-            algn: tileAlignment,
-            ...physical,
-          }
-          : undefined,
-      };
-    }
-    case 'pattFill':
-      return {
-        type: 'pattern',
-        fg: childColor(kid(el, 'fgClr'), env.ctx) ?? 'rgb(0,0,0)',
-        bg: childColor(kid(el, 'bgClr'), env.ctx) ?? 'rgba(0,0,0,0)',
-        preset: attr(el, 'prst') ?? 'pct50',
-      };
-    case 'grpFill':
-      return null;
-  }
-  return null;
-}
-
-function blipTarget(blipFill: Element | null, env: Env): string | null {
-  const blip = kid(blipFill, 'blip');
-  // PowerPoint 总在 a:blip 上留位图兼容副本；WPS 插入的图标常只写 extLst 里的 asvg:svgBlip。
-  const svgBlip = kids(kid(blip, 'extLst'), 'ext')
-    .map((ext) => kid(ext, 'svgBlip'))
-    .find((node): node is Element => node !== null) ?? null;
-  const rid = attr(blip, 'r:embed') ?? attr(blip, 'r:link') ?? attr(svgBlip, 'r:embed') ?? attr(svgBlip, 'r:link');
-  return rid ? env.rels[rid]?.target ?? null : null;
-}
-
-function blipUrl(blipFill: Element | null, env: Env): string | null {
-  const target = blipTarget(blipFill, env);
-  if (!target) return null;
-  if (/^https?:/i.test(target)) return target;
-  return env.pkg.mediaUrl(target);
-}
-
-/** blip 的图像效果 → CSS filter */
-function blipFilter(blipFill: Element | null): string | undefined {
-  const blip = kid(blipFill, 'blip');
-  if (!blip) return undefined;
-  const parts: string[] = [];
-  if (kid(blip, 'grayscl')) parts.push('grayscale(1)');
-  const lum = kid(blip, 'lum');
-  if (lum) {
-    const bright = (numAttr(lum, 'bright') ?? 0) / 100000;
-    const contrast = (numAttr(lum, 'contrast') ?? 0) / 100000;
-    if (bright) parts.push(`brightness(${(1 + bright).toFixed(2)})`);
-    if (contrast) parts.push(`contrast(${(1 + contrast).toFixed(2)})`);
-  }
-  return parts.length ? parts.join(' ') : undefined;
-}
-
-const DASH: Record<string, number[]> = {
-  dash: [4, 3], dashDot: [4, 3, 1, 3], dot: [1, 3], lgDash: [8, 3],
-  lgDashDot: [8, 3, 1, 3], lgDashDotDot: [8, 3, 1, 3, 1, 3],
-  sysDash: [3, 3], sysDashDot: [3, 3, 1, 3], sysDashDotDot: [3, 3, 1, 3, 1, 3], sysDot: [1, 1],
-};
-
-const CAPS: Record<string, Stroke['cap']> = { flat: 'butt', rnd: 'round', sq: 'square' };
-
-/** 解析 a:ln 元素；themeLn 为主题线样式（已带 phClr 的 env） */
-function parseLnElement(ln: Element | null, env: Env, fallback: Stroke | null): Stroke | null {
-  if (!ln) return fallback;
-  if (kid(ln, 'noFill')) return null;
-  const width = numAttr(ln, 'w') !== null ? emu(numAttr(ln, 'w')!) : fallback?.width ?? 1;
-  const fill = parseFillProps(ln, env);
-  let color = fallback?.color ?? null;
-  if (fill?.type === 'solid') color = fill.color;
-  else if (fill?.type === 'gradient' && fill.stops.length) color = fill.stops[0].color;
-  if (!color) return fallback ? { ...fallback, width } : null;
-
-  const dashName = attr(kid(ln, 'prstDash'), 'val');
-  const unit = Math.max(width, 1);
-  const dash = dashName
-    ? dashName === 'solid' ? null : (DASH[dashName] ?? [4, 3]).map((m) => m * unit)
-    : fallback?.dash ?? null;
-
-  const head = parseLineEnd(kid(ln, 'headEnd')) ?? fallback?.head;
-  const tail = parseLineEnd(kid(ln, 'tailEnd')) ?? fallback?.tail;
-  const cap = CAPS[attr(ln, 'cap') ?? ''] ?? fallback?.cap;
-  const join = kid(ln, 'round') ? 'round' : kid(ln, 'bevel') ? 'bevel' : kid(ln, 'miter') ? 'miter' : fallback?.join;
-
-  return { color, width, dash, cap, join, head, tail, compound: attr(ln, 'cmpd') ?? fallback?.compound };
-}
-
-/**
- * 非占位符形状的 fontRef 颜色压过 presentation defaultTextStyle 的方案色：
- * PowerPoint 新建形状的白字靠它，而 defaultTextStyle 几乎总写着 tx1。
- * 只把它当兜底色会让每个真实文件里的白字变黑；形状自己的 lstStyle 与 rPr 仍在它之后。
- */
-function styleTextColorLayer(color: string | null): LevelStyles[] {
-  return color ? [{ def: { rp: { color } }, lvls: [] }] : [];
-}
-
-/** p:style 的主题引用 → 底层样式 */
-function resolveStyleRefs(style: Element | null, env: Env): { fill: Fill | null; stroke: Stroke | null; fontColor: string | null; effects: ReturnType<typeof parseEffects> } {
-  if (!style) return { fill: null, stroke: null, fontColor: null, effects: undefined };
-  const pick = (refName: string, list: Element[]): { el: Element | null; env: Env } => {
-    const ref = kid(style, refName);
-    const idx = Number(attr(ref, 'idx') ?? '0');
-    if (!ref || !idx) return { el: null, env };
-    const phClr = childColor(ref, env.ctx);
-    return { el: list[Math.min(idx, list.length) - 1] ?? null, env: withPhClr(env, phClr) };
-  };
-  const f = pick('fillRef', env.theme.fillStyles);
-  const l = pick('lnRef', env.theme.lnStyles);
-  const e = pick('effectRef', env.theme.effectStyles);
-  return {
-    fill: f.el ? parseFillElement(f.el, f.env) : null,
-    stroke: l.el ? parseLnElement(l.el, l.env, null) : null,
-    fontColor: childColor(kid(style, 'fontRef'), env.ctx),
-    effects: e.el ? parseEffects(kid(e.el, 'effectLst') ?? e.el, e.env.ctx) : undefined,
-  };
-}
-
-let creationShapeParts: { style: Element; text: Element } | null = null;
-const CREATION_SHAPE_STYLE = `<p:style><a:lnRef idx="2"><a:schemeClr val="accent1"><a:shade val="50000"/></a:schemeClr></a:lnRef>
-<a:fillRef idx="1"><a:schemeClr val="accent1"/></a:fillRef><a:effectRef idx="0"><a:schemeClr val="accent1"/></a:effectRef>
-<a:fontRef idx="minor"><a:schemeClr val="lt1"/></a:fontRef></p:style>`;
-const CREATION_SHAPE_TEXT = `<p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:endParaRPr lang="zh-CN"/></a:p></p:txBody>`;
-
-function defaultShapeParts(): { style: Element; text: Element } {
-  if (creationShapeParts) return creationShapeParts;
-  const root = parseXml(`<root xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-${CREATION_SHAPE_STYLE}
-${CREATION_SHAPE_TEXT}
-</root>`);
-  creationShapeParts = { style: kid(root, 'style')!, text: kid(root, 'txBody')! };
-  return creationShapeParts;
-}
-
-/** 与真正写入的 p:style/txBody 共用语义，在当前页主题上先求值供即时投影使用。 */
-function defaultShapeEditInfo(env: Env): NonNullable<Slide['editInfo']>['defaultShape'] {
-  const source = defaultShapeParts();
-  const style = resolveStyleRefs(source.style, env);
-  const textTemplate = parseTextBody(source.text, {
-    ctx: env.ctx,
-    fonts: env.theme.fonts,
-    chain: [
-      env.docDefaults, ...styleTextColorLayer(style.fontColor),
-      extractLstStyle(kid(source.text, 'lstStyle'), env.ctx, env.theme.fonts),
-    ],
-    defaultColor: style.fontColor,
-    slideNum: env.slideNum,
-    edit: true,
-  }, true);
-  if (!textTemplate) throw new Error('无法构造新增形状文字模板');
-  return {
-    fill: style.fill, stroke: style.stroke, effects: style.effects, textTemplate,
-    styleMarkup: CREATION_SHAPE_STYLE, textBodyMarkup: CREATION_SHAPE_TEXT,
-  };
-}
-
-// ---------------- 形状树 ----------------
-
-function parseShapeTree(tree: Element | null, env: Env, skipPh: boolean): SlideElement[] {
-  const out: SlideElement[] = [];
-  if (!tree) return out;
-  for (let node = tree.firstElementChild; node; node = node.nextElementSibling) {
-    let el: SlideElement | SlideElement[] | null = null;
-    // 单个形状解析失败不应连累整页——真实文件里常见某个可选节点缺失/畸形，
-    // 一路抛到顶层会让整张幻灯片变成错误占位。
-    try {
-      el = parseOneShape(node, env, skipPh);
-    } catch (err) {
-      el = brokenShapePlaceholder(node, err, env);
-    }
-    if (Array.isArray(el)) out.push(...el);
-    else if (el) out.push(el);
-  }
-  return out;
-}
-
-/** 解析形状树里的单个节点 */
-function parseOneShape(node: Element, env: Env, skipPh: boolean): SlideElement | SlideElement[] | null {
-  {
-    let el: SlideElement | SlideElement[] | null = null;
-    switch (node.localName) {
-      case 'sp':
-      case 'cxnSp': {
-        const nv = node.localName === 'sp' ? 'nvSpPr' : 'nvCxnSpPr';
-        const ph = walk(node, nv, 'nvPr', 'ph');
-        if (skipPh && ph) break;
-        if (ph && env.hiddenPh.has(attr(ph, 'type') ?? '')) break;
-        el = parseSp(node, env);
-        break;
-      }
-      case 'pic':
-        el = parsePic(node, env);
-        break;
-      case 'grpSp':
-        el = parseGroup(node, env, skipPh);
-        break;
-      case 'graphicFrame':
-        el = parseGraphicFrame(node, env);
-        break;
-      case 'contentPart':
-        el = parseContentPart(node, env);
-        break;
-      case 'AlternateContent': {
-        if (env.edit) retainCompatibilitySource(env.pkg, node, env.partPath);
-        return parseCompatibleShapes(node, (branch) => parseShapeTree(branch, env, skipPh),
-          (source) => brokenShapePlaceholder(source, '不支持的兼容内容', env), env.edit, env.pkg);
-      }
-    }
-    return el;
-  }
-}
-
-/** 解析失败时给一个可见但不打断阅读的占位，方便定位问题而不是整页丢失 */
-function brokenShapePlaceholder(node: Element, err: unknown, env: Env): UnsupportedElement | null {
-  const nv = kid(node, 'nvSpPr') ?? kid(node, 'nvPicPr') ?? kid(node, 'nvGrpSpPr')
-    ?? kid(node, 'nvCxnSpPr') ?? kid(node, 'nvGraphicFramePr') ?? kid(node, 'nvContentPartPr');
-  const xf = parseXfrm(walk(node, 'spPr', 'xfrm') ?? walk(node, 'grpSpPr', 'xfrm') ?? kid(node, 'xfrm'));
-  if (!xf || xf.w <= 0 || xf.h <= 0) return null;
-  const cNvPr = kid(nv, 'cNvPr');
-  const name = attr(cNvPr, 'name') ?? node.localName;
-  const reason = err instanceof Error ? err.message : String(err);
-  return {
-    kind: 'unsupported',
-    ...base(xf),
-    id: numAttr(cNvPr, 'id') ?? undefined,
-    label: `${name}（解析失败：${reason.slice(0, 40)}）`,
-    ...editInfoOf(env, cNvPr, walk(nv, 'nvPr', 'ph'), undefined, 'frame', movementLocked(nv)),
-  };
-}
-
-function parseSp(sp: Element, env: Env): ShapeElement | null {
-  const nvName = sp.localName === 'cxnSp' ? 'nvCxnSpPr' : 'nvSpPr';
-  const nv = kid(sp, nvName);
-  const cNvPr = kid(nv, 'cNvPr');
-  const ph = walk(nv, 'nvPr', 'ph');
-  const phType = attr(ph, 'type');
-  const phIdx = attr(ph, 'idx');
-  const spPr = kid(sp, 'spPr');
-
-  const layoutSp = ph ? findPh(env.layoutPh, phType, phIdx) : null;
-  const masterSp = ph ? findPh(env.masterPh, phType, phIdx) : null;
-
-  let xf = parseXfrm(kid(spPr, 'xfrm'));
-  if (!xf && ph) xf = parseXfrm(walk(layoutSp, 'spPr', 'xfrm')) ?? parseXfrm(walk(masterSp, 'spPr', 'xfrm'));
-  if (!xf) return null;
-
-  const styleRef = resolveStyleRefs(kid(sp, 'style'), env);
-
-  // 几何：自身 → 占位符继承
-  let geomHost = spPr;
-  if (!kid(spPr, 'prstGeom') && !kid(spPr, 'custGeom') && ph) {
-    geomHost = walk(layoutSp, 'spPr') ?? walk(masterSp, 'spPr') ?? spPr;
-  }
-  const prstGeom = kid(geomHost, 'prstGeom');
-  const custGeom = kid(geomHost, 'custGeom');
-  let path: string | null = null;
-  let openGeom = false;
-  let editableGeom: NonNullable<ElementBase['editInfo']>['geom'] | undefined;
-  let editableCustomGeometry: NonNullable<ElementBase['editInfo']>['customGeometry'] | undefined;
-  if (prstGeom) {
-    const preset = attr(prstGeom, 'prst') ?? 'rect';
-    const adj = parseAdjustments(kid(prstGeom, 'avLst'));
-    const g = presetGeom(preset, xf.w, xf.h, adj);
-    path = g.d;
-    openGeom = g.open;
-    if (env.edit) editableGeom = { preset, adj };
-  } else if (custGeom) {
-    const g = custGeomPath(custGeom, xf.w, xf.h);
-    if (g) {
-      path = g.d;
-      openGeom = g.open;
-    }
-    if (env.edit) editableCustomGeometry = customGeometryModel(custGeom, xf.w, xf.h);
-  }
-
-  let fill = parseFillProps(spPr, env);
-  if (!fill && ph) fill = parseFillProps(walk(layoutSp, 'spPr'), env) ?? parseFillProps(walk(masterSp, 'spPr'), env);
-  if (!fill) fill = styleRef.fill;
-  if (openGeom) fill = { type: 'none' };
-
-  let stroke = parseLnElement(kid(spPr, 'ln'), env, styleRef.stroke);
-  if (!kid(spPr, 'ln') && ph) {
-    stroke = parseLnElement(walk(layoutSp, 'spPr', 'ln') ?? walk(masterSp, 'spPr', 'ln'), env, stroke);
-  }
-
-  const effects = parseEffects(kid(spPr, 'effectLst'), env.ctx) ?? styleRef.effects;
-  // Presentation 的既有字段不改语义；编辑模式另存解绑旧版式时才需要的继承来源。
-  const placeholderInheritedEffects = env.edit && !effects && ph && !kid(sp, 'style')
-    ? parseEffects(
-      walk(layoutSp, 'spPr', 'effectLst') ?? walk(masterSp, 'spPr', 'effectLst'), env.ctx,
-    ) ?? undefined
-    : undefined;
-
-  // 无几何但有填充/描边时按矩形处理（常见于省略 prstGeom 的文本框）
-  if (!path && (fill || stroke)) path = presetGeom('rect', xf.w, xf.h, {}).d;
-
-  const txBody = kid(sp, 'txBody');
-  let text: TextBody | null = null;
-  let textTemplate: TextBody | undefined;
-  let textLevelTemplate: TextBody | undefined;
-  if (txBody) {
-    const chain: LevelStyles[] = [env.docDefaults];
-    if (ph) {
-      const cat = phType === 'title' || phType === 'ctrTitle' ? 'title'
-        : !phType || PLACEHOLDER_TYPE_EQUIVALENTS.body.includes(phType) ? 'body' : 'other';
-      chain.push(env.masterStyles[cat]);
-      chain.push(extractLstStyle(walk(masterSp, 'txBody', 'lstStyle'), env.ctx, env.theme.fonts));
-      chain.push(extractLstStyle(walk(layoutSp, 'txBody', 'lstStyle'), env.ctx, env.theme.fonts));
-    } else {
-      chain.push(...styleTextColorLayer(styleRef.fontColor));
-    }
-    chain.push(extractLstStyle(kid(txBody, 'lstStyle'), env.ctx, env.theme.fonts));
-    const textEnv: TextEnv = {
-      ctx: env.ctx,
-      fonts: env.theme.fonts,
-      chain,
-      defaultColor: styleRef.fontColor,
-      slideNum: env.slideNum,
-      bodyPrFallbacks: [walk(layoutSp, 'txBody', 'bodyPr'), walk(masterSp, 'txBody', 'bodyPr')],
-      resolveLink: (rid, action) => resolveLink(env, rid, action),
-      resolveImage: (rid) => {
-        const t = env.rels[rid]?.target;
-        return t ? env.pkg.mediaUrl(t) : null;
-      },
-      edit: env.edit,
-    };
-    text = parseTextBody(txBody, textEnv);
-    if (!text && env.edit) {
-      textTemplate = parseTextBody(txBody, textEnv, true) ?? undefined;
-    }
-    const levelSeed = text ?? textTemplate;
-    if (env.edit && levelSeed) {
-      const completed = completeTextTemplateLevels(levelSeed, textEnv, env.layoutCatalog === true);
-      const key = JSON.stringify(completed);
-      textLevelTemplate = env.textLevelTemplateCache?.get(key) ?? completed;
-      env.textLevelTemplateCache?.set(key, textLevelTemplate);
-    }
-  }
-
-  if (!path && !text && !textTemplate) return null;
-  const hyperlink = hyperlinkOf(cNvPr, env);
-  const editing = editInfoOf(
-    env, cNvPr, ph, editableGeom, undefined, movementLocked(nv), hyperlink.unsupported,
-    placeholderDirectBits(spPr, kid(sp, 'style')), editableCustomGeometry,
-  );
-  if (editing.editInfo && textTemplate) editing.editInfo.textTemplate = textTemplate;
-  if (editing.editInfo && textLevelTemplate) editing.editInfo.textLevelTemplate = textLevelTemplate;
-  if (editing.editInfo && placeholderInheritedEffects) {
-    editing.editInfo.placeholderInheritedEffects = placeholderInheritedEffects;
-  }
-  return {
-    kind: 'shape', ...base(xf), path, fill, stroke, text,
-    openGeom: openGeom || undefined,
-    effects,
-    scene3d: parse3D(spPr, env.ctx),
-    link: hyperlink.link,
-    name: attr(cNvPr, 'name') ?? undefined,
-    id: numAttr(cNvPr, 'id') ?? undefined,
-    ...editing,
-  };
-}
-
-// ---------------- 媒体（音频 / 视频） ----------------
-
-const VIDEO_TAGS = new Set(['videoFile', 'quickTimeFile']);
-const AUDIO_TAGS = new Set(['audioFile', 'wavAudioFile', 'audioCd']);
-
-const isExternalTarget = (t: string): boolean => /^[a-z][a-z0-9+.-]*:/i.test(t);
-
-/**
- * 在 p:nvPr（含 extLst 里的 p14:media）中找音视频引用。
- *
- * 经典元素（ISO 29500 a:audioFile / a:videoFile 的 r:link）是标准引用，先试；
- * p14:media（MS-PPTX 2.3.3.14）是 PowerPoint 2010+ 的媒体扩展，二者并存时自身按 r:link 优先于 r:embed。
- * 新版 PowerPoint 内嵌 2007 不支持的容器（mp3 / mp4 等）时把经典关系写成 Target="NULL" TargetMode="External"，
- * 真实字节只在 p14:media 的 r:embed 部件里——所以逐个候选取第一个能解析的：
- * 包内关系要求部件真实存在，外链关系要求是带 scheme 的 URL。
- */
-function parseMedia(nvPr: Element | null, env: Env): MediaInfo | undefined {
-  if (!nvPr) return undefined;
-  let audio: Element | null = null;
-  let video: Element | null = null;
-  let extension: Element | null = null;
-  const all = nvPr.getElementsByTagName('*');
-  for (let i = 0; i < all.length; i++) {
-    const ln = all[i].localName;
-    if (!audio && AUDIO_TAGS.has(ln)) audio = all[i];
-    else if (!video && VIDEO_TAGS.has(ln)) video = all[i];
-    else if (!extension && ln === 'media') extension = all[i];
-  }
-  // p14:media 不区分音视频；有经典音频元素时以它为准
-  const kind: MediaInfo['kind'] | null = audio ? 'audio' : video || extension ? 'video' : null;
-  if (!kind) return undefined;
-
-  const candidates = [audio ?? video, extension]
-    .flatMap((node) => (node ? [attr(node, 'r:link'), attr(node, 'r:embed')] : []));
-  for (const rid of candidates) {
-    const rel = rid ? env.rels[rid] : undefined;
-    if (!rel) continue;
-    if (rel.external) {
-      if (isExternalTarget(rel.target)) return { kind, src: rel.target, external: true };
-      continue;
-    }
-    const ext = rel.target.slice(rel.target.lastIndexOf('.') + 1).toLowerCase();
-    const mime = MEDIA_MIME[ext] ?? (kind === 'audio' ? 'audio/mpeg' : 'video/mp4');
-    const src = env.pkg.blobUrl(rel.target, mime);
-    if (src) return { kind, src, mime };
-  }
-  return { kind, src: null };
-}
-
-function parsePic(pic: Element, env: Env): ImageElement | UnsupportedElement | null {
-  const nv = kid(pic, 'nvPicPr');
-  const spPr = kid(pic, 'spPr');
-  // 内容占位符里放的图片常常是空 <p:spPr/>，位置尺寸全靠版式/母版继承。
-  // 不做这一步整张图会被丢掉——真实文件里这种写法很常见。
-  const ph = walk(nv, 'nvPr', 'ph');
-  let xf = parseXfrm(kid(spPr, 'xfrm'));
-  if (!xf && ph) {
-    const phType = attr(ph, 'type');
-    const phIdx = attr(ph, 'idx');
-    xf = parseXfrm(walk(findPh(env.layoutPh, phType, phIdx), 'spPr', 'xfrm'))
-      ?? parseXfrm(walk(findPh(env.masterPh, phType, phIdx), 'spPr', 'xfrm'));
-  }
-  if (!xf) return null;
-  const cNvPr = kid(nv, 'cNvPr');
-  const blipFill = kid(pic, 'blipFill');
-  const src = blipUrl(blipFill, env);
-  const label = attr(cNvPr, 'name') ?? '图片';
-  const media = parseMedia(kid(nv, 'nvPr'), env);
-  if (media) media.spid = numAttr(cNvPr, 'id') ?? undefined;
-  const hyperlink = hyperlinkOf(cNvPr, env);
-  // 媒体对象即使没有封面帧也要出现（渲染层画深色底 + 播放标识）
-  if (!src && !media) {
-    return {
-      kind: 'unsupported', ...base(xf), label: `${label}（格式不支持）`,
-      link: hyperlink.link,
-      name: attr(cNvPr, 'name') ?? undefined,
-      id: numAttr(cNvPr, 'id') ?? undefined,
-      ...editInfoOf(env, cNvPr, ph, undefined, 'frame', movementLocked(nv), hyperlink.unsupported),
-    };
-  }
-
-  const srcRect = kid(blipFill, 'srcRect');
-  const frac = (name: string): number => (numAttr(srcRect, name) ?? 0) / 100000;
-  const crop = srcRect ? { l: frac('l'), t: frac('t'), r: frac('r'), b: frac('b') } : null;
-
-  // 非矩形轮廓 → 裁剪路径。默认预览仍只看图片自己的 spPr；编辑态另外记录继承语义。
-  let clipPath: string | null = null;
-  const prstGeom = kid(spPr, 'prstGeom');
-  const custGeom = kid(spPr, 'custGeom');
-  let editableGeom: NonNullable<ElementBase['editInfo']>['geom'] | undefined;
-  if (prstGeom) {
-    const preset = attr(prstGeom, 'prst') ?? 'rect';
-    const adj = parseAdjustments(kid(prstGeom, 'avLst'));
-    if (preset !== 'rect') clipPath = presetGeom(preset, xf.w, xf.h, adj).d;
-    if (env.edit) editableGeom = { preset, adj };
-  } else if (custGeom) {
-    clipPath = custGeomPath(custGeom, xf.w, xf.h)?.d ?? null;
-  } else if (env.edit && ph) {
-    const phType = attr(ph, 'type');
-    const phIdx = attr(ph, 'idx');
-    const inherited = walk(findPh(env.layoutPh, phType, phIdx), 'spPr', 'prstGeom')
-      ?? walk(findPh(env.masterPh, phType, phIdx), 'spPr', 'prstGeom');
-    if (inherited) {
-      editableGeom = {
-        preset: attr(inherited, 'prst') ?? 'rect',
-        adj: parseAdjustments(kid(inherited, 'avLst')),
-      };
-    }
-  }
-
-  const alphaMod = numAttr(kid(kid(blipFill, 'blip'), 'alphaModFix'), 'amt');
-  const tones = Array.from(kid(kid(blipFill, 'blip'), 'duotone')?.children ?? [])
-    .map((color) => parseColor(color, env.ctx));
-
-  return {
-    kind: 'image', ...base(xf), src: src ?? '', crop, clipPath,
-    alpha: alphaMod !== null ? alphaMod / 100000 : undefined,
-    filter: blipFilter(blipFill),
-    ...(tones.length === 2 ? { duotone: tones as [string, string] } : {}),
-    stroke: parseLnElement(kid(spPr, 'ln'), env, null),
-    effects: parseEffects(kid(spPr, 'effectLst'), env.ctx),
-    link: hyperlink.link,
-    name: attr(cNvPr, 'name') ?? undefined,
-    id: numAttr(cNvPr, 'id') ?? undefined,
-    media,
-    ...editInfoOf(
-      env, cNvPr, ph, editableGeom, media ? 'frame' : undefined,
-      movementLocked(nv), hyperlink.unsupported,
-      placeholderDirectBits(spPr, null),
-    ),
-  };
-}
-
-// ---------------- 墨迹批注（p14:contentPart + InkML） ----------------
-
-/** <p14:contentPart>：墨迹批注，r:id 指向 InkML part */
-function parseContentPart(node: Element, env: Env): GroupElement | null {
-  const xf = parseXfrm(kid(node, 'xfrm'));
-  if (!xf || xf.w <= 0 || xf.h <= 0) return null;
-  const rid = attr(node, 'r:id');
-  const target = rid ? env.rels[rid]?.target : null;
-  const root = target ? env.pkg.xml(target) : null;
-  // 数据缺失不是有意留空的 Choice；交给形状级诊断才能继续尝试兼容图片。
-  if (!root) throw new Error('缺少 InkML 内容');
-  const children = inkStrokes(root, xf.w, xf.h);
-  if (!children.length) throw new Error('InkML 没有可用笔迹');
-  const cNvPr = walk(node, 'nvContentPartPr', 'cNvPr');
-  const edit = editInfoOf(env, cNvPr, null, undefined, 'frame');
-  if (env.edit) {
-    retainCompatibilitySource(env.pkg, node, env.partPath);
-    edit.editInfo = { ...edit.editInfo, requiresOriginal: true };
-  }
-  return {
-    kind: 'group', ...base(xf),
-    childX: 0, childY: 0, scaleX: 1, scaleY: 1,
-    children,
-    name: attr(cNvPr, 'name') ?? '墨迹',
-    id: numAttr(cNvPr, 'id') ?? undefined,
-    ...edit,
-  };
-}
-
-function parseGroup(grp: Element, env: Env, skipPh: boolean): GroupElement | null {
-  const nv = kid(grp, 'nvGrpSpPr');
-  const grpSpPr = kid(grp, 'grpSpPr');
-  const xf = parseXfrm(kid(grpSpPr, 'xfrm'));
-  if (!xf) return null;
-  const children = parseShapeTree(grp, env, skipPh);
-  if (!children.length) return null;
-  const cNvPr = kid(nv, 'cNvPr');
-  const hyperlink = hyperlinkOf(cNvPr, env);
-  return {
-    kind: 'group',
-    ...base(xf),
-    childX: xf.chX,
-    childY: xf.chY,
-    scaleX: xf.chW ? xf.w / xf.chW : 1,
-    scaleY: xf.chH ? xf.h / xf.chH : 1,
-    children,
-    effects: parseEffects(kid(grpSpPr, 'effectLst'), env.ctx),
-    link: hyperlink.link,
-    name: attr(cNvPr, 'name') ?? undefined,
-    id: numAttr(cNvPr, 'id') ?? undefined,
-    ...editInfoOf(
-      env, cNvPr, null, undefined, undefined, movementLocked(nv), hyperlink.unsupported,
-    ),
-  };
-}
-
-function parseGraphicFrame(frame: Element, env: Env): SlideElement | SlideElement[] | null {
-  const nv = kid(frame, 'nvGraphicFramePr');
-  const xf = parseXfrm(kid(frame, 'xfrm'));
-  if (!xf) return null;
-  const data = walk(frame, 'graphic', 'graphicData');
-  const uri = attr(data, 'uri') ?? '';
-  const frameCNvPr = kid(nv, 'cNvPr');
-  const framePh = walk(nv, 'nvPr', 'ph');
-  const name = attr(frameCNvPr, 'name') ?? undefined;
-  const frameId = numAttr(frameCNvPr, 'id') ?? undefined;
-  const frameEditInfo = editInfoOf(env, frameCNvPr, framePh, undefined, undefined, movementLocked(nv));
-  const frameOnlyEditInfo = editInfoOf(
-    env, frameCNvPr, framePh, undefined, 'frame', movementLocked(nv),
-  );
-
-  const tbl = kid(data, 'tbl');
-  if (tbl) {
-    const parsed = parseTable(tbl, base(xf), env, TABLE_FORMAT_READER, name);
-    const editInfo = env.edit
-      ? { ...parsed.editInfo, ...frameEditInfo.editInfo }
-      : undefined;
-    return {
-      ...parsed, id: frameId, ...frameEditInfo,
-      ...(editInfo ? { editInfo } : {}),
-    };
-  }
-
-  if (env.edit) {
-    retainCompatibilitySource(env.pkg, frame, env.partPath);
-    frameOnlyEditInfo.editInfo = { ...frameOnlyEditInfo.editInfo, requiresOriginal: true };
-  }
-  if (uri.endsWith('/chart') || uri === 'http://schemas.microsoft.com/office/drawing/2014/chartex') {
-    const chart = parseChartFrame(data, xf, env, uri.endsWith('/chartex'));
-    if (chart) return { ...chart, id: frameId, ...frameOnlyEditInfo };
-    return { kind: 'unsupported', ...base(xf), label: '图表', name, id: frameId, ...frameOnlyEditInfo };
-  }
-
-  if (uri.endsWith('/diagram')) {
-    const dgm = parseDiagram(data, xf, env);
-    if (dgm) return { ...dgm, id: frameId, ...frameOnlyEditInfo };
-    return { kind: 'unsupported', ...base(xf), label: 'SmartArt', name, id: frameId, ...frameOnlyEditInfo };
-  }
-
-  // graphicData 的 URI 是 .../presentationml/2006/ole，不含 oleObject —— 原先的
-  // includes('oleObject') 从来没匹配上，OLE 一直落到「不支持的对象」分支
-  if (uri.endsWith('/ole') || uri.includes('oleObject')) {
-    const oleObj = kid(data, 'oleObj');
-    if (oleObj) {
-      // Office 2010+ 把预览图直接写成 p:oleObj 的 p:pic 子元素，
-      // 走它能连裁剪 / 效果一起拿到；旧式的 VML 快照是后备路径
-      const pic = kid(oleObj, 'pic');
-      if (pic) {
-        const img = parsePic(pic, env);
-        // p:pic 自己的 xfrm 是相对 frame 的，位置以 frame 为准
-        if (img && img.kind === 'image' && img.src) {
-          return { ...img, ...base(xf), name: name ?? img.name, id: frameId, ...frameOnlyEditInfo };
-        }
-      }
-      const src = olePreview(oleObj, env);
-      if (src) return { kind: 'image', ...base(xf), src, crop: null, name, id: frameId, ...frameOnlyEditInfo };
-    }
-    return { kind: 'unsupported', ...base(xf), label: 'OLE 对象', name, id: frameId, ...frameOnlyEditInfo };
-  }
-
-  const label = uri.includes('/media') || uri.includes('video') ? '媒体对象' : '不支持的对象';
-  return { kind: 'unsupported', ...base(xf), label, name, id: frameId, ...frameOnlyEditInfo };
-}
-
-/**
- * OLE 对象的预览图。
- *
- * PowerPoint 把嵌入对象的渲染快照放在旧式 VML 部件里：幻灯片的
- * vmlDrawing 关系 → <v:shape id="{oleObj@spid}"> → <v:imagedata o:relid>
- * → 该 VML 部件自己的关系 → 媒体文件。
- *
- * 预览格式随创作平台而变：Windows 通常是 EMF/WMF（我们能解），
- * Mac 版存的是 PICT（解不了）。mediaUrl 对认不出的扩展名返回 null，
- * 此时退回占位框而不是塞一张裂图。
- */
-function olePreview(oleObj: Element, env: Env): string | null {
-  const spid = attr(oleObj, 'spid');
-  if (!spid) return null;
-  const vmlPath = relByType(env.rels, '/vmlDrawing');
-  if (!vmlPath) return null;
-  // Pkg.rels 存的 target 已是包内绝对路径，不要再 resolvePath 一次
-  const root = env.pkg.xml(vmlPath);
-  if (!root) return null;
-
-  for (const shape of root.getElementsByTagName('*')) {
-    if (shape.localName !== 'shape' || attr(shape, 'id') !== spid) continue;
-    for (const data of shape.getElementsByTagName('*')) {
-      if (data.localName !== 'imagedata') continue;
-      const rid = attr(data, 'o:relid') ?? attr(data, 'r:id');
-      const target = rid ? env.pkg.rels(vmlPath)[rid]?.target : null;
-      if (!target) return null;
-      return env.pkg.mediaUrl(target);
-    }
-  }
-  return null;
-}
-
-function parseChartFrame(data: Element | null, xf: XfrmInfo, env: Env, extended = false): GroupElement | null {
-  if (!data) return null;
-  const render = getChartParser(extended, env.pkg);
-  const rid = attr(kid(data, 'chart'), 'r:id');
-  const target = rid ? env.rels[rid]?.target : null;
-  if (!render || !target) return null;
-  const root = env.pkg.xml(target);
-  if (!root) return null;
-  let children: SlideElement[];
-  try {
-    children = render(root, xf.w, xf.h, {
-      ctx: env.ctx, fonts: env.theme.fonts, rels: env.pkg.rels(target),
-      ...(extended ? { readPart: (path: string) => env.pkg.files?.[path] } : {}),
-    });
-  } catch {
-    return null;
-  }
-  if (!children.length) return null;
-  return {
-    kind: 'group', ...base(xf),
-    childX: 0, childY: 0, scaleX: 1, scaleY: 1,
-    children,
-    name: '图表',
-  };
-}
-
-/** SmartArt：读 dgm:relIds → 数据模型的 dataModelExt → 幻灯片 rels 中的 drawing part */
-function parseDiagram(data: Element | null, xf: XfrmInfo, env: Env): GroupElement | null {
-  if (!data) return null;
-  const relIds = kid(data, 'relIds');
-  let drawingPath: string | null = null;
-
-  const dmRid = attr(relIds, 'r:dm');
-  const dmTarget = dmRid ? env.rels[dmRid]?.target : null;
-  if (dmTarget) {
-    const dmRoot = env.pkg.xml(dmTarget);
-    const ext = dmRoot?.getElementsByTagName('*');
-    for (let i = 0; ext && i < ext.length; i++) {
-      if (ext[i].localName === 'dataModelExt') {
-        const relId = attr(ext[i], 'relId');
-        if (relId && env.rels[relId]) drawingPath = env.rels[relId].target;
-        break;
-      }
-    }
-  }
-  if (!drawingPath) drawingPath = relByType(env.rels, '/diagramDrawing');
-  // 没有缓存的 drawing part（python-pptx / Google Slides 导出常见）时，
-  // 退到自己按数据模型排布，总好过一个灰框
-  if (!drawingPath) return layoutDiagram(relIds, xf, env);
-
-  const root = env.pkg.xml(drawingPath);
-  const tree = kid(root, 'spTree');
-  if (!tree) return layoutDiagram(relIds, xf, env);
-
-  const childEnv: Env = { ...env, rels: env.pkg.rels(drawingPath), partPath: drawingPath, layoutPh: [], masterPh: [] };
-  const children = parseShapeTree(tree, childEnv, false);
-  if (!children.length) return layoutDiagram(relIds, xf, env);
-
-  // drawing 里的坐标是相对 frame 的绝对 EMU，用 group 的子坐标系归一
-  return {
-    kind: 'group', ...base(xf),
-    childX: 0, childY: 0, scaleX: 1, scaleY: 1,
-    children,
-    name: 'SmartArt',
-  };
-}
-
-/**
- * 按数据模型自行排布 SmartArt。见 diagram.ts 顶部对「做到哪一步」的说明。
- */
-function layoutDiagram(relIds: Element | null, xf: XfrmInfo, env: Env): GroupElement | null {
-  const partOf = (a: string): Element | null => {
-    const rid = attr(relIds, a);
-    const target = rid ? env.rels[rid]?.target : null;
-    return target ? env.pkg.xml(target) : null;
-  };
-  const dataRoot = partOf('r:dm');
-  const pts = parseDataModel(dataRoot);
-  if (!pts.length) return null;
-
-  const layoutRoot = partOf('r:lo');
-  const colorsRoot = partOf('r:cs');
-
-  // 配色：先用 colors part 里的，取不到退到主题强调色
-  const raw = parseDiagramColors(colorsRoot);
-  const colors = (raw.length ? raw : ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'])
-    .map((v: string) => (/^[0-9a-fA-F]{6}$/.test(v) ? `#${v}` : `#${env.ctx.theme[env.ctx.clrMap[v] ?? v] ?? '4472C4'}`));
-
-  const textEnv: TextEnv = {
-    ctx: env.ctx,
-    fonts: env.theme.fonts,
-    chain: [env.docDefaults, env.masterStyles.other],
-    defaultColor: 'rgb(255,255,255)',
-    slideNum: env.slideNum,
-  };
-
-  const children = buildDiagram(pts, xf.w, xf.h, {
-    family: layoutFamily(layoutRoot),
-    vertical: isVertical(layoutRoot),
-    colors,
-    textOf: (id: string) => {
-      const t = parseTextBody(pointTxBody(dataRoot, id), textEnv);
-      // 数据模型里的文本没有 bodyPr，居中显示才像 SmartArt
-      return t ? { ...t, anchor: 'middle', paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
-    },
-  });
-  if (!children.length) return null;
-  return wrapDiagram(children, { ...base(xf), name: 'SmartArt' });
-}
-
-// ---------------- 表格 ----------------
-
-const TABLE_FORMAT_READER = { fill: parseFillProps, line: parseLnElement } as const;
-
 // ---------------- 幻灯片 ----------------
-
-function extractText(root: Element | null): string {
-  if (!root) return '';
-  const out: string[] = [];
-  const all = root.getElementsByTagName('*');
-  for (let i = 0; i < all.length; i++) {
-    if (all[i].localName === 't') out.push(all[i].textContent ?? '');
-    else if (all[i].localName === 'p' && out.length) out.push('\n');
-  }
-  return out.join('').replace(/\n+/g, '\n').trim();
-}
 
 function extractNotesText(root: Element | null): string {
   const tree = walk(root, 'cSld', 'spTree');
@@ -984,81 +31,21 @@ function extractNotesText(root: Element | null): string {
     const placeholder = walk(kid(shape, 'nvSpPr'), 'nvPr', 'ph');
     if (attr(placeholder, 'type') !== 'body') continue;
     const body = kid(shape, 'txBody');
-    return kids(body, 'p').map((paragraph) => {
-      const text: string[] = [];
-      const descendants = paragraph.getElementsByTagName('*');
-      for (let index = 0; index < descendants.length; index++) {
-        const node = descendants[index];
-        if (node.localName === 't') text.push(node.textContent ?? '');
-        else if (node.localName === 'br') text.push('\n');
-        else if (node.localName === 'tab' && attr(node, 'pos') === null) text.push('\t');
-      }
-      return text.join('');
-    }).join('\n');
+    return kids(body, 'p')
+      .map((paragraph) => {
+        const text: string[] = [];
+        const descendants = paragraph.getElementsByTagName('*');
+        for (let index = 0; index < descendants.length; index++) {
+          const node = descendants[index];
+          if (node.localName === 't') text.push(node.textContent ?? '');
+          else if (node.localName === 'br') text.push('\n');
+          else if (node.localName === 'tab' && attr(node, 'pos') === null) text.push('\t');
+        }
+        return text.join('');
+      })
+      .join('\n');
   }
   return '';
-}
-
-// ---------------- 批注 ----------------
-
-export interface AuthorInfo {
-  name: string;
-  initials?: string;
-}
-
-/**
- * 作者表：经典 commentAuthors.xml（authorId 为数字）与新版 authors.xml（id 为 GUID）都收进同一张表。
- */
-export function parseCommentAuthors(pkg: Pkg, presRels: Rels): Map<string, AuthorInfo> {
-  const out = new Map<string, AuthorInfo>();
-  for (const rel of Object.values(presRels)) {
-    if (!/\/(commentAuthors|authors)$/.test(rel.type)) continue;
-    const root = pkg.xml(rel.target);
-    if (!root) continue;
-    const all = root.getElementsByTagName('*');
-    for (let i = 0; i < all.length; i++) {
-      const el = all[i];
-      if (el.localName !== 'cmAuthor' && el.localName !== 'author') continue;
-      const id = attr(el, 'id');
-      const name = attr(el, 'name');
-      if (id === null || !name) continue;
-      out.set(id, { name, initials: attr(el, 'initials') || undefined });
-    }
-  }
-  return out;
-}
-
-/** 幻灯片批注：经典 p:cm（p:text）与新版 p188:cm（p188:txBody）走同一条 localName 路径 */
-function parseSlideComments(pkg: Pkg, slideRels: Rels, authors: Map<string, AuthorInfo>): SlideComment[] {
-  const out: SlideComment[] = [];
-  for (const rel of Object.values(slideRels)) {
-    if (!rel.type.endsWith('/comments')) continue;
-    const root = pkg.xml(rel.target);
-    if (!root) continue;
-    for (const cm of kids(root, 'cm')) {
-      const authorId = attr(cm, 'authorId') ?? '';
-      const author = authors.get(authorId);
-      const pos = kid(cm, 'pos');
-      const textEl = kid(cm, 'text');
-      const text = textEl?.textContent ?? extractText(kid(cm, 'txBody')).trim();
-      const idx = numAttr(cm, 'idx');
-      const parent = Array.from(cm.getElementsByTagName('*')).find((node) => node.localName === 'parentCm'
-        && node.namespaceURI === 'http://schemas.microsoft.com/office/powerpoint/2012/main');
-      out.push({
-        id: attr(cm, 'id') ?? `${authorId}:${idx ?? out.length}`,
-        ...(parent ? { parentId: `${attr(parent, 'authorId') ?? ''}:${numAttr(parent, 'idx')}` } : {}),
-        author: author?.name ?? (authorId ? `作者 ${authorId}` : '未知作者'),
-        initials: author?.initials,
-        date: attr(cm, 'dt') ?? attr(cm, 'created') ?? undefined,
-        text,
-        x: emu(numAttr(pos, 'x')),
-        y: emu(numAttr(pos, 'y')),
-        idx: idx !== null ? idx : undefined,
-      });
-    }
-  }
-  out.sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
-  return out;
 }
 
 function parseEmbeddedFonts(pkg: Pkg, presRoot: Element, presRels: Rels, sources?: EmbeddedFont[], decode = true): EmbeddedFont[] {
@@ -1066,13 +53,18 @@ function parseEmbeddedFonts(pkg: Pkg, presRoot: Element, presRels: Rels, sources
   for (const ef of kids(kid(presRoot, 'embeddedFontLst'), 'embeddedFont')) {
     const family = attr(kid(ef, 'font'), 'typeface');
     if (!family) continue;
-    for (const [tag, bold, italic] of [['regular', false, false], ['bold', true, false], ['italic', false, true], ['boldItalic', true, true]] as const) {
+    for (const [tag, bold, italic] of [
+      ['regular', false, false],
+      ['bold', true, false],
+      ['italic', false, true],
+      ['boldItalic', true, true],
+    ] as const) {
       const rid = attr(kid(ef, tag), 'r:id');
       const target = rid ? presRels[rid]?.target : null;
       const url = decode && target ? pkg.fontUrl(target) : null;
       if (url) out.push({ family, src: url, bold, italic });
       const source = sources && target ? pkg.fontSourceUrl(target) : null;
-      if (source) sources!.push({family,src:source,bold,italic});
+      if (source) sources!.push({ family, src: source, bold, italic });
     }
   }
   return out;
@@ -1158,20 +150,25 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
 
   const failed = (i: number, err: unknown): Slide => ({
     background: { type: 'solid', color: 'rgb(255,255,255)' },
-    elements: [{
-      kind: 'unsupported', x: width * 0.1, y: height * 0.4, w: width * 0.8, h: height * 0.2,
-      rot: 0, flipH: false, flipV: false,
-      label: `第 ${i + 1} 页解析失败：${err instanceof Error ? err.message : String(err)}`,
-    }],
+    elements: [
+      {
+        kind: 'unsupported',
+        x: width * 0.1,
+        y: height * 0.4,
+        w: width * 0.8,
+        h: height * 0.2,
+        rot: 0,
+        flipH: false,
+        flipV: false,
+        label: `第 ${i + 1} 页解析失败：${err instanceof Error ? err.message : String(err)}`,
+      },
+    ],
     ...(opts.edit ? { editInfo: { origin: { part: slidePaths[i] } } } : {}),
   });
 
   const buildSlide = (i: number): Slide => {
     try {
-      return parseSlide(
-        pkg, slidePaths[i], i + 1, presRoot, tableStyles, slideIdMap, authors, opts.edit === true,
-        undefined, docDefaults,
-      );
+      return parseSlide(pkg, slidePaths[i], i + 1, presRoot, tableStyles, slideIdMap, authors, opts.edit === true, undefined, docDefaults);
     } catch (err) {
       return failed(i, err);
     }
@@ -1202,7 +199,12 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
 
   const sections = parseSections(presRoot, idToIndex);
   const themeCatalog = opts.edit
-    ? parseThemeCatalog(presRoot, presRels, (path) => pkg.xml(path), (path) => pkg.rels(path))
+    ? parseThemeCatalog(
+        presRoot,
+        presRels,
+        (path) => pkg.xml(path),
+        (path) => pkg.rels(path),
+      )
     : undefined;
   const layouts = themeCatalog
     ? parseLayoutCatalog(pkg, presRoot, presRels, tableStyles, slideIdMap, themeCatalog.themeByMaster)
@@ -1213,31 +215,44 @@ function buildPresentation(pkg: Pkg, opts: PptxParseOptions): Presentation {
 
   const opcPackage = pkg.opcPackage;
   const embeddedFontSources: EmbeddedFont[] | undefined = opts.edit || opts.embeddedFonts === 'source' ? [] : undefined;
-  const embeddedFonts = parseEmbeddedFonts(pkg,presRoot,presRels,embeddedFontSources,opts.embeddedFonts !== 'source');
+  const embeddedFonts = parseEmbeddedFonts(pkg, presRoot, presRels, embeddedFontSources, opts.embeddedFonts !== 'source');
   return {
-    width, height, slides, source: 'pptx',
-    dispose: () => { releaseCompatibilitySource(pkg); pkg.dispose(); },
+    width,
+    height,
+    slides,
+    source: 'pptx',
+    dispose: () => {
+      releaseCompatibilitySource(pkg);
+      pkg.dispose();
+    },
     ...(opcPackage ? { package: opcPackage } : {}),
     embeddedFonts,
-    ...(embeddedFontSources?.length ? {embeddedFontSources} : {}),
+    ...(embeddedFontSources?.length ? { embeddedFontSources } : {}),
     sections: sections.length ? sections : undefined,
-    ...(layouts && masters ? { editInfo: {
-      layouts,
-      masters,
-      themes: themeCatalog!.themes,
-      // 延迟页在 createDoc 时才解析；资源目录必须等页面投影完成后再读取。
-      get assets() { return compatibilityAssets(pkg); },
-      ...(tableStylesPath ? { tableStylesPart: tableStylesPath } : {}),
-    } } : {}),
+    ...(layouts && masters
+      ? {
+          editInfo: {
+            layouts,
+            masters,
+            themes: themeCatalog!.themes,
+            // 延迟页在 createDoc 时才解析；资源目录必须等页面投影完成后再读取。
+            get assets() {
+              return compatibilityAssets(pkg);
+            },
+            ...(tableStylesPath ? { tableStylesPart: tableStylesPath } : {}),
+          },
+        }
+      : {}),
   };
 }
 
-function masterTextTemplate(
-  env: Env,
-  category: keyof Env['masterStyles'],
-): TextBody {
+function masterTextTemplate(env: Env, category: keyof Env['masterStyles']): TextBody {
   const seed: TextBody = {
-    anchor: 'top', insets: [0, 0, 0, 0], wrap: true, fontScale: 1, paragraphs: [],
+    anchor: 'top',
+    insets: [0, 0, 0, 0],
+    wrap: true,
+    fontScale: 1,
+    paragraphs: [],
   };
   return completeTextTemplateLevels(seed, {
     ctx: env.ctx,
@@ -1257,39 +272,42 @@ export function parseMasterCatalog(
   themeByMaster: Readonly<Record<string, string>>,
 ): NonNullable<Presentation['editInfo']>['masters'] {
   return masterCatalogPaths(
-    presRoot, presRels, (path) => pkg.xml(path), (path) => pkg.rels(path),
+    presRoot,
+    presRels,
+    (path) => pkg.xml(path),
+    (path) => pkg.rels(path),
   ).flatMap(({ part, layoutIds }) => {
-    const inheritance = masterInheritance(
-      pkg, part, presRoot, tableStyles, slideIdMap, 1, true,
-    );
+    const inheritance = masterInheritance(pkg, part, presRoot, tableStyles, slideIdMap, 1, true);
     if (!inheritance.masterRoot || inheritance.masterPath !== part) return [];
     const env = inheritance.envFor(part, false);
-    return [{
-      id: part,
-      name: attr(walk(inheritance.masterRoot, 'cSld'), 'name') ?? part,
-      ...(themeByMaster[part] ? { themeId: themeByMaster[part] } : {}),
-      layoutIds: [...layoutIds],
-      background: resolvedSlideBackground(inheritance.masterRoot, part, inheritance),
-      elements: parseShapeTree(inheritance.masterTree, env, false),
-      textStyles: {
-        title: masterTextTemplate(env, 'title'),
-        body: masterTextTemplate(env, 'body'),
-        other: masterTextTemplate(env, 'other'),
+    return [
+      {
+        id: part,
+        name: attr(walk(inheritance.masterRoot, 'cSld'), 'name') ?? part,
+        ...(themeByMaster[part] ? { themeId: themeByMaster[part] } : {}),
+        layoutIds: [...layoutIds],
+        background: resolvedSlideBackground(inheritance.masterRoot, part, inheritance),
+        elements: parseShapeTree(inheritance.masterTree, env, false),
+        textStyles: {
+          title: masterTextTemplate(env, 'title'),
+          body: masterTextTemplate(env, 'body'),
+          other: masterTextTemplate(env, 'other'),
+        },
+        defaultShape: defaultShapeEditInfo(env)!,
+        defaultTable: defaultTableEditInfo(env, TABLE_FORMAT_READER),
+        tableStyles: tableStyleCatalog(tableStyles, env, TABLE_FORMAT_READER),
       },
-      defaultShape: defaultShapeEditInfo(env)!,
-      defaultTable: defaultTableEditInfo(env, TABLE_FORMAT_READER),
-      tableStyles: tableStyleCatalog(tableStyles, env, TABLE_FORMAT_READER),
-    }];
+    ];
   });
 }
 
-function resolvedSlideBackground(
-  slideRoot: Element | null,
-  slidePath: string | null,
-  inheritance: SlideInheritance,
-): Fill | null {
+function resolvedSlideBackground(slideRoot: Element | null, slidePath: string | null, inheritance: SlideInheritance): Fill | null {
   const { layoutRoot, layoutPath, masterRoot, masterPath, envFor } = inheritance;
-  for (const [root, path] of [[slideRoot, slidePath], [layoutRoot, layoutPath], [masterRoot, masterPath]] as const) {
+  for (const [root, path] of [
+    [slideRoot, slidePath],
+    [layoutRoot, layoutPath],
+    [masterRoot, masterPath],
+  ] as const) {
     const bg = walk(root, 'cSld', 'bg');
     if (!bg || !path) continue;
     const env = envFor(path, false);
@@ -1307,10 +325,8 @@ function resolvedSlideBackground(
     // 把 1001 直接夹到列表末项，会把最常见的 bg1 纯白背景画成主题第三档渐变。
     const styles = idx > 1000 ? env.theme.bgFillStyles : env.theme.fillStyles;
     const position = idx > 1000 ? idx - 1000 : idx;
-    const styleEl = position > 0 ? styles[Math.min(position, styles.length) - 1] ?? null : null;
-    const fill = styleEl
-      ? parseFillElement(styleEl, withPhClr(env, phClr))
-      : (phClr ? { type: 'solid' as const, color: phClr } : null);
+    const styleEl = position > 0 ? (styles[Math.min(position, styles.length) - 1] ?? null) : null;
+    const fill = styleEl ? parseFillElement(styleEl, withPhClr(env, phClr)) : phClr ? { type: 'solid' as const, color: phClr } : null;
     if (fill) return fill;
   }
   return null;
@@ -1325,23 +341,20 @@ export function parseLayoutCatalog(
   themeByMaster: Readonly<Record<string, string>>,
 ): NonNullable<Presentation['editInfo']>['layouts'] {
   const layoutPaths = layoutCatalogPaths(
-    presRoot, presRels, (path) => pkg.xml(path), (path) => pkg.rels(path),
+    presRoot,
+    presRels,
+    (path) => pkg.xml(path),
+    (path) => pkg.rels(path),
   );
   return layoutPaths.flatMap((layoutPath) => {
-    const inheritance = slideInheritance(
-      pkg, null, layoutPath, presRoot, tableStyles, slideIdMap, 1, true,
-    );
+    const inheritance = slideInheritance(pkg, null, layoutPath, presRoot, tableStyles, slideIdMap, 1, true);
     if (!inheritance.layoutRoot || !inheritance.masterPath) return [];
     const staticElements: SlideElement[] = [];
     if (boolAttr(inheritance.layoutRoot, 'showMasterSp', true)) {
-      staticElements.push(...parseShapeTree(
-        inheritance.masterTree, inheritance.envFor(inheritance.masterPath, false), true,
-      ));
+      staticElements.push(...parseShapeTree(inheritance.masterTree, inheritance.envFor(inheritance.masterPath, false), true));
     }
     // showMasterSp 只屏蔽母版图形；版式自身的背景图形始终属于该版式。
-    staticElements.push(...parseShapeTree(
-      inheritance.layoutTree, inheritance.envFor(layoutPath, false), true,
-    ));
+    staticElements.push(...parseShapeTree(inheritance.layoutTree, inheritance.envFor(layoutPath, false), true));
     const placeholders = parseShapeTree(
       inheritance.layoutTree,
       { ...inheritance.envFor(layoutPath, true), layoutCatalog: true },
@@ -1351,20 +364,22 @@ export function parseLayoutCatalog(
       return template ? [template] : [];
     });
     const editEnv = inheritance.envFor(layoutPath, true);
-    return [{
-      id: layoutPath,
-      name: attr(walk(inheritance.layoutRoot, 'cSld'), 'name') ?? layoutPath,
-      origin: { part: layoutPath, masterPart: inheritance.masterPath },
-      themeId: themeByMaster[inheritance.masterPath],
-      background: resolvedSlideBackground(null, null, inheritance),
-      ...(walk(inheritance.layoutRoot, 'cSld', 'bg') ? { directBackground: true as const } : {}),
-      showMasterShapes: boolAttr(inheritance.layoutRoot, 'showMasterSp', true),
-      elements: [...staticElements, ...placeholders],
-      transition: parseTransition(inheritance.layoutRoot) ?? undefined,
-      defaultShape: defaultShapeEditInfo(editEnv)!,
-      defaultTable: defaultTableEditInfo(editEnv, TABLE_FORMAT_READER),
-      tableStyles: tableStyleCatalog(tableStyles, editEnv, TABLE_FORMAT_READER),
-    }];
+    return [
+      {
+        id: layoutPath,
+        name: attr(walk(inheritance.layoutRoot, 'cSld'), 'name') ?? layoutPath,
+        origin: { part: layoutPath, masterPart: inheritance.masterPath },
+        themeId: themeByMaster[inheritance.masterPath],
+        background: resolvedSlideBackground(null, null, inheritance),
+        ...(walk(inheritance.layoutRoot, 'cSld', 'bg') ? { directBackground: true as const } : {}),
+        showMasterShapes: boolAttr(inheritance.layoutRoot, 'showMasterSp', true),
+        elements: [...staticElements, ...placeholders],
+        transition: parseTransition(inheritance.layoutRoot) ?? undefined,
+        defaultShape: defaultShapeEditInfo(editEnv)!,
+        defaultTable: defaultTableEditInfo(editEnv, TABLE_FORMAT_READER),
+        tableStyles: tableStyleCatalog(tableStyles, editEnv, TABLE_FORMAT_READER),
+      },
+    ];
   });
 }
 
@@ -1383,9 +398,7 @@ export function parseSlide(
   const slideRoot = pkg.xml(slidePath);
   const slideRels = pkg.rels(slidePath);
   const layoutPath = layoutOverride ?? relByType(slideRels, '/slideLayout');
-  const inheritance = slideInheritance(
-    pkg, slideRoot, layoutPath, presRoot, tableStyles, slideIdMap, slideNum, edit, docDefaults,
-  );
+  const inheritance = slideInheritance(pkg, slideRoot, layoutPath, presRoot, tableStyles, slideIdMap, slideNum, edit, docDefaults);
   const { layoutRoot, masterPath, masterTree, layoutTree, envFor } = inheritance;
   const slideTree = walk(slideRoot, 'cSld', 'spTree');
 
@@ -1404,8 +417,7 @@ export function parseSlide(
   const slideW = emu(numAttr(sz, 'cx') ?? 12192000);
   const slideH = emu(numAttr(sz, 'cy') ?? 6858000);
 
-  const notesRelationship = Object.entries(slideRels)
-    .find(([, relationship]) => relationship.type.endsWith('/notesSlide'));
+  const notesRelationship = Object.entries(slideRels).find(([, relationship]) => relationship.type.endsWith('/notesSlide'));
   const notesPath = notesRelationship?.[1].target ?? null;
   const notes = notesPath ? extractNotesText(pkg.xml(notesPath)) : '';
   const comments = parseSlideComments(pkg, slideRels, authors);
@@ -1413,10 +425,13 @@ export function parseSlide(
   const timing = parseSlideTiming(slideRoot, slideW, slideH);
   // timing 树媒体节点的播放语义按 spid 回填到媒体元素；解析不到目标（如引用母版形状）时丢弃
   for (const mediaTiming of timing.media ?? []) {
-    const target = elements.find(el => el.kind === 'image' && el.media?.spid === mediaTiming.spid);
-    if (target && target.kind === 'image' && target.media) target.media.playback = {
-      volume: mediaTiming.volume, loop: mediaTiming.loop, clickGroup: mediaTiming.clickGroup,
-    };
+    const target = elements.find((el) => el.kind === 'image' && el.media?.spid === mediaTiming.spid);
+    if (target && target.kind === 'image' && target.media)
+      target.media.playback = {
+        volume: mediaTiming.volume,
+        loop: mediaTiming.loop,
+        clickGroup: mediaTiming.clickGroup,
+      };
   }
   const editEnv = edit ? envFor(slidePath, true) : null;
 
@@ -1429,19 +444,21 @@ export function parseSlide(
     layoutName: attr(walk(layoutRoot, 'cSld'), 'name') ?? undefined,
     transition: directTransition ?? parseTransition(layoutRoot),
     animations: timing.animations,
-    ...(edit ? {
-      editInfo: {
-        origin: { part: slidePath }, ...(layoutPath ? { layoutId: layoutPath } : {}),
-        ...(notesPath && notesRelationship
-          ? { notes: { part: notesPath, relationshipId: notesRelationship[0] } } : {}),
-        ...(walk(slideRoot, 'cSld', 'bg') ? { directBackground: true as const } : {}),
-        ...(directTransition ? { directTransition: true as const } : {}),
-        ...(timing.readonly ? { animationSourceReadonly: true as const } : {}),
-        ...(!boolAttr(slideRoot, 'showMasterSp', true) ? { hideMasterShapes: true as const } : {}),
-        defaultShape: defaultShapeEditInfo(editEnv!),
-        defaultTable: defaultTableEditInfo(editEnv!, TABLE_FORMAT_READER),
-        tableStyles: tableStyleCatalog(tableStyles, editEnv!, TABLE_FORMAT_READER),
-      },
-    } : {}),
+    ...(edit
+      ? {
+          editInfo: {
+            origin: { part: slidePath },
+            ...(layoutPath ? { layoutId: layoutPath } : {}),
+            ...(notesPath && notesRelationship ? { notes: { part: notesPath, relationshipId: notesRelationship[0] } } : {}),
+            ...(walk(slideRoot, 'cSld', 'bg') ? { directBackground: true as const } : {}),
+            ...(directTransition ? { directTransition: true as const } : {}),
+            ...(timing.readonly ? { animationSourceReadonly: true as const } : {}),
+            ...(!boolAttr(slideRoot, 'showMasterSp', true) ? { hideMasterShapes: true as const } : {}),
+            defaultShape: defaultShapeEditInfo(editEnv!),
+            defaultTable: defaultTableEditInfo(editEnv!, TABLE_FORMAT_READER),
+            tableStyles: tableStyleCatalog(tableStyles, editEnv!, TABLE_FORMAT_READER),
+          },
+        }
+      : {}),
   };
 }

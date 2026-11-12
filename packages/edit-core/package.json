@@ -21,6 +21,9 @@
     "directory": "packages/edit-core"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "main": "./dist/edit-core.js",
   "module": "./dist/edit-core.js",
@@ -142,7 +145,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.9.0-beta.1"
+    "@web-ppt/core": "0.9.0-beta.1"
   },
   "dependencies": {
     "culori": "^4.0.2",

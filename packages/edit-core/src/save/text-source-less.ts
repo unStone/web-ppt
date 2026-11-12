@@ -7,17 +7,13 @@ import { appendDrawingColor } from './drawing-color';
 import { namespacedElement } from './xml-element';
 
 /** 无来源段落没有可克隆的 pPr；生成/插入路径必须把有效列表语义固定下来。 */
-export function materializeParagraphLayout(
-  properties: XmlElement,
-  paragraph: FlatTextParagraph,
-): void {
+export function materializeParagraphLayout(properties: XmlElement, paragraph: FlatTextParagraph): void {
   const props = paragraph.props;
   if (props.lvl) setXmlAttribute(properties, 'lvl', String(props.lvl));
   if (props.rtl) setXmlAttribute(properties, 'rtl', '1');
   // 生成段落会先写 paragraphOverrides；再次摊平 bullet 会制造 buAutoNum+buChar 等非法互斥组合。
   if (Object.prototype.hasOwnProperty.call(paragraph.paragraphOverrides ?? {}, 'bullet')) return;
-  const bullet = namespacedElement(properties, DRAWINGML_NS,
-    props.bullet === null ? 'buNone' : 'buChar');
+  const bullet = namespacedElement(properties, DRAWINGML_NS, props.bullet === null ? 'buNone' : 'buChar');
   if (props.bullet !== null) setXmlAttribute(bullet, 'char', props.bullet);
   insertXmlInOrder(properties, bullet);
   if (props.bulletColor) {

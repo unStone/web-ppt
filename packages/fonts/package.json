@@ -25,6 +25,9 @@
     "directory": "packages/fonts"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "main": "./dist/fonts.js",
   "module": "./dist/fonts.js",
@@ -68,7 +71,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.9.0-beta.1"
+    "@web-ppt/core": "0.9.0-beta.1"
   },
   "publishConfig": {
     "access": "public"

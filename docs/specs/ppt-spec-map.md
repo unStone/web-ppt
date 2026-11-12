@@ -55,7 +55,9 @@ RecordHeader（8B）：
 | 记录遍历与通用解码 | MS-PPT §2 / MS-ODRAW | `ppt/records.ts` |
 | 演示 / 页面 / 版式 / 母版记录树 | MS-PPT 各 container 章节 | `ppt/parser.ts` |
 | Escher 形状与属性（FOPT 6 字节条目、复杂属性尾部追加） | MS-ODRAW OfficeArtFOPT | `ppt/escher.ts` |
-| 文本（TextCharsAtom / TextBytesAtom / TxMasterStyle 九级） | MS-PPT 文本章节 | `ppt/parser.ts`；`edit-core/master-text-style-state.ts` |
+| Escher 图形树（SpContainer / SpgrContainer）、组与锚点 | MS-ODRAW | `ppt/shapes.ts`；单元格拼表在 `ppt/table.ts` |
+| 超链接（ExHyperlink / InteractiveInfo） | MS-PPT | `ppt/hyperlinks.ts`、`ppt/shapes.ts` |
+| 文本（TextCharsAtom / TextBytesAtom / TxMasterStyle 九级） | MS-PPT 文本章节 | `ppt/text.ts`；`edit-core/master-text-style-state.ts` |
 | 母版文本样式（TxMasterStyleAtom） | MS-PPT | 同上 |
 | 自动编号 | MS-PPT autonum | `ppt/autonum.ts`、`text-auto-number.ts` |
 | 主题色（excolor / 索引色求值） | MS-PPT | `ppt/theme.ts` |

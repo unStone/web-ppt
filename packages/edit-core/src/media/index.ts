@@ -24,7 +24,8 @@ export function createMediaEditor(editor: Pick<Editor, 'doc' | 'exec'>) {
       const id = command.type === 'AddMedia' ? command.slideId : command.id;
       const result = editor.exec({ type: 'Extension', namespace: 'media', id, payload: command });
       return command.type === 'AddMedia'
-        ? result.forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements')!.path[1] : id;
+        ? result.forward.find((patch) => patch.op === 'insert' && patch.path[0] === 'elements')!.path[1]
+        : id;
     },
   };
 }

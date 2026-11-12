@@ -11,27 +11,18 @@ import { insertionResourceToken } from '../session-assets';
 import { querySlideAnimations } from '../slide-animation';
 import { effectivePresetGeometry } from '../preset-geometry';
 import { tableCellKey } from '../table-cell';
-import type {
-  EditDoc, ElementInsertionResource, ElementInsertionSource,
-  ElementOverrides, ElementRecord, SlideId,
-} from '../types';
+import type { EditDoc, ElementInsertionResource, ElementInsertionSource, ElementOverrides, ElementRecord, SlideId } from '../types';
 import { DRAWINGML_NS, OFFICE_RELATIONSHIPS_NS, PRESENTATIONML_NS } from '../xml/qname';
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
-import {
-  mediaPackageParts, patchContentTypes, patchRelationshipPart, relationshipPartFor, resourceBytes,
-} from '../save/clipboard-parts';
+import { mediaPackageParts, patchContentTypes, patchRelationshipPart, relationshipPartFor, resourceBytes } from '../save/clipboard-parts';
 import { materializeElementTreeState } from '../save/insertion';
 import { createGeneratedNotesPart } from '../save/notes';
-import {
-  createHyperlinkSaveContext, patchHyperlinkRelationshipPart,
-} from '../save/hyperlink';
+import { createHyperlinkSaveContext, patchHyperlinkRelationshipPart } from '../save/hyperlink';
 import type { HyperlinkSaveContext } from '../save/hyperlink';
 import { materializeElementImageFill, materializeElementStroke } from '../save/shape-format';
 import { patchSlideProperties } from '../save/slide-properties';
 import { extensionSupportsGenerated, materializeElementExtensions } from '../save/extension-elements';
-import {
-  materializeTableStyles, patchTableStyleContentType, patchTableStylePresentationRelationships,
-} from '../save/table-style-part';
+import { materializeTableStyles, patchTableStyleContentType, patchTableStylePresentationRelationships } from '../save/table-style-part';
 import { customGeometryMarkup } from './custom-geometry';
 import { generatedLink } from './links';
 import { imageClosure, imageInsertion } from './media';
@@ -45,8 +36,7 @@ import { CompatibilityParts } from './compatibility-parts';
 import { compatibilityInsertion } from './compatibility';
 import { materializeGeneratedComments } from './comments';
 
-const esc = (value: string): string => value
-  .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const esc = (value: string): string => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 const NOTES_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide';
 const NOTES_MASTER_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster';
@@ -63,22 +53,32 @@ function fullOverrides(
   const altText = doc.elements[record.id]
     ? queryElementAltText(doc, record.id)
     : {
-      title: source.editInfo?.altText?.title ?? '',
-      descr: source.editInfo?.altText?.descr ?? '',
-    };
+        title: source.editInfo?.altText?.title ?? '',
+        descr: source.editInfo?.altText?.descr ?? '',
+      };
   const common: ElementOverrides = {
-    x: source.x, y: source.y, w: source.w, h: source.h,
-    rot: source.rot, flipH: source.flipH, flipV: source.flipV,
+    x: source.x,
+    y: source.y,
+    w: source.w,
+    h: source.h,
+    rot: source.rot,
+    flipH: source.flipH,
+    flipV: source.flipV,
     ...(source.name ? { name: source.name } : {}),
     ...(source.effects ? { effects: source.effects } : {}),
-    ...(altText.title || altText.descr ? {
-      altText: { title: altText.title, descr: altText.descr },
-    } : {}),
+    ...(altText.title || altText.descr
+      ? {
+          altText: { title: altText.title, descr: altText.descr },
+        }
+      : {}),
     ...(source.link && supportsElementLink(source.kind)
-      ? { link: generatedLink(doc, slideId, source.link, `元素 ${record.id} 链接`) } : {}),
+      ? { link: generatedLink(doc, slideId, source.link, `元素 ${record.id} 链接`) }
+      : {}),
   };
   const textContext = (suffix = ''): GeneratedTextContext => ({
-    part, relationshipPrefix: `rIdBullet${record.meta.origin?.spid ?? record.id}${suffix}`, resources,
+    part,
+    relationshipPrefix: `rIdBullet${record.meta.origin?.spid ?? record.id}${suffix}`,
+    resources,
   });
   if (source.kind === 'shape') {
     const text = textOverride(doc, slideId, source.text, textContext());
@@ -93,41 +93,45 @@ function fullOverrides(
   }
   if (source.kind === 'table') {
     const tableCells: NonNullable<ElementOverrides['tableCells']> = {};
-    source.rows.forEach((row, r) => row.cells.forEach((cell, c) => {
-      const text = !cell.merged && textOverride(
-        doc, slideId, cell.text, textContext(`R${r + 1}C${c + 1}`),
-        !!source.editInfo?.tableStyle && !!cell.editInfo?.styleBase,
-      );
-      if (text) tableCells[tableCellKey({ r, c })] = { text };
-    }));
+    source.rows.forEach((row, r) =>
+      row.cells.forEach((cell, c) => {
+        const text =
+          !cell.merged
+          && textOverride(
+            doc,
+            slideId,
+            cell.text,
+            textContext(`R${r + 1}C${c + 1}`),
+            !!source.editInfo?.tableStyle && !!cell.editInfo?.styleBase,
+          );
+        if (text) tableCells[tableCellKey({ r, c })] = { text };
+      }),
+    );
     return { ...common, ...(Object.keys(tableCells).length ? { tableCells } : {}) };
   }
   return common;
 }
 
-function shapeInsertion(
-  doc: EditDoc,
-  record: ElementRecord,
-  spid: number,
-  part: string,
-): ElementInsertionSource {
+function shapeInsertion(doc: EditDoc, record: ElementRecord, spid: number, part: string): ElementInsertionSource {
   const source = record.src;
   if (source.kind !== 'shape') throw new Error(`生成保存暂不支持元素类型：${source.kind}`);
   const geom = record.meta.geom;
   const preset = geom?.preset;
   const guides = Object.entries((geom?.adj ?? {}) as Readonly<Record<string, number>>)
     .map(([name, value]) => {
-    if (!Number.isSafeInteger(Math.round(value))) throw new Error(`形状 ${record.id} 的几何调整值无效`);
-    return `<a:gd name="${esc(name)}" fmla="val ${Math.round(value)}"/>`;
-    }).join('');
+      if (!Number.isSafeInteger(Math.round(value))) throw new Error(`形状 ${record.id} 的几何调整值无效`);
+      return `<a:gd name="${esc(name)}" fmla="val ${Math.round(value)}"/>`;
+    })
+    .join('');
   const text = source.text ? generatedTextBody(source.text, part, spid) : '';
   const name = esc(source.name ?? `形状 ${spid}`);
   const textBox = source.path === null;
-  const geometry = textBox ? '' : preset
-    ? `<a:prstGeom prst="${esc(preset)}"><a:avLst>${guides}</a:avLst></a:prstGeom>`
-    : customGeometryMarkup(source.path!, source.w, source.h, !!source.openGeom);
-  const fillClosure = source.fill?.type === 'image'
-    ? imageClosure(doc, source.fill, `rIdFill${spid}`, part) : null;
+  const geometry = textBox
+    ? ''
+    : preset
+      ? `<a:prstGeom prst="${esc(preset)}"><a:avLst>${guides}</a:avLst></a:prstGeom>`
+      : customGeometryMarkup(source.path!, source.w, source.h, !!source.openGeom);
+  const fillClosure = source.fill?.type === 'image' ? imageClosure(doc, source.fill, `rIdFill${spid}`, part) : null;
   if (fillClosure && !fillClosure.resource) {
     throw new Error(`形状 ${record.id} 的外链图片填充不能生成独立包`);
   }
@@ -166,12 +170,7 @@ function groupInsertion(record: ElementRecord, spid: number): ElementInsertionSo
 }
 
 /** 未建模旧格式不能悄悄变成普通矩形；生成包保留预览和带原因的明示框架占位。 */
-function unsupportedInsertion(
-  doc: EditDoc,
-  record: ElementRecord,
-  spid: number,
-  part: string,
-): ElementInsertionSource {
+function unsupportedInsertion(doc: EditDoc, record: ElementRecord, spid: number, part: string): ElementInsertionSource {
   const source = record.src;
   if (source.kind !== 'unsupported') throw new Error(`元素 ${record.id} 不是框架占位`);
   const name = esc(source.name ?? `未支持对象 ${spid}`);
@@ -189,7 +188,8 @@ function unsupportedInsertion(
 ${fill}<a:ln w="12700"><a:solidFill><a:srgbClr val="AAAAAA"/></a:solidFill><a:prstDash val="dash"/></a:ln></p:spPr>
 <p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="zh-CN" sz="1200"><a:solidFill><a:srgbClr val="777777"/></a:solidFill></a:rPr><a:t>${label}</a:t></a:r><a:endParaRPr lang="zh-CN"/></a:p></p:txBody></p:sp>`,
     namespaces: {
-      'xmlns:a': DRAWINGML_NS, 'xmlns:p': PRESENTATIONML_NS,
+      'xmlns:a': DRAWINGML_NS,
+      'xmlns:p': PRESENTATIONML_NS,
       ...(preview ? { 'xmlns:r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships' } : {}),
     },
     spids: { [String(spid)]: spid },
@@ -198,12 +198,7 @@ ${fill}<a:ln w="12700"><a:solidFill><a:srgbClr val="AAAAAA"/></a:solidFill><a:pr
   };
 }
 
-function elementInsertion(
-  doc: EditDoc,
-  record: ElementRecord,
-  spid: number,
-  part: string,
-): ElementInsertionSource {
+function elementInsertion(doc: EditDoc, record: ElementRecord, spid: number, part: string): ElementInsertionSource {
   if (record.src.editInfo?.requiresOriginal) {
     throw new Error(`兼容对象 ${record.id} 需要原包；请重新打开原文件并使用补丁保存`);
   }
@@ -237,25 +232,36 @@ function materializeSlide(
     let ancestor = projectionTree.sourceRecords[sourceRecord.parent];
     let opaque = false;
     while (ancestor) {
-      if (ancestor.src.editInfo?.requiresOriginal) { opaque = true; break; }
+      if (ancestor.src.editInfo?.requiresOriginal) {
+        opaque = true;
+        break;
+      }
       ancestor = projectionTree.sourceRecords[ancestor.parent];
     }
     if (opaque) continue;
     const source = structuredClone(doc.elements[id] ? effectiveElement(doc, id) : sourceRecord.src);
-    const presetGeometry = source.kind === 'shape'
-      ? doc.elements[id]
-        ? effectivePresetGeometry(doc, id)
-        : source.editInfo?.geom ?? sourceRecord.meta.geom ?? null
-      : null;
+    const presetGeometry =
+      source.kind === 'shape'
+        ? doc.elements[id]
+          ? effectivePresetGeometry(doc, id)
+          : (source.editInfo?.geom ?? sourceRecord.meta.geom ?? null)
+        : null;
     const record: ElementRecord = {
-      ...structuredClone(sourceRecord), src: source, ovr: {},
+      ...structuredClone(sourceRecord),
+      src: source,
+      ovr: {},
       meta: {
-        ...structuredClone(sourceRecord.meta), editable: 'full', created: true,
-        inherited: undefined, origin: { part, spid: spids.get(id)! },
-        ...(source.kind === 'shape' ? {
-          geom: presetGeometry ?? undefined,
-          customGeometry: presetGeometry ? undefined : sourceRecord.meta.customGeometry,
-        } : {}),
+        ...structuredClone(sourceRecord.meta),
+        editable: 'full',
+        created: true,
+        inherited: undefined,
+        origin: { part, spid: spids.get(id)! },
+        ...(source.kind === 'shape'
+          ? {
+              geom: presetGeometry ?? undefined,
+              customGeometry: presetGeometry ? undefined : sourceRecord.meta.customGeometry,
+            }
+          : {}),
       },
     };
     if (sourceRecord.src.editInfo?.requiresOriginal) {
@@ -279,8 +285,7 @@ function materializeSlide(
   slide.origin = { part };
   const projection = toSlide(doc, slideId);
   const background = projection.background;
-  const backgroundClosure = background?.type === 'image'
-    ? imageClosure(doc, background, 'rIdBackground', part) : null;
+  const backgroundClosure = background?.type === 'image' ? imageClosure(doc, background, 'rIdBackground', part) : null;
   if (backgroundClosure && !backgroundClosure.resource) {
     throw new Error(`页面 ${slideId} 的外链图片背景不能生成独立包`);
   }
@@ -295,42 +300,51 @@ function materializeSlide(
     };
   }
   const animations = querySlideAnimations(doc, [slideId]).value;
-  const backgroundOverride = background?.type === 'image' && backgroundClosure?.resource
-    ? { ...background, src: insertionResourceToken(backgroundClosure.resource.hash) }
-    : background;
+  const backgroundOverride =
+    background?.type === 'image' && backgroundClosure?.resource
+      ? { ...background, src: insertionResourceToken(backgroundClosure.resource.hash) }
+      : background;
   slide.ovr = {
     ...(backgroundOverride ? { background: backgroundOverride } : {}),
     hidden: !!projection.hidden,
     ...(projection.transition ? { transition: projection.transition } : {}),
     ...(animations.length ? { animations } : {}),
   };
-  const slides = Object.fromEntries(doc.slideOrder.map((id, slideIndex) => {
-    const generated = structuredClone(doc.slides[id]);
-    generated.origin = { part: `ppt/slides/slide${slideIndex + 1}.xml` };
-    delete generated.backgroundImage;
-    return [id, generated];
-  }));
+  const slides = Object.fromEntries(
+    doc.slideOrder.map((id, slideIndex) => {
+      const generated = structuredClone(doc.slides[id]);
+      generated.origin = { part: `ppt/slides/slide${slideIndex + 1}.xml` };
+      delete generated.backgroundImage;
+      return [id, generated];
+    }),
+  );
   slides[slideId] = slide;
   const work: EditDoc = {
     ...structuredClone({ ...doc, package: null }),
-    slides, elements: records,
+    slides,
+    elements: records,
     imageResources: {
       ...structuredClone(doc.imageResources),
       ...Object.fromEntries(generatedTextResources),
-      ...(backgroundClosure?.resource
-        ? { [backgroundClosure.resource.hash]: backgroundClosure.resource } : {}),
+      ...(backgroundClosure?.resource ? { [backgroundClosure.resource.hash]: backgroundClosure.resource } : {}),
     },
-    removedElements: {}, package: null,
+    removedElements: {},
+    package: null,
   };
-  const roots = [...projectionTree.roots].sort((left, right) =>
-    elementOrder(records[left]).localeCompare(elementOrder(records[right])));
+  const roots = [...projectionTree.roots].sort((left, right) => elementOrder(records[left]).localeCompare(elementOrder(records[right])));
   slide.children = roots;
   const tree = parseXmlTree(generatedEmptySlideXml());
-  const additions = Object.values(records).flatMap((record) =>
-    record.meta.insertion?.relationships ?? []);
+  const additions = Object.values(records).flatMap((record) => record.meta.insertion?.relationships ?? []);
   if (backgroundClosure) additions.push(backgroundClosure.relationship);
   const links = createHyperlinkSaveContext(work, part, relationshipSource, additions);
-  materializeElementTreeState(tree, work, part, roots.map((id) => records[id]), [], { links });
+  materializeElementTreeState(
+    tree,
+    work,
+    part,
+    roots.map((id) => records[id]),
+    [],
+    { links },
+  );
   patchSlideProperties(tree, work, slide);
   for (const record of Object.values(records)) {
     if (record.src.editInfo?.requiresOriginal) continue;
@@ -351,24 +365,19 @@ export function materializeGeneratedParts(
   resourceSource = doc,
 ): Record<string, Uint8Array> {
   const projections = doc.slideOrder.map((slideId) => toSlide(doc, slideId));
-  const notesSlides = doc.slideOrder.map((slideId, index) =>
-    !!doc.slides[slideId].notes || projections[index].notes !== undefined);
+  const notesSlides = doc.slideOrder.map((slideId, index) => !!doc.slides[slideId].notes || projections[index].notes !== undefined);
   const firstLayout = doc.slides[doc.slideOrder[0]]?.layoutId;
   const themeId = (firstLayout ? doc.layouts[firstLayout]?.themeId : undefined) ?? doc.themeOrder[0];
   const themeRecord = themeId ? doc.themes[themeId] : undefined;
   const theme = themeRecord ? { id: themeRecord.id, name: themeRecord.name, ...effectiveTheme(themeRecord) } : undefined;
-  const parts = generatedTemplateParts(
-    doc.meta.width, doc.meta.height, doc.slideOrder.length, notesSlides, theme,
-  );
+  const parts = generatedTemplateParts(doc.meta.width, doc.meta.height, doc.slideOrder.length, notesSlides, theme);
   materializeGeneratedMasterDefaults(doc, projections, parts);
   const tableStyles = generatedTableStyleDefinitions(doc);
   if (tableStyles.length) {
     const part = 'ppt/tableStyles.xml';
     parts[part] = materializeTableStyles(undefined, tableStyles);
     parts['[Content_Types].xml'] = patchTableStyleContentType(parts['[Content_Types].xml'], part);
-    parts['ppt/_rels/presentation.xml.rels'] = patchTableStylePresentationRelationships(
-      parts['ppt/_rels/presentation.xml.rels'], part,
-    );
+    parts['ppt/_rels/presentation.xml.rels'] = patchTableStylePresentationRelationships(parts['ppt/_rels/presentation.xml.rels'], part);
   }
   const resources = new Map<string, ElementInsertionResource>();
   const compatibility = new CompatibilityParts(doc);
@@ -381,11 +390,10 @@ export function materializeGeneratedParts(
     const media = mediaPackageParts(materialized.work);
     for (const [part, relationships] of media.relationships) {
       const targetRelsPart = relationshipPartFor(part);
-      parts[targetRelsPart] = part === slidePart
-        ? patchHyperlinkRelationshipPart(
-          parts[targetRelsPart], relationships, materialized.links, materialized.bytes,
-        )
-        : patchRelationshipPart(parts[targetRelsPart], relationships);
+      parts[targetRelsPart] =
+        part === slidePart
+          ? patchHyperlinkRelationshipPart(parts[targetRelsPart], relationships, materialized.links, materialized.bytes)
+          : patchRelationshipPart(parts[targetRelsPart], relationships);
     }
     for (const [part, resource] of media.resources) {
       const previous = resources.get(part);
@@ -395,26 +403,33 @@ export function materializeGeneratedParts(
     if (notesSlides[index]) {
       const notesPart = `ppt/notesSlides/notesSlide${index + 1}.xml`;
       parts[notesPart] = createGeneratedNotesPart(projections[index].notes ?? '');
-      parts[relationshipPartFor(notesPart)] = patchRelationshipPart(undefined, [{
-        sourceId: 'rId1', targetId: 'rId1', type: NOTES_MASTER_REL,
-        target: relativeTarget(notesPart, 'ppt/notesMasters/notesMaster1.xml'),
-      }, {
-        sourceId: 'rId2', targetId: 'rId2', type: SLIDE_REL,
-        target: relativeTarget(notesPart, slidePart),
-      }]);
-      parts[relsPart] = patchRelationshipPart(parts[relsPart], [{
-        sourceId: 'rIdNotes', targetId: 'rIdNotes', type: NOTES_REL,
-        target: relativeTarget(slidePart, notesPart),
-      }]);
+      parts[relationshipPartFor(notesPart)] = patchRelationshipPart(undefined, [
+        {
+          sourceId: 'rId1',
+          targetId: 'rId1',
+          type: NOTES_MASTER_REL,
+          target: relativeTarget(notesPart, 'ppt/notesMasters/notesMaster1.xml'),
+        },
+        {
+          sourceId: 'rId2',
+          targetId: 'rId2',
+          type: SLIDE_REL,
+          target: relativeTarget(notesPart, slidePart),
+        },
+      ]);
+      parts[relsPart] = patchRelationshipPart(parts[relsPart], [
+        {
+          sourceId: 'rIdNotes',
+          targetId: 'rIdNotes',
+          type: NOTES_REL,
+          target: relativeTarget(slidePart, notesPart),
+        },
+      ]);
     }
   });
   for (const [part, resource] of resources) parts[part] = resourceBytes(resource);
-  parts['[Content_Types].xml'] = patchContentTypes(
-    parts['[Content_Types].xml'], [...resources.values()],
-  );
-  parts['ppt/presentation.xml'] = patchGeneratedPresentationMetadata(
-    parts['ppt/presentation.xml'], doc,
-  );
+  parts['[Content_Types].xml'] = patchContentTypes(parts['[Content_Types].xml'], [...resources.values()]);
+  parts['ppt/presentation.xml'] = patchGeneratedPresentationMetadata(parts['ppt/presentation.xml'], doc);
   compatibility.mergeInto(parts);
   // 选区只裁剪页面宿主；共享资源仍由完整文稿的依赖关系物化，不能因少选框架改变数据身份。
   for (const extension of registeredEditExtensions().values()) extension.generateParts?.(resourceSource, parts);

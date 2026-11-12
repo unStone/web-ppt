@@ -13,19 +13,30 @@ export function jointXYRecords(shared: SharedGroup, resource: InsertedResource):
     if (family?.xyOwners.length) families.set(family.key, family);
   };
   for (const key of Object.keys(resource.insertions ?? {})) add(sharedFamilyByKey(shared, key));
-  if (resource.rows) for (const chart of shared.charts) {
-    const affected = chart.fields.filter(field => Object.prototype.hasOwnProperty.call(resource.rows, field.key));
-    if (affected.some(field => field.path[0] === 'categories')) add(sharedCategoryFamily(shared, chart.id));
-    for (const field of affected) if (field.path[0] === 'series' && field.path[2] === 'points') {
-      const series = chart.state.series[field.path[1] as keyof typeof chart.state.series];
-      if (series.plotKind === 'scatter' || series.plotKind === 'bubble') add(sharedCategoryForXY(shared, chart.id, series.id));
+  if (resource.rows)
+    for (const chart of shared.charts) {
+      const affected = chart.fields.filter((field) => Object.prototype.hasOwnProperty.call(resource.rows, field.key));
+      if (affected.some((field) => field.path[0] === 'categories')) add(sharedCategoryFamily(shared, chart.id));
+      for (const field of affected)
+        if (field.path[0] === 'series' && field.path[2] === 'points') {
+          const series = chart.state.series[field.path[1] as keyof typeof chart.state.series];
+          if (series.plotKind === 'scatter' || series.plotKind === 'bubble') add(sharedCategoryForXY(shared, chart.id, series.id));
+        }
     }
-  }
-  return [...families.values()].map(category => {
+  return [...families.values()].map((category) => {
     const layout = insertedRowLayout(category, resource.insertions, resource.rows);
-    return { family: { ...category, owners: category.xyOwners,
-      identities: new Set<string>(), positions: new Set(category.xyOwners.flatMap(owner => [...owner.positions.values()])),
-      anchors: new Set(category.xyOwners.flatMap(owner => [...owner.positions.values()])) },
-    record: { insertions: resource.insertions?.[category.key], removed: Object.fromEntries(layout.deleted.map(axis => [String(axis), true])) } };
+    return {
+      family: {
+        ...category,
+        owners: category.xyOwners,
+        identities: new Set<string>(),
+        positions: new Set(category.xyOwners.flatMap((owner) => [...owner.positions.values()])),
+        anchors: new Set(category.xyOwners.flatMap((owner) => [...owner.positions.values()])),
+      },
+      record: {
+        insertions: resource.insertions?.[category.key],
+        removed: Object.fromEntries(layout.deleted.map((axis) => [String(axis), true])),
+      },
+    };
   });
 }

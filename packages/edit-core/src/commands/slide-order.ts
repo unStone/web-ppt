@@ -3,8 +3,7 @@ import type { EditDoc, SlideId } from '../types';
 import type { CommandPatches, MoveSlideCommand, Patch, SlideOrderPatch } from './types';
 
 export function isSlideOrderPatch(patch: Patch): patch is SlideOrderPatch {
-  return patch.op === 'move' && patch.path.length === 2
-    && patch.path[0] === 'slideOrder' && typeof patch.path[1] === 'string';
+  return patch.op === 'move' && patch.path.length === 2 && patch.path[0] === 'slideOrder' && typeof patch.path[1] === 'string';
 }
 
 function assertAfter(doc: EditDoc, id: SlideId, after: unknown, label: string): asserts after is SlideId | null {
@@ -19,8 +18,12 @@ export function validateSlideOrderPatch(doc: EditDoc, patch: SlideOrderPatch, in
   if (!doc.slides[id] || !doc.slideOrder.includes(id)) {
     throw new Error(`Patch ${index} 移动的页面不存在：${id}`);
   }
-  if (!patch.value || typeof patch.value !== 'object' || !own(patch.value, 'after')
-    || Reflect.ownKeys(patch.value).some((key) => key !== 'after')) {
+  if (
+    !patch.value
+    || typeof patch.value !== 'object'
+    || !own(patch.value, 'after')
+    || Reflect.ownKeys(patch.value).some((key) => key !== 'after')
+  ) {
     throw new Error(`Patch ${index} 的页面锚点无效`);
   }
   assertAfter(doc, id, patch.value.after, `Patch ${index} 的页面锚点`);

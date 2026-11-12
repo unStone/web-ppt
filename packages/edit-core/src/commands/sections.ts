@@ -1,11 +1,14 @@
 import { assertDataArray, assertDataObject, own } from '../data-validation';
-import {
-  allocateSectionRecord, assertSectionName, canonicalSectionState, cloneSectionState,
-} from '../sections';
+import { allocateSectionRecord, assertSectionName, canonicalSectionState, cloneSectionState } from '../sections';
 import type { EditDoc, SectionId, SectionState, SlideId } from '../types';
 import type {
-  AddSectionCommand, CommandPatches, MoveSectionCommand, Patch, RemoveSectionCommand,
-  RenameSectionCommand, SectionStatePatch,
+  AddSectionCommand,
+  CommandPatches,
+  MoveSectionCommand,
+  Patch,
+  RemoveSectionCommand,
+  RenameSectionCommand,
+  SectionStatePatch,
 } from './types';
 
 function assertSectionId(value: unknown, label: string): asserts value is SectionId {
@@ -17,8 +20,12 @@ export function assertSectionState(doc: EditDoc, value: unknown, label: string):
   const state = value as SectionState;
   if (typeof state.edited !== 'boolean') throw new Error(`${label}.edited 必须是布尔值`);
   assertDataArray(state.order, `${label}.order`);
-  if (!state.records || typeof state.records !== 'object' || Array.isArray(state.records)
-    || ![Object.prototype, null].includes(Object.getPrototypeOf(state.records))) {
+  if (
+    !state.records
+    || typeof state.records !== 'object'
+    || Array.isArray(state.records)
+    || ![Object.prototype, null].includes(Object.getPrototypeOf(state.records))
+  ) {
     throw new Error(`${label}.records 必须是纯数据对象`);
   }
   if (new Set(state.order).size !== state.order.length) throw new Error(`${label}.order 不能重复`);
@@ -29,10 +36,11 @@ export function assertSectionState(doc: EditDoc, value: unknown, label: string):
     const section = state.records[id];
     assertDataObject(section, ['id', 'presentationId', 'name', 'slideIds'], `${label}.${id}`);
     if (section.id !== id) throw new Error(`${label}.${id} 身份不一致`);
-    if (typeof section.presentationId !== 'string'
-      || !/^\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}$/i.test(
-        section.presentationId,
-      )) throw new Error(`${label}.${id} 的 presentationId 不是 GUID`);
+    if (
+      typeof section.presentationId !== 'string'
+      || !/^\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}$/i.test(section.presentationId)
+    )
+      throw new Error(`${label}.${id} 的 presentationId 不是 GUID`);
     assertSectionName(section.name, `${label}.${id}.name`);
     assertDataArray(section.slideIds, `${label}.${id}.slideIds`);
     if (new Set(section.slideIds).size !== section.slideIds.length) {
@@ -49,17 +57,18 @@ export function assertSectionState(doc: EditDoc, value: unknown, label: string):
 }
 
 export function isSectionStatePatch(patch: Patch): patch is SectionStatePatch {
-  return patch.op === 'set' && patch.path.length === 4
-    && patch.path[0] === 'document' && patch.path[1] === 'sections'
-    && typeof patch.path[2] === 'string' && !!patch.path[2]
-    && ['state', 'name', 'order'].includes(patch.path[3]);
+  return (
+    patch.op === 'set'
+    && patch.path.length === 4
+    && patch.path[0] === 'document'
+    && patch.path[1] === 'sections'
+    && typeof patch.path[2] === 'string'
+    && !!patch.path[2]
+    && ['state', 'name', 'order'].includes(patch.path[3])
+  );
 }
 
-export function validateSectionStatePatch(
-  doc: EditDoc,
-  patch: SectionStatePatch,
-  index: number,
-): void {
+export function validateSectionStatePatch(doc: EditDoc, patch: SectionStatePatch, index: number): void {
   assertSectionState(doc, patch.value, `Patch ${index} 的节状态`);
 }
 
@@ -90,20 +99,12 @@ function assertWritable(doc: EditDoc): void {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能修改节');
 }
 
-function assertAnchor(
-  doc: EditDoc,
-  id: SectionId | null,
-  current?: SectionId,
-): asserts id is SectionId | null {
+function assertAnchor(doc: EditDoc, id: SectionId | null, current?: SectionId): asserts id is SectionId | null {
   if (id !== null && !doc.sections.records[id]) throw new Error(`找不到节锚点：${String(id)}`);
   if (id === current) throw new Error('节不能移动到自身之后');
 }
 
-export function addSectionPatches(
-  doc: EditDoc,
-  command: AddSectionCommand,
-  origin: string,
-): CommandPatches {
+export function addSectionPatches(doc: EditDoc, command: AddSectionCommand, origin: string): CommandPatches {
   assertWritable(doc);
   assertSectionName(command.name);
   assertDataArray(command.slideIds, 'AddSection.slideIds');
@@ -118,8 +119,10 @@ export function addSectionPatches(
     return doc.slideOrder.indexOf(id);
   });
   const sorted = [...positions].sort((a, b) => a - b);
-  if (positions.some((value, index) => value !== sorted[index])
-    || sorted.some((value, index) => index > 0 && value !== sorted[index - 1] + 1)) {
+  if (
+    positions.some((value, index) => value !== sorted[index])
+    || sorted.some((value, index) => index > 0 && value !== sorted[index - 1] + 1)
+  ) {
     throw new Error('AddSection.slideIds 必须按页序给出连续页面');
   }
   assertDataObject(command.at, ['after'], 'AddSection.at');
@@ -133,11 +136,7 @@ export function addSectionPatches(
   return statePatches(doc, next, origin, section.id, 'state');
 }
 
-export function renameSectionPatches(
-  doc: EditDoc,
-  command: RenameSectionCommand,
-  origin: string,
-): CommandPatches {
+export function renameSectionPatches(doc: EditDoc, command: RenameSectionCommand, origin: string): CommandPatches {
   assertWritable(doc);
   const section = doc.sections.records[command.id];
   if (!section) throw new Error(`找不到节：${command.id}`);
@@ -147,11 +146,7 @@ export function renameSectionPatches(
   return statePatches(doc, next, origin, command.id, 'name');
 }
 
-export function moveSectionPatches(
-  doc: EditDoc,
-  command: MoveSectionCommand,
-  origin: string,
-): CommandPatches {
+export function moveSectionPatches(doc: EditDoc, command: MoveSectionCommand, origin: string): CommandPatches {
   assertWritable(doc);
   if (!doc.sections.records[command.id]) throw new Error(`找不到节：${command.id}`);
   assertDataObject(command.at, ['after'], 'MoveSection.at');
@@ -164,11 +159,7 @@ export function moveSectionPatches(
   return statePatches(doc, next, origin, command.id, 'order');
 }
 
-export function removeSectionPatches(
-  doc: EditDoc,
-  command: RemoveSectionCommand,
-  origin: string,
-): CommandPatches {
+export function removeSectionPatches(doc: EditDoc, command: RemoveSectionCommand, origin: string): CommandPatches {
   assertWritable(doc);
   if (!doc.sections.records[command.id]) throw new Error(`找不到节：${command.id}`);
   const next = cloneSectionState(doc.sections);

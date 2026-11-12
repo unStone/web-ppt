@@ -20,6 +20,9 @@
     "directory": "packages/vue"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "main": "./dist/vue.js",
   "module": "./dist/vue.js",
@@ -59,7 +62,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/editor": "^0.9.0-beta.1",
+    "@web-ppt/editor": "0.9.0-beta.1",
     "vue": ">=3.3.0 <4"
   },
   "peerDependenciesMeta": {

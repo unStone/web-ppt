@@ -51,9 +51,7 @@ export class Viewer {
   ) {
     this.media = options.media ?? 'badge';
     const mode = options.textMode ?? 'auto';
-    this.textMode = mode !== 'auto'
-      ? mode
-      : foreignObjectScalesCorrectly(container.ownerDocument) ? 'html' : 'svg';
+    this.textMode = mode !== 'auto' ? mode : foreignObjectScalesCorrectly(container.ownerDocument) ? 'html' : 'svg';
     this.state = new PresentationState(presentation, options);
     this.unsubscribe = this.state.subscribe((change) => {
       if (change.type === 'slide') {
@@ -80,18 +78,40 @@ export class Viewer {
 
   // ---------------- 转发给状态机 ----------------
 
-  get index(): number { return this.state.index; }
-  get count(): number { return this.state.count; }
-  get slide(): Slide { return this.state.slide; }
-  get zoomLevel(): number { return this.state.zoom; }
-  get animationTotal(): number { return this.state.animationTotal; }
-  get animationDone(): number { return this.state.animationDone; }
-  get hasPendingAnimation(): boolean { return this.state.hasPendingAnimation; }
+  get index(): number {
+    return this.state.index;
+  }
+  get count(): number {
+    return this.state.count;
+  }
+  get slide(): Slide {
+    return this.state.slide;
+  }
+  get zoomLevel(): number {
+    return this.state.zoom;
+  }
+  get animationTotal(): number {
+    return this.state.animationTotal;
+  }
+  get animationDone(): number {
+    return this.state.animationDone;
+  }
+  get hasPendingAnimation(): boolean {
+    return this.state.hasPendingAnimation;
+  }
 
-  goTo(i: number, direction: 'forward' | 'backward' = 'forward'): void { this.state.goTo(i, direction); }
-  next(): void { this.state.next(); }
-  prev(): void { this.state.prev(); }
-  setZoom(z: number): void { this.state.setZoom(z); }
+  goTo(i: number, direction: 'forward' | 'backward' = 'forward'): void {
+    this.state.goTo(i, direction);
+  }
+  next(): void {
+    this.state.next();
+  }
+  prev(): void {
+    this.state.prev();
+  }
+  setZoom(z: number): void {
+    this.state.setZoom(z);
+  }
   finishAnimations(): void {
     this.state.finishAnimations();
     // 最后一批启动时光标已经到末尾，状态机此时不会再次发出终态事件。
@@ -101,8 +121,12 @@ export class Viewer {
       this.applySettled();
     }
   }
-  search(q: string): number[] { return this.state.search(q); }
-  text(i: number): string { return this.state.text(i); }
+  search(q: string): number[] {
+    return this.state.search(q);
+  }
+  text(i: number): string {
+    return this.state.text(i);
+  }
 
   setAnimate(on: boolean): void {
     this.state.setAnimate(on);
@@ -172,8 +196,8 @@ export class Viewer {
     wrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center';
     wrap.innerHTML = this.slideSvg(this.index);
 
-    const previous = this.currentLayer?.parentElement === this.container
-      ? this.currentLayer : this.container.firstElementChild as HTMLElement | null;
+    const previous =
+      this.currentLayer?.parentElement === this.container ? this.currentLayer : (this.container.firstElementChild as HTMLElement | null);
     // 幻灯片以绝对定位叠放，容器必须是定位上下文。
     // 只在容器确实是 static 时才动它——看内联 style 会漏掉样式表里设的定位，
     // 从而用内联值把宿主的布局覆盖掉。
@@ -248,7 +272,11 @@ export class Viewer {
     if (finish) playback.cancel();
     // 终态由隐藏集和 settledDeclaration 持有，释放 WAAPI 的 fill，避免遮住下一批。
     for (const animation of playback.animations) {
-      try { animation.cancel(); } catch { /* timeline 已释放。 */ }
+      try {
+        animation.cancel();
+      } catch {
+        /* timeline 已释放。 */
+      }
     }
   }
 
@@ -259,8 +287,7 @@ export class Viewer {
    */
   private applyVisibility(): void {
     const hidden = this.state.hiddenElementIds;
-    const activeExits = new Set(this.playingGroup?.filter((step) => step.kind === 'exit')
-      .map((step) => step.target));
+    const activeExits = new Set(this.playingGroup?.filter((step) => step.kind === 'exit').map((step) => step.target));
     this.currentLayer?.querySelectorAll('[data-el]').forEach((node) => {
       const id = Number(node.getAttribute('data-el'));
       // 不在隐藏集里的必须**清空**这条声明，不能写成 'visible'。
@@ -288,7 +315,10 @@ export class Viewer {
       const styled = node as HTMLElement | null;
       if (!styled?.style?.setProperty) continue;
       for (const [key, value] of Object.entries(style)) {
-        styled.style.setProperty(key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`), value);
+        styled.style.setProperty(
+          key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`),
+          value,
+        );
       }
     }
   }

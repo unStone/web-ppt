@@ -9,10 +9,14 @@ export function selectAlternateContent(alternate: Element, capabilities: Pick<Re
     if (branch.localName === 'Fallback') fallback ??= branch;
     if (branch.localName !== 'Choice') continue;
     const requires = branch.getAttribute('Requires')?.trim().split(/\s+/).filter(Boolean) ?? [];
-    if (requires.length && requires.every((prefix) => {
-      const namespace = branch!.lookupNamespaceURI(prefix);
-      return namespace !== null && capabilities.has(namespace);
-    })) return branch;
+    if (
+      requires.length
+      && requires.every((prefix) => {
+        const namespace = branch!.lookupNamespaceURI(prefix);
+        return namespace !== null && capabilities.has(namespace);
+      })
+    )
+      return branch;
   }
   return fallback;
 }

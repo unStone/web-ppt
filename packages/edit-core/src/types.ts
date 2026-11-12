@@ -1,10 +1,35 @@
 import type {
-  CellBorders, CustomGeometry, Effects, ElementBase, Fill, GeomSpec, ImageElement, OpcPackage, Paragraph, PlaceholderDirectFlags, TableCell,
-  Presentation, ShapeCreationDefaults, ShapeElement, Slide, Stroke, Transition,
+  CellBorders,
+  CustomGeometry,
+  Effects,
+  ElementBase,
+  Fill,
+  GeomSpec,
+  ImageElement,
+  OpcPackage,
+  Paragraph,
+  PlaceholderDirectFlags,
+  TableCell,
+  Presentation,
+  ShapeCreationDefaults,
+  ShapeElement,
+  Slide,
+  Stroke,
+  Transition,
   TableCreationDefaults,
-  SlideElement, TableStyleDefinition, TableStyleSettings, TextBody, TextRun,
-  TextCapsStyle, TextStrikeStyle, TextUnderlineStyle, ThemeColorScheme, ThemeColorSlot,
-  ThemeFontScheme, TextFontSlots, TextRunEditInfo,
+  SlideElement,
+  TableStyleDefinition,
+  TableStyleSettings,
+  TextBody,
+  TextRun,
+  TextCapsStyle,
+  TextStrikeStyle,
+  TextUnderlineStyle,
+  ThemeColorScheme,
+  ThemeColorSlot,
+  ThemeFontScheme,
+  TextFontSlots,
+  TextRunEditInfo,
 } from '@web-ppt/core';
 import type { EmphasisAnimationEffect, EntranceExitAnimationEffect } from './animation-catalog';
 import type { ElementId, FractionalIndex, SlideId } from './identities';
@@ -14,16 +39,34 @@ import type { MasterRecord } from './master-types';
 
 export type { ElementId, FractionalIndex, SectionId, SlideId } from './identities';
 export type {
-  ElementAltTextOverrides, ElementAltTextState, SectionRecord, SectionState, SlideSizeState,
+  ElementAltTextOverrides,
+  ElementAltTextState,
+  SectionRecord,
+  SectionState,
+  SlideSizeState,
 } from './common-object-slide-types';
 export type {
-  DesignTarget, LayoutCatalogItem, LayoutDesignState, LayoutDesignTarget, LayoutOverrides,
-  LayoutPropertyState, LayoutRecord, MasterDesignTarget,
+  DesignTarget,
+  LayoutCatalogItem,
+  LayoutDesignState,
+  LayoutDesignTarget,
+  LayoutOverrides,
+  LayoutPropertyState,
+  LayoutRecord,
+  MasterDesignTarget,
 } from './layout-types';
 export type {
-  MasterCatalogItem, MasterDesignState, MasterOverrides, MasterParagraphPropertyInput,
-  MasterParagraphPropertyOverrides, MasterParagraphStyle, MasterRecord, MasterRunPropertyOverrides, MasterTextLevelOverrides,
-  MasterTextLevelState, MasterTextStyleOverrides,
+  MasterCatalogItem,
+  MasterDesignState,
+  MasterOverrides,
+  MasterParagraphPropertyInput,
+  MasterParagraphPropertyOverrides,
+  MasterParagraphStyle,
+  MasterRecord,
+  MasterRunPropertyOverrides,
+  MasterTextLevelOverrides,
+  MasterTextLevelState,
+  MasterTextStyleOverrides,
 } from './master-types';
 export type EditableKind = 'full' | 'frame' | 'none';
 
@@ -100,17 +143,17 @@ export type SlideOverrides = Omit<Partial<SlideSource>, 'animations'> & {
   animations?: readonly EditAnimationStep[];
 };
 
-type BaseOverrideKey =
-  | 'x' | 'y' | 'w' | 'h' | 'rot' | 'flipH' | 'flipV'
-  | 'effects' | 'name' | 'scene3d';
+type BaseOverrideKey = 'x' | 'y' | 'w' | 'h' | 'rot' | 'flipH' | 'flipV' | 'effects' | 'name' | 'scene3d';
 
-export type LinkTarget = {
-  readonly kind: 'external';
-  readonly href: string;
-} | {
-  readonly kind: 'slide';
-  readonly slideId: SlideId;
-};
+export type LinkTarget =
+  | {
+      readonly kind: 'external';
+      readonly href: string;
+    }
+  | {
+      readonly kind: 'slide';
+      readonly slideId: SlideId;
+    };
 
 /** 相对放映动作没有稳定目标页；可展示和跟随，但不能冒充可编辑 LinkTarget。 */
 export interface RelativeLinkSource {
@@ -229,32 +272,39 @@ interface EditAnimationBase {
   readonly durationMs: number;
 }
 
-export type EditAnimationStep = EditAnimationBase & ({
-  readonly kind: 'entrance' | 'exit';
-  readonly effect: Exclude<EntranceExitAnimationEffect, 'fly' | 'wipe' | 'zoom'>;
-  readonly dir?: never;
-  readonly motionPath?: never;
-} | {
-  readonly kind: 'entrance' | 'exit';
-  readonly effect: 'fly' | 'wipe';
-  readonly dir?: 'l' | 'r' | 'u' | 'd';
-  readonly motionPath?: never;
-} | {
-  readonly kind: 'entrance' | 'exit';
-  readonly effect: 'zoom';
-  readonly dir?: 'in' | 'out';
-  readonly motionPath?: never;
-} | {
-  readonly kind: 'emphasis';
-  readonly effect: EmphasisAnimationEffect;
-  readonly dir?: never;
-  readonly motionPath?: never;
-} | {
-  readonly kind: 'motion';
-  readonly effect?: never;
-  readonly dir?: never;
-  readonly motionPath: readonly (readonly [number, number])[];
-});
+export type EditAnimationStep = EditAnimationBase &
+  (
+    | {
+        readonly kind: 'entrance' | 'exit';
+        readonly effect: Exclude<EntranceExitAnimationEffect, 'fly' | 'wipe' | 'zoom'>;
+        readonly dir?: never;
+        readonly motionPath?: never;
+      }
+    | {
+        readonly kind: 'entrance' | 'exit';
+        readonly effect: 'fly' | 'wipe';
+        readonly dir?: 'l' | 'r' | 'u' | 'd';
+        readonly motionPath?: never;
+      }
+    | {
+        readonly kind: 'entrance' | 'exit';
+        readonly effect: 'zoom';
+        readonly dir?: 'in' | 'out';
+        readonly motionPath?: never;
+      }
+    | {
+        readonly kind: 'emphasis';
+        readonly effect: EmphasisAnimationEffect;
+        readonly dir?: never;
+        readonly motionPath?: never;
+      }
+    | {
+        readonly kind: 'motion';
+        readonly effect?: never;
+        readonly dir?: never;
+        readonly motionPath: readonly (readonly [number, number])[];
+      }
+  );
 
 export interface SlideAnimationState {
   readonly value: readonly EditAnimationStep[];
@@ -427,19 +477,47 @@ export interface RunPropertiesState {
 export type RunLinkState = ElementLinkState;
 
 export type ParagraphAutoNumberType =
-  | 'alphaLcParenBoth' | 'alphaLcParenR' | 'alphaLcPeriod'
-  | 'alphaUcParenBoth' | 'alphaUcParenR' | 'alphaUcPeriod'
-  | 'arabic1Minus' | 'arabic2Minus' | 'arabicDbPeriod' | 'arabicDbPlain'
-  | 'arabicParenBoth' | 'arabicParenR' | 'arabicPeriod' | 'arabicPlain'
-  | 'circleNumDbPlain' | 'circleNumWdBlackPlain' | 'circleNumWdWhitePlain'
-  | 'ea1ChsPeriod' | 'ea1ChsPlain' | 'ea1ChtPeriod' | 'ea1ChtPlain'
-  | 'ea1JpnChsDbPeriod' | 'ea1JpnKorPeriod' | 'ea1JpnKorPlain'
-  | 'hebrew2Minus' | 'hindiAlpha1Period' | 'hindiAlphaPeriod'
-  | 'hindiNumParenR' | 'hindiNumPeriod'
-  | 'romanLcParenBoth' | 'romanLcParenR' | 'romanLcPeriod'
-  | 'romanUcParenBoth' | 'romanUcParenR' | 'romanUcPeriod'
-  | 'thaiAlphaParenBoth' | 'thaiAlphaParenR' | 'thaiAlphaPeriod'
-  | 'thaiNumParenBoth' | 'thaiNumParenR' | 'thaiNumPeriod';
+  | 'alphaLcParenBoth'
+  | 'alphaLcParenR'
+  | 'alphaLcPeriod'
+  | 'alphaUcParenBoth'
+  | 'alphaUcParenR'
+  | 'alphaUcPeriod'
+  | 'arabic1Minus'
+  | 'arabic2Minus'
+  | 'arabicDbPeriod'
+  | 'arabicDbPlain'
+  | 'arabicParenBoth'
+  | 'arabicParenR'
+  | 'arabicPeriod'
+  | 'arabicPlain'
+  | 'circleNumDbPlain'
+  | 'circleNumWdBlackPlain'
+  | 'circleNumWdWhitePlain'
+  | 'ea1ChsPeriod'
+  | 'ea1ChsPlain'
+  | 'ea1ChtPeriod'
+  | 'ea1ChtPlain'
+  | 'ea1JpnChsDbPeriod'
+  | 'ea1JpnKorPeriod'
+  | 'ea1JpnKorPlain'
+  | 'hebrew2Minus'
+  | 'hindiAlpha1Period'
+  | 'hindiAlphaPeriod'
+  | 'hindiNumParenR'
+  | 'hindiNumPeriod'
+  | 'romanLcParenBoth'
+  | 'romanLcParenR'
+  | 'romanLcPeriod'
+  | 'romanUcParenBoth'
+  | 'romanUcParenR'
+  | 'romanUcPeriod'
+  | 'thaiAlphaParenBoth'
+  | 'thaiAlphaParenR'
+  | 'thaiAlphaPeriod'
+  | 'thaiNumParenBoth'
+  | 'thaiNumParenR'
+  | 'thaiNumPeriod';
 
 export type ParagraphBulletSize = {
   readonly kind: 'percent' | 'points';
@@ -452,27 +530,33 @@ export interface ParagraphBulletStyle {
   readonly size?: ParagraphBulletSize | null;
 }
 
-export type ParagraphBullet = {
-  readonly kind: 'none';
-} | ({
-  readonly kind: 'char';
-  readonly char: string;
-} & ParagraphBulletStyle) | ({
-  readonly kind: 'autoNum';
-  readonly type: ParagraphAutoNumberType;
-  readonly startAt?: number;
-} & ParagraphBulletStyle) | ({
-  readonly kind: 'blip';
-  readonly image: { readonly src: string };
-} & ParagraphBulletStyle);
+export type ParagraphBullet =
+  | {
+      readonly kind: 'none';
+    }
+  | ({
+      readonly kind: 'char';
+      readonly char: string;
+    } & ParagraphBulletStyle)
+  | ({
+      readonly kind: 'autoNum';
+      readonly type: ParagraphAutoNumberType;
+      readonly startAt?: number;
+    } & ParagraphBulletStyle)
+  | ({
+      readonly kind: 'blip';
+      readonly image: { readonly src: string };
+    } & ParagraphBulletStyle);
 
-export type ParagraphBulletInput = ParagraphBullet | ({
-  readonly kind: 'blip';
-  readonly image: {
-    readonly bytes: Uint8Array;
-    readonly mime: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
-  };
-} & ParagraphBulletStyle);
+export type ParagraphBulletInput =
+  | ParagraphBullet
+  | ({
+      readonly kind: 'blip';
+      readonly image: {
+        readonly bytes: Uint8Array;
+        readonly mime: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+      };
+    } & ParagraphBulletStyle);
 
 export interface ParagraphPropertyOverrides {
   readonly level?: number | null;
@@ -555,18 +639,20 @@ export interface FlatTextParagraph {
 
 export type TextBodyOverride = Omit<TextBody, 'paragraphs' | 'editInfo'>;
 
-export type TextOverride = {
-  readonly kind: 'empty';
-  /** 清空文字后仍保留 bodyPr 的有效值，属性面板不能因此失去编辑入口。 */
-  readonly body?: TextBodyOverride;
-  readonly bodyOverrides?: TextBodyPropertyOverrides;
-} | {
-  readonly kind: 'flat';
-  readonly body: TextBodyOverride;
-  /** 只记录用户触碰过的 bodyPr 字段；null 表示清除本层直设。 */
-  readonly bodyOverrides?: TextBodyPropertyOverrides;
-  readonly paragraphs: readonly FlatTextParagraph[];
-};
+export type TextOverride =
+  | {
+      readonly kind: 'empty';
+      /** 清空文字后仍保留 bodyPr 的有效值，属性面板不能因此失去编辑入口。 */
+      readonly body?: TextBodyOverride;
+      readonly bodyOverrides?: TextBodyPropertyOverrides;
+    }
+  | {
+      readonly kind: 'flat';
+      readonly body: TextBodyOverride;
+      /** 只记录用户触碰过的 bodyPr 字段；null 表示清除本层直设。 */
+      readonly bodyOverrides?: TextBodyPropertyOverrides;
+      readonly paragraphs: readonly FlatTextParagraph[];
+    };
 
 export interface ElementMeta {
   geom?: GeomSpec;
@@ -791,11 +877,14 @@ export interface EditDoc {
   elements: Record<ElementId, ElementRecord>;
   removedElements: Record<ElementId, RemovedElementRecord>;
   /** 被移出模型的原生框架身份；副本和延迟扩展仍需定位它，不参与 XML 删除计划。 */
-  retainedElementOrigins?: Record<ElementId, {
-    readonly part: string;
-    readonly spid: number;
-    readonly sourcePart?: string;
-  }>;
+  retainedElementOrigins?: Record<
+    ElementId,
+    {
+      readonly part: string;
+      readonly spid: number;
+      readonly sourcePart?: string;
+    }
+  >;
   /** 会话图片按内容寻址；未被当前元素引用的条目仍可供历史逆向 Patch 恢复。 */
   imageResources: Record<string, ElementInsertionResource>;
   readonly package: OpcPackage | null;

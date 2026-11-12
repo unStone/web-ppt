@@ -42,6 +42,9 @@
     "url": "https://github.com/unStone/web-ppt/issues"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": [
     "./dist/core.js"
   ],

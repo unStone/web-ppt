@@ -14,15 +14,27 @@ import { fileURLToPath } from 'node:url';
 import { label, makeZip, NS, nvGrp, px, slideXml, solid, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const W = 960, H = 600;
+const W = 960,
+  H = 600;
 const BODY = '<a:bodyPr lIns="91440" rIns="91440" tIns="45720" bIns="45720" anchor="ctr"/>';
 
 // 渲染坐标 1pt = 4/3px：sz=2000 → 每个全角字符 26.67px，以下宽度全部按此推导
-const body = (text) => `<a:p><a:r><a:rPr sz="2000"><a:solidFill><a:srgbClr val="1A1A1A"/></a:solidFill></a:rPr><a:t>${text}</a:t></a:r></a:p>`;
+const body = (text) =>
+  `<a:p><a:r><a:rPr sz="2000"><a:solidFill><a:srgbClr val="1A1A1A"/></a:solidFill></a:rPr><a:t>${text}</a:t></a:r></a:p>`;
 
-const box = (x, y, w, h, text, name) => sp({
-  x, y, w, h, prst: 'rect', fill: '<a:noFill/>', ln: '', name, bodyPr: BODY, text: body(text),
-});
+const box = (x, y, w, h, text, name) =>
+  sp({
+    x,
+    y,
+    w,
+    h,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    ln: '',
+    name,
+    bodyPr: BODY,
+    text: body(text),
+  });
 
 // 9 字 240px，可用 250.8px：放得下，靠无条件规则收『』相邻侧
 const scene1 = box(60, 70, 270, 50, '甲甲甲甲：『乙。』', '连续标点对');
@@ -35,17 +47,20 @@ const scene4 = box(60, 380, 178, 50, '戊戊戊戊戊。', '放不下才挤');
 // 4 字 106.7px：零标点零挤压
 const scene5 = box(60, 470, 200, 50, '庚庚庚庚', '无标点对照');
 
-const tags = [scene1, scene2, scene3, scene4, scene5].map((_, i) => sp({
-  x: 320, y: [70, 175, 290, 380, 470][i], w: 200, h: 30, prst: 'rect',
-  fill: solid('accent2'), name: `tag${i + 1}`,
-  text: label(['1 连续标点对', '2 行首开标点', '3 行尾句读', '4 放不下才挤', '5 无标点对照'][i], 1000, 'FFFFFF'),
-}));
-
-const SLIDE = slideXml(
-  [scene1, scene2, scene3, scene4, scene5, ...tags].join(''),
-  '',
-  '',
+const tags = [scene1, scene2, scene3, scene4, scene5].map((_, i) =>
+  sp({
+    x: 320,
+    y: [70, 175, 290, 380, 470][i],
+    w: 200,
+    h: 30,
+    prst: 'rect',
+    fill: solid('accent2'),
+    name: `tag${i + 1}`,
+    text: label(['1 连续标点对', '2 行首开标点', '3 行尾句读', '4 放不下才挤', '5 无标点对照'][i], 1000, 'FFFFFF'),
+  }),
 );
+
+const SLIDE = slideXml([scene1, scene2, scene3, scene4, scene5, ...tags].join(''), '', '');
 
 const contentTypes = `${XML}<Types xmlns="${NS.ct}">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>

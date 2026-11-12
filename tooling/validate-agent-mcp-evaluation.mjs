@@ -21,10 +21,20 @@ for (const agent of ['claude', 'codex']) {
   const doc = createDoc(presentation, { idPrefix: `evaluation-${agent}-` });
   const description = describePresentation(doc);
   assert.equal(description.totalSlides, 2, `${agent} 必须新增一页`);
-  assert(description.slides[0].elements.some((element) => element.name === '页面标题'
-    && element.paragraphs.some((paragraph) => paragraph.text === '季度汇报 Q4')), `${agent} 标题正文必须更新`);
-  assert(description.slides[1].elements.some((element) => element.paragraphs.some((paragraph) => paragraph.text === '新增页面')), `${agent} 新页标题必须写入`);
-  assert(Object.values(unzipSync(bytes)).some((part) => Buffer.from(part).equals(replacement)), `${agent} 媒体字节必须等于 replacement.png`);
+  assert(
+    description.slides[0].elements.some(
+      (element) => element.name === '页面标题' && element.paragraphs.some((paragraph) => paragraph.text === '季度汇报 Q4'),
+    ),
+    `${agent} 标题正文必须更新`,
+  );
+  assert(
+    description.slides[1].elements.some((element) => element.paragraphs.some((paragraph) => paragraph.text === '新增页面')),
+    `${agent} 新页标题必须写入`,
+  );
+  assert(
+    Object.values(unzipSync(bytes)).some((part) => Buffer.from(part).equals(replacement)),
+    `${agent} 媒体字节必须等于 replacement.png`,
+  );
   const overflow = description.slides[0].elements.find((element) => element.name === '溢出文本');
   const lint = await lintPresentation(doc, { checks: ['text-overflow'], measureText });
   assert(!lint.issues.some((issue) => issue.elementId === overflow.id), `${agent} 溢出元素必须修复`);
@@ -38,7 +48,16 @@ for (const agent of ['claude', 'codex']) {
     quickLook = join(output, 'final.pptx.png');
     assert(statSync(quickLook).size > 0);
   }
-  evidence.agents[agent] = { final: file, slides: 2, title: '季度汇报 Q4', addedTitle: '新增页面', imageSha256Matched: true, overflowFixed: true, libreOfficeOpened: true, quickLook };
+  evidence.agents[agent] = {
+    final: file,
+    slides: 2,
+    title: '季度汇报 Q4',
+    addedTitle: '新增页面',
+    imageSha256Matched: true,
+    overflowFixed: true,
+    libreOfficeOpened: true,
+    quickLook,
+  };
 }
 writeFileSync(join(root, 'out/agent-mcp/evaluations/evidence.json'), `${JSON.stringify(evidence, null, 2)}\n`);
 console.log('Claude Code 与 Codex 四项任务机判、LibreOffice 与 Quick Look 全部通过');

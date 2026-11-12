@@ -87,14 +87,17 @@ function toBase64(bytes: Uint8Array): string {
 async function fetchSlice(url: string): Promise<string | null> {
   let job = sliceCache.get(url);
   if (!job) {
-    job = fetch(url).then(async (response) => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return `data:font/woff2;base64,${toBase64(new Uint8Array(await response.arrayBuffer()))}`;
-    }).catch(() => null).then((uri) => {
-      // 短时网络失败不永久缓存；同一导出会话内命中过的切片保持免费
-      if (uri === null) sliceCache.delete(url);
-      return uri;
-    });
+    job = fetch(url)
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return `data:font/woff2;base64,${toBase64(new Uint8Array(await response.arrayBuffer()))}`;
+      })
+      .catch(() => null)
+      .then((uri) => {
+        // 短时网络失败不永久缓存；同一导出会话内命中过的切片保持免费
+        if (uri === null) sliceCache.delete(url);
+        return uri;
+      });
     sliceCache.set(url, job);
   }
   return job;
@@ -102,10 +105,7 @@ async function fetchSlice(url: string): Promise<string | null> {
 
 /* ── 主流程 ───────────────────────────────────── */
 
-async function facesForUsage(
-  usage: FontUsage,
-  opts: ExportFaceOptions,
-): Promise<EmbeddedFont[]> {
+async function facesForUsage(usage: FontUsage, opts: ExportFaceOptions): Promise<EmbeddedFont[]> {
   const sub = substituteFor(usage.family, opts.overrides);
   if (!sub) return [];
   if (sub.cjk && opts.cjk === false) return [];
@@ -120,7 +120,9 @@ async function facesForUsage(
   const faces: EmbeddedFont[] = [];
   for (const key of wanted) {
     const [w, it] = key.split('|');
-    const weight = Number(w), bold = weight === 700, italic = it === 'true';
+    const weight = Number(w),
+      bold = weight === 700,
+      italic = it === 'true';
     const families = [sub.family, ...(sub.latinFamily && LATIN_CHARS.test(usage.chars) ? [sub.latinFamily] : [])];
     for (const family of families) {
       const href = cssUrl(family, weight, italic, opts.base ?? DEFAULT_BASE);
@@ -167,10 +169,7 @@ async function facesForUsage(
  * `fonts.extraFontFaces` 传给 core；core 的子集化引擎不会动这些切片
  * （它们已经是按 unicode-range 切好的最小单元，且多为 woff2）。
  */
-export async function exportFontFaces(
-  usages: readonly FontUsage[],
-  opts: ExportFaceOptions = {},
-): Promise<EmbeddedFont[]> {
+export async function exportFontFaces(usages: readonly FontUsage[], opts: ExportFaceOptions = {}): Promise<EmbeddedFont[]> {
   if (typeof fetch !== 'function') return [];
   // 逐个用量收集后按原顺序展平：Promise.all 的完成顺序不能进入产物
   const perUsage = await Promise.all(usages.map((usage) => facesForUsage(usage, opts)));

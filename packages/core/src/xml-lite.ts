@@ -14,9 +14,7 @@ export interface LiteAttr {
   value: string;
 }
 
-const ROOT_NAMESPACE_BINDINGS: ReadonlyMap<string, string> = new Map([
-  ['xml', 'http://www.w3.org/XML/1998/namespace'],
-]);
+const ROOT_NAMESPACE_BINDINGS: ReadonlyMap<string, string> = new Map([['xml', 'http://www.w3.org/XML/1998/namespace']]);
 
 export class LiteElement {
   readonly localName: string;
@@ -39,12 +37,9 @@ export class LiteElement {
     let local: Map<string, string> | undefined;
     for (const attribute of this.attributes) {
       if (attribute.name === 'xmlns') {
-        (local ??= new Map(parent?.namespaceBindings ?? ROOT_NAMESPACE_BINDINGS))
-          .set('', attribute.value);
-      }
-      else if (attribute.prefix === 'xmlns') {
-        (local ??= new Map(parent?.namespaceBindings ?? ROOT_NAMESPACE_BINDINGS))
-          .set(attribute.localName, attribute.value);
+        (local ??= new Map(parent?.namespaceBindings ?? ROOT_NAMESPACE_BINDINGS)).set('', attribute.value);
+      } else if (attribute.prefix === 'xmlns') {
+        (local ??= new Map(parent?.namespaceBindings ?? ROOT_NAMESPACE_BINDINGS)).set(attribute.localName, attribute.value);
       }
     }
     // 绝大多数 OOXML 节点没有 xmlns：直接共享父环境，既保持 O(1) 查询也不逐节点复制 Map。
@@ -99,16 +94,18 @@ export class LiteElement {
 }
 
 const ENTITIES: Record<string, string> = {
-  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
 };
 
 function decode(s: string): string {
   if (s.indexOf('&') < 0) return s;
   return s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, ref: string) => {
     if (ref[0] === '#') {
-      const code = ref[1] === 'x' || ref[1] === 'X'
-        ? parseInt(ref.slice(2), 16)
-        : parseInt(ref.slice(1), 10);
+      const code = ref[1] === 'x' || ref[1] === 'X' ? parseInt(ref.slice(2), 16) : parseInt(ref.slice(1), 10);
       return Number.isFinite(code) && code >= 0 ? String.fromCodePoint(code) : m;
     }
     return ENTITIES[ref] ?? m;

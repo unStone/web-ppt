@@ -26,8 +26,7 @@ export function queryMaster(doc: EditDoc, target: MasterDesignTarget): MasterDes
   return {
     ...catalog,
     background: {
-      value: structuredClone(own(master.ovr, 'background')
-        ? master.ovr.background! : resolved?.background ?? master.background),
+      value: structuredClone(own(master.ovr, 'background') ? master.ovr.background! : (resolved?.background ?? master.background)),
       source: structuredClone(master.background),
       direct: own(master.ovr, 'background'),
     },
@@ -40,8 +39,7 @@ export function toMasterCanvas(doc: EditDoc, target: MasterDesignTarget): Slide 
   if (!master) throw new Error(`找不到母版设计目标：${target.id}`);
   const resolved = resolvedMasterTemplate(doc, master.id);
   return {
-    background: structuredClone(own(master.ovr, 'background')
-      ? master.ovr.background! : resolved?.background ?? master.background),
+    background: structuredClone(own(master.ovr, 'background') ? master.ovr.background! : (resolved?.background ?? master.background)),
     elements: master.children.map((id) => effectiveElement(doc, id)),
     layoutName: master.name,
   };

@@ -10,11 +10,7 @@ const FRAME_SAVE_XFRM_FIELD_SET = new Set<XfrmField>(['x', 'y', 'w', 'h', 'flipH
 export const isFrameXfrmField = (field: XfrmField): boolean => FRAME_XFRM_FIELD_SET.has(field);
 export const isFrameSaveXfrmField = (field: XfrmField): boolean => FRAME_SAVE_XFRM_FIELD_SET.has(field);
 
-export function assertXfrmValue<F extends XfrmField>(
-  field: F,
-  value: unknown,
-  label: string,
-): asserts value is XfrmValueByField[F] {
+export function assertXfrmValue<F extends XfrmField>(field: F, value: unknown, label: string): asserts value is XfrmValueByField[F] {
   if (field === 'flipH' || field === 'flipV') {
     if (typeof value !== 'boolean') throw new Error(`${label} 必须是布尔值`);
     return;

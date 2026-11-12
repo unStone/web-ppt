@@ -16,10 +16,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { label, makePng, makeZip, NS, nextShapeId, nvGrp, px, slideXml, solid, sp, XML } from './lib/ooxml.mjs';
+import { makePng, makeZip, NS, nvGrp, px, slideXml, sp, XML } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const W = 1280, H = 720;
+const W = 1280,
+  H = 720;
 
 const FRAME = { x: 120, y: 160, w: 460, h: 300 };
 
@@ -32,10 +33,16 @@ const oleFrame = (spid, id) => `<p:graphicFrame>
 </a:graphicData></a:graphic>
 </p:graphicFrame>`;
 
-const title = (t) => sp({
-  x: 40, y: 50, w: W - 80, h: 60, prst: 'rect', fill: '<a:noFill/>',
-  text: `<a:p><a:r><a:rPr sz="2200" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${t}</a:t></a:r></a:p>`,
-});
+const title = (t) =>
+  sp({
+    x: 40,
+    y: 50,
+    w: W - 80,
+    h: 60,
+    prst: 'rect',
+    fill: '<a:noFill/>',
+    text: `<a:p><a:r><a:rPr sz="2200" b="1"><a:solidFill><a:schemeClr val="tx2"/></a:solidFill></a:rPr><a:t>${t}</a:t></a:r></a:p>`,
+  });
 
 /** Office 2010+ 的写法：预览图直接内嵌在 p:oleObj 里，不必绕 VML */
 const olePicFrame = (id) => `<p:graphicFrame>

@@ -10,23 +10,29 @@ import { materializeCommentEdits } from './save';
 
 export { queryComments } from './state';
 export type { CommentFields } from './state';
-export type CommentCommand = { type: 'AddComment'; slideId: SlideId; comment: SlideComment & { id: string } }
+export type CommentCommand =
+  | { type: 'AddComment'; slideId: SlideId; comment: SlideComment & { id: string } }
   | { type: 'UpdateComment'; slideId: SlideId; id: string; fields: Partial<CommentFields> }
   | { type: 'RemoveComment'; slideId: SlideId; id: string };
 
 function commandPatches(doc: EditDoc, extension: ExtensionCommand, origin: string): CommandPatches {
   const command = extension.payload as CommentCommand;
   assertDataObject(command, ['type', 'slideId', 'id', 'comment', 'fields'], '批注命令');
-  if (extension.scope !== 'slide' || extension.id !== command.slideId || !doc.slides[command.slideId]
-    || doc.meta.readonly) throw new Error('目标不允许修改批注');
+  if (extension.scope !== 'slide' || extension.id !== command.slideId || !doc.slides[command.slideId] || doc.meta.readonly)
+    throw new Error('目标不允许修改批注');
   const comments = queryComments(doc, command.slideId);
   let id: string, fields: Partial<CommentFields> & { deleted?: boolean };
   if (command.type === 'AddComment') {
     assertDataObject(command.comment, ['id', 'author', 'initials', 'date', 'text', 'x', 'y', 'parentId'], '新增批注');
     ({ id, ...fields } = command.comment);
     if (comments.some((c) => c.id === id)) throw new Error('批注身份已存在');
-    if (typeof fields.author !== 'string' || typeof fields.text !== 'string'
-      || typeof fields.x !== 'number' || typeof fields.y !== 'number') throw new Error('新增批注缺少作者、正文或锚点');
+    if (
+      typeof fields.author !== 'string'
+      || typeof fields.text !== 'string'
+      || typeof fields.x !== 'number'
+      || typeof fields.y !== 'number'
+    )
+      throw new Error('新增批注缺少作者、正文或锚点');
     fields.deleted = false;
   } else {
     id = command.id;
@@ -50,15 +56,17 @@ function commandPatches(doc: EditDoc, extension: ExtensionCommand, origin: strin
     }
   }
   const before = commentState(doc, command.slideId)[id] ?? {};
-  const forward: ExtensionPatch[] = [], inverse: ExtensionPatch[] = [];
+  const forward: ExtensionPatch[] = [],
+    inverse: ExtensionPatch[] = [];
   for (const [field, value] of Object.entries(fields)) {
     const path = ['slides', command.slideId, 'ovr', 'extensions', 'comments', id, field] as const;
     const patch: ExtensionPatch = { op: 'set', path, value, origin };
     validateCommentPatch(doc, patch);
     if (own(before, field) && before[field as keyof typeof before] === value) continue;
     forward.push(patch);
-    inverse.unshift(own(before, field) ? { op: 'set', path, value: before[field as keyof typeof before], origin }
-      : { op: 'del', path, origin });
+    inverse.unshift(
+      own(before, field) ? { op: 'set', path, value: before[field as keyof typeof before], origin } : { op: 'del', path, origin },
+    );
   }
   return { forward, inverse };
 }
@@ -66,8 +74,13 @@ function commandPatches(doc: EditDoc, extension: ExtensionCommand, origin: strin
 let registered = false;
 export function registerCommentEditing(): void {
   if (registered) return;
-  registerEditExtension('comments', { scope: 'slide', command: commandPatches, validatePatch: validateCommentPatch,
-    projectSlide(doc, id, slide) { return { ...slide, comments: queryComments(doc, id) }; },
+  registerEditExtension('comments', {
+    scope: 'slide',
+    command: commandPatches,
+    validatePatch: validateCommentPatch,
+    projectSlide(doc, id, slide) {
+      return { ...slide, comments: queryComments(doc, id) };
+    },
     materializePackage: materializeCommentEdits,
   });
   registered = true;
@@ -75,15 +88,22 @@ export function registerCommentEditing(): void {
 
 export function createCommentEditor(editor: Pick<Editor, 'doc' | 'exec'>) {
   registerCommentEditing();
-  const exec = (command: CommentCommand) => editor.exec({ type: 'Extension', namespace: 'comments',
-    scope: 'slide', id: command.slideId, payload: command });
-  return { exec, query: (id: SlideId) => queryComments(editor.doc, id),
+  const exec = (command: CommentCommand) =>
+    editor.exec({ type: 'Extension', namespace: 'comments', scope: 'slide', id: command.slideId, payload: command });
+  return {
+    exec,
+    query: (id: SlideId) => queryComments(editor.doc, id),
     add(slideId: SlideId, comment: CommentFields & { id?: string }) {
       const id = comment.id ?? `new:${globalThis.crypto.randomUUID()}`;
-      exec({ type: 'AddComment', slideId, comment: { ...comment, id } }); return id;
+      exec({ type: 'AddComment', slideId, comment: { ...comment, id } });
+      return id;
     },
-    update(slideId: SlideId, id: string, fields: Partial<CommentFields>) { return exec({ type: 'UpdateComment', slideId, id, fields }); },
-    remove(slideId: SlideId, id: string) { return exec({ type: 'RemoveComment', slideId, id }); },
+    update(slideId: SlideId, id: string, fields: Partial<CommentFields>) {
+      return exec({ type: 'UpdateComment', slideId, id, fields });
+    },
+    remove(slideId: SlideId, id: string) {
+      return exec({ type: 'RemoveComment', slideId, id });
+    },
     reply(slideId: SlideId, parentId: string, comment: CommentFields & { id?: string }) {
       return this.add(slideId, { ...comment, parentId });
     },

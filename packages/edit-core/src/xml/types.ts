@@ -46,8 +46,7 @@ export interface XmlDeclaration {
   readonly value: string;
 }
 
-export type XmlNode = XmlElement | XmlText | XmlCdata | XmlComment
-  | XmlProcessingInstruction | XmlDeclaration;
+export type XmlNode = XmlElement | XmlText | XmlCdata | XmlComment | XmlProcessingInstruction | XmlDeclaration;
 
 export interface XmlDocument {
   readonly type: 'document';

@@ -43,9 +43,7 @@ function encodeDiscriminator(value: string): string {
   // JS code unit 固定三位，既无拼接歧义，也不会把两个不同的非法代理项都编码成 U+FFFD。
   for (let i = 0; i < value.length; i++) {
     const unit = value.charCodeAt(i);
-    out += DIGITS[Math.floor(unit / (BASE * BASE))]
-      + DIGITS[Math.floor(unit / BASE) % BASE]
-      + DIGITS[unit % BASE];
+    out += DIGITS[Math.floor(unit / (BASE * BASE))] + DIGITS[Math.floor(unit / BASE) % BASE] + DIGITS[unit % BASE];
   }
   // 结尾 V 保持合法键不以 0 收尾。
   return `${out}V`;
@@ -55,10 +53,7 @@ function encodeDiscriminator(value: string): string {
  * 生成严格位于 lower 与 upper 之间的字典序键；null 表示无界。
  * 只要输入来自本模块，就能无限向任一边或任意相邻键之间继续插入。
  */
-function midpointBetween(
-  lower: FractionalIndex | null,
-  upper: FractionalIndex | null,
-): FractionalIndex {
+function midpointBetween(lower: FractionalIndex | null, upper: FractionalIndex | null): FractionalIndex {
   if (lower !== null) assertFractionalIndex(lower);
   if (upper !== null) assertFractionalIndex(upper);
   if (lower !== null && upper !== null && lower >= upper) {

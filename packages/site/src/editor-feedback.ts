@@ -12,9 +12,12 @@ export function createEditorFeedback(element: HTMLElement, signal?: AbortSignal)
     element.dataset.tone = tone;
   };
   const reportError = (error: unknown): void => {
-    notice(message('操作失败：{detail}', {
-      detail: error instanceof Error ? error.message : String(error),
-    }), 'error');
+    notice(
+      message('操作失败：{detail}', {
+        detail: error instanceof Error ? error.message : String(error),
+      }),
+      'error',
+    );
   };
   async function previewAnimations(view: SlideEditor | null): Promise<void> {
     if (!view || signal?.aborted) return;

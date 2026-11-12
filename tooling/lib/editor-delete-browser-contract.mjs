@@ -39,18 +39,30 @@ export async function runEditorDeleteBrowserContract({ openEditor, load }) {
     }
     const result = { deleteP95: p95(deletion), undoP95: p95(undo), redoP95: p95(redo) };
     const selection = session.editor.selection;
-    if (ids.length !== 60 || !consumed
+    if (
+      ids.length !== 60
+      || !consumed
       || !ids.every((id) => !!session.editor.doc.elements[id])
       || mount.querySelectorAll('[data-edit-id]').length !== 60
-      || selection.kind !== 'elements' || selection.ids.join(',') !== ids.join(',')
-      || session.editor.history.undoCount !== 0 || session.editor.history.redoCount !== 1
-      || session.editor.isDirty()) {
-      throw new Error('60 元素删除/撤销/重做最终状态不一致：'
-        + JSON.stringify({ consumed, existing: ids.filter((id) => !!session.editor.doc.elements[id]).length,
-          nodes: mount.querySelectorAll('[data-edit-id]').length, selection: selection.kind,
-          selected: selection.kind === 'elements' ? selection.ids.length : 0,
-          undo: session.editor.history.undoCount, redo: session.editor.history.redoCount,
-          dirty: session.editor.isDirty() }));
+      || selection.kind !== 'elements'
+      || selection.ids.join(',') !== ids.join(',')
+      || session.editor.history.undoCount !== 0
+      || session.editor.history.redoCount !== 1
+      || session.editor.isDirty()
+    ) {
+      throw new Error(
+        '60 元素删除/撤销/重做最终状态不一致：'
+          + JSON.stringify({
+            consumed,
+            existing: ids.filter((id) => !!session.editor.doc.elements[id]).length,
+            nodes: mount.querySelectorAll('[data-edit-id]').length,
+            selection: selection.kind,
+            selected: selection.kind === 'elements' ? selection.ids.length : 0,
+            undo: session.editor.history.undoCount,
+            redo: session.editor.history.redoCount,
+            dirty: session.editor.isDirty(),
+          }),
+      );
     }
     recordPerformanceBudget('60 元素删除 p95', result.deleteP95, 8);
     recordPerformanceBudget('60 元素删除撤销 p95', result.undoP95, 8);
@@ -79,7 +91,8 @@ export async function runTrustedDeleteContract({ evaluate, dispatchKey }) {
     view.element.focus({ preventScroll: true });
     globalThis.trustedDeleteContract = { view, id, events };
   })()`);
-  const snapshot = () => evaluate(`(() => {
+  const snapshot = () =>
+    evaluate(`(() => {
     const state = globalThis.trustedDeleteContract;
     const { perfSession } = globalThis.editorContract;
     const mount = document.querySelector('#mount');
@@ -111,18 +124,26 @@ export async function runTrustedDeleteContract({ evaluate, dispatchKey }) {
     delete globalThis.trustedDeleteContract;
     return result;
   })()`);
-  const removed = (state) => !state.exists && !state.node && state.selection === 'none'
-    && state.undo === 1 && state.redo === 0 && state.dirty && state.focused;
-  const present = (state) => state.exists && state.node && state.selection === 'elements'
-    && state.undo === 0 && state.redo === 1 && !state.dirty && state.focused;
+  const removed = (state) =>
+    !state.exists && !state.node && state.selection === 'none' && state.undo === 1 && state.redo === 0 && state.dirty && state.focused;
+  const present = (state) =>
+    state.exists && state.node && state.selection === 'elements' && state.undo === 0 && state.redo === 1 && !state.dirty && state.focused;
   const deleteEvents = result.events.filter((event) => event.key === 'Delete' || event.key === 'Backspace');
-  const eventsCorrect = deleteEvents.length === 2
+  const eventsCorrect =
+    deleteEvents.length === 2
     && deleteEvents.every((event) => event.trusted && event.prevented && !event.ctrl)
-    && !deleteEvents[0].shift && deleteEvents[1].shift;
-  if (!removed(deleted) || !present(restored) || !removed(backspaced)
-    || !present(restoredAgain) || !eventsCorrect || !result.focused) {
-    throw new Error(`真实 Delete/Backspace 失败：${JSON.stringify({
-      deleted, restored, backspaced, restoredAgain, result, eventsCorrect,
-    })}`);
+    && !deleteEvents[0].shift
+    && deleteEvents[1].shift;
+  if (!removed(deleted) || !present(restored) || !removed(backspaced) || !present(restoredAgain) || !eventsCorrect || !result.focused) {
+    throw new Error(
+      `真实 Delete/Backspace 失败：${JSON.stringify({
+        deleted,
+        restored,
+        backspaced,
+        restoredAgain,
+        result,
+        eventsCorrect,
+      })}`,
+    );
   }
 }

@@ -9,44 +9,53 @@ export function isElementHierarchyPatch(patch: Patch): patch is ElementHierarchy
   return patch.path.length === 3 && patch.path[0] === 'elements' && patch.path[2] === 'hierarchy';
 }
 
-function assertRecordMap(
-  records: ElementHierarchyState['records'], label: string,
-): void {
+function assertRecordMap(records: ElementHierarchyState['records'], label: string): void {
   if (!records || typeof records !== 'object') throw new Error(`${label} 的元素记录无效`);
   for (const [id, record] of Object.entries(records)) {
     if (!id || (record !== null && record.id !== id)) throw new Error(`${label} 的元素记录身份无效：${id}`);
   }
 }
 
-function assertRemovedMap(
-  removed: ElementHierarchyState['removed'], label: string,
-): void {
+function assertRemovedMap(removed: ElementHierarchyState['removed'], label: string): void {
   if (!removed || typeof removed !== 'object') throw new Error(`${label} 的删除记录无效`);
   for (const [id, record] of Object.entries(removed)) {
     if (!id || (record !== null && record.id !== id)) throw new Error(`${label} 的删除记录身份无效：${id}`);
   }
 }
 
-export function validateElementHierarchyPatch(
-  doc: EditDoc, patch: ElementHierarchyPatch, index: number,
-): void {
+export function validateElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchyPatch, index: number): void {
   const label = `Patch ${index}`;
   const state = patch.value;
-  if (!state || typeof state !== 'object' || typeof state.parent !== 'string' || !state.parent
-    || !Array.isArray(state.affected) || !state.affected.length
+  if (
+    !state
+    || typeof state !== 'object'
+    || typeof state.parent !== 'string'
+    || !state.parent
+    || !Array.isArray(state.affected)
+    || !state.affected.length
     || state.affected.some((id) => typeof id !== 'string' || !id)
-    || new Set(state.affected).size !== state.affected.length) {
+    || new Set(state.affected).size !== state.affected.length
+  ) {
     throw new Error(`${label} 的元素层级状态无效`);
   }
   assertRecordMap(state.records, label);
   assertRemovedMap(state.removed, label);
-  if (!doc.slides[state.parent] && !doc.layouts[state.parent] && !doc.masters[state.parent]
+  if (
+    !doc.slides[state.parent]
+    && !doc.layouts[state.parent]
+    && !doc.masters[state.parent]
     && !doc.elements[state.parent]
-    && !state.records[state.parent]) throw new Error(`${label} 的外部父级不存在`);
+    && !state.records[state.parent]
+  )
+    throw new Error(`${label} 的外部父级不存在`);
   if (!state.children || typeof state.children !== 'object') throw new Error(`${label} 的 children 状态无效`);
   for (const [parent, children] of Object.entries(state.children)) {
-    if (!parent || !Array.isArray(children) || new Set(children).size !== children.length
-      || children.some((id) => typeof id !== 'string' || !id)) {
+    if (
+      !parent
+      || !Array.isArray(children)
+      || new Set(children).size !== children.length
+      || children.some((id) => typeof id !== 'string' || !id)
+    ) {
       throw new Error(`${label} 的父级 children 无效：${parent}`);
     }
   }
@@ -55,10 +64,15 @@ export function validateElementHierarchyPatch(
 export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchyPatch): void {
   const canvas = elementHierarchyCanvas(doc, patch.value);
   const slide = canvas.kind === 'slide' ? doc.slides[canvas.id] : undefined;
-  const before = new Map(Object.keys(patch.value.records).flatMap((id) =>
-    doc.elements[id] ? [[id, doc.elements[id]] as const] : []));
-  retainElementOrigins(doc, [...before.values()].filter(record => patch.value.records[record.id] === null));
-  restoreElementOrigins(doc, Object.values(patch.value.records).filter((record): record is ElementRecord => record !== null));
+  const before = new Map(Object.keys(patch.value.records).flatMap((id) => (doc.elements[id] ? [[id, doc.elements[id]] as const] : [])));
+  retainElementOrigins(
+    doc,
+    [...before.values()].filter((record) => patch.value.records[record.id] === null),
+  );
+  restoreElementOrigins(
+    doc,
+    Object.values(patch.value.records).filter((record): record is ElementRecord => record !== null),
+  );
   // 统一 Patch seam 已整批隔离；这里直接接管，避免再次复制驻留目录。
   for (const [id, record] of Object.entries(patch.value.records)) {
     if (record === null) delete doc.elements[id];
@@ -81,10 +95,7 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
     if (record === null) delete doc.removedElements[id];
     else doc.removedElements[id] = structuredClone(record as RemovedElementRecord);
   }
-  const refreshIndex = (
-    key: 'dynamicSlideNumbers' | 'dynamicSlideLinks',
-    predicate: (record: ElementRecord) => boolean,
-  ): void => {
+  const refreshIndex = (key: 'dynamicSlideNumbers' | 'dynamicSlideLinks', predicate: (record: ElementRecord) => boolean): void => {
     if (!slide) return;
     const affected = new Set(patch.value.affected);
     const retained = slide[key].filter((id) => !affected.has(id));
@@ -94,12 +105,16 @@ export function applyElementHierarchyPatch(doc: EditDoc, patch: ElementHierarchy
     }
     slide[key] = retained;
   };
-  if ([...before.values(), ...patch.value.affected.flatMap((id) => doc.elements[id] ?? [])]
-    .some((record) => hasDynamicSlideNumber(record.src))) {
+  if (
+    [...before.values(), ...patch.value.affected.flatMap((id) => doc.elements[id] ?? [])].some((record) =>
+      hasDynamicSlideNumber(record.src),
+    )
+  ) {
     refreshIndex('dynamicSlideNumbers', (record) => hasDynamicSlideNumber(record.src));
   }
-  if ([...before.values(), ...patch.value.affected.flatMap((id) => doc.elements[id] ?? [])]
-    .some((record) => hasDynamicSlideLink(record.src))) {
+  if (
+    [...before.values(), ...patch.value.affected.flatMap((id) => doc.elements[id] ?? [])].some((record) => hasDynamicSlideLink(record.src))
+  ) {
     refreshIndex('dynamicSlideLinks', (record) => hasDynamicSlideLink(record.src));
   }
 }

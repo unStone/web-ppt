@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
-import { deck, makeZip, px, slideXml, solid, sp } from './lib/ooxml.mjs';
+import { deck, makeZip, slideXml, solid, sp } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const encoder = new TextEncoder();
@@ -15,14 +15,23 @@ const first = [
   sp({ x: 270, y: 230, w: 150, h: 80, name: 'common-middle-a', fill: solid('accent2'), rot: 900000 }),
   sp({ x: 515, y: 410, w: 90, h: 130, name: 'common-middle-b', fill: solid('accent3') }),
   sp({ x: 820, y: 570, w: 180, h: 100, name: 'common-right', fill: solid('accent4'), rot: -600000 }),
-  sp({ x: 80, y: 330, w: 320, h: 120, name: 'common-alt', fill: solid('accent5') })
-    .replace('name="common-alt"', 'name="common-alt" title="来源标题" descr="来源描述" xmlns:fixture="urn:web-ppt:common" fixture:keep="ALT"'),
+  sp({ x: 80, y: 330, w: 320, h: 120, name: 'common-alt', fill: solid('accent5') }).replace(
+    'name="common-alt"',
+    'name="common-alt" title="来源标题" descr="来源描述" xmlns:fixture="urn:web-ppt:common" fixture:keep="ALT"',
+  ),
 ].join('');
 
-const page = (index) => slideXml(sp({
-  x: 120, y: 160, w: 1040, h: 260, name: `common-page-${index}`,
-  fill: solid(`accent${index + 1}`),
-}));
+const page = (index) =>
+  slideXml(
+    sp({
+      x: 120,
+      y: 160,
+      w: 1040,
+      h: 260,
+      name: `common-page-${index}`,
+      fill: solid(`accent${index + 1}`),
+    }),
+  );
 
 const sections = `<p:extLst><p:ext uri="{WEB-PPT-COMMON-COMMANDS}">
 <p14:sectionLst xmlns:p14="${P14}">
@@ -32,14 +41,18 @@ const sections = `<p:extLst><p:ext uri="{WEB-PPT-COMMON-COMMANDS}">
 </p:ext></p:extLst>`;
 
 const bytes = deck({
-  name: 'Common Commands', width: 1280, height: 720,
-  slides: [slideXml(first), page(2), page(3)], presExtra: sections,
+  name: 'Common Commands',
+  width: 1280,
+  height: 720,
+  slides: [slideXml(first), page(2), page(3)],
+  presExtra: sections,
 });
 const files = unzipSync(bytes);
 files['ppt/presentation.xml'] = encoder.encode(
-  [701, 702, 703].reduce((xml, id, index) =>
-    xml.replace(`id="${256 + index}" r:id="rId${index + 2}"`, `id="${id}" r:id="rId${index + 2}"`),
-  decoder.decode(files['ppt/presentation.xml'])),
+  [701, 702, 703].reduce(
+    (xml, id, index) => xml.replace(`id="${256 + index}" r:id="rId${index + 2}"`, `id="${id}" r:id="rId${index + 2}"`),
+    decoder.decode(files['ppt/presentation.xml']),
+  ),
 );
 const output = makeZip(Object.entries(files));
 mkdirSync(join(root, 'fixtures'), { recursive: true });

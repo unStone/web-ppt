@@ -26,9 +26,7 @@ function installFullscreen(root) {
 }
 
 function restoreFullscreen(root) {
-  const target = root == null
-    ? 'document.documentElement'
-    : `document.querySelector(${JSON.stringify(root)})`;
+  const target = root == null ? 'document.documentElement' : `document.querySelector(${JSON.stringify(root)})`;
   return `(() => {
     const el = ${target};
     if (el && globalThis.__nativeRequestFullscreenPeriod) {
@@ -38,18 +36,10 @@ function restoreFullscreen(root) {
   })()`;
 }
 
-export async function runBlankPeriodContract({ evaluate, request, click, waitFor }, {
-  trigger,
-  fullscreenRoot = null,
-  stage,
-  pager,
-  prevButton,
-  gridButton,
-  blankButton,
-  presenting,
-  search = null,
-  hint = null,
-}) {
+export async function runBlankPeriodContract(
+  { evaluate, request, click, waitFor },
+  { trigger, fullscreenRoot = null, stage, pager, prevButton, gridButton, blankButton, presenting, search = null, hint = null },
+) {
   const blankOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on`)})`;
   const pageExpr = `document.querySelector(${JSON.stringify(pager)}).textContent`;
   const gridOn = `document.querySelector('.slide-grid:not([hidden])')`;
@@ -75,11 +65,11 @@ export async function runBlankPeriodContract({ evaluate, request, click, waitFor
   const browsePage = await evaluate(pageExpr);
   await press(request, '.', 190);
   if (await evaluate(blankOn)) throw new Error('浏览态句号不该黑屏');
-  if (await evaluate(pageExpr) !== browsePage) throw new Error('浏览态句号翻了页');
+  if ((await evaluate(pageExpr)) !== browsePage) throw new Error('浏览态句号翻了页');
 
   if (search) {
     const searchValue = `document.querySelector(${JSON.stringify(search)}).value`;
-    if (await evaluate(searchValue) !== '') throw new Error('浏览态句号写进了搜索框');
+    if ((await evaluate(searchValue)) !== '') throw new Error('浏览态句号写进了搜索框');
     await evaluate(`(() => {
       const input = document.querySelector(${JSON.stringify(search)});
       input.value = 'zzz';
@@ -87,11 +77,20 @@ export async function runBlankPeriodContract({ evaluate, request, click, waitFor
       input.setSelectionRange(input.value.length, input.value.length);
     })()`);
     await request('Input.dispatchKeyEvent', {
-      type: 'keyDown', key: '.', code: 'Period', text: '.', unmodifiedText: '.',
-      windowsVirtualKeyCode: 190, nativeVirtualKeyCode: 190,
+      type: 'keyDown',
+      key: '.',
+      code: 'Period',
+      text: '.',
+      unmodifiedText: '.',
+      windowsVirtualKeyCode: 190,
+      nativeVirtualKeyCode: 190,
     });
     await request('Input.dispatchKeyEvent', {
-      type: 'keyUp', key: '.', code: 'Period', windowsVirtualKeyCode: 190, nativeVirtualKeyCode: 190,
+      type: 'keyUp',
+      key: '.',
+      code: 'Period',
+      windowsVirtualKeyCode: 190,
+      nativeVirtualKeyCode: 190,
     });
     await waitFor(`${searchValue} === 'zzz.' && !${blankOn} && ${pageExpr} === ${JSON.stringify(browsePage)}`, '搜索框里的句号留在查询里');
     await waitFor(
@@ -108,18 +107,18 @@ export async function runBlankPeriodContract({ evaluate, request, click, waitFor
     await click(trigger);
     await waitFor(`${presenting} && !document.fullscreenElement`, '句号契约进入演示');
     const start = await evaluate(pageExpr);
-    if (search && await evaluate(`document.querySelector(${JSON.stringify(search)}).value`) !== 'zzz.') {
+    if (search && (await evaluate(`document.querySelector(${JSON.stringify(search)}).value`)) !== 'zzz.') {
       throw new Error('进入放映改写了查询');
     }
 
     await press(request, '.', 190);
     await waitFor(blankOn, '放映中句号黑屏');
-    if (await evaluate(pageExpr) !== start) throw new Error('句号黑屏改变了页码');
+    if ((await evaluate(pageExpr)) !== start) throw new Error('句号黑屏改变了页码');
     const shown = await evaluate(`document.querySelector(${JSON.stringify(blankButton)}).title`);
     if (!shown.includes('B') || !shown.includes('.')) throw new Error(`黑屏中的按钮提示丢了句号：${shown}`);
     await press(request, '.', 190);
     await waitFor(`!${blankOn}`, '再按句号恢复');
-    if (await evaluate(pageExpr) !== start) throw new Error('句号恢复改变了页码');
+    if ((await evaluate(pageExpr)) !== start) throw new Error('句号恢复改变了页码');
 
     await press(request, 'b', 66);
     await waitFor(blankOn, 'B 打开黑屏以便句号关掉');
@@ -132,7 +131,9 @@ export async function runBlankPeriodContract({ evaluate, request, click, waitFor
 
     await press(request, '.', 190);
     await waitFor(blankOn, '再黑一次以便点层');
-    await evaluate(`document.querySelector(${JSON.stringify(`${stage} .present-blank`)}).dispatchEvent(new MouseEvent('click', { bubbles: true }))`);
+    await evaluate(
+      `document.querySelector(${JSON.stringify(`${stage} .present-blank`)}).dispatchEvent(new MouseEvent('click', { bubbles: true }))`,
+    );
     await waitFor(`!${blankOn} && ${pageExpr} === ${JSON.stringify(start)}`, '点黑层恢复且不翻页');
 
     await press(request, '.', 190);
@@ -141,7 +142,7 @@ export async function runBlankPeriodContract({ evaluate, request, click, waitFor
     await waitFor(`!${blankOn} && ${pageExpr} === ${JSON.stringify(start)}`, '黑屏中空格只恢复');
 
     await press(request, '.', 190, 4);
-    if (await evaluate(blankOn) || await evaluate(pageExpr) !== start || !await evaluate(presenting)) {
+    if ((await evaluate(blankOn)) || (await evaluate(pageExpr)) !== start || !(await evaluate(presenting))) {
       throw new Error('⌘+. 黑了屏、翻了页或结束了放映');
     }
     const whiteOn = `document.querySelector(${JSON.stringify(`${stage} .present-blank.is-on.is-white`)})`;
@@ -153,7 +154,7 @@ export async function runBlankPeriodContract({ evaluate, request, click, waitFor
     await press(request, ',', 188);
     await waitFor(`!${blankOn} && ${pageExpr} === ${JSON.stringify(start)}`, '再按逗号关掉白屏');
 
-    if (search && await evaluate(`document.querySelector(${JSON.stringify(search)}).value`) !== 'zzz.') {
+    if (search && (await evaluate(`document.querySelector(${JSON.stringify(search)}).value`)) !== 'zzz.') {
       throw new Error('放映中的句号改写了查询');
     }
 
@@ -164,7 +165,7 @@ export async function runBlankPeriodContract({ evaluate, request, click, waitFor
     await click(gridButton);
     await waitFor(gridOn, '放映打开网格');
     await press(request, '.', 190);
-    if (await evaluate(blankOn) || await evaluate(pageExpr) !== start || !await evaluate(gridOn)) {
+    if ((await evaluate(blankOn)) || (await evaluate(pageExpr)) !== start || !(await evaluate(gridOn))) {
       throw new Error('网格开着时句号黑了屏、翻了页或关掉了网格');
     }
     const escape = { key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 };
@@ -199,7 +200,7 @@ export async function runBlankPeriodContract({ evaluate, request, click, waitFor
   // 刚退出放映后，headless 的 Input.dispatchKeyEvent 再送句号会让主线程不再响应。
   // 监听器仍在 document 上，页面内派发走的是同一条「浏览态不黑屏」。
   await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: '.', bubbles: true, cancelable: true }))`);
-  if (await evaluate(blankOn) || await evaluate(presenting)) throw new Error('退出后句号仍黑屏或留在放映');
+  if ((await evaluate(blankOn)) || (await evaluate(presenting))) throw new Error('退出后句号仍黑屏或留在放映');
 }
 
 export async function runStandaloneBlankPeriodContract({ evaluate, request, waitFor, click }) {
@@ -216,16 +217,19 @@ export async function runStandaloneBlankPeriodContract({ evaluate, request, wait
     "document.querySelector('#fileInfo')?.textContent.includes('showcase.pptx') && document.querySelector('#pageIndicator')?.textContent.startsWith('1 /') && !document.querySelector('#searchInput').disabled",
     '句号契约 showcase',
   );
-  await runBlankPeriodContract({ evaluate, request, waitFor, click }, {
-    trigger: '#btnPresent',
-    stage: '#stage',
-    pager: '#pageIndicator',
-    prevButton: '#btnPrev',
-    gridButton: '#pvGrid',
-    blankButton: '#pvBlank',
-    presenting: "!document.querySelector('#presenter').hidden",
-    search: '#searchInput',
-    hint: '.hint',
-  });
+  await runBlankPeriodContract(
+    { evaluate, request, waitFor, click },
+    {
+      trigger: '#btnPresent',
+      stage: '#stage',
+      pager: '#pageIndicator',
+      prevButton: '#btnPrev',
+      gridButton: '#pvGrid',
+      blankButton: '#pvBlank',
+      presenting: "!document.querySelector('#presenter').hidden",
+      search: '#searchInput',
+      hint: '.hint',
+    },
+  );
   console.log('  放映句号黑屏通过');
 }

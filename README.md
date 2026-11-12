@@ -111,8 +111,6 @@ session.dispose();
 
 模板、设计画布、选择窗格、快捷键与剪贴板、低层 `EditDoc`、预设调节柄与保存链路见[编辑器接入](docs/api/editor.md)。
 
-0.7 的模板旅程（`npm run test:v07`）覆盖“模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开”，细节见[编辑器接入](docs/api/editor.md)。
-
 ### 按需入口
 
 | 能力 | 文档 |
@@ -128,15 +126,15 @@ session.dispose();
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM | fflate | 137.84KB |
-| [`@web-ppt/edit-core`](packages/edit-core) | 编辑文档、命令历史、投影与增量保存，无框架无 DOM | `core`；lint 使用 Culori / RBush | 185.70KB |
-| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、三层增量 DOM | `core` + `edit-core` + `viewer-core` | 59.27KB |
-| [`@web-ppt/collab`](packages/collab) | 可选字段级 LWW 协同与 BroadcastChannel provider | `edit-core` optional peer | 12.20KB |
-| [`@web-ppt/agent-mcp`](packages/agent-mcp) | 本机 stdio MCP server 与 Agent Skill | `core` + `edit-core` + MCP SDK | 3.10KB |
-| [`@web-ppt/react`](packages/react) | React 组件 + hook | `editor` + React optional peer | 1.12KB |
-| [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable | `editor` + Vue optional peer | 1.34KB |
-| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `core` | 14.09KB |
-| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（包里零字体字节） | `core` | 4.39KB |
+| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM | fflate | 135.69KB |
+| [`@web-ppt/edit-core`](packages/edit-core) | 编辑文档、命令历史、投影与增量保存，无框架无 DOM | `core`；lint 使用 Culori / RBush | 172.93KB |
+| [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、三层增量 DOM | `core` + `edit-core` + `viewer-core` | 57.35KB |
+| [`@web-ppt/collab`](packages/collab) | 可选字段级 LWW 协同与 BroadcastChannel provider | `edit-core` optional peer | 11.35KB |
+| [`@web-ppt/agent-mcp`](packages/agent-mcp) | 本机 stdio MCP server 与 Agent Skill | `core` + `edit-core` + MCP SDK | 3.05KB |
+| [`@web-ppt/react`](packages/react) | React 组件 + hook | `editor` + React optional peer | 1.17KB |
+| [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable | `editor` + Vue optional peer | 1.31KB |
+| [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `core` | 11.18KB |
+| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（包里零字体字节） | `core` | 2.87KB |
 
 体积按默认入口及全部相对静态分块逐文件 gzip 求和，不含 peer 与动态入口。
 
@@ -165,7 +163,7 @@ session.dispose();
 |---|---|
 | `npm run dev` | 启动 viewer（`?file=/showcase.pptx` 指定文件） |
 | `npm run dev:site` | 启动官网（含浏览器内实时 Demo） |
-| `npm run check` | TypeScript 类型检查 |
+| `npm run check` | TypeScript 类型检查与 Biome 静态检查 |
 | `npm test` | 全部测试 |
 | `npm run build` | 构建九个发布包（core / edit-core / viewer-core / editor / react / vue / fonts / collab / agent-mcp） |
 | `npm run verify` | 许可证 / 版本 / 链接 / 文档数字与实测比对 |

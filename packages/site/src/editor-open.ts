@@ -9,8 +9,7 @@ function assertOpenActive(signal: AbortSignal): void {
   if (signal.aborted) throw signal.reason ?? new DOMException('打开已取消', 'AbortError');
 }
 
-export async function prepareEditorDocument(source: File | Blob | ArrayBuffer | Uint8Array,
-  recovery: SiteRecovery, signal: AbortSignal) {
+export async function prepareEditorDocument(source: File | Blob | ArrayBuffer | Uint8Array, recovery: SiteRecovery, signal: AbortSignal) {
   await languageReady;
   const bytes = source instanceof Blob ? await source.arrayBuffer() : source;
   assertOpenActive(signal);
@@ -25,13 +24,13 @@ export async function prepareEditorDocument(source: File | Blob | ArrayBuffer | 
     'EditContext' in window ? import('@web-ppt/editor/edit-context').catch(() => undefined) : undefined,
   ]);
   assertOpenActive(signal);
-  const session = await openEditor(source, {...recovery.openOptions(signal),embeddedFonts:'source'});
+  const session = await openEditor(source, { ...recovery.openOptions(signal), embeddedFonts: 'source' });
   try {
     assertOpenActive(signal);
     const doc = session.editor.doc;
     const elements = Object.values(doc.elements);
-    const has = (name: string) => elements.some(record => record.ovr.extensions?.[name] !== undefined);
-    if (Object.values(doc.slides).some(record => record.ovr.extensions?.comments !== undefined)) {
+    const has = (name: string) => elements.some((record) => record.ovr.extensions?.[name] !== undefined);
+    if (Object.values(doc.slides).some((record) => record.ovr.extensions?.comments !== undefined)) {
       const { registerCommentEditing } = await import('@web-ppt/edit-core/comments');
       registerCommentEditing();
     }

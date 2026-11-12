@@ -5,6 +5,6 @@ export default defineConfig({
     copyPublicDir: false,
     emptyOutDir: false,
     lib: { entry: 'src/design/index.ts', fileName: 'design', formats: ['es'] },
-    rollupOptions: { external: ['@web-ppt/core', '@web-ppt/edit-core', '@web-ppt/viewer-core'] },
+    rolldownOptions: { external: ['@web-ppt/core', '@web-ppt/edit-core', '@web-ppt/viewer-core'] },
   },
 });

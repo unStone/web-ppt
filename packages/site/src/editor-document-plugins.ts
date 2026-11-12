@@ -1,11 +1,11 @@
-import type { Context,Fiber } from 'cordis';
+import type { Context, Fiber } from 'cordis';
 import type { EditorSession, SelectionPane, SlideEditor, SlideEditorOptions } from '@web-ppt/editor';
 import type { PresetAdjustmentEditor } from '@web-ppt/editor/adjustments';
 import { bindPaneLabels } from './editor-pane-labels';
 import { bindViewLabels } from './editor-view-labels';
 import type { EditorToolsHost } from './editor-tools-plugin';
-import {editorFontsPlugin} from './editor-fonts-plugin';
-import type {DocumentFontService} from './editor-document-fonts';
+import { editorFontsPlugin } from './editor-fonts-plugin';
+import type { DocumentFontService } from './editor-document-fonts';
 
 export interface DocumentModules {
   adjustments: typeof import('@web-ppt/editor/adjustments');
@@ -46,15 +46,19 @@ declare module 'cordis' {
 
 const documentView = {
   name: 'editor-document-view',
-  inject: ['editorHost','editorFonts','editorFiles'],
+  inject: ['editorHost', 'editorFonts', 'editorFiles'],
   apply(ctx: Context, { session, viewOptions }: DocumentConfig) {
     const host = ctx.editorHost;
-    ctx.effect(function* () { yield ctx.editorFiles.bindDocument(session,ctx.editorFonts); });
+    ctx.effect(function* () {
+      yield ctx.editorFiles.bindDocument(session, ctx.editorFonts);
+    });
     const view = session.mount(host.canvas, viewOptions);
     const pane = session.mountSelectionPane(host.objects, {
-      mode: viewOptions.mode, ariaLabel: '当前页对象', onError: viewOptions.onError,
+      mode: viewOptions.mode,
+      ariaLabel: '当前页对象',
+      onError: viewOptions.onError,
     });
-    ctx.provide('editorDocument', { session, view, pane, adjustments: null, fonts:ctx.editorFonts });
+    ctx.provide('editorDocument', { session, view, pane, adjustments: null, fonts: ctx.editorFonts });
   },
 };
 
@@ -69,7 +73,9 @@ const documentTools = {
         onError: viewOptions.onError,
       });
       ctx.editorDocument.adjustments = adjustments;
-      yield () => { adjustments.destroy(); };
+      yield () => {
+        adjustments.destroy();
+      };
       yield bindPaneLabels(session, pane);
       yield bindViewLabels(session, view);
       if (modules.accessibility) yield modules.accessibility.createCanvasAccessibility(session, view).dispose;
@@ -84,18 +90,20 @@ const documentTools = {
 export const documentWorkspace = {
   name: 'editor-document-workspace',
   async apply(ctx: Context, config: DocumentConfig) {
-    let release = ctx.effect(() => () => { config.session.dispose(); });
+    let release = ctx.effect(() => () => {
+      config.session.dispose();
+    });
     const own = (fiber: Fiber) => {
       const previous = release;
       // Cordis disposer 也是 thenable；以同步集合收编原函数，才能避免异步解包后并行释放。
       release = ctx.effect(() => [previous, fiber.dispose]);
       return fiber;
     };
-    await own(ctx.plugin(editorFontsPlugin,{session:config.session,signal:config.signal}));
+    await own(ctx.plugin(editorFontsPlugin, { session: config.session, signal: config.signal }));
     if (ctx.fiber.uid === null || config.signal.aborted) return;
-    await own(ctx.plugin(documentView,config));
+    await own(ctx.plugin(documentView, config));
     if (ctx.fiber.uid === null || config.signal.aborted) return;
-    await own(ctx.plugin(documentTools,config));
+    await own(ctx.plugin(documentTools, config));
     if (ctx.fiber.uid === null || config.signal.aborted) return;
     if (typeof (document as Document & { modelContext?: { registerTool?: unknown } }).modelContext?.registerTool === 'function') {
       const { editorWebMcpPlugin } = await import('./editor-webmcp-plugin');

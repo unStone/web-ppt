@@ -2,16 +2,37 @@ export async function testDocumentExtensions({ core, edit, input, assert }) {
   const presentation = await core.parse(input, { edit: true, keepPackage: true, lazy: false });
   const makeDoc = () => edit.createDoc(presentation, { idPrefix: 'document-protocol-' });
   const namespace = 'protocol-unloaded';
-  const leaf = (value, tail = ['resource', 'value']) => ({ op: 'set', origin: 'peer',
-    path: ['document', 'extensions', namespace, ...tail], value });
-  const invalid = [null, false, 1, [], new Date(0), { [namespace]: null }, { [namespace]: [] },
-    { [namespace]: { resource: undefined } }, { [namespace]: { resource: NaN } },
-    { [namespace]: { resource: new Uint8Array(1) } }, { [namespace]: { constructor: 1 } },
-    { 'Invalid namespace': { resource: 1 } }, { constructor: { resource: 1 } }, { prototype: { resource: 1 } }];
-  const cyclic = {}; cyclic.self = cyclic;
+  const leaf = (value, tail = ['resource', 'value']) => ({
+    op: 'set',
+    origin: 'peer',
+    path: ['document', 'extensions', namespace, ...tail],
+    value,
+  });
+  const invalid = [
+    null,
+    false,
+    1,
+    [],
+    new Date(0),
+    { [namespace]: null },
+    { [namespace]: [] },
+    { [namespace]: { resource: undefined } },
+    { [namespace]: { resource: NaN } },
+    { [namespace]: { resource: new Uint8Array(1) } },
+    { [namespace]: { constructor: 1 } },
+    { 'Invalid namespace': { resource: 1 } },
+    { constructor: { resource: 1 } },
+    { prototype: { resource: 1 } },
+  ];
+  const cyclic = {};
+  cyclic.self = cyclic;
   invalid.push({ [namespace]: cyclic });
-  const accessor = Object.defineProperty({}, 'resource', { enumerable: true,
-    get: () => { throw new Error('不应执行访问器'); } });
+  const accessor = Object.defineProperty({}, 'resource', {
+    enumerable: true,
+    get: () => {
+      throw new Error('不应执行访问器');
+    },
+  });
   invalid.push({ [namespace]: accessor });
   invalid.push({ [namespace]: Object.defineProperty({}, 'hidden', { value: 1 }) });
   invalid.push({ [namespace]: { [Symbol('hidden')]: 1 } });
@@ -21,16 +42,22 @@ export async function testDocumentExtensions({ core, edit, input, assert }) {
   for (let i = 0; i < 17; i++) deep = { next: deep };
   invalid.push({ [namespace]: deep });
   for (const extensions of invalid) {
-    const doc = makeDoc(); doc.extensions = extensions;
+    const doc = makeDoc();
+    doc.extensions = extensions;
     assert.throws(() => edit.validateEditDoc(doc), /文档扩展/, '会话入口拒绝不能由叶补丁表示或完整序列化的文档扩展');
   }
 
-  const editor = new edit.Editor(makeDoc()), recovery = [], events = [];
-  editor.subscribeRecovery(frame => recovery.push(frame));
-  editor.subscribe(change => events.push(change));
+  const editor = new edit.Editor(makeDoc()),
+    recovery = [],
+    events = [];
+  editor.subscribeRecovery((frame) => recovery.push(frame));
+  editor.subscribe((change) => events.push(change));
   for (const key of ['constructor', 'prototype', '__proto__']) {
-    assert.throws(() => editor.applyExternalPatches([{ ...leaf(1), path: ['document', 'extensions', key, 'value'] }]),
-      /扩展/, '文档扩展命名空间也不能使用保留属性');
+    assert.throws(
+      () => editor.applyExternalPatches([{ ...leaf(1), path: ['document', 'extensions', key, 'value'] }]),
+      /扩展/,
+      '文档扩展命名空间也不能使用保留属性',
+    );
   }
   const valid = [null, false, 0, 1.5, '', 'text'];
   editor.applyExternalPatches(valid.map((value, index) => leaf(value, ['resource', `v${index}`])));
@@ -40,16 +67,22 @@ export async function testDocumentExtensions({ core, edit, input, assert }) {
   const restored = new edit.Editor(makeDoc(), { recoveryFrames: recovery });
   assert.deepEqual(restored.doc.extensions, editor.doc.extensions, '未加载协议的冷恢复保留所有标量');
   restored.dispose();
-  const before = JSON.stringify(editor.doc.extensions), eventCount = events.length, frameCount = recovery.length;
+  const before = JSON.stringify(editor.doc.extensions),
+    eventCount = events.length,
+    frameCount = recovery.length;
   assert.throws(() => editor.applyExternalPatches([leaf(88), leaf(Infinity)]), /扩展/);
   assert.equal(JSON.stringify(editor.doc.extensions), before, '后续无效补丁使整个文档批次保持原样');
   assert.equal(events.length, eventCount);
   assert.equal(recovery.length, frameCount);
 
   // 结构暂存与普通字段写入必须遵守同一叶协议，失败不安装页面或覆盖。
-  const source = new edit.Editor(makeDoc()), outgoing = [];
+  const source = new edit.Editor(makeDoc()),
+    outgoing = [];
   let identity;
-  source.subscribePatches(event => { outgoing.push(...event.patches); identity = event.identity; });
+  source.subscribePatches((event) => {
+    outgoing.push(...event.patches);
+    identity = event.identity;
+  });
   source.exec({ type: 'DuplicateSlide', id: source.doc.slideOrder[0] });
   const slides = [...editor.doc.slideOrder];
   assert.throws(() => editor.applyExternalPatches([...outgoing, leaf(99), leaf({ invalid: true })]), /扩展/);
@@ -64,7 +97,8 @@ export async function testDocumentExtensions({ core, edit, input, assert }) {
   withStructure.dispose();
   source.dispose();
 
-  const recoveredDoc = makeDoc(), base = JSON.stringify(recoveredDoc.extensions);
+  const recoveredDoc = makeDoc(),
+    base = JSON.stringify(recoveredDoc.extensions);
   const corrupted = structuredClone(recovery);
   corrupted[0].patches.push(leaf({ invalid: true }));
   assert.throws(() => new edit.Editor(recoveredDoc, { recoveryFrames: corrupted }), /扩展/);

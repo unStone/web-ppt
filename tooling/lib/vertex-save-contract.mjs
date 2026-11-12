@@ -1,7 +1,10 @@
 export async function runVertexSaveContract({ core, edit, load, check, saveArtifact }) {
   console.log('\n\x1b[36m▸ 顶点编辑保留型保存\x1b[0m');
   const presentation = await core.parse(load('sample-editor-vertex.pptx'), {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const doc = edit.createDoc(presentation, { idPrefix: 'vertex-save-' });
   const editor = new edit.Editor(doc);
@@ -15,15 +18,19 @@ export async function runVertexSaveContract({ core, edit, load, check, saveArtif
   const saved = await editor.saveDetailed();
   saveArtifact('vertex-editing.pptx', saved.bytes);
   const reopened = await core.parse(saved.bytes, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
   const reopenedShape = reopened.slides[0].elements.find((element) => element.name === 'vertex-freeform');
   const reopenedPreset = reopened.slides[0].elements.find((element) => element.name === 'vertex-load-1');
-  check('顶点保存产物重解析后逐点相等且预设转换已物化',
+  check(
+    '顶点保存产物重解析后逐点相等且预设转换已物化',
     JSON.stringify(reopenedShape?.editInfo?.customGeometry?.paths) === JSON.stringify(moved.paths)
-      && reopenedPreset?.editInfo?.customGeometry?.paths.length > 0);
-  check('顶点保存只形成两项显式历史且保持 60 元素页面',
-    editor.history.undoCount === 2 && reopened.slides[0].elements.length === 60);
+      && reopenedPreset?.editInfo?.customGeometry?.paths.length > 0,
+  );
+  check('顶点保存只形成两项显式历史且保持 60 元素页面', editor.history.undoCount === 2 && reopened.slides[0].elements.length === 60);
 
   const undoDoc = edit.createDoc(presentation, { idPrefix: 'vertex-seed-' });
   const undoEditor = new edit.Editor(undoDoc);
@@ -49,14 +56,16 @@ export async function runVertexSaveContract({ core, edit, load, check, saveArtif
   const undone = undoEditor.undo();
   const undoSaved = await undoEditor.saveDetailed();
   const undoReopened = await core.parse(undoSaved.bytes, {
-    edit: true, keepPackage: true, lazy: false, assets: 'defer',
+    edit: true,
+    keepPackage: true,
+    lazy: false,
+    assets: 'defer',
   });
-  const undoReopenedShape = undoReopened.slides[0].elements.find(
-    (element) => element.name === 'vertex-freeform',
+  const undoReopenedShape = undoReopened.slides[0].elements.find((element) => element.name === 'vertex-freeform');
+  check(
+    '固定种子顶点编辑、撤销、保存、重解析后路径逐点相等',
+    undone && JSON.stringify(undoReopenedShape?.editInfo?.customGeometry?.paths) === JSON.stringify(undoSource.paths),
   );
-  check('固定种子顶点编辑、撤销、保存、重解析后路径逐点相等',
-    undone && JSON.stringify(undoReopenedShape?.editInfo?.customGeometry?.paths)
-      === JSON.stringify(undoSource.paths));
   undoReopened.dispose?.();
   edit.disposeDoc(undoDoc);
   reopened.dispose?.();

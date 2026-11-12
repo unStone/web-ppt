@@ -15,8 +15,12 @@ export function assertPresetGeometry(value: unknown, label: string): asserts val
   }
   assertDataObject(spec.adj, Object.keys(spec.adj ?? {}), `${label}.adj`);
   for (const [name, adjustment] of Object.entries(spec.adj ?? {})) {
-    if (!/^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/.test(name)
-      || !Number.isSafeInteger(adjustment) || adjustment < -2147483648 || adjustment > 2147483647) {
+    if (
+      !/^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/.test(name)
+      || !Number.isSafeInteger(adjustment)
+      || adjustment < -2147483648
+      || adjustment > 2147483647
+    ) {
       throw new Error(`${label}.adj.${name} 不是合法的 DrawingML 调节值`);
     }
   }
@@ -27,9 +31,7 @@ export function sourcePresetGeometry(doc: EditDoc, id: ElementId): GeomSpec | nu
   if (!record || record.src.kind !== 'shape') throw new Error(`元素不支持预设几何：${id}`);
   if (record.meta.customGeometry) return null;
   const canvas = canvasTargetOfElement(doc, id);
-  const geom = canvas.kind === 'slide'
-    ? rebasedElementBase(doc, canvas.id, record).geom
-    : record.meta.geom;
+  const geom = canvas.kind === 'slide' ? rebasedElementBase(doc, canvas.id, record).geom : record.meta.geom;
   return structuredClone(geom ?? null);
 }
 
@@ -41,10 +43,7 @@ export function effectivePresetGeometry(doc: EditDoc, id: ElementId): GeomSpec |
   return sourcePresetGeometry(doc, id);
 }
 
-export function queryElementPresetGeometry(
-  doc: EditDoc,
-  ids: readonly ElementId[],
-): ElementPresetGeometryState {
+export function queryElementPresetGeometry(doc: EditDoc, ids: readonly ElementId[]): ElementPresetGeometryState {
   if (!ids.length) throw new Error('预设几何查询至少需要一个元素');
   const values = ids.map((id) => effectivePresetGeometry(doc, id));
   const sources = ids.map((id) => sourcePresetGeometry(doc, id));

@@ -25,7 +25,7 @@ export async function runStandaloneSwipeNavContract({ evaluate, request, waitFor
     '独立查看器打开失败',
   );
   await evaluate(dispatchSwipeScript('#stage', -80, 0));
-  if (await evaluate("document.querySelector('#pageIndicator').textContent") !== '- / -') {
+  if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== '- / -') {
     throw new Error('打开失败后滑动制造了假页码');
   }
 
@@ -43,32 +43,38 @@ export async function runStandaloneSwipeNavContract({ evaluate, request, waitFor
   const stay = await evaluate("document.querySelector('#pageIndicator').textContent");
   await evaluate(dispatchSwipeScript('#stage', 0, 90));
   await evaluate(dispatchSwipeScript('#stage', -20, 0));
-  if (await evaluate("document.querySelector('#pageIndicator').textContent") !== stay) {
+  if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== stay) {
     throw new Error('竖滑或短滑被当成翻页');
   }
 
   await click('#btnNotes');
   await waitFor("!document.querySelector('#notesPanel').hidden", '打开备注');
   await evaluate(dispatchSwipeScript('#notesBody', -80, 0));
-  if (await evaluate("document.querySelector('#pageIndicator').textContent") !== stay) {
+  if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== stay) {
     throw new Error('备注上滑被当成翻页');
   }
   await click('#btnNotes');
   await waitFor("document.querySelector('#notesPanel').hidden", '关掉备注');
 
   await evaluate(dispatchSwipeScript('#thumbs', -80, 0));
-  if (await evaluate("document.querySelector('#pageIndicator').textContent") !== stay) {
+  if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== stay) {
     throw new Error('缩略图上滑被当成翻页');
   }
 
   await click('#btnZoomIn');
-  await waitFor("document.querySelector('#zoomLabel').textContent !== '适应' && !document.querySelector('#stage').classList.contains('swipe-x')", '放大后不允许滑翻页');
+  await waitFor(
+    "document.querySelector('#zoomLabel').textContent !== '适应' && !document.querySelector('#stage').classList.contains('swipe-x')",
+    '放大后不允许滑翻页',
+  );
   await evaluate(dispatchSwipeScript('#stage', -80, 0));
-  if (await evaluate("document.querySelector('#pageIndicator').textContent") !== stay) {
+  if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== stay) {
     throw new Error('放大后左右滑被当成翻页');
   }
   await click('#btnFit');
-  await waitFor("document.querySelector('#zoomLabel').textContent === '适应' && document.querySelector('#stage').classList.contains('swipe-x')", '回到适应');
+  await waitFor(
+    "document.querySelector('#zoomLabel').textContent === '适应' && document.querySelector('#stage').classList.contains('swipe-x')",
+    '回到适应',
+  );
 
   await evaluate(`(() => {
     globalThis.__nativeRequestFullscreenSwipe = document.documentElement.requestFullscreen.bind(document.documentElement);
@@ -80,7 +86,7 @@ export async function runStandaloneSwipeNavContract({ evaluate, request, waitFor
     await evaluate(dispatchSwipeScript('#stage', -80, 0));
     const onlySwipe = await evaluate("document.querySelector('#pageIndicator').textContent");
     await evaluate(dispatchSwipeScript('#pvNotes', -80, 0));
-    if (await evaluate("document.querySelector('#pageIndicator').textContent") !== onlySwipe) {
+    if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== onlySwipe) {
       throw new Error('演讲者备注上滑被当成翻页');
     }
     const escape = { key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 };
@@ -94,7 +100,7 @@ export async function runStandaloneSwipeNavContract({ evaluate, request, waitFor
     await click('#btnPresent');
     await waitFor("!document.querySelector('#presenter').hidden", '滑动连跳对照再进演示');
     await evaluate(dispatchSwipeScript('#stage', -80, 0, true));
-    if (await evaluate("document.querySelector('#pageIndicator').textContent") !== onlySwipe) {
+    if ((await evaluate("document.querySelector('#pageIndicator').textContent")) !== onlySwipe) {
       throw new Error('放映滑动被随后的 click 连跳');
     }
     await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...escape });

@@ -45,11 +45,19 @@ export async function runTrustedTextContract({ evaluate, request }) {
       .flatMap((paragraph) => paragraph.runs.map((run) => run.text)).join('');
   })()`);
   await request('Input.dispatchKeyEvent', {
-    type: 'rawKeyDown', key: 'u', code: 'KeyU', windowsVirtualKeyCode: 85, nativeVirtualKeyCode: 85,
+    type: 'rawKeyDown',
+    key: 'u',
+    code: 'KeyU',
+    windowsVirtualKeyCode: 85,
+    nativeVirtualKeyCode: 85,
     modifiers: modifier,
   });
   await request('Input.dispatchKeyEvent', {
-    type: 'keyUp', key: 'u', code: 'KeyU', windowsVirtualKeyCode: 85, nativeVirtualKeyCode: 85,
+    type: 'keyUp',
+    key: 'u',
+    code: 'KeyU',
+    windowsVirtualKeyCode: 85,
+    nativeVirtualKeyCode: 85,
     modifiers: modifier,
   });
   await evaluate(`(() => {
@@ -73,16 +81,26 @@ export async function runTrustedTextContract({ evaluate, request }) {
     editable.focus({ preventScroll: true });
   })()`);
   await request('Input.dispatchKeyEvent', {
-    type: 'rawKeyDown', key: 'b', code: 'KeyB', windowsVirtualKeyCode: 66, nativeVirtualKeyCode: 66,
+    type: 'rawKeyDown',
+    key: 'b',
+    code: 'KeyB',
+    windowsVirtualKeyCode: 66,
+    nativeVirtualKeyCode: 66,
     modifiers: modifier,
   });
   await request('Input.dispatchKeyEvent', {
-    type: 'keyUp', key: 'b', code: 'KeyB', windowsVirtualKeyCode: 66, nativeVirtualKeyCode: 66,
+    type: 'keyUp',
+    key: 'b',
+    code: 'KeyB',
+    windowsVirtualKeyCode: 66,
+    nativeVirtualKeyCode: 66,
     modifiers: modifier,
   });
   for (let index = 0; index < 80; index++) await request('Input.insertText', { text: '真' });
   await request('Input.imeSetComposition', {
-    text: '中', selectionStart: 1, selectionEnd: 1,
+    text: '中',
+    selectionStart: 1,
+    selectionEnd: 1,
   });
   const stable = await evaluate(`(() => {
     const state = globalThis.editorContract.textResult;
@@ -91,7 +109,9 @@ export async function runTrustedTextContract({ evaluate, request }) {
     return !!current && state.session.editor.history.undoCount > 0;
   })()`);
   await request('Input.imeSetComposition', {
-    text: '中文', selectionStart: 2, selectionEnd: 2,
+    text: '中文',
+    selectionStart: 2,
+    selectionEnd: 2,
   });
   await evaluate(`(() => {
     const state = globalThis.editorContract.textResult;
@@ -141,9 +161,17 @@ export async function runTrustedTextContract({ evaluate, request }) {
     state.view.destroy(); state.session.dispose(); state.mount.remove();
     return result;
   })()`);
-  const passed = stable && clearPending && result.stable && result.inserted
-    && result.trustedBeforeInput && result.trustedComposition && result.formatted
-    && result.clearedPendingFormat && result.selectedFormatted && result.trustedShortcut;
+  const passed =
+    stable
+    && clearPending
+    && result.stable
+    && result.inserted
+    && result.trustedBeforeInput
+    && result.trustedComposition
+    && result.formatted
+    && result.clearedPendingFormat
+    && result.selectedFormatted
+    && result.trustedShortcut;
   if (!passed) {
     throw new Error(`真实文字/IME 输入失败：${JSON.stringify({ stable, ...result })}`);
   }

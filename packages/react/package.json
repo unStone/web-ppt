@@ -20,6 +20,9 @@
     "directory": "packages/react"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "main": "./dist/react.js",
   "module": "./dist/react.js",
@@ -59,7 +62,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/editor": "^0.9.0-beta.1",
+    "@web-ppt/editor": "0.9.0-beta.1",
     "react": ">=18.2.0 <20"
   },
   "peerDependenciesMeta": {

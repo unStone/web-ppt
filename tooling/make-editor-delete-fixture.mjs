@@ -7,7 +7,12 @@ import { deck, makePng, makeZip, px, slideXml, solid, sp } from './lib/ooxml.mjs
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const shape = sp({
-  x: 70, y: 70, w: 170, h: 90, fill: solid('accent1'), name: 'delete-shape',
+  x: 70,
+  y: 70,
+  w: 170,
+  h: 90,
+  fill: solid('accent1'),
+  name: 'delete-shape',
   text: '<a:p><a:r><a:t>ordinary</a:t></a:r></a:p>',
 });
 const group = `<p:grpSp>
@@ -32,25 +37,32 @@ const placeholder = (id, name, y, text) => `<p:sp>
 <p:spPr><a:xfrm><a:off x="${px(80)}" y="${px(y)}"/><a:ext cx="${px(440)}" cy="${px(100)}"/></a:xfrm>
 <a:prstGeom prst="roundRect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>
 <p:txBody><a:bodyPr/><a:lstStyle/>${text}</p:txBody></p:sp>`;
-const filled = placeholder(404, 'delete-placeholder-filled', 280,
-  '<a:p><a:r><a:rPr b="1"/><a:t>保留格式后清空</a:t></a:r></a:p>');
-const empty = placeholder(405, 'delete-placeholder-empty', 420,
-  '<a:p><a:endParaRPr lang="zh-CN"/></a:p>');
+const filled = placeholder(404, 'delete-placeholder-filled', 280, '<a:p><a:r><a:rPr b="1"/><a:t>保留格式后清空</a:t></a:r></a:p>');
+const empty = placeholder(405, 'delete-placeholder-empty', 420, '<a:p><a:endParaRPr lang="zh-CN"/></a:p>');
 const peer = sp({ x: 590, y: 280, w: 200, h: 90, fill: solid('accent4'), name: 'delete-peer' });
 const second = sp({ x: 100, y: 100, w: 220, h: 100, fill: solid('accent5'), name: 'delete-second-page' });
 
-const files = unzipSync(deck({
-  name: 'Editor Delete', width: 1100, height: 620,
-  slides: [slideXml(shape + group + picture + frame + filled + empty + peer), slideXml(second)],
-}));
+const files = unzipSync(
+  deck({
+    name: 'Editor Delete',
+    width: 1100,
+    height: 620,
+    slides: [slideXml(shape + group + picture + frame + filled + empty + peer), slideXml(second)],
+  }),
+);
 const decoder = new TextDecoder();
 files['ppt/slides/_rels/slide1.xml.rels'] = new TextEncoder().encode(
-  decoder.decode(files['ppt/slides/_rels/slide1.xml.rels']).replace('</Relationships>',
-    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/></Relationships>'),
+  decoder
+    .decode(files['ppt/slides/_rels/slide1.xml.rels'])
+    .replace(
+      '</Relationships>',
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/></Relationships>',
+    ),
 );
 files['[Content_Types].xml'] = new TextEncoder().encode(
-  decoder.decode(files['[Content_Types].xml']).replace('<Default Extension="xml"',
-    '<Default Extension="png" ContentType="image/png"/>\n<Default Extension="xml"'),
+  decoder
+    .decode(files['[Content_Types].xml'])
+    .replace('<Default Extension="xml"', '<Default Extension="png" ContentType="image/png"/>\n<Default Extension="xml"'),
 );
 files['ppt/media/image1.png'] = makePng(20, 14, (x, y) => [x * 9, y * 13, 170]);
 const bytes = makeZip(Object.entries(files));

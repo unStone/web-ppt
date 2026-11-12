@@ -13,14 +13,21 @@ export interface SharedChartRuntime {
   readonly owns: (doc: EditDoc, id: ElementId) => boolean;
   readonly workbook?: (doc: EditDoc, id: ElementId) => boolean;
   readonly overrides?: (doc: EditDoc, id: ElementId) => unknown;
-  readonly source?: (doc: EditDoc, id: ElementId, deferred: boolean, part: string | undefined,
-    read: () => ChartDatasetState) => ChartDatasetState;
+  readonly source?: (
+    doc: EditDoc,
+    id: ElementId,
+    deferred: boolean,
+    part: string | undefined,
+    read: () => ChartDatasetState,
+  ) => ChartDatasetState;
   readonly identityScopes?: (doc: EditDoc, part: string, source: Uint8Array, id: ElementId) => ChartIdentityScopes | undefined;
 }
 
 let runtime: SharedChartRuntime | undefined;
 export const sharedChartRuntime = (): SharedChartRuntime | undefined => runtime;
-export const setSharedChartRuntime = (value: SharedChartRuntime): void => { runtime = value; };
+export const setSharedChartRuntime = (value: SharedChartRuntime): void => {
+  runtime = value;
+};
 
 export const chartDatasetOverrides = (doc: EditDoc, id: ElementId): unknown =>
   runtime?.overrides?.(doc, id) ?? doc.elements[id]?.ovr.extensions?.['chart-data'];
@@ -31,13 +38,18 @@ export function sharedDatasetState(doc: EditDoc, id: ElementId, state: ChartData
   if (runtime) return runtime.dataset(doc, id, state);
   if (state.binding.mode === 'readonly') return state;
   const { chartPart, workbookPart } = state.binding;
-  const linked = (part: string) => part !== chartPart && workbookPart && Object.values(chartRelationships(doc, part))
-    .some(relationship => !relationship.external && relationship.target === workbookPart);
-  if (Object.values(doc.elements).some(record => {
-    if (record.id === id) return false;
-    const part = chartPartForElement(doc, record.id);
-    return part === chartPart || !!(part && linked(part));
-  }) || workbookPart && nativeChartParts(doc).parts.some(linked)) {
+  const linked = (part: string) =>
+    part !== chartPart
+    && workbookPart
+    && Object.values(chartRelationships(doc, part)).some((relationship) => !relationship.external && relationship.target === workbookPart);
+  if (
+    Object.values(doc.elements).some((record) => {
+      if (record.id === id) return false;
+      const part = chartPartForElement(doc, record.id);
+      return part === chartPart || !!(part && linked(part));
+    })
+    || (workbookPart && nativeChartParts(doc).parts.some(linked))
+  ) {
     state.binding = { ...state.binding, mode: 'readonly', reason: SHARED_CHART_REASON };
   }
   return state;

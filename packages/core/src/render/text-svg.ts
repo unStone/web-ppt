@@ -14,15 +14,16 @@ import { escapeXml as esc, round as r } from './serialize';
  */
 
 const ANCHOR: Record<Paragraph['align'], string> = {
-  left: 'start', center: 'middle', right: 'end', justify: 'start',
+  left: 'start',
+  center: 'middle',
+  right: 'end',
+  justify: 'start',
 };
 
 /** RTL 段落：SVG 的 text-anchor 相对书写方向，翻转后才能保持与 HTML 一致的物理对齐 */
-const flipAnchor = (anchor: string): string =>
-  anchor === 'start' ? 'end' : anchor === 'end' ? 'start' : anchor;
+const flipAnchor = (anchor: string): string => (anchor === 'start' ? 'end' : anchor === 'end' ? 'start' : anchor);
 
-const applyCaps = (text: string, run: TextRun): string =>
-  run.caps === 'all' ? text.toUpperCase() : text;
+const applyCaps = (text: string, run: TextRun): string => (run.caps === 'all' ? text.toUpperCase() : text);
 
 interface Seg {
   text: string;
@@ -46,15 +47,11 @@ export function renderTextSvg(
 ): string {
   // 竖排：按横排排完再整体旋转 90°（交换宽高）
   if (t.vert === 'vert' || t.vert === 'wordArtVert') {
-    const inner = renderTextSvg(
-      { ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers, measureText,
-    );
+    const inner = renderTextSvg({ ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers, measureText);
     return `<g transform="translate(${r(w)} 0) rotate(90)">${inner}</g>`;
   }
   if (t.vert === 'vert270') {
-    const inner = renderTextSvg(
-      { ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers, measureText,
-    );
+    const inner = renderTextSvg({ ...t, vert: undefined }, h, w, addDef, marginsOverride, vAlignOverride, includeEditMarkers, measureText);
     return `<g transform="translate(0 ${r(h)}) rotate(-90)">${inner}</g>`;
   }
 
@@ -79,16 +76,23 @@ export function renderTextSvg(
     const para = t.paragraphs[line.paragraphIndex];
     const first = para.runs[0];
     const segs: Seg[] = line.segments.map((segment) => {
-      const run = segment.runIndex >= 0
-        ? para.runs[segment.runIndex]
-        : bulletTextRun({
-          ...first, text: `${para.bullet} `, size: first.size * (para.bulletSize ?? 1),
-          color: para.bulletColor ?? first.color,
-        });
+      const run =
+        segment.runIndex >= 0
+          ? para.runs[segment.runIndex]
+          : bulletTextRun({
+              ...first,
+              text: `${para.bullet} `,
+              size: first.size * (para.bulletSize ?? 1),
+              color: para.bulletColor ?? first.color,
+            });
       return {
-        text: segment.text, run, width: segment.naturalWidth,
-        paragraphIndex: line.paragraphIndex, runIndex: segment.runIndex,
-        from: segment.from, to: segment.to,
+        text: segment.text,
+        run,
+        width: segment.naturalWidth,
+        paragraphIndex: line.paragraphIndex,
+        runIndex: segment.runIndex,
+        from: segment.from,
+        to: segment.to,
       };
     });
     if (!segs.length) continue;
@@ -115,8 +119,8 @@ export function renderTextSvg(
       if (seg.run.highlight) {
         const size = fontSize(seg.run, scale);
         out.push(
-          `<rect x="${r(cursor)}" y="${r(line.baseline - size * 0.82)}" width="${r(seg.width)}" ` +
-          `height="${r(size * 1.12)}" fill="${esc(seg.run.highlight)}"/>`,
+          `<rect x="${r(cursor)}" y="${r(line.baseline - size * 0.82)}" width="${r(seg.width)}" `
+            + `height="${r(size * 1.12)}" fill="${esc(seg.run.highlight)}"/>`,
         );
       }
       cursor += seg.width - segSqueeze[i];
@@ -129,31 +133,26 @@ export function renderTextSvg(
       for (const [i, seg] of segs.entries()) {
         const math = seg.run.math?.length ? mathOf(seg.run, scale) : null;
         if (math) {
-          out.push(withHyperlink(
-            `<g transform="translate(${r(x)} ${r(line.baseline)})">${math.svg}</g>`, seg.run.link,
-          ));
+          out.push(withHyperlink(`<g transform="translate(${r(x)} ${r(line.baseline)})">${math.svg}</g>`, seg.run.link));
         } else {
           out.push(
-            `<text x="${r(x)}" y="${r(line.baseline)}" text-anchor="start"` +
-            (line.rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
-            ` xml:space="preserve">${spanSvg(
-              seg, scale, addDef, undefined, includeEditMarkers,
-            )}</text>`,
+            `<text x="${r(x)}" y="${r(line.baseline)}" text-anchor="start"`
+              + (line.rtl ? ' direction="rtl" unicode-bidi="embed"' : '')
+              + ` xml:space="preserve">${spanSvg(seg, scale, addDef, undefined, includeEditMarkers)}</text>`,
           );
         }
         x += seg.width - segSqueeze[i];
       }
     } else {
-      const tspans = plan.total > 0
-        ? planSpans(segs, segRanges, plan, scale, addDef, includeEditMarkers)
-        : segs.map((segment) => spanSvg(
-          segment, scale, addDef, undefined, includeEditMarkers,
-        )).join('');
+      const tspans =
+        plan.total > 0
+          ? planSpans(segs, segRanges, plan, scale, addDef, includeEditMarkers)
+          : segs.map((segment) => spanSvg(segment, scale, addDef, undefined, includeEditMarkers)).join('');
       out.push(
-        `<text x="${r(line.anchorX)}" y="${r(line.baseline)}" ` +
-        `text-anchor="${line.rtl ? flipAnchor(textAnchor) : textAnchor}"` +
-        (line.rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
-        ` xml:space="preserve">${tspans}</text>`,
+        `<text x="${r(line.anchorX)}" y="${r(line.baseline)}" `
+          + `text-anchor="${line.rtl ? flipAnchor(textAnchor) : textAnchor}"`
+          + (line.rtl ? ' direction="rtl" unicode-bidi="embed"' : '')
+          + ` xml:space="preserve">${tspans}</text>`,
       );
     }
   }
@@ -180,9 +179,9 @@ function gradientFill(css: string, addDef: (m: string) => string): string | null
   const dx = Math.cos(rad) / 2;
   const dy = Math.sin(rad) / 2;
   const id = addDef(
-    `<linearGradient id="__ID__" x1="${r(0.5 - dx)}" y1="${r(0.5 - dy)}" x2="${r(0.5 + dx)}" y2="${r(0.5 + dy)}">` +
-    stops.map((sp) => `<stop offset="${r(sp.pos)}%" stop-color="${esc(sp.color)}"/>`).join('') +
-    '</linearGradient>',
+    `<linearGradient id="__ID__" x1="${r(0.5 - dx)}" y1="${r(0.5 - dy)}" x2="${r(0.5 + dx)}" y2="${r(0.5 + dy)}">`
+      + stops.map((sp) => `<stop offset="${r(sp.pos)}%" stop-color="${esc(sp.color)}"/>`).join('')
+      + '</linearGradient>',
   );
   return `url(#${id})`;
 }
@@ -205,32 +204,24 @@ function planSpans(
   addDef: (m: string) => string,
   includeEditMarkers = false,
 ): string {
-  return segs.map((seg, i) => {
-    const [from, to] = segRanges[i];
-    // plan 的位移是 em，tspan dx 的无单位值是用户坐标（px），要按本段字号换算
-    const em = fontSize(seg.run, scale);
-    const dx = plan.dx.slice(from, to).map((v) => v * em);
-    const moved = dx.some((v) => v !== 0);
-    return spanSvg(seg, scale, addDef, moved ? dx : undefined, includeEditMarkers);
-  }).join('');
+  return segs
+    .map((seg, i) => {
+      const [from, to] = segRanges[i];
+      // plan 的位移是 em，tspan dx 的无单位值是用户坐标（px），要按本段字号换算
+      const em = fontSize(seg.run, scale);
+      const dx = plan.dx.slice(from, to).map((v) => v * em);
+      const moved = dx.some((v) => v !== 0);
+      return spanSvg(seg, scale, addDef, moved ? dx : undefined, includeEditMarkers);
+    })
+    .join('');
 }
 
 /** `dx` 非空时按逐字符位移输出（标点挤压用，见 squeezedSpans） */
-function spanSvg(
-  seg: Seg,
-  scale: number,
-  addDef: (m: string) => string,
-  dx?: number[],
-  includeEditMarkers = false,
-): string {
+function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string, dx?: number[], includeEditMarkers = false): string {
   const run = seg.run;
   const size = fontSize(run, scale);
   const grad = run.gradient ? gradientFill(run.gradient, addDef) : null;
-  const attrs: string[] = [
-    `font-size="${r(size)}"`,
-    `font-family="${esc(fontFamily(run))}"`,
-    `fill="${esc(grad ?? run.color)}"`,
-  ];
+  const attrs: string[] = [`font-size="${r(size)}"`, `font-family="${esc(fontFamily(run))}"`, `fill="${esc(grad ?? run.color)}"`];
   if (run.b) attrs.push('font-weight="700"');
   if (run.i) attrs.push('font-style="italic"');
   if (run.spacing) attrs.push(`letter-spacing="${r(run.spacing)}"`);
@@ -238,13 +229,13 @@ function spanSvg(
   if (run.baseline) attrs.push(`dy="${r(run.baseline > 0 ? -size * 0.45 : size * 0.25)}"`);
   if (run.outline) attrs.push(`stroke="${esc(run.outline.color)}" stroke-width="${r(run.outline.width)}" paint-order="stroke"`);
   if (dx?.some((v) => v !== 0)) attrs.push(`dx="${dx.map((v) => r(v)).join(' ')}"`);
-  const marker = includeEditMarkers && seg.runIndex !== undefined && seg.runIndex >= 0
-    ? ` data-r="${seg.paragraphIndex}.${seg.runIndex}" data-from="${seg.from}" data-to="${seg.to}"`
-    : '';
-  const span = `<tspan${marker} ${attrs.join(' ')}>${decorateText(esc(seg.text), run, 'tspan',grad ?? run.color)}</tspan>`;
+  const marker =
+    includeEditMarkers && seg.runIndex !== undefined && seg.runIndex >= 0
+      ? ` data-r="${seg.paragraphIndex}.${seg.runIndex}" data-from="${seg.from}" data-to="${seg.to}"`
+      : '';
+  const span = `<tspan${marker} ${attrs.join(' ')}>${decorateText(esc(seg.text), run, 'tspan', grad ?? run.color)}</tspan>`;
   // 上下标用 dy 偏移后需要复位，避免影响后续 tspan
-  const restored = run.baseline
-    ? `${span}<tspan dy="${r(run.baseline > 0 ? size * 0.45 : -size * 0.25)}"></tspan>` : span;
+  const restored = run.baseline ? `${span}<tspan dy="${r(run.baseline > 0 ? size * 0.45 : -size * 0.25)}"></tspan>` : span;
   return withHyperlink(restored, run.link);
 }
 
@@ -288,8 +279,8 @@ function curveGeom(f: (u: number) => number, w: number, n = 28): WarpGeom {
     const p2 = pts[i + 1];
     const p3 = pts[Math.min(n, i + 2)];
     d +=
-      `C${r(p1[0] + (p2[0] - p0[0]) / 6)} ${r(p1[1] + (p2[1] - p0[1]) / 6)} ` +
-      `${r(p2[0] - (p3[0] - p1[0]) / 6)} ${r(p2[1] - (p3[1] - p1[1]) / 6)} ${r(p2[0])} ${r(p2[1])}`;
+      `C${r(p1[0] + (p2[0] - p0[0]) / 6)} ${r(p1[1] + (p2[1] - p0[1]) / 6)} `
+      + `${r(p2[0] - (p3[0] - p1[0]) / 6)} ${r(p2[1] - (p3[1] - p1[1]) / 6)} ${r(p2[0])} ${r(p2[1])}`;
     len += Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
   }
   return { d, len };
@@ -297,10 +288,14 @@ function curveGeom(f: (u: number) => number, w: number, n = 28): WarpGeom {
 
 /** 弯曲基线的振幅系数（相对框高），正数为中间隆起 */
 const CURVE_AMP: Record<string, number> = {
-  textCurveUp: 0.30, textCurveDown: -0.30,
-  textCanUp: 0.16, textCanDown: -0.16,
-  textDeflate: 0.22, textInflate: -0.22,
-  textTriangle: 0.20, textChevron: 0.34,
+  textCurveUp: 0.3,
+  textCurveDown: -0.3,
+  textCanUp: 0.16,
+  textCanDown: -0.16,
+  textDeflate: 0.22,
+  textInflate: -0.22,
+  textTriangle: 0.2,
+  textChevron: 0.34,
 };
 
 const SHARP = new Set(['textTriangle', 'textChevron']);
@@ -311,7 +306,11 @@ const SHARP = new Set(['textTriangle', 'textChevron']);
  * - 曲线族用 y = f(x)，pad 为该段最大字号，用于给字形留出高度
  */
 function warpGeom(
-  preset: string, adj: Record<string, number>, w: number, h: number, pad: number,
+  preset: string,
+  adj: Record<string, number>,
+  w: number,
+  h: number,
+  pad: number,
   anchor: 'top' | 'middle' | 'bottom',
 ): WarpGeom | null {
   const cx = w / 2;
@@ -323,8 +322,7 @@ function warpGeom(
     const ry = Math.max(1, cy - pad * 0.3);
     // 从底部起顺时针绕一圈，路径中点落在正上方，便于居中
     return {
-      d: `M${r(cx)} ${r(cy + ry)}A${r(rx)} ${r(ry)} 0 1 1 ${r(cx)} ${r(cy - ry)}` +
-        `A${r(rx)} ${r(ry)} 0 1 1 ${r(cx)} ${r(cy + ry)}`,
+      d: `M${r(cx)} ${r(cy + ry)}A${r(rx)} ${r(ry)} 0 1 1 ${r(cx)} ${r(cy - ry)}` + `A${r(rx)} ${r(ry)} 0 1 1 ${r(cx)} ${r(cy + ry)}`,
       len: Math.PI * (rx + ry),
       fill: true,
     };
@@ -352,9 +350,7 @@ function warpGeom(
   const a = CURVE_AMP[preset];
   if (a === undefined) return null;
   const amp = a * h;
-  const shape = SHARP.has(preset)
-    ? (u: number): number => 1 - Math.abs(2 * u - 1)
-    : (u: number): number => Math.sin(Math.PI * u);
+  const shape = SHARP.has(preset) ? (u: number): number => 1 - Math.abs(2 * u - 1) : (u: number): number => Math.sin(Math.PI * u);
   return curveGeom((u) => mid + amp / 2 - amp * shape(u), w);
 }
 
@@ -398,9 +394,7 @@ function renderWarp(
     // 变形语义是把文本铺满包络，短文字按字间距拉开（上限 2.2 倍，避免拉散）
     const drawn = total * fit;
     const chars = segs.reduce((n, s) => n + s.text.length, 0);
-    const spread = geom.fill && chars > 1 && drawn > 0
-      ? (drawn * clamp(geom.len / drawn, 1, 2.2) - drawn) / chars
-      : 0;
+    const spread = geom.fill && chars > 1 && drawn > 0 ? (drawn * clamp(geom.len / drawn, 1, 2.2) - drawn) / chars : 0;
 
     const id = addDef(`<path id="__ID__" fill="none" d="${geom.d}"/>`);
     const base = ANCHOR[p.align];
@@ -408,13 +402,13 @@ function renderWarp(
     const offset = base === 'end' ? '100%' : base === 'middle' ? '50%' : '0%';
     const spans = segs.map((s) => spanSvg(s, scale * fit, addDef)).join('');
     out.push(
-      `<g transform="translate(${r(pl)} ${r(pt + segH * i)})">` +
-      `<text text-anchor="${rtl ? flipAnchor(base) : base}"` +
-      (spread > 0.05 ? ` letter-spacing="${r(spread)}"` : '') +
-      (rtl ? ' direction="rtl" unicode-bidi="embed"' : '') +
-      ' xml:space="preserve">' +
-      `<textPath href="#${id}" xlink:href="#${id}" startOffset="${offset}">${spans}</textPath>` +
-      '</text></g>',
+      `<g transform="translate(${r(pl)} ${r(pt + segH * i)})">`
+        + `<text text-anchor="${rtl ? flipAnchor(base) : base}"`
+        + (spread > 0.05 ? ` letter-spacing="${r(spread)}"` : '')
+        + (rtl ? ' direction="rtl" unicode-bidi="embed"' : '')
+        + ' xml:space="preserve">'
+        + `<textPath href="#${id}" xlink:href="#${id}" startOffset="${offset}">${spans}</textPath>`
+        + '</text></g>',
     );
   });
   return out.length ? out.join('') : null;

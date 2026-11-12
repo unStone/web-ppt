@@ -1,36 +1,51 @@
 import { querySlideAnimations, querySlideTransition } from '@web-ppt/edit-core';
 import type {
-  AddSectionCommand, DistributeElementsCommand, EditAnimationStep, EditorChange, ElementAltTextState,
-  ElementId, LinkTarget, SectionId, SectionRecord, SetAltTextCommand, SetSlideSizeCommand,
-  SlideAnimationState, SlideId, SlideSizeState, SlideTransitionInput, SlideTransitionState, TextSearchMatch,
+  AddSectionCommand,
+  DistributeElementsCommand,
+  EditAnimationStep,
+  EditorChange,
+  ElementAltTextState,
+  ElementId,
+  LinkTarget,
+  SectionId,
+  SectionRecord,
+  SetAltTextCommand,
+  SetSlideSizeCommand,
+  SlideAnimationState,
+  SlideId,
+  SlideSizeState,
+  SlideTransitionInput,
+  SlideTransitionState,
+  TextSearchMatch,
 } from '@web-ppt/edit-core';
 import { openEditor } from './session';
 import type { EditorSession, OpenEditorOptions } from './session';
 import { RecoveryOpenCancelledError } from './recovery-store';
 import { bindAdapterRecovery } from './adapter-recovery';
-import type {
-  EditorContextRequest, LinkFollowContext, SlideEditor, TouchNavigationChange,
-} from './slide-editor-types';
+import type { EditorContextRequest, LinkFollowContext, SlideEditor, TouchNavigationChange } from './slide-editor-types';
 import type { WebPptSource } from './source-fingerprint';
 import { openOptionsKey, sameMargins, validateViewOptions } from './adapter-options';
 import type { SelectionPane } from './selection-pane-types';
 import { AdapterSelectionPaneBinding } from './adapter-selection-pane';
 import type {
-  WebPptAdapter, WebPptAdapterBinding, WebPptAdapterCallbacks, WebPptAdapterSnapshot,
-  WebPptAdapterSubscriber, WebPptDocument, WebPptFormatPainterState, WebPptTextSearchState,
-  WebPptViewOptions, WebPptViewState,
+  WebPptAdapter,
+  WebPptAdapterBinding,
+  WebPptAdapterCallbacks,
+  WebPptAdapterSnapshot,
+  WebPptAdapterSubscriber,
+  WebPptDocument,
+  WebPptFormatPainterState,
+  WebPptTextSearchState,
+  WebPptViewOptions,
+  WebPptViewState,
 } from './framework-adapter-types';
 import type { FormatPainterStartOptions } from './format-painter-types';
 import { AdapterFormatPainterBinding } from './adapter-format-painter';
 import { AdapterTextSearchBinding } from './adapter-text-search';
 import type { TextSearchOpenOptions, TextSearchOptions } from './text-search-types';
-import {
-  DEFAULT_WEB_PPT_VIEW as DEFAULT_VIEW, WEB_PPT_IDLE_SNAPSHOT,
-} from './framework-adapter-state';
+import { DEFAULT_WEB_PPT_VIEW as DEFAULT_VIEW, WEB_PPT_IDLE_SNAPSHOT } from './framework-adapter-state';
 import { followAdapterLink } from './adapter-link';
-import {
-  commonObjectSlideCommands, CommonObjectSlideCommands,
-} from './common-object-slide-commands';
+import { commonObjectSlideCommands, CommonObjectSlideCommands } from './common-object-slide-commands';
 
 class BrowserWebPptAdapter implements WebPptAdapter {
   private callbacks: WebPptAdapterCallbacks;
@@ -60,16 +75,24 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     });
   }
 
-  get snapshot(): WebPptAdapterSnapshot { return this.currentSnapshot; }
-  get disposed(): boolean { return this.isDisposed; }
+  get snapshot(): WebPptAdapterSnapshot {
+    return this.currentSnapshot;
+  }
+  get disposed(): boolean {
+    return this.isDisposed;
+  }
 
   subscribe(subscriber: WebPptAdapterSubscriber): () => void {
     if (typeof subscriber !== 'function') throw new Error('adapter 订阅者必须是函数');
     this.subscribers.add(subscriber);
-    return () => { this.subscribers.delete(subscriber); };
+    return () => {
+      this.subscribers.delete(subscriber);
+    };
   }
 
-  setCallbacks(callbacks: WebPptAdapterCallbacks): void { this.callbacks = callbacks; }
+  setCallbacks(callbacks: WebPptAdapterCallbacks): void {
+    this.callbacks = callbacks;
+  }
 
   async applyBinding(binding: WebPptAdapterBinding): Promise<EditorSession | null> {
     this.setCallbacks({ ...this.callbacks, ...binding });
@@ -96,8 +119,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
         ? await this.setDocument(null)
         : await this.setDocument({ source: binding.source, openOptions: binding.openOptions });
     } catch (error) {
-      if (!this.isDisposed
-        && (this.currentSnapshot.status !== 'error' || this.currentSnapshot.error !== error)) this.fail(error);
+      if (!this.isDisposed && (this.currentSnapshot.status !== 'error' || this.currentSnapshot.error !== error)) this.fail(error);
       throw error;
     }
   }
@@ -115,10 +137,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
 
   attachSelectionPane(container: HTMLElement | null): void {
     this.assertActive();
-    this.paneBinding.attach(
-      container, this.session, this.desired, this.view?.slideId ?? null,
-      (error) => this.emitError(error),
-    );
+    this.paneBinding.attach(container, this.session, this.desired, this.view?.slideId ?? null, (error) => this.emitError(error));
     this.publishReadyState(false);
   }
 
@@ -129,14 +148,12 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     const desired = { ...previous, ...options };
     const margins = desired.snapMargins;
     const meta = this.session?.editor.doc.meta;
-    if (margins && meta && (margins.left + margins.right >= meta.width
-      || margins.top + margins.bottom >= meta.height)) {
+    if (margins && meta && (margins.left + margins.right >= meta.width || margins.top + margins.bottom >= meta.height)) {
       throw new Error('吸附页边距必须位于页面内');
     }
     this.desired = desired;
     if (options.mode === 'view' && previous.mode !== 'view') this.formatPainterBinding.cancel();
-    const rebuild = previous.textMode !== this.desired.textMode
-      || !sameMargins(previous.snapMargins, this.desired.snapMargins);
+    const rebuild = previous.textMode !== this.desired.textMode || !sameMargins(previous.snapMargins, this.desired.snapMargins);
     if (rebuild && this.session && this.container) {
       const next = this.mount(this.session, this.container);
       const old = this.view;
@@ -144,8 +161,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       old?.destroy();
     } else if (this.view) {
       if (options.mode !== undefined) this.view.setMode(options.mode);
-      if (options.slideId !== undefined
-        && this.session?.editor.doc.slides[options.slideId]) {
+      if (options.slideId !== undefined && this.session?.editor.doc.slides[options.slideId]) {
         this.view.setSlide(options.slideId);
       }
       if (options.zoom !== undefined) this.view.setZoom(options.zoom);
@@ -165,9 +181,16 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       this.opening = null;
       this.releaseCurrent();
       this.updateSnapshot({
-        status: 'idle', progress: 0, error: null, session: null, view: null,
-        selectionPane: null, slideId: null, documentKind: null,
-        recovery: null, formatPainter: WEB_PPT_IDLE_SNAPSHOT.formatPainter,
+        status: 'idle',
+        progress: 0,
+        error: null,
+        session: null,
+        view: null,
+        selectionPane: null,
+        slideId: null,
+        documentKind: null,
+        recovery: null,
+        formatPainter: WEB_PPT_IDLE_SNAPSHOT.formatPainter,
         textSearch: WEB_PPT_IDLE_SNAPSHOT.textSearch,
       });
       return null;
@@ -190,7 +213,10 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.currentSource = document.source;
     this.currentOpenKey = key;
     this.updateSnapshot({
-      status: 'opening', progress: 0, error: null, recovery: null,
+      status: 'opening',
+      progress: 0,
+      error: null,
+      recovery: null,
       formatPainter: { ...this.formatPainterState(false), readonly: true },
       textSearch: { ...this.textSearchState(false), canReplace: false },
     });
@@ -211,16 +237,20 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     return this.session!.editor.save();
   }
 
-  undo(): EditorChange | null { this.assertReady(); return this.session!.editor.undo(); }
-  redo(): EditorChange | null { this.assertReady(); return this.session!.editor.redo(); }
+  undo(): EditorChange | null {
+    this.assertReady();
+    return this.session!.editor.undo();
+  }
+  redo(): EditorChange | null {
+    this.assertReady();
+    return this.session!.editor.redo();
+  }
 
   startFormatPainter(options: FormatPainterStartOptions = {}): boolean {
     this.assertReady();
     if (this.formatPainterState().readonly) return false;
     try {
-      return this.view
-        ? this.view.startFormatPainter(options)
-        : this.formatPainterBinding.start(options);
+      return this.view ? this.view.startFormatPainter(options) : this.formatPainterBinding.start(options);
     } catch (error) {
       this.emitError(error);
       throw error;
@@ -232,19 +262,44 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.formatPainterBinding.cancel();
   }
 
-  openTextSearch(options: TextSearchOpenOptions = {}): void { this.assertReady(); this.textSearchBinding.open(options); }
-  closeTextSearch(): void { this.assertReady(); this.textSearchBinding.close(); }
-  setTextSearchQuery(query: string): void { this.assertReady(); this.textSearchBinding.setQuery(query); }
-  setTextSearchReplacement(value: string): void { this.assertReady(); this.textSearchBinding.setReplacement(value); }
-  setTextSearchOptions(options: Partial<TextSearchOptions>): void { this.assertReady(); this.textSearchBinding.setOptions(options); }
-  nextTextSearch(): TextSearchMatch | null { this.assertReady(); return this.textSearchBinding.next(); }
-  previousTextSearch(): TextSearchMatch | null { this.assertReady(); return this.textSearchBinding.previousMatch(); }
-  replaceCurrentText(): boolean { this.assertReady(); return this.textSearchState().canReplace && this.textSearchBinding.replaceCurrent(); }
-  replaceAllText(): number { this.assertReady(); return this.textSearchState().canReplace ? this.textSearchBinding.replaceAll() : 0; }
+  openTextSearch(options: TextSearchOpenOptions = {}): void {
+    this.assertReady();
+    this.textSearchBinding.open(options);
+  }
+  closeTextSearch(): void {
+    this.assertReady();
+    this.textSearchBinding.close();
+  }
+  setTextSearchQuery(query: string): void {
+    this.assertReady();
+    this.textSearchBinding.setQuery(query);
+  }
+  setTextSearchReplacement(value: string): void {
+    this.assertReady();
+    this.textSearchBinding.setReplacement(value);
+  }
+  setTextSearchOptions(options: Partial<TextSearchOptions>): void {
+    this.assertReady();
+    this.textSearchBinding.setOptions(options);
+  }
+  nextTextSearch(): TextSearchMatch | null {
+    this.assertReady();
+    return this.textSearchBinding.next();
+  }
+  previousTextSearch(): TextSearchMatch | null {
+    this.assertReady();
+    return this.textSearchBinding.previousMatch();
+  }
+  replaceCurrentText(): boolean {
+    this.assertReady();
+    return this.textSearchState().canReplace && this.textSearchBinding.replaceCurrent();
+  }
+  replaceAllText(): number {
+    this.assertReady();
+    return this.textSearchState().canReplace ? this.textSearchBinding.replaceAll() : 0;
+  }
 
-  distributeElements(
-    axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[],
-  ): boolean {
+  distributeElements(axis: DistributeElementsCommand['axis'], ids?: readonly ElementId[]): boolean {
     return this.common().distribute(this.currentSnapshot.mode === 'edit', axis, ids);
   }
 
@@ -256,7 +311,9 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     return this.common().setAltText(this.currentSnapshot.mode === 'edit', value, id);
   }
 
-  listSections(): SectionRecord[] { return this.common().listSections(); }
+  listSections(): SectionRecord[] {
+    return this.common().listSections();
+  }
 
   addSection(value: Omit<AddSectionCommand, 'type'>): SectionRecord | null {
     return this.common().addSection(this.currentSnapshot.mode === 'edit', value);
@@ -271,7 +328,9 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   removeSection(id: SectionId): boolean {
     return this.common().removeSection(this.currentSnapshot.mode === 'edit', id);
   }
-  querySlideSize(): SlideSizeState { return this.common().querySlideSize(); }
+  querySlideSize(): SlideSizeState {
+    return this.common().querySlideSize();
+  }
   setSlideSize(value: Pick<SetSlideSizeCommand, 'w' | 'h' | 'fit'>): boolean {
     return this.common().setSlideSize(this.currentSnapshot.mode === 'edit', value);
   }
@@ -330,8 +389,15 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.currentSource = null;
     this.currentOpenKey = '';
     this.currentSnapshot = {
-      ...this.currentSnapshot, status: 'disposed', progress: 0, error: null,
-      session: null, view: null, selectionPane: null, slideId: null, recovery: null,
+      ...this.currentSnapshot,
+      status: 'disposed',
+      progress: 0,
+      error: null,
+      session: null,
+      view: null,
+      selectionPane: null,
+      slideId: null,
+      recovery: null,
       documentKind: null,
       formatPainter: WEB_PPT_IDLE_SNAPSHOT.formatPainter,
       textSearch: WEB_PPT_IDLE_SNAPSHOT.textSearch,
@@ -362,8 +428,7 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     try {
       session = await openEditor(source, boundOptions);
     } catch (error) {
-      if (boundOptions?.recovery?.signal?.aborted
-        || error instanceof RecoveryOpenCancelledError) {
+      if (boundOptions?.recovery?.signal?.aborted || error instanceof RecoveryOpenCancelledError) {
         this.publishCancelledOpen(generation);
         return null;
       }
@@ -397,7 +462,11 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     if (this.session === document.session && !this.ownsSession) {
       const wasReady = this.currentSnapshot.status === 'ready';
       this.updateSnapshot({
-        status: 'ready', progress: 1, error: null, session: this.session, view: this.view,
+        status: 'ready',
+        progress: 1,
+        error: null,
+        session: this.session,
+        view: this.view,
       });
       this.publishReadyState(true);
       if (!wasReady) {
@@ -415,17 +484,11 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     }
   }
 
-  private commitSession(
-    session: EditorSession,
-    owned: boolean,
-    recoveryGeneration: number | null,
-  ): void {
+  private commitSession(session: EditorSession, owned: boolean, recoveryGeneration: number | null): void {
     const nextView = this.container ? this.mount(session, this.container) : null;
     let nextPane: SelectionPane | null = null;
     try {
-      nextPane = this.paneBinding.prepare(
-        session, this.desired, nextView?.slideId ?? null, (error) => this.emitError(error),
-      );
+      nextPane = this.paneBinding.prepare(session, this.desired, nextView?.slideId ?? null, (error) => this.emitError(error));
     } catch (error) {
       nextView?.destroy();
       throw error;
@@ -458,10 +521,15 @@ class BrowserWebPptAdapter implements WebPptAdapter {
       if (this.session === session && !this.isDisposed) this.publishReadyState(false);
     });
     this.updateSnapshot({
-      status: 'ready', progress: 1, error: null, session: this.session, view: this.view,
+      status: 'ready',
+      progress: 1,
+      error: null,
+      session: this.session,
+      view: this.view,
       selectionPane: this.paneBinding.pane,
       documentKind: session.editor.doc.meta.source,
-      recovery: null, formatPainter: this.formatPainterState(false),
+      recovery: null,
+      formatPainter: this.formatPainterState(false),
       textSearch: this.textSearchState(false),
     });
     this.publishReadyState(true);
@@ -470,8 +538,8 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   }
 
   private mount(session: EditorSession, container: HTMLElement): SlideEditor {
-    const slideId = this.desired.slideId && session.editor.doc.slides[this.desired.slideId]
-      ? this.desired.slideId : session.editor.doc.slideOrder[0];
+    const slideId =
+      this.desired.slideId && session.editor.doc.slides[this.desired.slideId] ? this.desired.slideId : session.editor.doc.slideOrder[0];
     return session.mount(container, {
       mode: this.desired.mode ?? DEFAULT_VIEW.mode,
       zoom: this.desired.zoom ?? DEFAULT_VIEW.zoom,
@@ -508,8 +576,11 @@ class BrowserWebPptAdapter implements WebPptAdapter {
 
   private followLink(target: LinkTarget, context: LinkFollowContext): boolean | void {
     return followAdapterLink(
-      target, context, this.desired.onLinkFollow,
-      (slideId) => this.setView({ slideId }), (error) => this.emitError(error),
+      target,
+      context,
+      this.desired.onLinkFollow,
+      (slideId) => this.setView({ slideId }),
+      (error) => this.emitError(error),
     );
   }
 
@@ -530,18 +601,24 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   private publishReadyState(notifyView: boolean): void {
     const viewState: WebPptViewState = {
       mode: this.view?.mode ?? this.desired.mode ?? DEFAULT_VIEW.mode,
-      slideId: this.view?.slideId
+      slideId:
+        this.view?.slideId
         ?? (this.desired.slideId && this.session?.editor.doc.slides[this.desired.slideId]
-          ? this.desired.slideId : this.session?.editor.doc.slideOrder[0] ?? null),
+          ? this.desired.slideId
+          : (this.session?.editor.doc.slideOrder[0] ?? null)),
       zoom: this.view?.zoom ?? this.desired.zoom ?? DEFAULT_VIEW.zoom,
       snapping: this.view?.snapping ?? this.desired.snapping ?? DEFAULT_VIEW.snapping,
     };
-    const changed = viewState.mode !== this.currentSnapshot.mode
+    const changed =
+      viewState.mode !== this.currentSnapshot.mode
       || viewState.slideId !== this.currentSnapshot.slideId
       || viewState.zoom !== this.currentSnapshot.zoom
       || viewState.snapping !== this.currentSnapshot.snapping;
     this.updateSnapshot({
-      ...viewState, session: this.session, view: this.view, selectionPane: this.paneBinding.pane,
+      ...viewState,
+      session: this.session,
+      view: this.view,
+      selectionPane: this.paneBinding.pane,
       documentKind: this.session?.editor.doc.meta.source ?? null,
       formatPainter: this.formatPainterState(),
       textSearch: this.textSearchState(),
@@ -550,15 +627,11 @@ class BrowserWebPptAdapter implements WebPptAdapter {
   }
 
   private formatPainterState(ready = this.currentSnapshot.status === 'ready'): WebPptFormatPainterState {
-    return this.formatPainterBinding.state(
-      ready, this.view?.mode ?? this.desired.mode ?? DEFAULT_VIEW.mode,
-    );
+    return this.formatPainterBinding.state(ready, this.view?.mode ?? this.desired.mode ?? DEFAULT_VIEW.mode);
   }
 
   private textSearchState(ready = this.currentSnapshot.status === 'ready'): WebPptTextSearchState {
-    return this.textSearchBinding.state(
-      ready, this.view?.mode ?? this.desired.mode ?? DEFAULT_VIEW.mode,
-    );
+    return this.textSearchBinding.state(ready, this.view?.mode ?? this.desired.mode ?? DEFAULT_VIEW.mode);
   }
 
   private cancelOpening(): void {
@@ -571,8 +644,11 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.currentSource = null;
     this.currentOpenKey = '';
     this.updateSnapshot({
-      status: this.session ? 'ready' : 'idle', progress: this.session ? 1 : 0,
-      error: null, recovery: null, formatPainter: this.formatPainterState(!!this.session),
+      status: this.session ? 'ready' : 'idle',
+      progress: this.session ? 1 : 0,
+      error: null,
+      recovery: null,
+      formatPainter: this.formatPainterState(!!this.session),
       textSearch: this.textSearchState(!!this.session),
     });
   }
@@ -588,7 +664,10 @@ class BrowserWebPptAdapter implements WebPptAdapter {
     this.currentSource = null;
     this.currentOpenKey = '';
     this.updateSnapshot({
-      status: 'error', error, progress: 0, recovery: null,
+      status: 'error',
+      error,
+      progress: 0,
+      recovery: null,
       formatPainter: { ...this.formatPainterState(false), readonly: true },
       textSearch: { ...this.textSearchState(false), canReplace: false },
     });
@@ -597,16 +676,28 @@ class BrowserWebPptAdapter implements WebPptAdapter {
 
   private notifySubscribers(): void {
     for (const subscriber of [...this.subscribers]) {
-      try { subscriber(this.currentSnapshot); } catch (error) { this.emitError(error); }
+      try {
+        subscriber(this.currentSnapshot);
+      } catch (error) {
+        this.emitError(error);
+      }
     }
   }
 
   private notify(run: (callbacks: WebPptAdapterCallbacks) => void): void {
-    try { run(this.callbacks); } catch (error) { this.emitError(error); }
+    try {
+      run(this.callbacks);
+    } catch (error) {
+      this.emitError(error);
+    }
   }
 
   private emitError(error: unknown): void {
-    try { this.callbacks.onError?.(error); } catch { /* 宿主事件不能破坏资源生命周期。 */ }
+    try {
+      this.callbacks.onError?.(error);
+    } catch {
+      /* 宿主事件不能破坏资源生命周期。 */
+    }
   }
 
   private async rejectDocument(error: Error): Promise<never> {

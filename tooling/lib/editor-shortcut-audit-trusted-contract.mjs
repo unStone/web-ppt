@@ -57,11 +57,13 @@ export async function runTrustedShortcutAuditContract({ evaluate, dispatchKey, r
     delete globalThis.trustedShortcutAudit;
     return result;
   })()`);
-  const pageEvents = pageResult.events.length === 4
+  const pageEvents =
+    pageResult.events.length === 4
     && pageResult.events.map((event) => event.code).join(',') === 'KeyA,KeyM,PageUp,PageDown'
     && pageResult.events.every((event) => event.trusted && event.prevented);
 
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const { openEditor, load } = globalThis.editorContract;
     const session = await openEditor(await load('sample-editor-text.pptx'), {
       idPrefix: 'trusted-shortcut-text-',
@@ -71,7 +73,9 @@ export async function runTrustedShortcutAuditContract({ evaluate, dispatchKey, r
     const record = Object.values(session.editor.doc.elements)
       .find((candidate) => candidate.src.name === '重复格式');
     globalThis.trustedShortcutText = { session, mount, view, id: record.id };
-  })()`, true);
+  })()`,
+    true,
+  );
   await evaluate(`(() => {
     const state = globalThis.trustedShortcutText;
     state.shortcutSourceSlide = state.view.slideId;
@@ -151,13 +155,19 @@ export async function runTrustedShortcutAuditContract({ evaluate, dispatchKey, r
     const state = globalThis.trustedShortcutText;
     return Math.abs(state.view.queryRunProps().size.value - state.shortcutAudit.size) < 1e-6;
   })()`);
-  const alignments = [['e', 'KeyE', 69, 'center'], ['l', 'KeyL', 76, 'left'],
-    ['r', 'KeyR', 82, 'right'], ['j', 'KeyJ', 74, 'justify']];
+  const alignments = [
+    ['e', 'KeyE', 69, 'center'],
+    ['l', 'KeyL', 76, 'left'],
+    ['r', 'KeyR', 82, 'right'],
+    ['j', 'KeyJ', 74, 'justify'],
+  ];
   const aligned = [];
   for (const [key, code, virtualKeyCode, expected] of alignments) {
     await textKey(key, code, virtualKeyCode);
-    aligned.push(await evaluate(`globalThis.trustedShortcutText.session.editor.effectiveElement(
-      globalThis.trustedShortcutText.id).text.paragraphs[0].align === '${expected}'`));
+    aligned.push(
+      await evaluate(`globalThis.trustedShortcutText.session.editor.effectiveElement(
+      globalThis.trustedShortcutText.id).text.paragraphs[0].align === '${expected}'`),
+    );
   }
   await textKey('m', 'KeyM', 77);
   const textAdd = await evaluate(`(() => {
@@ -246,15 +256,14 @@ export async function runTrustedShortcutAuditContract({ evaluate, dispatchKey, r
     delete globalThis.trustedShortcutText;
     return result;
   })()`);
-  const expectedTextCodes = [
-    'PageDown', 'PageUp', 'Period', 'Comma', 'KeyE', 'KeyL', 'KeyR', 'KeyJ', 'KeyM', 'KeyA', 'KeyA',
-  ];
+  const expectedTextCodes = ['PageDown', 'PageUp', 'Period', 'Comma', 'KeyE', 'KeyL', 'KeyR', 'KeyJ', 'KeyM', 'KeyA', 'KeyA'];
   const auditedTextEvents = textResult.events.filter((event) => expectedTextCodes.includes(event.code));
-  const textEvents = auditedTextEvents.length === expectedTextCodes.length
-    && auditedTextEvents.map((event) => event.code).join(',')
-      === 'PageDown,PageUp,Period,Comma,KeyE,KeyL,KeyR,KeyJ,KeyM,KeyA,KeyA'
+  const textEvents =
+    auditedTextEvents.length === expectedTextCodes.length
+    && auditedTextEvents.map((event) => event.code).join(',') === 'PageDown,PageUp,Period,Comma,KeyE,KeyL,KeyR,KeyJ,KeyM,KeyA,KeyA'
     && auditedTextEvents.every((event) => event.trusted && event.prevented);
-  await evaluate(`(async () => {
+  await evaluate(
+    `(async () => {
     const { openEditor, load } = globalThis.editorContract;
     const session = await openEditor(await load('sample-editor-text.pptx'), {
       idPrefix: 'trusted-shortcut-ime-',
@@ -280,7 +289,9 @@ export async function runTrustedShortcutAuditContract({ evaluate, dispatchKey, r
       model: session.editor.effectiveElement(record.id).text.paragraphs
         .flatMap((paragraph) => paragraph.runs.map((run) => run.text)).join(''),
     };
-  })()`, true);
+  })()`,
+    true,
+  );
   await request('Input.imeSetComposition', { text: '中', selectionStart: 1, selectionEnd: 1 });
   await dispatchKey('PageDown', 'PageDown', 34, 0);
   await dispatchKey('m', 'KeyM', 77, primary);
@@ -304,12 +315,28 @@ export async function runTrustedShortcutAuditContract({ evaluate, dispatchKey, r
     delete globalThis.trustedShortcutIme;
     return result;
   })()`);
-  if (!Object.entries(pageResult).filter(([key]) => key !== 'events').every(([, value]) => value)
-    || !pageEvents || !textResult.textPageDown || !textResult.textPageUp || !textResult.textAdd
-    || !textResult.textAddUndo || !textResult.textAddRedo
-    || !imeBlocked || !imeCommitted
-    || !textResult.grew || !textResult.restored || !textResult.aligned.every(Boolean)
-    || !textResult.selectedText || !textResult.selectedPage || !textResult.closedText || !textEvents) {
-    throw new Error(`真实附录 B 快捷键失败：${JSON.stringify({ pageResult, pageEvents, textResult, textEvents, imeBlocked, imeCommitted })}`);
+  if (
+    !Object.entries(pageResult)
+      .filter(([key]) => key !== 'events')
+      .every(([, value]) => value)
+    || !pageEvents
+    || !textResult.textPageDown
+    || !textResult.textPageUp
+    || !textResult.textAdd
+    || !textResult.textAddUndo
+    || !textResult.textAddRedo
+    || !imeBlocked
+    || !imeCommitted
+    || !textResult.grew
+    || !textResult.restored
+    || !textResult.aligned.every(Boolean)
+    || !textResult.selectedText
+    || !textResult.selectedPage
+    || !textResult.closedText
+    || !textEvents
+  ) {
+    throw new Error(
+      `真实附录 B 快捷键失败：${JSON.stringify({ pageResult, pageEvents, textResult, textEvents, imeBlocked, imeCommitted })}`,
+    );
   }
 }

@@ -111,8 +111,6 @@ session.dispose();
 
 Templates, design canvas, selection pane, shortcuts and clipboard, low-level `EditDoc`, preset handles and save paths: [Editor integration](https://github.com/unStone/web-ppt/blob/master/docs/api/editor.md).
 
-The 0.7 template journey (`npm run test:v07`) covers template → theme → master → layout → ordinary slide → reopen; details are in [Editor integration](https://github.com/unStone/web-ppt/blob/master/docs/api/editor.md).
-
 ### Optional entries
 
 | Capability | Docs |
@@ -128,15 +126,15 @@ The 0.7 template journey (`npm run test:v07`) covers template → theme → mast
 
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 137.84 KB |
-| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Edit document, command history, projection and incremental save. No framework, no DOM. | `core`; lint uses Culori / RBush | 185.70 KB |
-| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection and transforms, three-layer incremental DOM. | `core` + `edit-core` + `viewer-core` | 59.27 KB |
-| [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration and BroadcastChannel provider. | `edit-core` optional peer | 12.20 KB |
-| [`@web-ppt/agent-mcp`](https://github.com/unStone/web-ppt/tree/master/packages/agent-mcp) | Local stdio MCP server and Agent Skill. | `core` + `edit-core` + MCP SDK | 3.10 KB |
-| [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook. | `editor` + React optional peer | 1.12 KB |
-| [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable. | `editor` + Vue optional peer | 1.34 KB |
-| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching. | `core` | 14.09 KB |
-| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (zero font bytes in the package). | `core` | 4.39 KB |
+| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 135.69 KB |
+| [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Edit document, command history, projection and incremental save. No framework, no DOM. | `core`; lint uses Culori / RBush | 172.93 KB |
+| [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection and transforms, three-layer incremental DOM. | `core` + `edit-core` + `viewer-core` | 57.35 KB |
+| [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration and BroadcastChannel provider. | `edit-core` optional peer | 11.35 KB |
+| [`@web-ppt/agent-mcp`](https://github.com/unStone/web-ppt/tree/master/packages/agent-mcp) | Local stdio MCP server and Agent Skill. | `core` + `edit-core` + MCP SDK | 3.05 KB |
+| [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook. | `editor` + React optional peer | 1.17 KB |
+| [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable. | `editor` + Vue optional peer | 1.31 KB |
+| [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching. | `core` | 11.18 KB |
+| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (zero font bytes in the package). | `core` | 2.87 KB |
 
 Sizes sum the gzipped default entry and every relative static chunk, excluding peers and dynamic entries.
 
@@ -165,7 +163,7 @@ Every parsing pipeline converges on one schema, and the renderer knows the schem
 |---|---|
 | `npm run dev` | Start the viewer (`?file=/showcase.pptx` to pick a file) |
 | `npm run dev:site` | Start the site (includes the in-browser live demo) |
-| `npm run check` | TypeScript type check |
+| `npm run check` | TypeScript type check and Biome lint |
 | `npm test` | Every test suite |
 | `npm run build` | Build all nine publishable packages (core / edit-core / viewer-core / editor / react / vue / fonts / collab / agent-mcp) |
 | `npm run verify` | License / version / links / documented numbers against measured values |

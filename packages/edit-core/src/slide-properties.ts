@@ -1,8 +1,6 @@
 import { own } from './data-validation';
 import { toSlide } from './projection';
-import type {
-  EditDoc, SlideBackgroundState, SlideHiddenState, SlideId, SlideLayoutState,
-} from './types';
+import type { EditDoc, SlideBackgroundState, SlideHiddenState, SlideId, SlideLayoutState } from './types';
 
 function records(doc: EditDoc, ids: readonly SlideId[]) {
   if (!ids.length) throw new Error('页面属性查询至少需要一个页面');
@@ -13,10 +11,7 @@ function records(doc: EditDoc, ids: readonly SlideId[]) {
   });
 }
 
-export function querySlideBackground(
-  doc: EditDoc,
-  ids: readonly SlideId[],
-): SlideBackgroundState {
+export function querySlideBackground(doc: EditDoc, ids: readonly SlideId[]): SlideBackgroundState {
   const selected = records(doc, ids);
   const values = ids.map((id) => toSlide(doc, id).background);
   const sources = selected.map((record) => record.src.background);

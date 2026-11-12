@@ -30,10 +30,7 @@ export async function runViewerPresentBarContract({ evaluate, request, click, wa
         stageEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       }
     })()`);
-    await waitFor(
-      `document.querySelector(${JSON.stringify(pager)}).textContent !== ${JSON.stringify(start)}`,
-      '控制条隐去后点舞台仍前进',
-    );
+    await waitFor(`document.querySelector(${JSON.stringify(pager)}).textContent !== ${JSON.stringify(start)}`, '控制条隐去后点舞台仍前进');
 
     await pressT();
     await waitFor(shown, 'T 唤出控制条');
@@ -47,7 +44,8 @@ export async function runViewerPresentBarContract({ evaluate, request, click, wa
       if (await evaluate(shown)) throw new Error('能悬停时 2s 后控制条应隐去');
     }
 
-    const readInput = () => evaluate(`(() => {
+    const readInput = () =>
+      evaluate(`(() => {
       const matches = (query) => window.matchMedia(query).matches;
       return {
         points: navigator.maxTouchPoints,
@@ -60,31 +58,37 @@ export async function runViewerPresentBarContract({ evaluate, request, click, wa
     })()`);
     const previousInput = await readInput();
     const sameInput = (actual) => Object.entries(previousInput).every(([key, value]) => actual[key] === value);
+    // 契约失败与输入能力未恢复可能同时发生；两者都要报出，不能让后者盖掉前者的根因。
+    let contractFailure = null;
     try {
       // hover/pointer 不受 setEmulatedMedia 支持；触屏仿真直接建立真实的输入设备能力。
       await request('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
       if (await evaluate("window.matchMedia('(hover: hover) and (pointer: fine)').matches")) {
         throw new Error('触屏仿真后仍被当成可悬停');
       }
-      if (!await evaluate("navigator.maxTouchPoints === 1 && window.matchMedia('(hover: none) and (pointer: coarse)').matches")) {
+      if (!(await evaluate("navigator.maxTouchPoints === 1 && window.matchMedia('(hover: none) and (pointer: coarse)').matches"))) {
         throw new Error('触屏仿真未建立单触点、无悬停与粗指针能力');
       }
-      if (!await evaluate(shown)) await pressT();
+      if (!(await evaluate(shown))) await pressT();
       await waitFor(`${presenting} && ${shown}`, '不能悬停时控制条保持可见');
       await evaluate('(async () => { await new Promise((resolve) => setTimeout(resolve, 2100)); })()', true);
-      if (!await evaluate(`${presenting} && ${shown}`)) throw new Error('不能悬停时控制条不应自动隐去');
-    } finally {
-      // 原生触屏与已启用仿真都可能有触点，先回到 embedder，按实际能力决定是否重启仿真。
-      await request('Emulation.setTouchEmulationEnabled', { enabled: false });
-      let restoredInput = await readInput();
-      if (!sameInput(restoredInput) && previousInput.points > 0) {
-        await request('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: previousInput.points });
-        restoredInput = await readInput();
-      }
-      if (!sameInput(restoredInput)) {
-        throw new Error(`触屏仿真未恢复原输入能力：${JSON.stringify({ previousInput, restoredInput })}`);
-      }
+      if (!(await evaluate(`${presenting} && ${shown}`))) throw new Error('不能悬停时控制条不应自动隐去');
+    } catch (error) {
+      contractFailure = error;
     }
+    // 原生触屏与已启用仿真都可能有触点，先回到 embedder，按实际能力决定是否重启仿真。
+    await request('Emulation.setTouchEmulationEnabled', { enabled: false });
+    let restoredInput = await readInput();
+    if (!sameInput(restoredInput) && previousInput.points > 0) {
+      await request('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: previousInput.points });
+      restoredInput = await readInput();
+    }
+    if (!sameInput(restoredInput)) {
+      const restoreFailure = new Error(`触屏仿真未恢复原输入能力：${JSON.stringify({ previousInput, restoredInput })}`);
+      if (contractFailure) throw new AggregateError([contractFailure, restoreFailure], '触屏放映契约失败，且输入能力未恢复');
+      throw restoreFailure;
+    }
+    if (contractFailure) throw contractFailure;
 
     const escape = { key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 };
     await request('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...escape });

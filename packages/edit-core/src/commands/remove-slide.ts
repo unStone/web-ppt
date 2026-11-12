@@ -16,18 +16,15 @@ function snapshotSlide(doc: EditDoc, id: string): SlideTreeSnapshot {
   };
   for (const child of slide.children) visit(child);
   return {
-    slide: structuredClone(slide), records,
+    slide: structuredClone(slide),
+    records,
     after: doc.slideOrder[index - 1] ?? null,
     before: doc.slideOrder[index + 1] ?? null,
     ...(sectionOfSlide(doc, id) ? { sectionId: sectionOfSlide(doc, id)! } : {}),
   };
 }
 
-export function removeSlidePatches(
-  doc: EditDoc,
-  command: RemoveSlideCommand,
-  origin: string,
-): CommandPatches {
+export function removeSlidePatches(doc: EditDoc, command: RemoveSlideCommand, origin: string): CommandPatches {
   if (doc.meta.readonly) throw new Error('只读编辑文档不能删除页面');
   if (typeof command.id !== 'string' || !doc.slides[command.id]) {
     throw new Error(`找不到页面：${String(command.id)}`);

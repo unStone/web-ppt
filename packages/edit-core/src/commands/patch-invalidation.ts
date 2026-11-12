@@ -1,6 +1,11 @@
 import {
-  invalidateElement, invalidateElementStructure, invalidateLayoutElementCaches,
-  invalidateSlide, invalidateSlideData, invalidateSlideSequence, invalidateSlideStructure,
+  invalidateElement,
+  invalidateElementStructure,
+  invalidateLayoutElementCaches,
+  invalidateSlide,
+  invalidateSlideData,
+  invalidateSlideSequence,
+  invalidateSlideStructure,
 } from '../projection';
 import type { EditDoc, ElementId, SlideId } from '../types';
 import { isElementHierarchyPatch } from './element-hierarchy';
@@ -29,10 +34,10 @@ import { registeredEditExtensions } from '../extension-runtime';
 import { isExtensionAddressPatch, readExtensionAddress } from '../extension-addresses';
 
 function masterElementPatch(doc: EditDoc, patch: Patch): boolean {
-  return (isElementTreePatch(patch) || isElementHierarchyPatch(patch))
-    && !!doc.masters[patch.value.parent]
-    || patch.path[0] === 'elements' && !!doc.elements[patch.path[1]]
-    && canvasTargetOfElement(doc, patch.path[1]).kind === 'master';
+  return (
+    ((isElementTreePatch(patch) || isElementHierarchyPatch(patch)) && !!doc.masters[patch.value.parent])
+    || (patch.path[0] === 'elements' && !!doc.elements[patch.path[1]] && canvasTargetOfElement(doc, patch.path[1]).kind === 'master')
+  );
 }
 
 function slideElementIds(doc: EditDoc, slideId: SlideId): ElementId[] {
@@ -72,8 +77,7 @@ export function collectPatchInvalidation(
   if (masterElementPatch(doc, patch)) {
     releaseLayoutProjectionCache(doc);
     releaseDesignProjectionPackage(doc);
-    const target = patch.path[0] === 'elements' && doc.elements[patch.path[1]]
-      ? canvasTargetOfElement(doc, patch.path[1]) : null;
+    const target = patch.path[0] === 'elements' && doc.elements[patch.path[1]] ? canvasTargetOfElement(doc, patch.path[1]) : null;
     if (target?.kind === 'master') {
       const layoutElements = invalidateLayoutElementCaches(doc, doc.masters[target.id].layoutIds);
       for (const id of layoutElements) dirtyElements.add(id);
@@ -115,7 +119,8 @@ export function collectPatchInvalidation(
     releaseDesignProjectionPackage(doc);
     releaseThemeProjectionPackage(doc);
     const designElements = invalidateLayoutElementCaches(
-      doc, doc.layoutOrder.filter((id) => doc.layouts[id].themeId === patch.path[1]),
+      doc,
+      doc.layoutOrder.filter((id) => doc.layouts[id].themeId === patch.path[1]),
       patch.path[1],
     );
     for (const id of designElements) dirtyElements.add(id);
@@ -126,8 +131,7 @@ export function collectPatchInvalidation(
     }
     return;
   }
-  if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)
-    || isSectionStatePatch(patch) || isDocumentSizePatch(patch)) return;
+  if (isImageResourcePatch(patch) || isElementInteractionPatch(patch) || isSectionStatePatch(patch) || isDocumentSizePatch(patch)) return;
   if (isSlideOrderPatch(patch)) {
     const sequence = invalidateSlideSequence(doc, slideOrderPatchStart(doc, patch));
     for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
@@ -135,28 +139,32 @@ export function collectPatchInvalidation(
     return;
   }
   if (isSlideTreePatch(patch)) {
-    const start = patch.op === 'insert'
-      ? (patch.value.after === null ? 0 : doc.slideOrder.indexOf(patch.value.after) + 1)
-      : doc.slideOrder.indexOf(patch.path[1]) + 1;
+    const start =
+      patch.op === 'insert'
+        ? patch.value.after === null
+          ? 0
+          : doc.slideOrder.indexOf(patch.value.after) + 1
+        : doc.slideOrder.indexOf(patch.path[1]) + 1;
     const sequence = invalidateSlideSequence(doc, start);
     for (const elementId of sequence.dirtyElements) dirtyElements.add(elementId);
     for (const slideId of sequence.dirtySlides) dirtySlides.add(slideId);
   }
-  const dirty = patch.path[0] === 'slides' && patch.path[3] === 'extensions'
-    ? invalidateSlide(doc, patch.path[1])
-    : isSlideNotesPatch(patch)
-    ? invalidateSlideData(doc, patch.path[1])
-    : isSlideLayoutPatch(patch)
-    ? invalidateSlideStructure(doc, patch.path[1], slideElementIds(doc, patch.path[1]))
-    : isSlidePropertyPatch(patch)
-    ? invalidateSlide(doc, patch.path[1])
-    : isSlideTreePatch(patch)
-    ? invalidateSlideStructure(doc, patch.path[1], Object.keys(patch.value.records))
-    : isElementTreePatch(patch)
-    ? invalidateElementStructure(doc, Object.keys(patch.value.records), patch.value.parent)
-    : isElementHierarchyPatch(patch)
-    ? invalidateElementStructure(doc, patch.value.affected, patch.value.parent)
-    : invalidateElement(doc, patch.path[1]);
+  const dirty =
+    patch.path[0] === 'slides' && patch.path[3] === 'extensions'
+      ? invalidateSlide(doc, patch.path[1])
+      : isSlideNotesPatch(patch)
+        ? invalidateSlideData(doc, patch.path[1])
+        : isSlideLayoutPatch(patch)
+          ? invalidateSlideStructure(doc, patch.path[1], slideElementIds(doc, patch.path[1]))
+          : isSlidePropertyPatch(patch)
+            ? invalidateSlide(doc, patch.path[1])
+            : isSlideTreePatch(patch)
+              ? invalidateSlideStructure(doc, patch.path[1], Object.keys(patch.value.records))
+              : isElementTreePatch(patch)
+                ? invalidateElementStructure(doc, Object.keys(patch.value.records), patch.value.parent)
+                : isElementHierarchyPatch(patch)
+                  ? invalidateElementStructure(doc, patch.value.affected, patch.value.parent)
+                  : invalidateElement(doc, patch.path[1]);
   for (const elementId of dirty.dirtyElements) dirtyElements.add(elementId);
   for (const slideId of dirty.dirtySlides) dirtySlides.add(slideId);
 }
@@ -166,24 +174,35 @@ export function canInvalidateAgainst(doc: EditDoc, patch: Patch): boolean {
   if (isThemePatch(patch)) return !!doc.themes[patch.path[1]];
   if (isLayoutPropertyPatch(patch)) return !!doc.layouts[patch.path[1]];
   if (isMasterBackgroundPatch(patch) || isMasterTextStylePatch(patch)) return !!doc.masters[patch.path[1]];
-  if (isImageResourcePatch(patch) || isElementInteractionPatch(patch)
-    || isSlideTreePatch(patch) || isSectionStatePatch(patch) || isDocumentSizePatch(patch)) return true;
+  if (
+    isImageResourcePatch(patch)
+    || isElementInteractionPatch(patch)
+    || isSlideTreePatch(patch)
+    || isSectionStatePatch(patch)
+    || isDocumentSizePatch(patch)
+  )
+    return true;
   if (isSlideOrderPatch(patch)) {
-    return !!doc.slides[patch.path[1]]
-      && (patch.value.after === null || !!doc.slides[patch.value.after]);
+    return !!doc.slides[patch.path[1]] && (patch.value.after === null || !!doc.slides[patch.value.after]);
   }
   if (patch.path[0] === 'slides') {
     return !!doc.slides[patch.path[1]];
   }
   if (isElementTreePatch(patch)) {
-    return !!doc.slides[patch.value.parent] || !!doc.layouts[patch.value.parent]
+    return (
+      !!doc.slides[patch.value.parent]
+      || !!doc.layouts[patch.value.parent]
       || !!doc.masters[patch.value.parent]
-      || !!doc.elements[patch.value.parent];
+      || !!doc.elements[patch.value.parent]
+    );
   }
   if (isElementHierarchyPatch(patch)) {
-    return !!doc.slides[patch.value.parent] || !!doc.layouts[patch.value.parent]
+    return (
+      !!doc.slides[patch.value.parent]
+      || !!doc.layouts[patch.value.parent]
       || !!doc.masters[patch.value.parent]
-      || !!doc.elements[patch.value.parent];
+      || !!doc.elements[patch.value.parent]
+    );
   }
   return !!doc.elements[patch.path[1]];
 }

@@ -41,8 +41,18 @@ export const PACKAGES: Readonly<Record<string, FontPackage>> = {
   Arimo: { pkg: '@fontsource/arimo', version: '5.3.0', weights: [400, 500, 600, 700], italics: [400, 500, 600, 700] },
   Tinos: { pkg: '@fontsource/tinos', version: '5.3.0', weights: [400, 700], italics: [400, 700] },
   Cousine: { pkg: '@fontsource/cousine', version: '5.3.0', weights: [400, 700], italics: [400, 700] },
-  'Open Sans': { pkg: '@fontsource/open-sans', version: '5.3.0', weights: [300, 400, 500, 600, 700, 800], italics: [300, 400, 500, 600, 700, 800] },
-  'Noto Sans SC': { pkg: '@fontsource/noto-sans-sc', version: '5.3.0', weights: [100, 200, 300, 400, 500, 600, 700, 800, 900], italics: [] },
+  'Open Sans': {
+    pkg: '@fontsource/open-sans',
+    version: '5.3.0',
+    weights: [300, 400, 500, 600, 700, 800],
+    italics: [300, 400, 500, 600, 700, 800],
+  },
+  'Noto Sans SC': {
+    pkg: '@fontsource/noto-sans-sc',
+    version: '5.3.0',
+    weights: [100, 200, 300, 400, 500, 600, 700, 800, 900],
+    italics: [],
+  },
   'Noto Serif SC': { pkg: '@fontsource/noto-serif-sc', version: '5.3.0', weights: [200, 300, 400, 500, 600, 700, 800, 900], italics: [] },
   // 霞鹜文楷只出 Light / Regular / Bold 三档，没有 400
   'LXGW WenKai': { pkg: '@fontsource/lxgw-wenkai', version: '5.3.0', weights: [300, 500, 700], italics: [] },

@@ -8,7 +8,10 @@ function pressG(request) {
 
 export async function runViewerOpenSessionContract({ evaluate, click, waitFor, request }) {
   await evaluate(`document.querySelector('#demoRoot')?.scrollIntoView({ block: 'start', behavior: 'instant' })`);
-  await waitFor("document.querySelector('#stage svg') && document.querySelector('#meta').textContent.includes('showcase.pptx')", '打开会话前默认文稿');
+  await waitFor(
+    "document.querySelector('#stage svg') && document.querySelector('#meta').textContent.includes('showcase.pptx')",
+    '打开会话前默认文稿',
+  );
 
   await evaluate(`(() => {
     const original = window.fetch;
@@ -32,7 +35,11 @@ export async function runViewerOpenSessionContract({ evaluate, click, waitFor, r
     await evaluate("globalThis.__holdNames.add('sample-chart.pptx')");
     await click('.chip[data-src="demo/sample-chart.pptx"]');
     await waitFor("document.querySelector('#stage')?.dataset.openPhase === 'download'", '换文件立刻进入下载');
-    if (!await evaluate("!document.querySelector('#stage svg') && document.querySelector('#present').disabled && document.querySelector('#pager').textContent === '— / —'")) {
+    if (
+      !(await evaluate(
+        "!document.querySelector('#stage svg') && document.querySelector('#present').disabled && document.querySelector('#pager').textContent === '— / —'",
+      ))
+    ) {
       throw new Error('下载中仍留着旧页或演示仍可用');
     }
     await pressG(request);
@@ -59,12 +66,19 @@ export async function runViewerOpenSessionContract({ evaluate, click, waitFor, r
     await waitFor("document.querySelector('#stage')?.dataset.openPhase === 'download'", '后一次打开仍在下载');
     await evaluate("globalThis.__releaseOpen['sample-chart.pptx']()");
     await new Promise((resolve) => setTimeout(resolve, 80));
-    if (await evaluate("document.querySelector('#meta').textContent.includes('图表.pptx') || document.querySelector('#meta').textContent.includes('Charts.pptx') || document.querySelector('#stage svg')")) {
+    if (
+      await evaluate(
+        "document.querySelector('#meta').textContent.includes('图表.pptx') || document.querySelector('#meta').textContent.includes('Charts.pptx') || document.querySelector('#stage svg')",
+      )
+    ) {
       throw new Error('先点的样本在后一次打开之后仍画上了舞台');
     }
     await evaluate("globalThis.__releaseOpen['showcase.pptx']()");
-    await waitFor("document.querySelector('#stage svg') && document.querySelector('#meta').textContent.includes('showcase.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'", '后一次打开画上默认文稿');
-    if (!await evaluate('globalThis.__sawParsing === true')) {
+    await waitFor(
+      "document.querySelector('#stage svg') && document.querySelector('#meta').textContent.includes('showcase.pptx') && document.querySelector('#stage')?.dataset.openPhase === 'ready'",
+      '后一次打开画上默认文稿',
+    );
+    if (!(await evaluate('globalThis.__sawParsing === true'))) {
       throw new Error('解析阶段没有出现解析中');
     }
   } finally {

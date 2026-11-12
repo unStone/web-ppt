@@ -4,11 +4,19 @@ import { recordPerformanceBudget } from './browser-performance-contract.mjs';
 const center = (rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
 const distance = (left, right) => Math.hypot(left.x - right.x, left.y - right.y);
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-const pointer = (type, point, pointerId) => new PointerEvent(type, {
-  bubbles: true, composed: true, cancelable: true, pointerType: 'mouse', pointerId, isPrimary: true,
-  button: 0, buttons: type === 'pointerup' || type === 'pointercancel' ? 0 : 1,
-  clientX: point.x, clientY: point.y,
-});
+const pointer = (type, point, pointerId) =>
+  new PointerEvent(type, {
+    bubbles: true,
+    composed: true,
+    cancelable: true,
+    pointerType: 'mouse',
+    pointerId,
+    isPrimary: true,
+    button: 0,
+    buttons: type === 'pointerup' || type === 'pointercancel' ? 0 : 1,
+    clientX: point.x,
+    clientY: point.y,
+  });
 
 function contractMount() {
   const mount = document.createElement('div');
@@ -18,7 +26,7 @@ function contractMount() {
 }
 
 function rotatePoint(point, origin, degrees) {
-  const radians = degrees * Math.PI / 180;
+  const radians = (degrees * Math.PI) / 180;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
   const x = point.x - origin.x;
@@ -35,18 +43,20 @@ function renderedTarget(mount, id) {
 }
 
 function screenCorners(matrix, frame) {
-  return [
-    new DOMPoint(0, 0), new DOMPoint(frame.w, 0),
-    new DOMPoint(frame.w, frame.h), new DOMPoint(0, frame.h),
-  ].map((point) => point.matrixTransform(matrix));
+  return [new DOMPoint(0, 0), new DOMPoint(frame.w, 0), new DOMPoint(frame.w, frame.h), new DOMPoint(0, frame.h)].map((point) =>
+    point.matrixTransform(matrix),
+  );
 }
 
 function expectedFrameCorners(parentMatrix, frame) {
   const centerInParent = { x: frame.x + frame.w / 2, y: frame.y + frame.h / 2 };
   return [
-    { x: frame.x, y: frame.y }, { x: frame.x + frame.w, y: frame.y },
-    { x: frame.x + frame.w, y: frame.y + frame.h }, { x: frame.x, y: frame.y + frame.h },
-  ].map((point) => rotatePoint(point, centerInParent, frame.rot))
+    { x: frame.x, y: frame.y },
+    { x: frame.x + frame.w, y: frame.y },
+    { x: frame.x + frame.w, y: frame.y + frame.h },
+    { x: frame.x, y: frame.y + frame.h },
+  ]
+    .map((point) => rotatePoint(point, centerInParent, frame.rot))
     .map((point) => new DOMPoint(point.x, point.y).matrixTransform(parentMatrix));
 }
 
@@ -59,8 +69,7 @@ async function nestedGeometryContract(openEditor, load) {
   const session = await openEditor(await load('sample-editor-space.pptx'), { idPrefix: 'browser-rotate-' });
   try {
     const view = session.mount(mount, { mode: 'edit', textMode: 'svg' });
-    const record = Object.values(session.editor.doc.elements)
-      .find((candidate) => candidate.src.name === 'space-nested-leaf');
+    const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === 'space-nested-leaf');
     let geometryError = 0;
     for (const [index, zoom] of [0.5, 1, 2].entries()) {
       view.setZoom(zoom);
@@ -84,21 +93,24 @@ async function nestedGeometryContract(openEditor, load) {
       await nextFrame();
       const preview = renderedTarget(mount, record.id);
       geometryError = Math.max(geometryError, pointError(screenCorners(preview.matrix, frame), expected));
-      if (!mount.querySelector('[data-edit-rotation-ghost]')
+      if (
+        !mount.querySelector('[data-edit-rotation-ghost]')
         || mount.querySelector(`[data-edit-id="${record.id}"]`) !== before.target
         || mount.querySelector('[data-ppt-layer="static"] svg') !== staticSvg
         || staticSvg.querySelector('defs') !== defs
-        || session.editor.effectiveElement(record.id).rot !== record.src.rot) {
+        || session.editor.effectiveElement(record.id).rot !== record.src.rot
+      ) {
         throw new Error(`zoom ${zoom} 旋转预览重建了静态 DOM 或写入模型`);
       }
       view.element.dispatchEvent(pointer('pointerup', end, 120 + index));
       const committed = session.editor.effectiveElement(record.id);
       const committedTarget = renderedTarget(mount, record.id);
-      geometryError = Math.max(
-        geometryError, pointError(screenCorners(committedTarget.matrix, frame), expected),
-      );
-      if (Math.abs(committed.rot - 52) > 1e-6 || session.editor.history.undoCount !== 1
-        || mount.querySelector('[data-edit-rotation-ghost]')) {
+      geometryError = Math.max(geometryError, pointError(screenCorners(committedTarget.matrix, frame), expected));
+      if (
+        Math.abs(committed.rot - 52) > 1e-6
+        || session.editor.history.undoCount !== 1
+        || mount.querySelector('[data-edit-rotation-ghost]')
+      ) {
         throw new Error(`zoom ${zoom} 嵌套旋转没有单事务提交`);
       }
       session.editor.undo();
@@ -120,8 +132,7 @@ async function nonUniformGeometryContract(openEditor, load) {
   const session = await openEditor(await load('sample-group-scale.pptx'), { idPrefix: 'browser-rotate-skew-' });
   try {
     const view = session.mount(mount, { mode: 'edit', textMode: 'svg' });
-    const record = Object.values(session.editor.doc.elements)
-      .find((candidate) => candidate.src.name === '30° 子元素');
+    const record = Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === '30° 子元素');
     if (!record) throw new Error('组合缩放固件缺少 30° 子元素');
     let slideId = record.parent;
     while (session.editor.doc.elements[slideId]) slideId = session.editor.doc.elements[slideId].parent;
@@ -140,16 +151,19 @@ async function nonUniformGeometryContract(openEditor, load) {
       handle.dispatchEvent(pointer('pointerdown', start, 160 + index));
       view.element.dispatchEvent(pointer('pointermove', end, 160 + index));
       await nextFrame();
-      geometryError = Math.max(geometryError,
-        pointError(screenCorners(renderedTarget(mount, record.id).matrix, frame), expected));
+      geometryError = Math.max(geometryError, pointError(screenCorners(renderedTarget(mount, record.id).matrix, frame), expected));
       view.element.dispatchEvent(pointer('pointerup', end, 160 + index));
       const committed = session.editor.renderedElement(record.id);
-      geometryError = Math.max(geometryError,
-        pointError(screenCorners(renderedTarget(mount, record.id).matrix, committed), expected));
-      if (Math.abs(committed.w - frame.w) > 1e-6 || Math.abs(committed.h - frame.h) > 1e-6
-        || session.editor.history.undoCount !== 1 || mount.querySelector('[data-edit-rotation-ghost]')) {
-        throw new Error(`zoom ${zoom} 非等比组合内旋转未保持画面宽高或未单事务提交：`
-          + `${frame.w}×${frame.h} → ${committed.w}×${committed.h}`);
+      geometryError = Math.max(geometryError, pointError(screenCorners(renderedTarget(mount, record.id).matrix, committed), expected));
+      if (
+        Math.abs(committed.w - frame.w) > 1e-6
+        || Math.abs(committed.h - frame.h) > 1e-6
+        || session.editor.history.undoCount !== 1
+        || mount.querySelector('[data-edit-rotation-ghost]')
+      ) {
+        throw new Error(
+          `zoom ${zoom} 非等比组合内旋转未保持画面宽高或未单事务提交：` + `${frame.w}×${frame.h} → ${committed.w}×${committed.h}`,
+        );
       }
       session.editor.undo();
     }
@@ -166,14 +180,15 @@ async function multiGeometryContract(openEditor, load) {
   const session = await openEditor(await load('sample-editor-space.pptx'), { idPrefix: 'browser-multi-rotate-' });
   try {
     const view = session.mount(mount, { mode: 'edit', textMode: 'svg' });
-    const byName = (name) => Object.values(session.editor.doc.elements)
-      .find((candidate) => candidate.src.name === name);
+    const byName = (name) => Object.values(session.editor.doc.elements).find((candidate) => candidate.src.name === name);
     const records = [byName('space-plain'), byName('space-rotated-flipped')];
     let geometryError = 0;
     for (const [index, zoom] of [0.5, 1, 2].entries()) {
       view.setZoom(zoom);
       session.editor.select({
-        kind: 'elements', ids: records.map((record) => record.id), enteredGroup: null,
+        kind: 'elements',
+        ids: records.map((record) => record.id),
+        enteredGroup: null,
       });
       const frameRect = mount.querySelector('[data-edit-selection-frame]').getBoundingClientRect();
       const selectionCenter = center(frameRect);
@@ -182,21 +197,30 @@ async function multiGeometryContract(openEditor, load) {
       const end = rotatePoint(start, selectionCenter, 37);
       const before = records.map((record) => ({ record, ...renderedTarget(mount, record.id) }));
       const expected = before.map(({ record, matrix }) =>
-        screenCorners(matrix, record.src).map((point) => rotatePoint(point, selectionCenter, 37)));
+        screenCorners(matrix, record.src).map((point) => rotatePoint(point, selectionCenter, 37)),
+      );
       handle.dispatchEvent(pointer('pointerdown', start, 130 + index));
       view.element.dispatchEvent(pointer('pointermove', end, 130 + index));
       await nextFrame();
-      geometryError = Math.max(geometryError, ...before.map(({ record }, targetIndex) => pointError(
-        screenCorners(renderedTarget(mount, record.id).matrix, record.src), expected[targetIndex],
-      )));
-      if (mount.querySelectorAll('[data-edit-rotation-ghost]').length !== 2
-        || mount.querySelector('[data-edit-rotation-angle]').style.display !== 'none') {
+      geometryError = Math.max(
+        geometryError,
+        ...before.map(({ record }, targetIndex) =>
+          pointError(screenCorners(renderedTarget(mount, record.id).matrix, record.src), expected[targetIndex]),
+        ),
+      );
+      if (
+        mount.querySelectorAll('[data-edit-rotation-ghost]').length !== 2
+        || mount.querySelector('[data-edit-rotation-angle]').style.display !== 'none'
+      ) {
         throw new Error(`zoom ${zoom} 多选旋转没有同步预览或错误显示单元素角度`);
       }
       view.element.dispatchEvent(pointer('pointerup', end, 130 + index));
-      geometryError = Math.max(geometryError, ...before.map(({ record }, targetIndex) => pointError(
-        screenCorners(renderedTarget(mount, record.id).matrix, record.src), expected[targetIndex],
-      )));
+      geometryError = Math.max(
+        geometryError,
+        ...before.map(({ record }, targetIndex) =>
+          pointError(screenCorners(renderedTarget(mount, record.id).matrix, record.src), expected[targetIndex]),
+        ),
+      );
       if (session.editor.history.undoCount !== 1 || geometryError > 0.5) {
         throw new Error(`zoom ${zoom} 多选旋转幽灵角度/中心偏差 ${geometryError.toFixed(3)}px`);
       }
@@ -239,7 +263,7 @@ function measureRotationFrames(mount, view, pointerId) {
     view.element.dispatchEvent(pointer('pointermove', end, pointerId));
     samples.push(flush());
     for (let index = 0; index < 80; index++) {
-      end = rotatePoint(start, selectionCenter, 20 + index % 7);
+      end = rotatePoint(start, selectionCenter, 20 + (index % 7));
       view.element.dispatchEvent(pointer('pointermove', end, pointerId));
       samples.push(flush());
     }
@@ -263,11 +287,9 @@ async function performanceContract(openEditor, load) {
     const p95 = measureRotationFrames(mount, view, 140);
     const stable = ids.every((id, index) => {
       const current = session.editor.effectiveElement(id);
-      return current.x === sources[index].x && current.y === sources[index].y
-        && current.rot === sources[index].rot;
+      return current.x === sources[index].x && current.y === sources[index].y && current.rot === sources[index].rot;
     });
-    if (ids.length !== 60 || !stable || session.editor.history.undoCount !== 0
-      || mount.querySelector('[data-edit-rotation-ghost]')) {
+    if (ids.length !== 60 || !stable || session.editor.history.undoCount !== 0 || mount.querySelector('[data-edit-rotation-ghost]')) {
       throw new Error('60 元素旋转取消恢复失败');
     }
     recordPerformanceBudget('60 元素旋转帧 p95', p95, 8);

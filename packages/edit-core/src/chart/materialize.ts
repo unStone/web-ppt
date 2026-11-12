@@ -1,11 +1,13 @@
 import {
-  cloneXmlNode, cloneXmlNodeWithNamespaceClosure, parseXmlTree,
-  removeXmlChild, serializeXmlTree, setXmlAttribute,
+  cloneXmlNode,
+  cloneXmlNodeWithNamespaceClosure,
+  parseXmlTree,
+  removeXmlChild,
+  serializeXmlTree,
+  setXmlAttribute,
 } from '@web-ppt/edit-core/xml';
 import type { XmlDocument, XmlElement, XmlNode } from '@web-ppt/edit-core/xml';
-import type {
-  ChartCategory, ChartDatasetState, ChartFormulaBinding, ChartPlotKind, ChartPointId, ChartSeriesId,
-} from './types';
+import type { ChartCategory, ChartDatasetState, ChartFormulaBinding, ChartPlotKind, ChartPointId, ChartSeriesId } from './types';
 import { resizedChartFormula } from './formula';
 import { readChartIdentityManifest, writeChartIdentityManifest } from './identity';
 import type { ChartIdentityScopes } from './identity-scopes';
@@ -14,11 +16,14 @@ import { orderedChartRecords } from './ordering';
 import { MAX_CHART_POINTS } from './validation';
 import { canonicalNumericCategories } from './category-value';
 import { writeCategoryLevels } from './category-levels';
+import { CHART_NS, DRAWING_NS, STRICT_CHART_NS, STRICT_DRAWING_NS } from './xml-namespaces';
 import {
-  CHART_NS, DRAWING_NS, STRICT_CHART_NS, STRICT_DRAWING_NS,
-} from './xml-namespaces';
-import {
-  chartXml, xmlAttribute as attr, appendXml as append, axisTitleAnchor, makeDataElement as make, setDataText as setText,
+  chartXml,
+  xmlAttribute as attr,
+  appendXml as append,
+  axisTitleAnchor,
+  makeDataElement as make,
+  setDataText as setText,
 } from './xml-data';
 import { CHART_PLOTS as PLOTS } from './plot-kinds';
 
@@ -34,9 +39,12 @@ function ensure(parent: XmlElement, name: string, before: XmlNode | null = null)
 
 function replaceElement(parent: XmlElement, current: XmlElement, name: string): XmlElement {
   const index = parent.children.indexOf(current);
-  const before = index < 0 ? null : parent.children[index + 1] ?? null;
-  const replacement = make(parent, name,
-    current.attributes.map((item) => [item.name, item.value] as const));
+  const before = index < 0 ? null : (parent.children[index + 1] ?? null);
+  const replacement = make(
+    parent,
+    name,
+    current.attributes.map((item) => [item.name, item.value] as const),
+  );
   for (const node of [...current.children]) {
     removeXmlChild(current, node);
     append(replacement, node);
@@ -47,19 +55,45 @@ function replaceElement(parent: XmlElement, current: XmlElement, name: string): 
 }
 
 const CATEGORY_SERIES_ORDER = [
-  'idx', 'order', 'tx', 'spPr', 'invertIfNegative', 'pictureOptions', 'explosion', 'marker',
-  'dPt', 'dLbls', 'trendline', 'errBars', 'cat', 'val', 'shape', 'smooth', 'extLst',
+  'idx',
+  'order',
+  'tx',
+  'spPr',
+  'invertIfNegative',
+  'pictureOptions',
+  'explosion',
+  'marker',
+  'dPt',
+  'dLbls',
+  'trendline',
+  'errBars',
+  'cat',
+  'val',
+  'shape',
+  'smooth',
+  'extLst',
 ] as const;
 const XY_SERIES_ORDER = [
-  'idx', 'order', 'tx', 'spPr', 'invertIfNegative', 'marker', 'dPt', 'dLbls', 'trendline',
-  'errBars', 'xVal', 'yVal', 'bubbleSize', 'bubble3D', 'smooth', 'extLst',
+  'idx',
+  'order',
+  'tx',
+  'spPr',
+  'invertIfNegative',
+  'marker',
+  'dPt',
+  'dLbls',
+  'trendline',
+  'errBars',
+  'xVal',
+  'yVal',
+  'bubbleSize',
+  'bubble3D',
+  'smooth',
+  'extLst',
 ] as const;
 
-function ensureSeriesChild(
-  series: XmlElement, name: string, plotKind: ChartPlotKind,
-): XmlElement {
-  const sequence: readonly string[] = plotKind === 'scatter' || plotKind === 'bubble'
-    ? XY_SERIES_ORDER : CATEGORY_SERIES_ORDER;
+function ensureSeriesChild(series: XmlElement, name: string, plotKind: ChartPlotKind): XmlElement {
+  const sequence: readonly string[] = plotKind === 'scatter' || plotKind === 'bubble' ? XY_SERIES_ORDER : CATEGORY_SERIES_ORDER;
   const rank = (localName: string): number => {
     const index = sequence.indexOf(localName);
     return index < 0 ? Number.POSITIVE_INFINITY : index;
@@ -68,9 +102,10 @@ function ensureSeriesChild(
   const elements = children(series);
   const targetRank = rank(name);
   const currentIndex = current ? elements.indexOf(current) : -1;
-  const misplaced = currentIndex >= 0 && (elements.slice(0, currentIndex)
-    .some((item) => rank(item.localName) > targetRank)
-    || elements.slice(currentIndex + 1).some((item) => rank(item.localName) < targetRank));
+  const misplaced =
+    currentIndex >= 0
+    && (elements.slice(0, currentIndex).some((item) => rank(item.localName) > targetRank)
+      || elements.slice(currentIndex + 1).some((item) => rank(item.localName) < targetRank));
   if (current && misplaced) removeXmlChild(series, current);
   const before = children(series).find((item) => rank(item.localName) > targetRank) ?? null;
   if (!current) {
@@ -85,31 +120,31 @@ function ensureSeriesChild(
 function containerOf(holder: XmlElement): { ref: XmlElement | null; data: XmlElement | null } {
   for (const refName of ['numRef', 'strRef', 'multiLvlStrRef']) {
     const ref = child(holder, refName);
-    if (ref) return {
-      ref,
-      data: children(ref).find((item) => item.localName.endsWith('Cache')) ?? null,
-    };
+    if (ref)
+      return {
+        ref,
+        data: children(ref).find((item) => item.localName.endsWith('Cache')) ?? null,
+      };
   }
   return { ref: null, data: child(holder, 'numLit') ?? child(holder, 'strLit') };
 }
 
-function referenceToLiteral(
-  holder: XmlElement, ref: XmlElement, data: XmlElement | null, numeric: boolean,
-): XmlElement {
+function referenceToLiteral(holder: XmlElement, ref: XmlElement, data: XmlElement | null, numeric: boolean): XmlElement {
   const before = holder.children[holder.children.indexOf(ref) + 1] ?? null;
-  const literal = make(holder, numeric ? 'numLit' : 'strLit',
-    data?.attributes.map((item) => [item.name, item.value] as const) ?? []);
-  if (data) for (const node of [...data.children]) {
-    removeXmlChild(data, node);
-    append(literal, node);
-  }
+  const literal = make(holder, numeric ? 'numLit' : 'strLit', data?.attributes.map((item) => [item.name, item.value] as const) ?? []);
+  if (data)
+    for (const node of [...data.children]) {
+      removeXmlChild(data, node);
+      append(literal, node);
+    }
   const refExtension = child(ref, 'extLst');
   if (refExtension) {
     const literalExtension = child(literal, 'extLst');
-    if (literalExtension) for (const node of [...refExtension.children]) {
-      removeXmlChild(refExtension, node);
-      append(literalExtension, node);
-    }
+    if (literalExtension)
+      for (const node of [...refExtension.children]) {
+        removeXmlChild(refExtension, node);
+        append(literalExtension, node);
+      }
     else {
       removeXmlChild(ref, refExtension);
       append(literal, refExtension);
@@ -133,7 +168,7 @@ function writeData(
     data = children(ref).find((item) => item.localName.endsWith('Cache')) ?? null;
   }
   if (data) {
-    const expected = ref ? numeric ? 'numCache' : 'strCache' : numeric ? 'numLit' : 'strLit';
+    const expected = ref ? (numeric ? 'numCache' : 'strCache') : numeric ? 'numLit' : 'strLit';
     if (data.localName !== expected) data = replaceElement(ref ?? holder, data, expected);
   }
   if (ref && sourceBinding.formula === null) {
@@ -141,9 +176,7 @@ function writeData(
     ref = null;
   }
   if (!data) {
-    data = make(ref ?? holder, ref
-      ? numeric ? 'numCache' : 'strCache'
-      : numeric ? 'numLit' : 'strLit');
+    data = make(ref ?? holder, ref ? (numeric ? 'numCache' : 'strCache') : numeric ? 'numLit' : 'strLit');
     append(ref ?? holder, data, child(ref ?? holder, 'extLst'));
   }
   if (!numeric) {
@@ -160,11 +193,9 @@ function writeData(
   if (numeric && !child(data, 'formatCode')) {
     const format = make(data, 'formatCode');
     setText(format, 'General');
-    append(data, format, children(data).find((item) =>
-      ['ptCount', 'pt', 'extLst'].includes(item.localName)) ?? null);
+    append(data, format, children(data).find((item) => ['ptCount', 'pt', 'extLst'].includes(item.localName)) ?? null);
   }
-  const count = ensure(data, 'ptCount', children(data).find((item) =>
-    ['pt', 'extLst'].includes(item.localName)) ?? null);
+  const count = ensure(data, 'ptCount', children(data).find((item) => ['pt', 'extLst'].includes(item.localName)) ?? null);
   setXmlAttribute(count, 'val', String(values.length));
   values.forEach((value, index) => {
     if (value === null) return;
@@ -206,8 +237,7 @@ function dataPointCount(holder: XmlElement | null): number {
   let count = Number.isInteger(declared) && declared >= 0 ? declared : 0;
   let scanned = 0;
   for (const node of data?.children ?? []) {
-    if (node.type !== 'element' || node.namespaceUri !== data?.namespaceUri
-      || node.localName !== 'pt') continue;
+    if (node.type !== 'element' || node.namespaceUri !== data?.namespaceUri || node.localName !== 'pt') continue;
     if (++scanned > MAX_CHART_POINTS) break;
     const rawIndex = attr(node, 'idx');
     const index = rawIndex === null ? Number.NaN : Number(rawIndex);
@@ -218,9 +248,7 @@ function dataPointCount(holder: XmlElement | null): number {
   return Math.min(MAX_CHART_POINTS, count);
 }
 
-function sourceSeriesIds(
-  root: XmlElement, plotArea: XmlElement, chartId: string, frameKey?: string,
-): Map<ChartSeriesId, SourceSeriesNode> {
+function sourceSeriesIds(root: XmlElement, plotArea: XmlElement, chartId: string, frameKey?: string): Map<ChartSeriesId, SourceSeriesNode> {
   const result = new Map<ChartSeriesId, SourceSeriesNode>();
   const identities = readChartIdentityManifest(root, frameKey, chartId);
   const seen = new Map<string, number>();
@@ -235,16 +263,17 @@ function sourceSeriesIds(
       const base = `${chartId}:s${index}`;
       const occurrence = seen.get(base) ?? 0;
       seen.set(base, occurrence + 1);
-      const id = identities?.series[fallback]?.id
-        ?? `${base}${occurrence ? `~${occurrence}` : ''}` as ChartSeriesId;
+      const id = identities?.series[fallback]?.id ?? (`${base}${occurrence ? `~${occurrence}` : ''}` as ChartSeriesId);
       const xy = plotKind === 'scatter' || plotKind === 'bubble';
       const holders = xy
         ? [child(series, 'xVal'), child(series, 'yVal'), child(series, 'bubbleSize')]
         : [child(series, 'cat'), child(series, 'val')];
       const persisted = xy ? identities?.series[fallback]?.points : identities?.categories;
       const count = Math.max(persisted?.length ?? 0, ...holders.map(dataPointCount));
-      const pointIds = Array.from({ length: count }, (_, pointIndex) => persisted?.[pointIndex]
-        ?? `${xy ? id : chartId}:p${pointIndex}` as ChartPointId);
+      const pointIds = Array.from(
+        { length: count },
+        (_, pointIndex) => persisted?.[pointIndex] ?? (`${xy ? id : chartId}:p${pointIndex}` as ChartPointId),
+      );
       result.set(id, { node: series, pointIds, id, plotKind, sourceIndex: index });
       fallback++;
     }
@@ -257,7 +286,8 @@ function plotParent(plotArea: XmlElement, series: XmlElement): XmlElement | null
 }
 
 function cloneSeries(
-  plotArea: XmlElement, plotKind: ChartPlotKind,
+  plotArea: XmlElement,
+  plotKind: ChartPlotKind,
   templates: ReadonlyMap<ChartPlotKind, SourceSeriesNode>,
 ): SourceSeriesNode {
   const plot = children(plotArea).find((candidate) => PLOTS[candidate.localName] === plotKind);
@@ -265,17 +295,22 @@ function cloneSeries(
   const template = templates.get(plotKind);
   if (!template) throw new Error(`${plotKind} 绘图区没有可继承样式的系列`);
   const clone = cloneXmlNode(template.node);
-  const before = children(plot).find((item) => !'barDir grouping varyColors scatterStyle radarStyle ofPieType wireframe ser'.split(' ').includes(item.localName)) ?? null;
+  const before =
+    children(plot).find(
+      (item) => !'barDir grouping varyColors scatterStyle radarStyle ofPieType wireframe ser'.split(' ').includes(item.localName),
+    ) ?? null;
   append(plot, clone, before);
   return { ...template, node: clone };
 }
 
 function remapPointIndexes(
-  node: XmlElement, sourcePointIds: readonly ChartPointId[],
+  node: XmlElement,
+  sourcePointIds: readonly ChartPointId[],
   series: ChartDatasetState['series'][ChartSeriesId],
 ): void {
-  const current = new Map(orderedChartRecords(Object.values(series.points)
-    .filter((point) => !point.removed)).map((point, index) => [point.id, index]));
+  const current = new Map(
+    orderedChartRecords(Object.values(series.points).filter((point) => !point.removed)).map((point, index) => [point.id, index]),
+  );
   const remap = (parent: XmlElement, item: XmlElement): void => {
     const indexNode = child(item, 'idx');
     const rawIndex = attr(indexNode, 'val');
@@ -303,31 +338,50 @@ function writeSeries(
   const points = orderedChartRecords(Object.values(series.points).filter((point) => !point.removed));
   const xy = series.plotKind === 'scatter' || series.plotKind === 'bubble';
   if (xy) {
-    writeData(ensureSeriesChild(node, 'xVal', series.plotKind),
-      points.map((point) => point.x ?? null), true, series.bindings.x!);
-    writeData(ensureSeriesChild(node, 'yVal', series.plotKind),
-      points.map((point) => point.value), true, series.bindings.y!);
+    writeData(
+      ensureSeriesChild(node, 'xVal', series.plotKind),
+      points.map((point) => point.x ?? null),
+      true,
+      series.bindings.x!,
+    );
+    writeData(
+      ensureSeriesChild(node, 'yVal', series.plotKind),
+      points.map((point) => point.value),
+      true,
+      series.bindings.y!,
+    );
     if (series.plotKind === 'bubble') {
-      writeData(ensureSeriesChild(node, 'bubbleSize', series.plotKind),
-        points.map((point) => point.size ?? null), true,
-        series.bindings.size!);
+      writeData(
+        ensureSeriesChild(node, 'bubbleSize', series.plotKind),
+        points.map((point) => point.size ?? null),
+        true,
+        series.bindings.size!,
+      );
     }
   } else {
     const categoryHolder = ensureSeriesChild(node, 'cat', series.plotKind);
     // 日期轴也以数值序列保存；只有标签真正变成非数值时才切换为字符串缓存。
-    const labels = categories.map(category => category.label);
-    const numericCategories = canonicalNumericCategories(labels) !== null
+    const labels = categories.map((category) => category.label);
+    const numericCategories =
+      canonicalNumericCategories(labels) !== null
       && (series.bindings.categories?.cache === 'number' || numericCategoryContainer(categoryHolder));
     if (series.bindings.categories?.hierarchy) writeCategoryLevels(categoryHolder, categories, series.bindings.categories);
     else writeData(categoryHolder, labels, numericCategories, series.bindings.categories!);
-    writeData(ensureSeriesChild(node, 'val', series.plotKind),
-      points.map((point) => point.value), true, series.bindings.values!);
+    writeData(
+      ensureSeriesChild(node, 'val', series.plotKind),
+      points.map((point) => point.value),
+      true,
+      series.bindings.values!,
+    );
   }
 }
 
 export function materializeChartTree(
-  source: string | Uint8Array, chartId: string, state: ChartDatasetState,
-  frameKey?: string, scopes?: ChartIdentityScopes,
+  source: string | Uint8Array,
+  chartId: string,
+  state: ChartDatasetState,
+  frameKey?: string,
+  scopes?: ChartIdentityScopes,
 ): XmlDocument {
   const tree = parseXmlTree(source);
   const plotArea = child(child(tree.root, 'chart'), 'plotArea');
@@ -337,8 +391,11 @@ export function materializeChartTree(
   const templates = new Map<ChartPlotKind, SourceSeriesNode>();
   for (const template of identities?.templates ?? []) {
     templates.set(template.plotKind, {
-      node: template.node, pointIds: template.points, id: template.id,
-      plotKind: template.plotKind, sourceIndex: template.sourceIndex,
+      node: template.node,
+      pointIds: template.points,
+      id: template.id,
+      plotKind: template.plotKind,
+      sourceIndex: template.sourceIndex,
     });
   }
   for (const plot of children(plotArea)) {
@@ -357,8 +414,7 @@ export function materializeChartTree(
   }
   const categories = orderedChartRecords(Object.values(state.categories).filter((item) => !item.removed));
   const visible = orderedChartRecords(Object.values(state.series).filter((series) => !series.removed));
-  const reserved = new Set(visible.filter((series) => sourceById.has(series.id))
-    .map((series) => series.sourceIndex));
+  const reserved = new Set(visible.filter((series) => sourceById.has(series.id)).map((series) => series.sourceIndex));
   const usedNew = new Set<number>();
   const writtenIds = new Map<XmlElement, ChartSeriesId>();
   let nextSourceIndex = 0;
@@ -392,30 +448,32 @@ export function materializeChartTree(
       }
     }
   }
-  const physicalSeriesOrder = children(plotArea).flatMap((plot) => children(plot, 'ser'))
-    .flatMap((node) => writtenIds.has(node) ? [writtenIds.get(node)!] : []);
+  const physicalSeriesOrder = children(plotArea)
+    .flatMap((plot) => children(plot, 'ser'))
+    .flatMap((node) => (writtenIds.has(node) ? [writtenIds.get(node)!] : []));
   const activeKinds = new Set(visible.map((series) => series.plotKind));
   const retainedTemplates: ChartIdentityTemplate[] = [];
   for (const [plotKind, template] of templates) {
     if (activeKinds.has(plotKind)) continue;
-    const series = state.series[template.id]
-      ?? Object.values(state.series).find((item) => item.plotKind === plotKind);
+    const series = state.series[template.id] ?? Object.values(state.series).find((item) => item.plotKind === plotKind);
     if (!series) continue;
     const node = cloneXmlNodeWithNamespaceClosure(template.node);
     const emptySeries = { ...series, name: '', points: Object.create(null) };
     remapPointIndexes(node, template.pointIds, emptySeries);
     writeSeries(node, emptySeries, categories, 0, series.sourceIndex);
     retainedTemplates.push({
-      id: series.id, plotKind, sourceIndex: series.sourceIndex, points: [], node,
+      id: series.id,
+      plotKind,
+      sourceIndex: series.sourceIndex,
+      points: [],
+      node,
     });
   }
   writeChartIdentityManifest(tree.root, state, physicalSeriesOrder, retainedTemplates, scopes ?? identities?.scopes);
   return tree;
 }
 
-export function materializeChartXml(
-  source: string | Uint8Array, chartId: string, state: ChartDatasetState,
-): string {
+export function materializeChartXml(source: string | Uint8Array, chartId: string, state: ChartDatasetState): string {
   return serializeXmlTree(materializeChartTree(source, chartId, state));
 }
 
@@ -429,13 +487,14 @@ function sanitizeProjectionTree(parent: XmlElement, allowed: ReadonlySet<string>
 
 /** 编辑投影只消费当前图表方言；未知扩展仍原样保存，但不能以同名节点劫持屏幕数据。 */
 export function materializeChartProjectionXml(
-  source: string | Uint8Array, chartId: string, state: ChartDatasetState,
+  source: string | Uint8Array,
+  chartId: string,
+  state: ChartDatasetState,
   frameKey?: string,
 ): string {
   const tree = materializeChartTree(source, chartId, state, frameKey);
-  const allowed = tree.root.namespaceUri === STRICT_CHART_NS
-    ? new Set([STRICT_CHART_NS, STRICT_DRAWING_NS])
-    : new Set([CHART_NS, DRAWING_NS]);
+  const allowed =
+    tree.root.namespaceUri === STRICT_CHART_NS ? new Set([STRICT_CHART_NS, STRICT_DRAWING_NS]) : new Set([CHART_NS, DRAWING_NS]);
   sanitizeProjectionTree(tree.root, allowed);
   return serializeXmlTree(tree);
 }

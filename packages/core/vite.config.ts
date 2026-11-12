@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { compactLibrary } from '../../tooling/lib/compact-library';
+import { compactLibrary } from '../../tooling/lib/compact-library.ts';
 
 export default defineConfig({
   plugins: [compactLibrary()],

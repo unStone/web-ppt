@@ -16,12 +16,23 @@ const decoder = new TextDecoder();
 const EMPTY_BYTES = new Uint8Array(0);
 
 const MIME: Record<string, string> = {
-  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
-  bmp: 'image/bmp', webp: 'image/webp', svg: 'image/svg+xml', tif: 'image/tiff', tiff: 'image/tiff',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  bmp: 'image/bmp',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  tif: 'image/tiff',
+  tiff: 'image/tiff',
 };
 
 const METAFILE_MIME: Record<string, string> = {
-  emf: 'image/x-emf', wmf: 'image/x-wmf', pict: 'image/x-pict', pct: 'image/x-pict', pic: 'image/x-pict',
+  emf: 'image/x-emf',
+  wmf: 'image/x-wmf',
+  pict: 'image/x-pict',
+  pct: 'image/x-pict',
+  pic: 'image/x-pict',
 };
 
 function resolvePath(baseDir: string, target: string): string {
@@ -70,20 +81,32 @@ export class Pkg {
       const owner = this;
       this.opcHandle = Object.freeze({
         format: 'pptx' as const,
-        get bytes(): Uint8Array { return owner.sourceBytes ?? EMPTY_BYTES; },
-        get parts(): Readonly<Record<string, Uint8Array>> { return owner.files; },
+        get bytes(): Uint8Array {
+          return owner.sourceBytes ?? EMPTY_BYTES;
+        },
+        get parts(): Readonly<Record<string, Uint8Array>> {
+          return owner.files;
+        },
         get assets(): Readonly<Record<string, { mime: string; bytes: Uint8Array }>> {
           return owner.assetStore.published;
         },
-        get disposed(): boolean { return owner.isDisposed; },
+        get disposed(): boolean {
+          return owner.isDisposed;
+        },
       });
       captureChartExParser(this.opcHandle, this);
     }
   }
 
-  set assetMode(value: AssetMode) { this.assetStore.mode = value; }
-  get deferred(): DeferredAsset[] { return this.assetStore.deferred; }
-  get opcPackage(): OpcPackage | undefined { return this.opcHandle; }
+  set assetMode(value: AssetMode) {
+    this.assetStore.mode = value;
+  }
+  get deferred(): DeferredAsset[] {
+    return this.assetStore.deferred;
+  }
+  get opcPackage(): OpcPackage | undefined {
+    return this.opcHandle;
+  }
 
   xml(path: string): Element | null {
     this.cacheTrace?.add(path);
@@ -167,7 +190,7 @@ export class Pkg {
   fontSourceUrl(path: string): string | null {
     const raw = this.files[path];
     // 原始容器与已解码字体不能共用 sourcePart 缓存，否则版式重解析会把 EOT 当作 TTF。
-    return raw ? this.assetStore.store(`font-source|${path}`,raw,'application/octet-stream') : null;
+    return raw ? this.assetStore.store(`font-source|${path}`, raw, 'application/octet-stream') : null;
   }
 
   /** 释放全部 blob URL，并清空缓存以便 zip 数据被回收。 */

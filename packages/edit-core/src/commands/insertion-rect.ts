@@ -32,10 +32,18 @@ const isNonNegativeCoordinate = (value: number): boolean => {
 export function assertInsertionRect(value: unknown, label: string): asserts value is InsertionRect {
   assertDataObject(value, ['x', 'y', 'w', 'h'], label);
   const rect = value as InsertionRect;
-  if (!Number.isFinite(rect.x) || !Number.isFinite(rect.y)
-    || !isCoordinate(rect.x) || !isCoordinate(rect.y)
-    || !Number.isFinite(rect.w) || rect.w <= 0 || !isPositiveCoordinate(rect.w)
-    || !Number.isFinite(rect.h) || rect.h <= 0 || !isPositiveCoordinate(rect.h)) {
+  if (
+    !Number.isFinite(rect.x)
+    || !Number.isFinite(rect.y)
+    || !isCoordinate(rect.x)
+    || !isCoordinate(rect.y)
+    || !Number.isFinite(rect.w)
+    || rect.w <= 0
+    || !isPositiveCoordinate(rect.w)
+    || !Number.isFinite(rect.h)
+    || rect.h <= 0
+    || !isPositiveCoordinate(rect.h)
+  ) {
     throw new Error(`${label} 必须是 PowerPoint 可表示的有限坐标与有限正尺寸`);
   }
 }
@@ -44,10 +52,16 @@ export function assertInsertionRect(value: unknown, label: string): asserts valu
 export function assertFrameRect(value: unknown, label: string): asserts value is InsertionRect {
   assertDataObject(value, ['x', 'y', 'w', 'h'], label);
   const rect = value as InsertionRect;
-  if (!Number.isFinite(rect.x) || !Number.isFinite(rect.y)
-    || !isCoordinate(rect.x) || !isCoordinate(rect.y)
-    || !Number.isFinite(rect.w) || !isNonNegativeCoordinate(rect.w)
-    || !Number.isFinite(rect.h) || !isNonNegativeCoordinate(rect.h)) {
+  if (
+    !Number.isFinite(rect.x)
+    || !Number.isFinite(rect.y)
+    || !isCoordinate(rect.x)
+    || !isCoordinate(rect.y)
+    || !Number.isFinite(rect.w)
+    || !isNonNegativeCoordinate(rect.w)
+    || !Number.isFinite(rect.h)
+    || !isNonNegativeCoordinate(rect.h)
+  ) {
     throw new Error(`${label} 必须是 PowerPoint 可表示的有限坐标与有限非负尺寸`);
   }
 }
