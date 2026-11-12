@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/fonts",
-  "version": "0.8.0",
+  "version": "0.9.0-beta.1",
   "description": "Font substitution and on-demand web-font loading for PowerPoint decks: metric-compatible free substitutes plus a unicode-range slice loader. Zero font bytes in the package.",
   "keywords": [
     "pptx",
@@ -46,10 +46,10 @@
       "types": "./dist/glyphs/worker.d.ts",
       "import": "./dist/glyphs-worker.js"
     },
- "./glyphs/browser": {
-  "types": "./dist/glyphs/browser.d.ts",
-  "import": "./dist/glyphs-browser.js"
- },
+    "./glyphs/browser": {
+      "types": "./dist/glyphs/browser.d.ts",
+      "import": "./dist/glyphs-browser.js"
+    },
     "./subset": {
       "types": "./dist/subset/index.d.ts",
       "import": "./dist/subset.js"
@@ -68,7 +68,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "^0.8.0"
+    "@web-ppt/core": "^0.9.0-beta.1"
   },
   "publishConfig": {
     "access": "public"
