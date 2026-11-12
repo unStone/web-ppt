@@ -128,6 +128,21 @@ export interface ElementImageReplacement {
   readonly suppressedRelationshipId?: string;
 }
 
+/** 要写入 PPTX 的嵌入字体条目；每个 style 槽位对应保存时的一个 fntdata 部件。 */
+export interface FontEmbedResource {
+  readonly family: string;
+  /** 字体字节的内容哈希；协同与历史只引用它 */
+  readonly hash: string;
+  /** 还原后的 sfnt MIME（font/ttf | font/otf） */
+  readonly mime: string;
+  /** 本条目覆盖的样式槽（PowerPoint 每槽一个 fntdata） */
+  readonly styles: readonly { bold: boolean; italic: boolean }[];
+  /** base64 编码的 sfnt 字节 */
+  readonly bytes: string;
+  /** 字体真实的 OS/2 fsType；EOT 容器头原样回写保留许可边界 */
+  readonly fsType: number;
+}
+
 /** 页面背景会克隆未知扩展；因此除主图片外还要持有扩展引用的完整关系/资源闭包。 */
 export interface SlideImageBackground extends ElementImageReplacement {
   readonly imageRelationshipId: string;
@@ -887,6 +902,12 @@ export interface EditDoc {
   >;
   /** 会话图片按内容寻址；未被当前元素引用的条目仍可供历史逆向 Patch 恢复。 */
   imageResources: Record<string, ElementInsertionResource>;
+  /**
+   * 本会话要求写入保存的嵌入字体，按内容寻址；patch 载荷只携带哈希引用。
+   * 字节已是还原后的 sfnt（写入时再封 EOT 容器）；许可检查在登记时完成，
+   * 保存计划只输出这里仍然存在的条目。
+   */
+  fontResources?: Record<string, FontEmbedResource>;
   readonly package: OpcPackage | null;
   saveState: EditSaveState;
 }

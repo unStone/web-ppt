@@ -3482,6 +3482,83 @@ group('嵌入字体');
   }
 }
 
+group('嵌入字体写入');
+{
+  // 固件 TTF：OS/2 已带真实 fsType（make-font-glyph-samples 按许可登记）
+  const latin = makeTtf({ family: 'WebPPT Write', style: 'Regular', bold: false, italic: false });
+  const rights = lib.sfntEmbeddingRights(latin);
+  check('固件 TTF 可判定嵌入权利', rights.ok === true, JSON.stringify(rights));
+  if (rights.ok) {
+    // 封容器 → 读侧剥容器，必须逐字节还原
+    const container = lib.wrapEotContainer(latin, { family: 'WebPPT Write', bold: false, italic: false, fsType: 8 });
+    check('容器头是 EOT 魔数', container[34] === 0x4c && container[35] === 0x50, `${container[34]},${container[35]}`);
+    const decoded = lib.embeddedFontToSfnt(container);
+    check('容器可被读侧还原', !!decoded && decoded.mime === 'font/ttf', JSON.stringify(decoded?.mime));
+    const back = decoded ? new Uint8Array(decoded.data) : new Uint8Array();
+    check(
+      '剥头后逐字节等于原字体',
+      back.length === latin.length && back.every((b, i) => b === latin[i]),
+      `${back.length}B vs ${latin.length}B`,
+    );
+
+    // 异或容器同样往返
+    const xored = lib.wrapEotContainer(latin, { family: 'WebPPT Write', bold: false, italic: false, xor: true });
+    const xorBack = lib.embeddedFontToSfnt(xored);
+    check('异或容器剥头后逐字节还原', !!xorBack && new Uint8Array(xorBack.data).every((b, i) => b === latin[i]));
+    check('异或容器的 Flags 已置位', (xored[12] | (xored[13] << 8) | (xored[14] << 16) | (xored[15] << 24)) & 0x10000000);
+    check('普通容器未置子集位', !(container[12] | (container[13] << 8) | (container[14] << 16) | (container[15] << 24)) & 0x1);
+    const subset = lib.wrapEotContainer(latin, { family: 'WebPPT Write', bold: false, italic: false, subset: true });
+    check('子集容器置 TTEMBED_SUBSET', !!(subset[12] & 1));
+  }
+
+  // 权利判定正反例：改 OS/2 fsType 的固件字节（OS/2 version @0、fsType @8）
+  const fsTypeOf = (fsType, version = 4) => {
+    const bytes = latin.slice();
+    const view = new DataView(bytes.buffer);
+    let os2 = -1;
+    for (let i = 0; i < view.getUint16(4); i++) {
+      const record = 12 + i * 16;
+      if (String.fromCharCode(bytes[record], bytes[record + 1], bytes[record + 2], bytes[record + 3]) === 'OS/2')
+        os2 = view.getUint32(record + 8);
+    }
+    if (os2 < 0) throw new Error('固件缺 OS/2');
+    view.setUint16(os2, version);
+    view.setUint16(os2 + 8, fsType);
+    return bytes;
+  };
+  const cases = [
+    [0x0000, 0, 'installable', true],
+    [0x0008, 4, 'editable', true],
+    [0x0004, 4, 'view-print', true],
+    [0x0002, 4, 'restricted', false],
+    [0x0003, 4, null, false], // version ≥3 必须互斥
+    [0x0000, 6, null, false], // 超出版本范围
+  ];
+  for (const [fsType, version, usage, writable] of cases) {
+    const checkResult = lib.sfntEmbeddingRights(fsTypeOf(fsType, version));
+    if (writable) {
+      check(`fsType ${fsType}/${version} 判为 ${usage}`, checkResult.ok && checkResult.rights.usage === usage, JSON.stringify(checkResult));
+    } else {
+      check(`fsType ${fsType}/${version} 明确拒绝`, !checkResult.ok, JSON.stringify(checkResult));
+    }
+  }
+  const bitmap = lib.sfntEmbeddingRights(fsTypeOf(0x0008 | 0x200));
+  check('outline 限制位判 bitmap-only 拒绝', !bitmap.ok, JSON.stringify(bitmap));
+
+  // 非法家族名 fast-fail
+  check(
+    '空家族名抛错',
+    (() => {
+      try {
+        lib.wrapEotContainer(latin, { family: '  ' });
+        return false;
+      } catch {
+        return true;
+      }
+    })(),
+  );
+}
+
 // ---------------- 14c. 字体统计 ----------------
 
 group('字体统计');

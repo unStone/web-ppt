@@ -41,6 +41,7 @@ import { runBulletFormatSaveContract } from './lib/bullet-format-save-contract.m
 import { runVertexSaveContract } from './lib/vertex-save-contract.mjs';
 import { runPresetShapeSaveContract } from './lib/preset-shape-save-contract.mjs';
 import { runTableStyleSaveContract } from './lib/table-style-save-contract.mjs';
+import { runFontEmbeddingSaveContract } from './lib/font-embedding-save-contract.mjs';
 import { runAdvancedRunFormatSaveContract } from './lib/advanced-run-format-save-contract.mjs';
 import { runCommonObjectSlideSaveContract } from './lib/common-object-slide-save-contract.mjs';
 import { runV06IntegrationSaveContract } from './lib/v06-integration-save-contract.mjs';
@@ -204,6 +205,7 @@ await runTableStyleSaveContract({
     return JSON.parse(stdout);
   },
 });
+await runFontEmbeddingSaveContract({ edit, core, load, check, saveArtifact });
 await runThemeEditSaveContract({
   edit,
   core,

@@ -46,6 +46,7 @@ import { materializeNotesMaster, prepareNotesMasterSave } from './notes-master';
 import { hasNameOverride } from './name';
 import { hasAltTextOverride } from './alt-text';
 import { hasGeometryOverride } from './geometry';
+import { fontEmbedSavePlan, patchEmbeddedFontList, patchFontContentType, patchFontPresentationRelationships } from './font-embedding';
 import {
   materializeTableStyles,
   patchTableStyleContentType,
@@ -228,6 +229,13 @@ export function saveEditDoc(doc: EditDoc, extensionPlan: EditExtensionSavePlan =
     const source = doc.package.parts[part];
     if (!source) throw new Error(`找不到主题 OPC part：${part}`);
     nextBaselines[part] = source.slice();
+  }
+  // 嵌入字体部件是本会话新增：登记基线与 created 语义，供撤销后的保存回收
+  const fontPlan = fontEmbedSavePlan(doc, { ...doc.package.parts, ...nextBaselines });
+  for (const font of fontPlan.parts) {
+    if (nextBaselines[font.part]) continue;
+    nextCreatedParts.add(font.part);
+    nextBaselines[font.part] = font.bytes.slice();
   }
   if (tableStyles?.definitions.length && !nextBaselines[tableStyles.part]) {
     const source = doc.package.parts[tableStyles.part];
@@ -499,6 +507,29 @@ export function saveEditDoc(doc: EditDoc, extensionPlan: EditExtensionSavePlan =
     }
     changes[contentTypesPart] = patchTableStyleContentType(contentTypes, tableStyles.part);
     changes[presentationRelsPart] = patchTableStylePresentationRelationships(relationships, tableStyles.part);
+  }
+  if (fontPlan.parts.length) {
+    const contentTypes = changes[contentTypesPart] ?? nextBaselines[contentTypesPart] ?? doc.package.parts[contentTypesPart];
+    const relationships = changes[presentationRelsPart] ?? nextBaselines[presentationRelsPart] ?? doc.package.parts[presentationRelsPart];
+    const presentation = nextBaselines[presentationPart] ?? doc.package.parts[presentationPart];
+    if (!(contentTypes instanceof Uint8Array) || !(relationships instanceof Uint8Array) || !(presentation instanceof Uint8Array)) {
+      throw new Error(
+        `写入嵌入字体缺少 OPC 闭包基线：contentTypes=${contentTypes?.constructor?.name} relationships=${relationships?.constructor?.name} presentation=${presentation?.constructor?.name}`,
+      );
+    }
+    for (const font of fontPlan.parts) changes[font.part] = font.bytes;
+    changes[contentTypesPart] = patchFontContentType(contentTypes);
+    const fontRels = patchFontPresentationRelationships(relationships, fontPlan.parts);
+    changes[presentationRelsPart] = fontRels.bytes;
+    changes[presentationPart] = patchEmbeddedFontList(
+      presentation,
+      fontPlan.parts.map((font, index) => ({
+        family: font.family,
+        bold: font.bold,
+        italic: font.italic,
+        relationshipId: fontRels.ids[index],
+      })),
+    );
   }
   for (const part of removedSlideParts.packageParts) changes[part] = null;
   if (tableStyles) {

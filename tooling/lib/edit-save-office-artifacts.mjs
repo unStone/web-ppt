@@ -15,6 +15,7 @@ export const EDIT_SAVE_OFFICE_ARTIFACTS = Object.freeze([
   Object.freeze({ file: 'group-elements.pptx', slides: 1 }),
   Object.freeze({ file: 'ungroup-elements.pptx', slides: 1 }),
   Object.freeze({ file: 'single-move.pptx', slides: 1 }),
+  Object.freeze({ file: 'font-embedding.pptx', slides: 1 }),
   Object.freeze({ file: 'element-delete.pptx', slides: 2 }),
   Object.freeze({ file: 'element-layer.pptx', slides: 2 }),
   Object.freeze({ file: 'element-align.pptx', slides: 2 }),
