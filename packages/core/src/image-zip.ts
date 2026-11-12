@@ -2,7 +2,7 @@ import { Zip, ZipPassThrough } from 'fflate';
 import { staticHidden } from './anim-steps';
 import { slideToPng } from '@web-ppt/core';
 import { validateRasterSize } from './raster-size';
-import type { Presentation, Slide } from './types';
+import type { ExportFontOptions, Presentation, Slide } from './types';
 
 const DEFAULT_CONCURRENCY = 2;
 const MAX_CONCURRENCY = 8;
@@ -26,6 +26,8 @@ export interface PresentationImageZipOptions {
   concurrency?: number;
   /** 每个文件写入 ZIP 后调用一次，适合驱动产品层进度条。 */
   onProgress?: (progress: PresentationImageZipProgress) => void;
+  /** 导出字体处理（子集化引擎与追加脸集），逐页透传给 PNG 光栅化 */
+  fonts?: ExportFontOptions;
 }
 
 export class PresentationImageExportError extends Error {
@@ -51,14 +53,14 @@ interface PageJob {
 
 function optionsOf(options: PresentationImageZipOptions): Required<Pick<
   PresentationImageZipOptions, 'scale' | 'skipHidden' | 'concurrency'
->> & Pick<PresentationImageZipOptions, 'onProgress' | 'showComments'> {
+>> & Pick<PresentationImageZipOptions, 'onProgress' | 'showComments' | 'fonts'> {
   const scale = options.scale ?? 2;
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
   if (!Number.isFinite(scale) || scale <= 0) throw new RangeError('scale 必须是大于 0 的有限数');
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > MAX_CONCURRENCY) {
     throw new RangeError(`concurrency 必须是 1–${MAX_CONCURRENCY} 的整数`);
   }
-  return { scale, concurrency, skipHidden: options.skipHidden ?? false, onProgress: options.onProgress, showComments: options.showComments };
+  return { scale, concurrency, skipHidden: options.skipHidden ?? false, onProgress: options.onProgress, showComments: options.showComments, fonts: options.fonts };
 }
 
 function jobsOf(pres: Presentation, skipHidden: boolean): PageJob[] {
@@ -70,12 +72,18 @@ function jobsOf(pres: Presentation, skipHidden: boolean): PageJob[] {
   });
 }
 
-async function renderPage(pres: Presentation, job: PageJob, scale: number, showComments?: boolean): Promise<Uint8Array> {
+async function renderPage(
+  pres: Presentation,
+  job: PageJob,
+  scale: number,
+  options: Pick<PresentationImageZipOptions, 'showComments' | 'fonts'>,
+): Promise<Uint8Array> {
   try {
     const blob = await slideToPng(pres, job.slide, scale, {
-      showComments,
+      showComments: options.showComments,
       hiddenElements: [...staticHidden(job.slide)],
       strictResources: true,
+      fonts: options.fonts,
     });
     return new Uint8Array(await blob.arrayBuffer());
   } catch (error) {
@@ -110,7 +118,7 @@ export async function presentationToImageZip(
     for (let start = 0; start < jobs.length; start += normalized.concurrency) {
       const batch = jobs.slice(start, start + normalized.concurrency);
       const outcomes = await Promise.allSettled(
-        batch.map((job) => renderPage(pres, job, normalized.scale, normalized.showComments)),
+        batch.map((job) => renderPage(pres, job, normalized.scale, normalized)),
       );
       const failed = outcomes.find((outcome) => outcome.status === 'rejected');
       if (failed?.status === 'rejected') throw failed.reason;

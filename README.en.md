@@ -136,7 +136,7 @@ The 0.7 template journey (`npm run test:v07`) covers template → theme → mast
 | [`@web-ppt/react`](https://github.com/unStone/web-ppt/tree/master/packages/react) | React component and hook. | `editor` + React optional peer | 1.12 KB |
 | [`@web-ppt/vue`](https://github.com/unStone/web-ppt/tree/master/packages/vue) | Vue component and composable. | `editor` + Vue optional peer | 1.34 KB |
 | [`@web-ppt/viewer-core`](https://github.com/unStone/web-ppt/tree/master/packages/viewer-core) | Navigation / zoom / search / animation batching. | `core` | 14.09 KB |
-| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (zero font bytes in the package). | `core` | 3.44 KB |
+| [`@web-ppt/fonts`](https://github.com/unStone/web-ppt/tree/master/packages/fonts) | Font substitution and on-demand loading (zero font bytes in the package). | `core` | 4.39 KB |
 
 Sizes sum the gzipped default entry and every relative static chunk, excluding peers and dynamic entries.
 

@@ -1,5 +1,5 @@
 import type {
-  CellBorders, ElementBase, GroupElement, ImageElement, LineEnd, MediaInfo, Presentation,
+  CellBorders, ElementBase, EmbeddedFont, GroupElement, ImageElement, LineEnd, MediaInfo, Presentation,
   ShapeElement, Slide, SlideComment, SlideElement, Stroke, TableElement, TextBody,
   UnsupportedElement,
 } from '../types';
@@ -86,6 +86,11 @@ export interface RenderOptions extends RenderElementOptions {
   includeNotes?: boolean;
   /** 画批注标记（Slide.comments），默认关闭 */
   showComments?: boolean;
+  /**
+   * 在 `Presentation.embeddedFonts` 之后追加的 `@font-face`。
+   * 给导出用：替代字体切片等只有导出时才需要的脸从这里进来，不污染展示模型。
+   */
+  fontFaces?: EmbeddedFont[];
 }
 
 export interface RenderElementResult {
@@ -162,8 +167,11 @@ export function renderSlideToSvg(pres: Presentation, slide: Slide, opts: RenderO
   const body = slide.elements.map((el) => renderEl(el, ctx)).join('')
     + (opts.showComments ? renderComments(slide.comments, pres.width, pres.height) : '');
 
-  const fontFaces = (pres.embeddedFonts ?? [])
-    .map((f) => `@font-face{font-family:'${escapeCssString(f.family)}';src:url('${escapeCssString(f.src)}');font-weight:${f.bold ? 700 : 400};font-style:${f.italic ? 'italic' : 'normal'};}`)
+  const fontFaces = [...(pres.embeddedFonts ?? []), ...(opts.fontFaces ?? [])]
+    .map((f) => `@font-face{font-family:'${escapeCssString(f.family)}';src:url('${escapeCssString(f.src)}');font-weight:${f.bold ? 700 : 400};font-style:${f.italic ? 'italic' : 'normal'};`
+      + (f.unicodeRange ? `unicode-range:${f.unicodeRange};` : '')
+      + (f.sizeAdjust ? `size-adjust:${f.sizeAdjust}%;` : '')
+      + '}')
     .join('') + (body.includes(DENGXIAN_LATIN_FAMILY) ? dengXianLatinFontFaces() : '');
   const styleTag = fontFaces ? `<style>${fontFaces}</style>` : '';
   const notes = opts.includeNotes && slide.notes

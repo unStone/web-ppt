@@ -6,11 +6,13 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build"
+    "dev": "node ../../tooling/sync-font-wasm.mjs && vite",
+    "build": "node ../../tooling/sync-font-wasm.mjs && vite build"
   },
   "dependencies": {
     "@web-ppt/core": "*",
-    "@web-ppt/viewer-core": "*"
+    "@web-ppt/fonts": "*",
+    "@web-ppt/viewer-core": "*",
+    "harfbuzzjs": "1.6.1"
   }
 }

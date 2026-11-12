@@ -2773,6 +2773,78 @@ group('字体替换');
       globalThis.fetch = originalFetch;
     }
   }
+
+  // 导出脸集：命中的切片以 data URI 内联、家族名写回原名、未命中的切片不下载
+  {
+    const originalFetch = globalThis.fetch;
+    const base = 'https://export.test/npm';
+    const requested = [];
+    const woff2 = (tail) => new Uint8Array([0x77, 0x4f, 0x46, 0x32, tail]);
+    const face = (family, file, range) =>
+      `@font-face{font-family:'${family}';font-style:normal;font-weight:400;src:url(./files/${file}.woff2) format('woff2');${range ? `unicode-range:${range};` : ''}}`;
+    const cssText = {
+      'noto-sans-sc#400.css': [
+        face('Noto Sans SC', 'cjk-a', 'U+4E00-4FFF'), // 命中「你」
+        face('Noto Sans SC', 'cjk-b', 'U+5000-5FFF'), // 命中「好」
+        face('Noto Sans SC', 'cjk-c', 'U+6000-6FFF'), // 不命中，不应下载
+        face('Noto Sans SC', 'cjk-d', 'U+4E00-4FFF'), // 命中但字节 404
+      ].join(''),
+      'noto-sans-sc#700.css': face('Noto Sans SC', 'cjk-a', 'U+4E00-9FFF'),
+      'arimo#700.css': face('Arimo', 'lat-b', 'U+0000-024F'),
+    };
+    const slices = {
+      [`${base}/@fontsource/noto-sans-sc@5.3.0/files/cjk-a.woff2`]: woff2(1),
+      [`${base}/@fontsource/noto-sans-sc@5.3.0/files/cjk-b.woff2`]: woff2(2),
+      [`${base}/@fontsource/arimo@5.3.0/files/lat-b.woff2`]: woff2(4),
+    };
+    globalThis.fetch = async (url) => {
+      requested.push(String(url));
+      // CSS 按「包名 + 结尾文件名」匹配：真实地址中间隔着 @version
+      const text = Object.entries(cssText).find(([key]) => {
+        const [pkg, file] = key.split('#');
+        return String(url).includes(pkg) && String(url).endsWith(`/${file}`);
+      })?.[1];
+      if (text !== undefined) return { ok: true, text: async () => text };
+      const bytes = slices[String(url)];
+      if (bytes) return { ok: true, arrayBuffer: async () => bytes.slice().buffer };
+      return { ok: false, status: 404 };
+    };
+    const usages = [
+      { family: '黑体', styles: [{ bold: false, italic: false }], chars: '你好', count: 2 },
+      { family: '宋体', styles: [{ bold: false, italic: false }], chars: '字', count: 1 },
+      { family: '等线', styles: [{ bold: true, italic: false }], chars: 'A_', count: 2 },
+    ];
+    try {
+      const issues = [];
+      const faces = await fontsLib.exportFontFaces(usages, { base, onIssue: (i) => issues.push(i) });
+      eq('命中与等线西文共 4 张脸', faces.length, 4, JSON.stringify(faces.map((f) => f.unicodeRange)));
+      check('脸顶着原字体名', faces.every((f) => ['黑体', '等线'].includes(f.family)));
+      check('切片以 data URI 内联',
+        faces[0]?.src === `data:font/woff2;base64,${Buffer.from(woff2(1)).toString('base64')}`
+        && faces[1]?.src === `data:font/woff2;base64,${Buffer.from(woff2(2)).toString('base64')}`,
+        faces.map((f) => f.src.slice(0, 40)).join(' | '));
+      check('unicode-range 规范化为大写', faces[0]?.unicodeRange === 'U+4E00-4FFF' && faces[1]?.unicodeRange === 'U+5000-5FFF');
+      check('未命中的切片不下载', !requested.some((u) => u.includes('cjk-c')));
+      check('命中的 404 切片被跳过', requested.some((u) => u.includes('cjk-d'))
+        && faces.filter((f) => f.family === '黑体').length === 2);
+      eq('CSS 取不到报告 css-unavailable', issues.some((i) => i.family === '宋体' && i.reason === 'css-unavailable'), true);
+      eq('切片取不到报告 slice-unavailable', issues.some((i) => i.family === '黑体' && i.reason === 'slice-unavailable'), true);
+      const dengxianLatin = faces.filter((f) => f.family === '等线');
+      check('粗体西文整体缩放', dengxianLatin.some((f) => f.sizeAdjust === 95.4 && f.unicodeRange === 'U+0000-024F'));
+      check('下划线单独成脸再缩放', dengxianLatin.some((f) => f.unicodeRange === 'U+5F' && f.sizeAdjust === 74.6));
+      check('下划线面排在同字重整体面之后',
+        dengxianLatin.findIndex((f) => f.unicodeRange === 'U+5F') > dengxianLatin.findIndex((f) => f.unicodeRange === 'U+0000-024F'));
+      const again = await fontsLib.exportFontFaces(usages, { base });
+      eq('两次导出脸集完全一致', JSON.stringify(again), JSON.stringify(faces));
+      const noCjk = await fontsLib.exportFontFaces(usages.slice(0, 1), { base, cjk: false });
+      eq('关掉 cjk 后中文家族不内联', noCjk.length, 0);
+      // 导出看的是收件人的机器：默认不因本机已装而跳过（skipInstalled 的真机行为由浏览器套件验收）
+      const still = await fontsLib.exportFontFaces(usages.slice(0, 1), { base });
+      eq('默认不跳过本机已装', still.length, 2);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  }
 }
 
 // ---------------- 14f. 行距 ----------------
@@ -3717,6 +3789,148 @@ group('渲染快照');
     } else {
       console.log(`  ${pass} 项累计通过，快照全部一致`);
     }
+  }
+}
+
+group('导出字体子集化');
+{
+  // 最小文稿：两页共用「黑体」，嵌入字体里再塞一个没用到的 Calibri
+  const mkText = (text, family) => ({
+    kind: 'shape', x: 0, y: 0, w: 400, h: 100, rot: 0, flipH: false, flipV: false, path: null,
+    fill: null, stroke: null,
+    text: {
+      anchor: 'top', insets: [0, 0, 0, 0], wrap: true, fontScale: 1,
+      paragraphs: [{
+        align: 'left', lvl: 0, marL: 0, indent: 0, bullet: null, lineHeight: null,
+        spaceBefore: 0, spaceAfter: 0,
+        runs: [{ text, b: false, i: false, u: false, strike: false, size: 24, color: '#000', fonts: [family] }],
+      }],
+    },
+  });
+  const pres = {
+    width: 960, height: 540, source: 'pptx',
+    slides: [
+      { background: null, elements: [mkText('你好世界', '黑体')] },
+      { background: null, elements: [mkText('字体切割', '黑体')] },
+    ],
+    embeddedFonts: [
+      { family: '黑体', src: 'blob:node/heti', bold: false, italic: false },
+      { family: 'Calibri', src: 'blob:node/cali', bold: false, italic: false },
+    ],
+  };
+  // sfnt 魔数开头，让按魔数判定 MIME 的路径走到 font/ttf
+  const heti = new Uint8Array([0, 1, 0, 0, ...Array(120).fill(65)]);
+  const cali = new Uint8Array([0, 1, 0, 0, ...Array(60).fill(66)]);
+  const resources = new Map([['blob:node/heti', heti], ['blob:node/cali', cali]]);
+  const realFetch = globalThis.fetch, realReader = globalThis.FileReader;
+  globalThis.FileReader = class {
+    readAsDataURL(blob) {
+      blob.arrayBuffer().then((buf) => {
+        this.result = `data:${blob.type};base64,${Buffer.from(buf).toString('base64')}`;
+        this.onload && this.onload();
+      }, (err) => this.onerror && this.onerror({ error: err }));
+    }
+  };
+  globalThis.fetch = async (url) => {
+    const bytes = resources.get(String(url));
+    if (!bytes) return { ok: false, status: 404 };
+    return { ok: true, arrayBuffer: async () => bytes.slice().buffer, blob: async () => new globalThis.Blob([bytes], { type: 'font/ttf' }) };
+  };
+  const base64 = (bytes) => Buffer.from(bytes).toString('base64');
+  const subsetBytes = new Uint8Array([9, 9, 9, 9, 7, 7]);
+  const sortedChars = (text) => [...text].sort((a, b) => a.codePointAt(0) - b.codePointAt(0)).join('');
+
+  try {
+    // 默认不传 fonts：整字体进入产物、未用家族也保留——现状语义逐字节不变
+    const plain = await lib.slideToSvgFile(pres, pres.slides[0]);
+    check('默认导出内联整字体', plain.includes(`data:font/ttf;base64,${base64(heti)}`));
+    check('默认导出保留未用家族', plain.includes(`data:font/ttf;base64,${base64(cali)}`));
+    check('默认产物不携带 unicode-range', !plain.includes('unicode-range'));
+
+    // 开启子集化：有用量家族按字符集子集，未用家族整脸剔除
+    const seen = [], fallbacks = [];
+    const subsetter = {
+      subset: async (input) => { seen.push(input); return { ok: true, bytes: subsetBytes, mime: 'font/ttf' }; },
+      dispose() {},
+    };
+    const out = await lib.slideToSvgFile(pres, pres.slides[0], undefined,
+      { fonts: { subsetter, onFontFallback: (f, r) => fallbacks.push([f, r]) } });
+    check('子集化产物使用子集字节', out.includes(`data:font/ttf;base64,${base64(subsetBytes)}`));
+    check('未用家族整脸剔除', !out.includes('blob:node/cali') && !out.includes('Calibri'));
+    eq('子集化只处理有用量家族', seen.length, 1);
+    eq('字符集按 collectFonts 口径传递', seen[0].chars, sortedChars('你好世界'));
+    eq('字符集随脸带家族与样式', seen[0].family, '黑体');
+    check('MIME 按魔数判定', seen[0].mime === 'font/ttf');
+    eq('失败回调收到 unused-family', fallbacks.length, 1);
+    eq('unused-family 的家族名', fallbacks[0]?.[0], 'Calibri');
+    eq('unused-family 的 reason', fallbacks[0]?.[1], 'unused-family');
+
+    // 引擎返回失败 / 抛异常：都回退整字体内联，且可观察
+    const fallbacks2 = [];
+    const failing = {
+      subset: async () => ({ ok: false, reason: 'subset-failed' }),
+      dispose() {},
+    };
+    const out2 = await lib.slideToSvgFile(pres, pres.slides[0], undefined,
+      { fonts: { subsetter: failing, onFontFallback: (f, r) => fallbacks2.push([f, r]) } });
+    check('引擎失败回退整字体', out2.includes(`data:font/ttf;base64,${base64(heti)}`));
+    eq('失败回调收到 subset-failed', fallbacks2[0]?.[1], 'subset-failed');
+    const throwing = {
+      subset: async () => { throw new Error('wasm 崩了'); },
+      dispose() {},
+    };
+    const out3 = await lib.slideToSvgFile(pres, pres.slides[0], undefined,
+      { fonts: { subsetter: throwing, onFontFallback: (f, r) => fallbacks2.push([f, r]) } });
+    check('引擎抛错也回退整字体', out3.includes(`data:font/ttf;base64,${base64(heti)}`));
+    check('抛错报告 subsetter-error', fallbacks2.some(([, r]) => r === 'subsetter-error'));
+
+    // 打印整稿：并集字符集、跨页只子集化一次、两页共用同一 data URI
+    const printSeen = [];
+    const printSubsetter = {
+      subset: async (input) => { printSeen.push(input); return { ok: true, bytes: subsetBytes, mime: 'font/ttf' }; },
+      dispose() {},
+    };
+    const html = await lib.presentationToPrintableHtml(pres, { fonts: { subsetter: printSubsetter } });
+    eq('打印整稿同字体只子集一次', printSeen.length, 1);
+    eq('打印用并集字符集', printSeen[0].chars, sortedChars('你好世界字体切割'));
+    eq('两页共用同一份子集 data URI',
+      html.split(`data:font/ttf;base64,${base64(subsetBytes)}`).length - 1, 2);
+    check('打印不含未用家族', !html.includes('blob:node/cali'));
+
+    // 追加脸集（替代字体切片）：随导出进入并携带 unicode-range / size-adjust
+    const out4 = await lib.slideToSvgFile(pres, pres.slides[0], undefined, {
+      fonts: { extraFontFaces: [{ family: '楷体', src: 'data:font/woff2;base64,AA==', bold: false, italic: false, unicodeRange: 'U+4E00-9FA5', sizeAdjust: 95.4 }] },
+    });
+    check('追加脸进入导出', out4.includes("font-family:'楷体'") && out4.includes('unicode-range:U+4E00-9FA5;'));
+    check('追加脸带 size-adjust', out4.includes('size-adjust:95.4%;'));
+
+    // PNG 路径同样吃到子集化
+    const realImage = globalThis.Image;
+    const doc = globalThis.document;
+    const realCreate = doc.createElement.bind(doc);
+    const srcs = [];
+    globalThis.Image = class {
+      set src(v) { srcs.push(v); queueMicrotask(() => this.onload && this.onload()); }
+    };
+    doc.createElement = (tag) => {
+      if (tag !== 'canvas') return realCreate(tag);
+      return {
+        width: 0, height: 0,
+        getContext: () => ({ fillStyle: '', font: '', fillRect() {}, drawImage() {}, measureText: (s) => ({ width: s.length * 8 }) }),
+        toDataURL: () => `data:image/png;base64,${btoa('png')}`,
+      };
+    };
+    try {
+      await lib.slideToPng(pres, pres.slides[0], 1, { fonts: { subsetter } });
+      check('PNG 导出同样吃到子集',
+        srcs[0] !== undefined && decodeURIComponent(srcs[0]).includes(`data:font/ttf;base64,${base64(subsetBytes)}`));
+    } finally {
+      globalThis.Image = realImage;
+      doc.createElement = realCreate;
+    }
+  } finally {
+    globalThis.fetch = realFetch;
+    globalThis.FileReader = realReader;
   }
 }
 

@@ -198,8 +198,10 @@ export const editorWebMcpPlugin = {
         },
         rasterize: async () => {
           const render = input as AgentRenderInput;
-          const blob = await slideToPng(presentation, presentation.slides[render.slideNumber - 1], render.scale,
-            { strictResources: true });
+          const slide = presentation.slides[render.slideNumber - 1];
+          const fonts = await import('./export-fonts').then(({ exportFontOptions }) => exportFontOptions([slide]));
+          const blob = await slideToPng(presentation, slide, render.scale,
+            { strictResources: true, ...(fonts ? { fonts } : {}) });
           active(signal);
           return new Uint8Array(await blob.arrayBuffer());
         },
@@ -224,8 +226,10 @@ export const editorWebMcpPlugin = {
         let result = await call();
         if (result.ok && name === 'render' && (input as AgentRenderInput).format === 'svg') {
           const render = input as AgentRenderInput;
+          const slide = presentation.slides[render.slideNumber - 1];
           // 使用既有资源内联路径，返回值不依赖当前文稿的 blob URL。
-          const data = await slideToSvgFile(presentation, presentation.slides[render.slideNumber - 1]);
+          const fonts = await import('./export-fonts').then(({ exportFontOptions }) => exportFontOptions([slide]));
+          const data = await slideToSvgFile(presentation, slide, undefined, fonts ? { fonts } : {});
           result = { ok: true, value: { slideNumber: render.slideNumber, format: 'svg', data } };
         }
         current(signal);

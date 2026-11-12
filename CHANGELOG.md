@@ -2,6 +2,22 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 0.9.0-beta.1 - 2026-11-12
+
+九包发布到 npm `next`，开启 0.9 线。本版交付导出字体子集化与替代字体内联（[设计与实测](docs/design/export-font-subset.md)）：
+
+- 新增导出字体选项 `fonts`（PNG / 独立 SVG / 打印 / 图片 ZIP）：`subsetter` 按导出范围字符集精确子集化嵌入字体，导出范围没有用量的家族整脸剔除；子集失败按稳定 reason（`subset-failed` / `unused-family` / `subsetter-error`，经 `onFontFallback` 观察）回退整字体内联，回退结果不劣于旧行为。不传该选项时导出产物逐字节不变。打印整稿使用并集字符集，同一字体跨页共享一份 data URI。
+- `EmbeddedFont` 增加可选 `unicodeRange` / `sizeAdjust`，导出 SVG 的 `@font-face` 按声明输出。
+- `@web-ppt/fonts` 新增可选入口 `@web-ppt/fonts/subset`：`createHarfBuzzSubsetter(wasm)` 把宿主提供的 harfbuzzjs `harfbuzz-subset.wasm` 转成 core 的 `FontSubsetter`，包内不携带 wasm 与字体字节，输出确定性字节（同输入两次一致，变量字体钉默认轴）；默认入口新增 `exportFontFaces(usages)`，把替代字体命中的 fontsource 切片转成 data URI 的 `EmbeddedFont[]`（含 `unicode-range` 与等线西文实测 `size-adjust`），独立 SVG 在未安装该字体的机器上不再回退系统字体。
+- 官网与查看器的导出入口显式开启；引擎不可用时降级整字体内联，不阻断导出。
+- 实测（12.2KB 中文固件字体）：子集 2.5KB，单页导出 SVG 16.9KB → 3.9KB；子集开 / 关两次导出 PNG 光栅字节一致。
+
+破坏性变更核对：无 API 撤除；`fonts` 选项缺省行为不变。
+
+`@web-ppt/collab` 发布入口为 12.20KB gzip；排除 peer 的完整测试薄包为 14,333B gzip，两种口径分别核对。
+
+Windows PowerPoint 真机验收继续延后，未记为通过。
+
 ## 0.8.0 - 2026-11-06
 
 0.8.0 稳定版：`0.8.0-beta.3` 的全部内容转正到 `latest`，包括 Agent 命令工具面、本机 MCP server 与 Agent Skill（`@web-ppt/agent-mcp` 首个稳定版）、模板填充 `@web-ppt/edit-core/fill`、编辑器 WebMCP 与 Agent 配对评测工具。相对 0.6.0 的逐项变化见下方 `0.8.0-beta.1` 至 `0.8.0-beta.3` 条目。本版另含：

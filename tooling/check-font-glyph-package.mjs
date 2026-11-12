@@ -20,7 +20,7 @@ for(const name of ['core','fonts']){
     if(packed.files.some(file=>/\.(?:wasm|ttf|otf|woff2?|eot)$|prototype|font-glyph-samples/.test(file.path)))
       throw new Error('字体发布包包含字体字节、WASM 或原型');
     const pkg=JSON.parse(readFileSync(join(target,'package.json'),'utf8'));
-    for(const key of ['.','./glyphs','./glyphs/harfbuzz','./glyphs/worker','./glyphs/browser']){
+    for(const key of ['.','./glyphs','./glyphs/harfbuzz','./glyphs/worker','./glyphs/browser','./subset']){
       for(const field of ['types','import'])if(!existsSync(join(target,pkg.exports[key][field])))
         throw new Error(`${key} 缺少 ${field} 发布文件`);
     }
@@ -34,6 +34,8 @@ import {createFontProvider,segmentFontText,withFontMeasurement,type FontGlyphPro
 import {createHarfBuzzShaper} from '@web-ppt/fonts/glyphs/harfbuzz';
 import {createWorkerFontShaper,serveFontWorker,type FontWorkerEndpoint} from '@web-ppt/fonts/glyphs/worker';
 import {createFontFaceScope} from '@web-ppt/fonts/glyphs/browser';
+import {createHarfBuzzSubsetter} from '@web-ppt/fonts/subset';
+import type {FontSubsetter} from '@web-ppt/core';
 
 substituteFor('Arial');
 const shaper=createWorkerFontShaper(()=>new Worker(new URL('./worker.js',import.meta.url),{type:'module'}));
@@ -52,6 +54,7 @@ await withFontMeasurement(provider,measure=>measure('A',{
   language:'en',purpose:'view-print',faceForRun:(style,script)=>style.b&&script==='Latn'?'bold':'local',
 });
 segmentFontText('中文 ABC',{direction:'ltr',language:'zh'});
+const subsetter:FontSubsetter=await createHarfBuzzSubsetter(new ArrayBuffer(0));
 declare const endpoint:FontWorkerEndpoint;
 serveFontWorker(endpoint,{loadShaper:async()=>shaper});
 // @ts-expect-error 首版不允许把复杂脚本悄悄作为已支持范围。

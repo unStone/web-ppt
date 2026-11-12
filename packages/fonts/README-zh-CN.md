@@ -6,7 +6,7 @@
 
 PPT 里指定的字体，本机往往没有。这个包负责换一份**免费的、能自动按需下载的**替代字体，让文本仍然按接近原样的方式排版。
 
-包里**一个字节的字体都没有**（默认入口 gzip 2.8KB）。切片指向 [fontsource](https://fontsource.org/) 已发布的版本，由 jsDelivr 分发，用不到就不下载。
+包里**一个字节的字体都没有**（默认入口 gzip 4.3KB，含导出脸集能力；子集化引擎入口另计 0.9KB）。切片指向 [fontsource](https://fontsource.org/) 已发布的版本，由 jsDelivr 分发，用不到就不下载。
 
 ```bash
 npm i @web-ppt/fonts
@@ -90,7 +90,29 @@ await loadFontsFor(usages, { base: 'https://cdn.example.com/npm' });
 
 ## 导出的另一半
 
-`<img>` 加载的 SVG 是隔离文档，拿不到页面注册的字体。导出 PNG / 独立 SVG 时必须把命中的切片内联进去——`collectFonts` 给出的字符集就是为这个准备的。
+`<img>` 加载的 SVG 是隔离文档，拿不到页面注册的字体。导出 PNG / 独立 SVG / 打印时有两个能力补齐这一半：
+
+**替代字体命中切片内联**（默认入口）：`exportFontFaces` 只取与 `collectFonts` 字符集相交的切片，转成 data URI 的 `EmbeddedFont[]`，传给 core 导出选项的 `fonts.extraFontFaces`：
+
+```ts
+import { collectFonts } from '@web-ppt/core';
+import { exportFontFaces } from '@web-ppt/fonts';
+
+const faces = await exportFontFaces(collectFonts([slide]));
+const svg = await slideToSvgFile(pres, slide, undefined, { fonts: { extraFontFaces: faces } });
+```
+
+**嵌入字体精确子集化**（可选入口 `@web-ppt/fonts/subset`）：把文稿内嵌字体按导出范围字符集压到只含用到的字形，引擎是宿主注入的 harfbuzzjs `harfbuzz-subset.wasm`（包内不携带），输出确定性字节：
+
+```ts
+import { createHarfBuzzSubsetter } from '@web-ppt/fonts/subset';
+
+const subsetter = await createHarfBuzzSubsetter(await fetch('/vendor/harfbuzz-subset.wasm').then(r => r.arrayBuffer()));
+// 未用到的家族整脸剔除；子集失败回退整字体内联，reason 稳定（onFontFallback 可观察）
+const svg = await slideToSvgFile(pres, slide, undefined, { fonts: { subsetter } });
+```
+
+不传 `fonts` 选项时导出产物逐字节与旧版一致。实测（中文固件 12.2KB）：子集 2.5KB，单页导出 SVG 16.9KB → 3.9KB；子集开 / 关两次导出 PNG 光栅字节一致。
 
 ## 许可
 

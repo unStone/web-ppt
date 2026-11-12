@@ -178,6 +178,44 @@ export interface EmbeddedFont {
   src: string;
   bold: boolean;
   italic: boolean;
+  /**
+   * 该脸只覆盖的码位范围（CSS `unicode-range` 语法）。替代字体一个家族对应
+   * 多个切片脸时靠它区分；缺省表示覆盖全部码位。
+   */
+  unicodeRange?: string;
+  /** CSS `size-adjust` 百分比；替代字体用它把前进宽度拉向原字体 */
+  sizeAdjust?: number;
+}
+
+/**
+ * 导出用的字体子集化引擎。由宿主注入（发布包不携带实现），core 只定义契约。
+ *
+ * 引擎必须确定性：同 bytes + chars 产出相同输出字节，导出快照才能稳定。
+ * 引擎自行判断能否处理输入（如仅接受 sfnt），不能处理时返回失败而不是抛错。
+ */
+export interface FontSubsetter {
+  subset(input: {
+    bytes: Uint8Array;
+    /** 按魔数判定的字体 MIME（`font/ttf` / `font/otf` / `font/woff` / `font/woff2`） */
+    mime: string;
+    /** 该字体在导出范围内要渲染的字符（collectFonts 的超集口径） */
+    chars: string;
+    family: string;
+    bold: boolean;
+    italic: boolean;
+  }): Promise<{ ok: true; bytes: Uint8Array; mime: string } | { ok: false; reason: string }>;
+  /** 释放引擎持有的资源（如 wasm 线性内存）；调用后 subset 抛错 */
+  dispose(): void;
+}
+
+/** 导出时的字体处理选项；缺省即现状（整字体 base64 内联） */
+export interface ExportFontOptions {
+  /** 嵌入字体按导出范围字符集子集化后内联，无用量的家族整脸剔除 */
+  subsetter?: FontSubsetter;
+  /** 追加进导出 SVG 的 `@font-face`（替代字体切片等），src 为 blob:/data: 均可 */
+  extraFontFaces?: EmbeddedFont[];
+  /** 子集化被跳过或失败时的观察口；reason 稳定（`subset-failed` / `unused-family` / `subsetter-error`） */
+  onFontFallback?: (family: string, reason: string) => void;
 }
 
 export interface Slide {

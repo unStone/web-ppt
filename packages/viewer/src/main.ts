@@ -27,6 +27,8 @@ import {
   showOpenOpening,
   showOpenParsing,
 } from './open-status';
+import { createHarfBuzzSubsetter } from '@web-ppt/fonts/subset';
+import type { ExportFontOptions, FontSubsetter } from '@web-ppt/core';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 
@@ -504,23 +506,47 @@ async function withToast(label: string, fn: () => Promise<void>): Promise<void> 
   }
 }
 
+// 导出字体子集化：wasm 由 tooling/sync-font-wasm.mjs 拷进 public/vendor，
+// 惰性加载、单实例复用；加载失败降级为整字体内联（旧行为），导出本身不被引擎阻断
+let subsetterPromise: Promise<FontSubsetter> | undefined;
+const exportFontOptions = async (): Promise<ExportFontOptions | undefined> => {
+  subsetterPromise ??= fetch('/vendor/harfbuzz-subset.wasm')
+    .then((response) => {
+      if (!response.ok) throw new Error(`子集化 wasm HTTP ${response.status}`);
+      return response.arrayBuffer();
+    })
+    .then((bytes) => createHarfBuzzSubsetter(bytes));
+  try {
+    return { subsetter: await subsetterPromise };
+  } catch (error) {
+    console.warn('字体子集化引擎不可用，导出将内联整字体', error);
+    return undefined;
+  }
+};
+
 const exportPng = (): Promise<void> =>
   withToast('导出 PNG', async () => {
     if (!viewer) return;
-    download(await slideToPng(viewer.presentation, viewer.slide, 2, { showComments: commentsTools.showComments }), `slide-${viewer.index + 1}.png`);
+    const fonts = await exportFontOptions();
+    download(await slideToPng(viewer.presentation, viewer.slide, 2,
+      { showComments: commentsTools.showComments, ...(fonts ? { fonts } : {}) }), `slide-${viewer.index + 1}.png`);
   });
 
 const exportSvg = (): Promise<void> =>
   withToast('导出 SVG', async () => {
     if (!viewer || !pres) return;
-    const svg = await slideToSvgFile(pres, viewer.slide, undefined, { showComments: commentsTools.showComments });
+    const fonts = await exportFontOptions();
+    const svg = await slideToSvgFile(pres, viewer.slide, undefined,
+      { showComments: commentsTools.showComments, ...(fonts ? { fonts } : {}) });
     download(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), `slide-${viewer.index + 1}.svg`);
   });
 
 const exportPdf = (): Promise<void> =>
   withToast('生成打印视图', async () => {
     if (!pres) return;
-    const html = await presentationToPrintableHtml(pres, { showComments: commentsTools.showComments });
+    const fonts = await exportFontOptions();
+    const html = await presentationToPrintableHtml(pres,
+      { showComments: commentsTools.showComments, ...(fonts ? { fonts } : {}) });
     const win = window.open('', '_blank');
     if (!win) throw new Error('浏览器阻止了新窗口，请允许弹窗');
     win.document.write(html);

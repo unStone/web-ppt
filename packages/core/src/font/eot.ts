@@ -53,8 +53,8 @@ const le32 = (b: Uint8Array, at: number): number =>
   ((b[at + 3] << 24) | (b[at + 2] << 16) | (b[at + 1] << 8) | b[at]) >>> 0;
 const le16 = (b: Uint8Array, at: number): number => (b[at + 1] << 8) | b[at];
 
-/** 已经是浏览器直接认的字体格式就原样放行 */
-function sfntMime(bytes: Uint8Array): string | null {
+/** 已经是浏览器直接认的字体格式就原样放行；导出内联时按魔数判定 MIME 也用它 */
+export function sfntMime(bytes: Uint8Array): string | null {
   if (bytes.length < 4) return null;
   switch (be32(bytes, 0)) {
     case 0x00010000: // TrueType 轮廓

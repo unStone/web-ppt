@@ -8,6 +8,9 @@
 | `@web-ppt/fonts/glyphs/harfbuzz` | 把宿主提供的 HarfBuzz 转为整形接口，不下载 WASM |
 | `@web-ppt/fonts/glyphs/worker` | 客户端与 Worker 服务；一个文稿拥有一个 Worker |
 | `@web-ppt/fonts/glyphs/browser` | 可选 FontFace 作用域；向浏览器安装字体并拥有导出资源 URL |
+| `@web-ppt/fonts/subset` | 导出子集化引擎：宿主注入的 hb-subset wasm → core 的 `FontSubsetter` |
+
+默认入口另提供 `exportFontFaces(usages)`：把替代字体**命中的切片**转成 data URI 的 `EmbeddedFont[]`（含 `unicodeRange` / `sizeAdjust`），供 core 导出选项 `fonts.extraFontFaces` 内联进隔离的导出 SVG。`/subset` 入口则服务嵌入字体：`createHarfBuzzSubsetter(wasm)` 产出确定性 `FontSubsetter`，core 在导出时按 `collectFonts` 字符集子集化、剔除无用量家族，失败按稳定 reason（`subset-failed` / `unused-family` / `subsetter-error`，经 `onFontFallback` 观察）回退整字体内联；不传 `fonts` 选项时导出产物逐字节不变。设计与实测见[导出字体子集化](../design/export-font-subset.md)。
 
 字体包不携带字体字节、整形器或 Cordis。产品编辑器用 Cordis 管理文稿生命周期；公开 SDK 不依赖框架。
 
@@ -71,7 +74,7 @@ serveFontWorker(self, {
 
 | 命令 | 产物 |
 |---|---|
-| `npm run test:fonts` / `npm run test:fonts:dist` | 源码 / 构建产物的 Provider、Worker、文稿、布局与浏览器合约；dist 另检查默认入口边界和真实 tarball 消费者类型 |
+| `npm run test:fonts` / `npm run test:fonts:dist` | 源码 / 构建产物的 Provider、Worker、文稿、布局与浏览器合约；dist 另检查默认入口边界和真实 tarball 消费者类型。子集化引擎经真实 hb-subset wasm 验证覆盖与确定性（pyftsubset 交叉验证在本机有 fontTools 时执行），浏览器合约验收「子集开 / 关 PNG 字节一致」 |
 | `npm run proof:fonts` | 正式 Provider 经真实 Worker 生成 PDF / 纯轮廓 SVG 证明 |
 | `npm run measure:fonts` | 完整中文字体、长文本、取消、释放、六份真实 MTX 的浏览器测量 |
 

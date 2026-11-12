@@ -75,12 +75,17 @@ export function bindCommentsTools(button: HTMLButtonElement, current: () => Comm
           const source = current();
           if (busy || !source) return;
           busy = true;
-          const options = { showComments: include }, target = host;
+          const target = host;
           try {
             setText(status, '正在导出…');
             const core = await import('@web-ppt/core');
+            const { exportFontOptions } = await import('./export-fonts');
             if (current()?.owner !== source.owner || host !== target) return;
             const presentation = source.presentation(), stem = source.name.replace(/\.pptx?$/i, '');
+            // 单页格式只带本页字符集；打印与 ZIP 覆盖整稿
+            const deckFonts = await exportFontOptions(
+              format === 'png' || format === 'svg' ? [source.slide] : presentation.slides);
+            const options = { showComments: include, ...(deckFonts ? { fonts: deckFonts } : {}) };
             const blob = format === 'png' ? await core.slideToPng(presentation, source.slide, 2, options)
               : format === 'svg' ? new Blob([await core.slideToSvgFile(presentation, source.slide, undefined, options)], { type: 'image/svg+xml' })
               : format === 'print' ? new Blob([await core.presentationToPrintableHtml(presentation, options)], { type: 'text/html' })

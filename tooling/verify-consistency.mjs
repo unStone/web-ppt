@@ -336,8 +336,8 @@ if (!counts) {
 } else {
   const COUNT_CLAIMS = [
     // 分套件断言数的唯一明细表在测试规范 §8；README 只留快照总数与入口链接
-    ['docs/engineering/testing.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
-    ['AGENTS.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout']],
+    ['docs/engineering/testing.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) \+ 子集 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout','fontSubset']],
+    ['AGENTS.md', /字体 Provider ([\d,]+) \+ Worker ([\d,]+) \+ 文稿 ([\d,]+) \+ 测量 ([\d,]+) \+ 子集 ([\d,]+) 项断言/, ['fontGlyphs','fontWorker','fontDocument','fontLayout','fontSubset']],
     ['docs/engineering/testing.md', /Agent 命令工具面 ([\d,]+) 项断言/, ['agentTools']],
     ['AGENTS.md', /Agent 命令工具面 ([\d,]+) 项断言/, ['agentTools']],
     ['docs/engineering/testing.md', /本机 MCP ([\d,]+) 项断言/, ['agentMcp']],

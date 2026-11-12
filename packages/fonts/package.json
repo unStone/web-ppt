@@ -46,9 +46,13 @@
       "types": "./dist/glyphs/worker.d.ts",
       "import": "./dist/glyphs-worker.js"
     },
-    "./glyphs/browser": {
-      "types": "./dist/glyphs/browser.d.ts",
-      "import": "./dist/glyphs-browser.js"
+ "./glyphs/browser": {
+  "types": "./dist/glyphs/browser.d.ts",
+  "import": "./dist/glyphs-browser.js"
+ },
+    "./subset": {
+      "types": "./dist/subset/index.d.ts",
+      "import": "./dist/subset.js"
     },
     "./package.json": "./package.json"
   },

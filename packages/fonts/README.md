@@ -4,7 +4,7 @@
 
 The fonts a deck asks for usually aren't installed on the machine viewing it. This package swaps in a **free substitute that downloads on demand**, so the text still lays out close to the original.
 
-There is **not one byte of font data in the package** (default entry: 2.8 KB gzip). Slices point at already-published [fontsource](https://fontsource.org/) versions served by jsDelivr; nothing downloads until it's actually rendered.
+There is **not one byte of font data in the package** (default entry: 4.3 KB gzip, including the export face collector; the optional subsetting engine entry adds 0.9 KB). Slices point at already-published [fontsource](https://fontsource.org/) versions served by jsDelivr; nothing downloads until it's actually rendered.
 
 For explicit font bytes, positioned glyphs, outlines and UTF-16 source clusters, use the optional `@web-ppt/fonts/glyphs` entry. The `/glyphs/harfbuzz`, `/glyphs/worker` and `/glyphs/browser` adapters keep the shaper, Worker and browser font lifetime under the host's control. No font bytes, HarfBuzz or Cordis are bundled. See the [API and verification guide](https://github.com/unStone/web-ppt/blob/master/docs/api/font-glyphs.md).
 
@@ -90,7 +90,30 @@ await loadFontsFor(usages, { base: 'https://cdn.example.com/npm' });
 
 ## The other half: exports
 
-An SVG loaded through `<img>` is an isolated document and can't see fonts registered on the page. Exporting to PNG or standalone SVG means inlining the slices you hit — the character sets `collectFonts` returns exist for exactly this.
+An SVG loaded through `<img>` is an isolated document and can't see fonts registered on the page. Two capabilities close this gap for PNG / standalone SVG / print exports:
+
+**Inline the substitute slices you actually hit** (default entry): `exportFontFaces` keeps only the slices intersecting the character set `collectFonts` returns and hands them back as data-URI `EmbeddedFont[]` for core's export option `fonts.extraFontFaces`:
+
+```ts
+import { collectFonts } from '@web-ppt/core';
+import { exportFontFaces } from '@web-ppt/fonts';
+
+const faces = await exportFontFaces(collectFonts([slide]));
+const svg = await slideToSvgFile(pres, slide, undefined, { fonts: { extraFontFaces: faces } });
+```
+
+**Subset embedded fonts to the exported text** (optional `@web-ppt/fonts/subset` entry): compress the deck's embedded fonts down to the glyphs actually rendered. The engine is a host-provided harfbuzzjs `harfbuzz-subset.wasm` (never bundled here); output bytes are deterministic:
+
+```ts
+import { createHarfBuzzSubsetter } from '@web-ppt/fonts/subset';
+
+const subsetter = await createHarfBuzzSubsetter(await fetch('/vendor/harfbuzz-subset.wasm').then(r => r.arrayBuffer()));
+// Families unused in the export scope are dropped; a failed subset falls back to the full font
+// with a stable reason (observable via onFontFallback)
+const svg = await slideToSvgFile(pres, slide, undefined, { fonts: { subsetter } });
+```
+
+Without the `fonts` option, exported bytes are identical to the previous behaviour. Measured on a 12.2 KB CJK fixture: subset 2.5 KB, single-slide SVG 16.9 KB → 3.9 KB, and PNG rasters are byte-identical with subsetting on or off.
 
 ## License
 

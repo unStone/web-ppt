@@ -38,7 +38,7 @@ flowchart TD
 | `viewer-core` | 纯状态机 `PresentationState` + 播放（动画/切换/墨迹/视频），DOM 耦合仅 Viewer 一处 | peer `core` | — |
 | `editor` | 编辑会话、三层增量 DOM 视图、手势/键盘/吸附、文本编辑面、IndexedDB 恢复存储 | peer `core` + `edit-core` + `viewer-core` | — |
 | `react` / `vue` | 组件 + hook 薄适配，只包 `editor` 公开 seam | peer `editor` + 对应框架 | — |
-| `fonts` | 字体替换表、按需加载、字形子集 | peer `core` | — |
+| `fonts` | 字体替换表、按需加载、字形 Provider、导出脸集与子集化引擎入口 | peer `core` | — |
 | `collab` | 字段级 LWW 协同：原子补丁、BroadcastChannel 传输、冲突解决与检查点 | peer `edit-core` | — |
 | `agent-mcp` | 本机 stdio MCP server 与 Agent Skill；复用 004 命令工具面，只读写调用方指定路径 | peer `core` + `edit-core` | MCP SDK 仅在此包 |
 | `viewer`（私有） | 工具栏 / 缩略图虚拟化 / 批注面板 / 导出的完整查看器页面 | 直接依赖 | — |
@@ -129,7 +129,7 @@ flowchart LR
 
 ## 4. 字体体系
 
-嵌入字体是 EOT 容器且普遍开 MTX 压缩，`core/font/eot.ts` 剥容器，MTX 解压经 hook 注入（官网接 `mtx-decompressor`）。`fonts` 包提供替换表与按需加载，`site` 按文稿作用域持有 Provider / Worker / FontFace。SVG 作为 `<img>` 加载时是隔离上下文，非系统字体必须把 `@font-face` 与 base64 字节内联进 SVG。
+嵌入字体是 EOT 容器且普遍开 MTX 压缩，`core/font/eot.ts` 剥容器，MTX 解压经 hook 注入（官网接 `mtx-decompressor`）。`fonts` 包提供替换表、按需加载、导出脸集与 `/subset` 子集化引擎入口（hb-subset wasm 由宿主注入），`site` 按文稿作用域持有 Provider / Worker / FontFace。SVG 作为 `<img>` 加载时是隔离上下文，非系统字体必须把 `@font-face` 与 base64 字节内联进 SVG；导出选项 `fonts` 按范围字符集子集化嵌入字体并内联命中的替代切片，默认关闭产物逐字节不变。
 
 ## 5. 产品层
 

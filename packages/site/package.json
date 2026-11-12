@@ -6,8 +6,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node ../../tooling/sync-font-wasm.mjs && vite",
+    "build": "node ../../tooling/sync-font-wasm.mjs && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

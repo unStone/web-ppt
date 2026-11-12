@@ -116,6 +116,7 @@ flowchart TB
 |---|---|
 | [editing-design.md](design/editing-design.md) | 编辑能力技术总纲：EditDoc / src-ovr / 补丁保存 / 三层视图（D1–D14 决策） |
 | [cordis-editor.md](design/cordis-editor.md) | 编辑器产品层 Cordis 插件分层、生命周期与红绿证据 |
+| [export-font-subset.md](design/export-font-subset.md) | 导出字体子集化与替代内联：引擎评估、core 导出管线、字体包入口与实测 |
 | [agent-command-tools.md](design/agent-command-tools.md) | Agent 命令 Schema、原子事务、错误定位与按需成本决策 |
 | [agent-mcp.md](design/agent-mcp.md) | Agent 005 实施计划：stdio、文件会话、无网络约束、真实 Agent 验收与发布 |
 | [agent-webmcp.md](design/agent-webmcp.md) | Agent 006 原生接口、文稿作用域、任务串行与验收方案 |

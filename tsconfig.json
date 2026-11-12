@@ -78,7 +78,8 @@
       "@web-ppt/fonts/glyphs": ["./packages/fonts/src/glyphs/index.ts"],
       "@web-ppt/fonts/glyphs/harfbuzz": ["./packages/fonts/src/glyphs/harfbuzz.ts"],
       "@web-ppt/fonts/glyphs/worker": ["./packages/fonts/src/glyphs/worker.ts"],
-      "@web-ppt/fonts/glyphs/browser": ["./packages/fonts/src/glyphs/browser.ts"]
+      "@web-ppt/fonts/glyphs/browser": ["./packages/fonts/src/glyphs/browser.ts"],
+      "@web-ppt/fonts/subset": ["./packages/fonts/src/subset/index.ts"]
     }
   },
   "include": [

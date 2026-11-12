@@ -14,3 +14,5 @@ export { DEFAULT_BASE, PACKAGES, cssUrl } from './sources';
 export type { FontPackage } from './sources';
 export { isInstalled, loadFontsFor, rewriteFontFaceCss, unloadFonts } from './load';
 export type { LoadOptions, LoadResult } from './load';
+export { exportFontFaces } from './export-faces';
+export type { ExportFaceOptions } from './export-faces';

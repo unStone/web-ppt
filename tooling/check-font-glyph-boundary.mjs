@@ -17,7 +17,7 @@ for(const name of ['core','edit-core','viewer-core','editor','fonts','react','vu
 const pkg=JSON.parse(readFileSync(resolve(root,'packages/fonts/package.json')));
 if(Object.keys(pkg.dependencies??{}).length)throw new Error('字体包不能引入 HarfBuzz 或其他运行时依赖');
 const entries={};
-for(const name of ['glyphs','glyphs/harfbuzz','glyphs/worker','glyphs/browser']){
+for(const name of ['glyphs','glyphs/harfbuzz','glyphs/worker','glyphs/browser','subset']){
   const entry=resolve(root,'packages/fonts',pkg.exports[`./${name}`].import);
   const built=await build({entryPoints:[entry],bundle:true,write:false,format:'esm',platform:'neutral',metafile:true});
   if(Object.keys(built.metafile.inputs).some(path=>/node_modules|packages\/core\/|font-glyph-samples/.test(path)))throw new Error(`${name} 引入外部运行时或字体样本`);
@@ -27,7 +27,7 @@ for(const name of ['glyphs','glyphs/harfbuzz','glyphs/worker','glyphs/browser'])
   entries[name]=moduleClosure(entry);
   delete entries[name].source;
 }
-for(const name of ['glyphs','glyphs/harfbuzz','glyphs/worker']){
+for(const name of ['glyphs','glyphs/harfbuzz','glyphs/worker','subset']){
   if(/\b(document|DOMParser|FontFace|HTMLCanvasElement)\b/.test((await build({
     entryPoints:[resolve(root,'packages/fonts',pkg.exports[`./${name}`].import)],bundle:true,write:false,format:'esm',platform:'neutral',
   })).outputFiles[0].text))throw new Error(`${name} 不能依赖 DOM`);

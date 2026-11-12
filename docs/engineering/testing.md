@@ -101,7 +101,7 @@ flowchart LR
 
 | 命令 | 覆盖 |
 |---|---|
-| `npm run test:core` | 核心解析 / 渲染，2491 项断言 + 212 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，2528 项断言 + 212 个渲染快照 |
 | `npm run test:zip` | ZIP 安全 57 项断言：中央目录、声明与实际大小、条目数、压缩比、重复名称、路径穿越、真实 parse 与内存峰值；`test:zip:dist` 复验发布入口 |
 | `npm run test:describe` | Agent 结构化读出：全部固件 Schema 校验、两独立进程字节一致与逐 ID 选择；另验组合变换、当前设计投影、只读及预算错误；发布入口由 `test:describe:dist` 复验 |
 | `npm run test:lint` | 布局七项正反例、真实字体、普通组合去重、裁剪、复杂采样、取消及只读；全固件 Node/Canvas reason 对照与独立进程确定性；发布入口由 `test:lint:dist` 复验 |
@@ -110,7 +110,7 @@ flowchart LR
 | `npm run test:webmcp` | 官网 WebMCP 127 项浏览器断言：工具注册、真实编辑与保存重开、渲染、同一历史、恢复、协同、只读、取消及切换；注册平台边界可注入失败，不支持路径检查动态块未加载，原生浏览器另验 |
 | `npm run test:fill` | 模板填充 483 项 + 浏览器 70 项断言：六类页面、八种原生图表、完整七项检查与副本设计修复、POTX 类型转换、输入保护、Unicode、调用快照、裁剪精度、动态字段、备注闭包、独立进程确定性和双文字路径；`test:fill:dist` 检查类型、Schema、按需闭包和纯发布入口 |
 | `npm run test:agent-eval` | 独立评测自测：八类输入/参考固件、真实字体、完整七项检查、原文/可见性/媒体/原生设计保护、实际 MCP 修复可达性，以及进程、协议变换、保存哈希和证据完整性；不调用模型，不进入发布门禁 |
-| `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 项断言；另含真实浏览器字体文稿 112 项断言、缺字诊断及取消 / 释放验收，[接口与边界](../api/font-glyphs.md) |
+| `npm run test:fonts` | 字体 Provider 100 + Worker 136 + 文稿 30 + 测量 15 + 子集 12 项断言；另含真实浏览器字体文稿 112 项 + 导出子集浏览器 5 项断言（真实 wasm、PNG 字节一致）、缺字诊断及取消 / 释放验收，[接口与边界](../api/font-glyphs.md) |
 | `node tooling/test-agent-node-render.mjs` | Agent Node 渲染 21 项断言：缺测字 / 光栅化注入的稳定 reason、注入渲染、跨进程确定性、HarfBuzz 真实测量整页渲染与 PNG 尺寸换算；`--dist` 复验 `@web-ppt/core/node` 发布入口 |
 | `node tooling/test-agent-node-render-parity.mjs` | Agent Node 双端对照 4 项断言：同一字体字节双端注册（浏览器 FontFace / Node Provider）下全部固件整页 SVG 指纹比对，差异页必须归因（公式测量源 / textPath 字距放大）；缺字固件不满足同一字体前提，跳过并计数；`--dist` 复验 |
 | `npm run test:animation` | 动画统一验收 809 项断言：全部动画效果与切换共用同一套 Web Animations 驱动，`currentTime` seek 到 t=0 / 0.5 / 1 断言计算样式端点 == 关键帧声明、中点命中精确中间帧或严格介于两端、painted 包围盒按效果族核对（fly 离场 / 伸展锚边 / 运动路径终点位移）；morph 断言子元素级配对进度；代表性效果中间态截图落盘 `out/animation-acceptance/midpoints/`。新效果进 `sample-animation-effects.pptx` 固件矩阵即自动纳入；`test:animation:dist` 复验发布入口 |

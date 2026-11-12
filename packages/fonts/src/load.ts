@@ -155,9 +155,11 @@ function adjustLatinFaceCss(
 
 const injected = new Set<string>();
 const cssCache = new Map<string, Promise<string | null>>();
-const LATIN_CHARS = /[\u0000-\u024f\u1e00-\u1eff\u2000-\u206f]/;
+/** run 文字里出现西文时才需要西文替代家族；导出脸集与页面加载共用这一判定 */
+export const LATIN_CHARS = /[\u0000-\u024f\u1e00-\u1eff\u2000-\u206f]/;
 
-async function fetchCss(url: string): Promise<string | null> {
+/** 抓一份按字重的 CSS（短缓存）；导出脸集与页面加载共用，页面抓过导出就免费 */
+export async function fetchCss(url: string): Promise<string | null> {
   let job = cssCache.get(url);
   if (!job) {
     job = fetch(url).then((r) => (r.ok ? r.text() : null)).catch(() => null).then((css) => {
