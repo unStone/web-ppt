@@ -6,7 +6,7 @@
 
 PPT 里指定的字体，本机往往没有。这个包负责换一份**免费的、能自动按需下载的**替代字体，让文本仍然按接近原样的方式排版。
 
-包里**一个字节的字体都没有**（默认入口 gzip 4.3KB，含导出脸集能力；子集化引擎入口另计 0.9KB）。切片指向 [fontsource](https://fontsource.org/) 已发布的版本，由 jsDelivr 分发，用不到就不下载。
+包里**一个字节的字体都没有**（默认入口 gzip 3.75KB，含导出脸集能力；子集化引擎入口另计 0.86KB）。切片指向 [fontsource](https://fontsource.org/) 已发布的版本，由 jsDelivr 分发，用不到就不下载。
 
 ```bash
 npm i @web-ppt/fonts

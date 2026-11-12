@@ -9,8 +9,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, resolve } from 'node:path';
 import { countedAssert } from './lib/counted-assert.mjs';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
 import { fontSample } from './lib/font-glyph-samples.mjs';

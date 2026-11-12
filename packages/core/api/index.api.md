@@ -256,12 +256,21 @@ export interface EmbeddedFont {
     family: string;
     // (undocumented)
     italic: boolean;
+    sizeAdjust?: number;
     // (undocumented)
     src: string;
+    unicodeRange?: string;
 }
 
 // @public
 export function encryptionScheme(info: Uint8Array): 'agile' | 'standard' | 'extensible';
+
+// @public
+export interface ExportFontOptions {
+    extraFontFaces?: EmbeddedFont[];
+    onFontFallback?: (family: string, reason: string) => void;
+    subsetter?: FontSubsetter;
+}
 
 // @public (undocumented)
 export type Fill = {
@@ -300,6 +309,27 @@ export function fitTextShapeHeight(text: TextBody, width: number, options?: Text
 
 // @public
 export type FontDecoder = (eot: Uint8Array) => Uint8Array | null;
+
+// @public
+export interface FontSubsetter {
+    dispose(): void;
+    // (undocumented)
+    subset(input: {
+        bytes: Uint8Array;
+        mime: string;
+        chars: string;
+        family: string;
+        bold: boolean;
+        italic: boolean;
+    }): Promise<{
+        ok: true;
+        bytes: Uint8Array;
+        mime: string;
+    } | {
+        ok: false;
+        reason: string;
+    }>;
+}
 
 // @public
 export interface FontUsage {
@@ -732,6 +762,7 @@ export interface PlaceholderIdentity {
 
 // @public (undocumented)
 export interface PngExportOptions extends CommentExportOptions {
+    fonts?: ExportFontOptions;
     // (undocumented)
     hiddenElements?: readonly number[];
     // (undocumented)
@@ -796,6 +827,8 @@ export function presentationToPrintableHtml(pres: Presentation, options?: Printa
 // @public (undocumented)
 export interface PrintableOptions extends CommentExportOptions {
     animationSteps?: boolean;
+    // (undocumented)
+    fonts?: ExportFontOptions;
 }
 
 // @public
@@ -825,6 +858,7 @@ export function renderElementToSvg(el: SlideElement, opts?: RenderElementOptions
 
 // @public (undocumented)
 export interface RenderOptions extends RenderElementOptions {
+    fontFaces?: EmbeddedFont[];
     includeNotes?: boolean;
     showComments?: boolean;
 }
@@ -1088,7 +1122,9 @@ export function slideText(slide: Slide): string;
 export function slideToPng(pres: Presentation, slide: Slide, scale?: number, options?: PngExportOptions): Promise<Blob>;
 
 // @public
-export function slideToSvgFile(pres: Presentation, slide: Slide, hiddenElements?: readonly number[], options?: CommentExportOptions): Promise<string>;
+export function slideToSvgFile(pres: Presentation, slide: Slide, hiddenElements?: readonly number[], options?: CommentExportOptions & {
+    fonts?: ExportFontOptions;
+}): Promise<string>;
 
 // @public
 export function staticHidden(slide: Slide): Set<number>;

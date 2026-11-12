@@ -298,8 +298,9 @@ const applicationAdditional = [...closure([applicationEntry], false)]
 // OOXML 门禁配套：轴标题序位归位、lvl*pPr / defRPr 顺序表登记与 hlinkHover 悬停链接修复，
 // 合计实测超出 160B（前两项 46B、悬停链接 114B），上调 200B
 // 导出字体子集化：批注导出 / WebMCP 的引擎与脸集全在动态 chunk（静态闭包零 exportFontFaces），
-// 新增动态 chunk 使共享 chunk 重新划分，在 Biome 重排与 runtime 升级后的基线上实测另行登记
-const activatedBudget = { raw: initialBudget.raw + 142_565, gzip: initialBudget.gzip + 54_700 };
+// 新增动态 chunk 使共享 chunk 重新划分：gzip 实测 565,475B 超出 926B，上调 1000B；
+// raw 实测 2,398,175B 超出 708B，上调 800B
+const activatedBudget = { raw: initialBudget.raw + 143_365, gzip: initialBudget.gzip + 55_700 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

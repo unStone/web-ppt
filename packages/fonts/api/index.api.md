@@ -4,6 +4,7 @@
 
 ```ts
 
+import type { EmbeddedFont } from '@web-ppt/core';
 import type { FontUsage } from '@web-ppt/core';
 
 // @public
@@ -11,6 +12,22 @@ export function cssUrl(family: string, weight: number, italic: boolean, base?: s
 
 // @public
 export const DEFAULT_BASE = "https://cdn.jsdelivr.net/npm";
+
+// @public (undocumented)
+export interface ExportFaceOptions {
+    base?: string;
+    cjk?: boolean;
+    document?: Document;
+    onIssue?: (info: {
+        family: string;
+        reason: 'css-unavailable' | 'slice-unavailable';
+    }) => void;
+    overrides?: Readonly<Record<string, Substitution>>;
+    skipInstalled?: boolean;
+}
+
+// @public
+export function exportFontFaces(usages: readonly FontUsage[], opts?: ExportFaceOptions): Promise<EmbeddedFont[]>;
 
 // @public
 export interface FontPackage {

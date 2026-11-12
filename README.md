@@ -134,7 +134,7 @@ session.dispose();
 | [`@web-ppt/react`](packages/react) | React 组件 + hook | `editor` + React optional peer | 1.17KB |
 | [`@web-ppt/vue`](packages/vue) | Vue 组件 + composable | `editor` + Vue optional peer | 1.31KB |
 | [`@web-ppt/viewer-core`](packages/viewer-core) | 导航 / 缩放 / 搜索 / 动画批次 | `core` | 11.18KB |
-| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（包里零字体字节） | `core` | 2.87KB |
+| [`@web-ppt/fonts`](packages/fonts) | 字体替换与按需加载（包里零字体字节） | `core` | 3.75KB |
 
 体积按默认入口及全部相对静态分块逐文件 gzip 求和，不含 peer 与动态入口。
 

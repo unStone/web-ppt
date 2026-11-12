@@ -18,6 +18,7 @@ export class PresentationImageExportError extends Error {
 // @public (undocumented)
 export interface PresentationImageZipOptions {
     concurrency?: number;
+    fonts?: ExportFontOptions;
     onProgress?: (progress: PresentationImageZipProgress) => void;
     scale?: number;
     showComments?: boolean;
