@@ -17,6 +17,8 @@ for item in sources:
 
 latin_text = 'AV office ffi ﬁ ﬃ a\u0301 q\u0307 café ABC abc 0123456789'
 chinese_text = '中文测试你好世界，。ABC abc 0123456789'
+# 桌面 003：趋势线公式 / 图例的可搜索断言需要完整 ASCII 与常用数学符号（²、−）。
+formula_text = ''.join(chr(c) for c in range(0x20, 0x7f)) + '²−·×'
 
 def rename(font, family):
     style = 'Bold' if font['OS/2'].usWeightClass == 700 else 'Regular'
@@ -64,6 +66,7 @@ sample('latin-bold.ttf', 'latin-bold.ttf', latin_text, 'WebPPT Glyph Latin')
 sample('chinese-variable.ttf', 'chinese.ttf', chinese_text, 'WebPPT Glyph Chinese', 400)
 sample('chinese-variable.ttf', 'variable.ttf', chinese_text, 'WebPPT Glyph Variable')
 sample('chinese-cff.otf', 'cff.otf', chinese_text, 'WebPPT Glyph CFF')
+sample('latin.ttf', 'latin-formula.ttf', formula_text, 'WebPPT Glyph Formula')
 for flavor in ['woff', 'woff2']:
     font = TTFont(dest / 'latin.ttf', recalcTimestamp=False)
     font.flavor = flavor

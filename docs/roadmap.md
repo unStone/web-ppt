@@ -65,7 +65,7 @@ Windows PowerPoint 真机继续按用户要求暂缓；独立读取器通过不�
 | 图片 | ✅ 裁剪/裁进形状/透明度/灰度/双色调 | ✅ Pictures 流 | — |
 | EMF/WMF/PICT | ✅ 解码为 SVG | ✅ | EMF+ 按需入口支持常见绘图；未知记录按格式回退 |
 | 表格 | ✅ tableStyles/条纹/合并/边框/垂直对齐 | ✅ 网格启发式 | — |
-| 图表 | ✅ 经典 16 种 + 次坐标轴 + 3D | ✅ 经内嵌 EMF | 趋势线、误差线、数据表不绘制（桌面 003）；ChartEx 完整真实语料与 Office 原生验收待补 |
+| 图表 | ✅ 经典 16 种 + 次坐标轴 + 3D + 趋势线 / 误差线 / 数据表（桌面 003 已交付） | ✅ 经内嵌 EMF | ChartEx 完整真实语料与 Office 原生验收待补 |
 | SmartArt | ✅ 缓存 drawing；无缓存时 6 种布局族启发式排布 | ❌ | 布局定义引擎（桌面 001）；`.ppt` SmartArt 未实现 |
 | 媒体·墨迹·评论·节 | ✅ | ❌ | — |
 | 组合 | ✅ 嵌套 + 子坐标系 | ✅ 展平 | — |
@@ -304,7 +304,7 @@ Agent 004–008 随 `0.8.0-beta.3` 交付，桌面 004 导入安全与 005 OOXML
 | 票据 | 剩余 | 依赖 |
 |---|---|---|
 | 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md) 新建图表 | 16 种经典 + 7 种现代类型的插入命令、原生内容、主题默认外观与产品入口（产品待确认） | 无 |
-| 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md) 图表细节 | 趋势线、误差线、数据表进入 Schema 与两条文本路径；编辑命令与入口 | 无 |
+| 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md) 图表细节 | ✅ 趋势线 / 误差线 / 数据表解析与渲染、chart-design 编辑命令已交付（2026-11-14）；官网入口待产品确认 | 无 |
 | 桌面 [001](wayfinder/ppt-desktop-parity/tickets/001-smartart-layout-engine.md) SmartArt 引擎 | 布局树、全部算法、约束与规则重试；与 PowerPoint 缓存逐形状对照 | portability 008 的真实样本；可立即开工 |
 | 桌面 [006](wayfinder/ppt-desktop-parity/tickets/006-smartart-authoring.md) 新建 SmartArt | 自编布局目录、插入 / 切换布局 / 文本转换命令、产品入口 | 001 |
 | 桌面 [007](wayfinder/ppt-desktop-parity/tickets/007-animation-catalog.md) 动画库 | 全部预设、运动路径、时间设置、动画刷与动画窗格 | 无 |

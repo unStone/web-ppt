@@ -1,0 +1,375 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720" font-family="Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<defs>
+</defs>
+<rect width="1280" height="720" fill="rgb(245,247,251)"/>
+<g data-el="2" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(64 24)">
+<text x="9.6" y="51.54" text-anchor="start" xml:space="preserve">
+<tspan font-size="37.33" font-family="'Trebuchet MS','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">3D 饼图 + 3D 折线</tspan>
+</text>
+</g>
+</g>
+<g data-el="10" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(48 120)">
+<g>
+<g transform="translate(7.33 7.33)">
+<text x="272.67" y="22.41" text-anchor="middle" xml:space="preserve">
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">渠道占比（3D 饼图）</tspan>
+</text>
+</g>
+<g transform="translate(55.93 164.96)">
+<path d="M 388.8 106.92 A 194.4 106.92 0 0 1 347.59 172.75 L 347.59 205.79 A 194.4 106.92 0 0 0 388.8 139.97 Z" fill="rgb(54,91,157)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(55.93 164.96)">
+<path d="M 59.36 183.83 A 194.4 106.92 0 0 1 0 106.92 L 0 139.97 A 194.4 106.92 0 0 0 59.36 216.88 Z" fill="rgb(204,154,0)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(55.93 164.96)">
+<path d="M 347.59 172.75 A 194.4 106.92 0 0 1 59.36 183.83 L 59.36 216.88 A 194.4 106.92 0 0 0 347.59 205.79 Z" fill="rgb(190,100,39)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(55.93 164.96)">
+<path d="M 194.4 106.92 L 194.4 0 A 194.4 106.92 0 0 1 347.59 172.75 Z" fill="rgb(68,114,196)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(55.93 164.96)">
+<path d="M 194.4 106.92 L 347.59 172.75 A 194.4 106.92 0 0 1 59.36 183.83 Z" fill="rgb(237,125,49)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(55.93 164.96)">
+<path d="M 194.4 106.92 L 59.36 183.83 A 194.4 106.92 0 0 1 19.67 60.05 Z" fill="rgb(255,192,0)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(55.93 164.96)">
+<path d="M 194.4 106.92 L 19.67 60.05 A 194.4 106.92 0 0 1 103.13 12.52 Z" fill="rgb(112,173,71)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(55.93 164.96)">
+<path d="M 194.4 106.92 L 103.13 12.52 A 194.4 106.92 0 0 1 194.4 0 Z" fill="rgb(91,155,213)" fill-rule="nonzero" stroke="rgb(255,255,255)" stroke-width="2"/>
+</g>
+<g transform="translate(446.5 207.23)">
+<text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">36%</tspan>
+</text>
+</g>
+<g transform="translate(253.11 424.52)">
+<text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">27%</tspan>
+</text>
+</g>
+<g transform="translate(7.1 318.8)">
+<text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20%</tspan>
+</text>
+</g>
+<g transform="translate(69.03 174.35)">
+<text x="13.5" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">10%</tspan>
+</text>
+</g>
+<g transform="translate(181.9 138.98)">
+<text x="12" y="12.26" text-anchor="middle" xml:space="preserve">
+<tspan font-size="12" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8%</tspan>
+</text>
+</g>
+<g transform="translate(493.33 236.93)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 230.07)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华东</tspan>
+</text>
+</g>
+<g transform="translate(493.33 260.27)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(237,125,49)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 253.4)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华北</tspan>
+</text>
+</g>
+<g transform="translate(493.33 283.6)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(255,192,0)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 276.73)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">华南</tspan>
+</text>
+</g>
+<g transform="translate(493.33 306.93)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 300.07)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">西部</tspan>
+</text>
+</g>
+<g transform="translate(493.33 330.27)">
+<path d="M 0 0 L 16 0 L 16 9.6 L 0 9.6 Z" fill="rgb(91,155,213)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(514 323.4)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">海外</tspan>
+</text>
+</g>
+</g>
+</g>
+</g>
+<g data-el="11" style="transform-box:fill-box;transform-origin:center">
+<g transform="translate(640 120)">
+<g>
+<g transform="translate(7.33 7.33)">
+<text x="272.67" y="22.41" text-anchor="middle" xml:space="preserve">
+<tspan font-size="18.67" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="rgb(31,56,100)" font-weight="700">负载趋势（3D 折线）</tspan>
+</text>
+</g>
+<g transform="translate(74.18 50.8)">
+<path d="M 0 0 L 467.82 0 L 467.82 407.83 L 0 407.83 Z" fill="rgb(239,240,240)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(39.47 50.8)">
+<path d="M 0 26.03 L 34.71 0 L 34.71 407.83 L 0 433.87 Z" fill="rgb(230,231,232)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(39.47 458.63)">
+<path d="M 0 26.03 L 467.82 26.03 L 502.53 0 L 34.71 0 Z" fill="rgb(224,224,225)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(74.18 458.63)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 458.63)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 417.85)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 417.85)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 377.07)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 377.07)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 336.28)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 336.28)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 295.5)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 295.5)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 254.72)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 254.72)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 213.93)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 213.93)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 173.15)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 173.15)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 132.37)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 132.37)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 91.58)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 91.58)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(74.18 50.8)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 50.8)">
+<path d="M 0 26.03 L 34.71 0" fill="none" fill-rule="nonzero" stroke="rgb(206,207,208)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 484.67)">
+<path d="M 0 0 L 467.82 0" fill="none" fill-rule="nonzero" stroke="rgb(132,135,138)" stroke-width="1"/>
+</g>
+<g transform="translate(39.47 76.83)">
+<path d="M 0 0 L 0 407.83" fill="none" fill-rule="nonzero" stroke="rgb(132,135,138)" stroke-width="1"/>
+</g>
+<g transform="translate(55.17 490.67)">
+<text x="13.53" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">1月</tspan>
+</text>
+</g>
+<g transform="translate(113.65 490.67)">
+<text x="13.53" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">2月</tspan>
+</text>
+</g>
+<g transform="translate(172.13 490.67)">
+<text x="13.53" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">3月</tspan>
+</text>
+</g>
+<g transform="translate(230.61 490.67)">
+<text x="13.53" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">4月</tspan>
+</text>
+</g>
+<g transform="translate(289.08 490.67)">
+<text x="13.53" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">5月</tspan>
+</text>
+</g>
+<g transform="translate(347.56 490.67)">
+<text x="13.53" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">6月</tspan>
+</text>
+</g>
+<g transform="translate(406.04 490.67)">
+<text x="13.53" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">7月</tspan>
+</text>
+</g>
+<g transform="translate(464.52 490.67)">
+<text x="13.53" y="11.96" text-anchor="middle" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">8月</tspan>
+</text>
+</g>
+<g transform="translate(19.73 475.33)">
+<text x="13.73" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">0</tspan>
+</text>
+</g>
+<g transform="translate(19.73 434.55)">
+<text x="13.73" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">5</tspan>
+</text>
+</g>
+<g transform="translate(12.67 393.77)">
+<text x="20.8" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">10</tspan>
+</text>
+</g>
+<g transform="translate(12.67 352.98)">
+<text x="20.8" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">15</tspan>
+</text>
+</g>
+<g transform="translate(12.67 312.2)">
+<text x="20.8" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">20</tspan>
+</text>
+</g>
+<g transform="translate(12.67 271.42)">
+<text x="20.8" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">25</tspan>
+</text>
+</g>
+<g transform="translate(12.67 230.63)">
+<text x="20.8" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">30</tspan>
+</text>
+</g>
+<g transform="translate(12.67 189.85)">
+<text x="20.8" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">35</tspan>
+</text>
+</g>
+<g transform="translate(12.67 149.07)">
+<text x="20.8" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">40</tspan>
+</text>
+</g>
+<g transform="translate(12.67 108.28)">
+<text x="20.8" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">45</tspan>
+</text>
+</g>
+<g transform="translate(12.67 67.5)">
+<text x="20.8" y="13.63" text-anchor="end" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">50</tspan>
+</text>
+</g>
+<g transform="translate(68.71 109.46)">
+<path d="M 0 195.76 L 58.48 146.82 L 116.96 163.13 L 175.43 89.72 L 233.91 130.51 L 292.39 32.63 L 350.87 65.25 L 409.35 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3"/>
+</g>
+<g transform="translate(68.71 215.5)">
+<path d="M 0 146.82 L 58.48 122.35 L 116.96 73.41 L 175.43 106.04 L 233.91 48.94 L 292.39 65.25 L 350.87 0 L 409.35 24.47" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="3"/>
+</g>
+<g transform="translate(64.71 301.22)">
+<path d="M 0 4 A 4 4 0 1 1 8 4 A 4 4 0 1 1 0 4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(123.18 252.28)">
+<path d="M 0 4 A 4 4 0 1 1 8 4 A 4 4 0 1 1 0 4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(181.66 268.59)">
+<path d="M 0 4 A 4 4 0 1 1 8 4 A 4 4 0 1 1 0 4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(240.14 195.18)">
+<path d="M 0 4 A 4 4 0 1 1 8 4 A 4 4 0 1 1 0 4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(298.62 235.97)">
+<path d="M 0 4 A 4 4 0 1 1 8 4 A 4 4 0 1 1 0 4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(357.1 138.09)">
+<path d="M 0 4 A 4 4 0 1 1 8 4 A 4 4 0 1 1 0 4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(415.57 170.71)">
+<path d="M 0 4 A 4 4 0 1 1 8 4 A 4 4 0 1 1 0 4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(474.05 105.46)">
+<path d="M 0 4 A 4 4 0 1 1 8 4 A 4 4 0 1 1 0 4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(64.71 358.32)">
+<path d="M 0 0 L 8 0 L 8 8 L 0 8 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(123.18 333.85)">
+<path d="M 0 0 L 8 0 L 8 8 L 0 8 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(181.66 284.91)">
+<path d="M 0 0 L 8 0 L 8 8 L 0 8 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(240.14 317.53)">
+<path d="M 0 0 L 8 0 L 8 8 L 0 8 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(298.62 260.44)">
+<path d="M 0 0 L 8 0 L 8 8 L 0 8 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(357.1 276.75)">
+<path d="M 0 0 L 8 0 L 8 8 L 0 8 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(415.57 211.5)">
+<path d="M 0 0 L 8 0 L 8 8 L 0 8 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(474.05 235.97)">
+<path d="M 0 0 L 8 0 L 8 8 L 0 8 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(220.8 525)">
+<path d="M 0 0 L 16 0" fill="none" fill-rule="nonzero" stroke="rgb(68,114,196)" stroke-width="3"/>
+</g>
+<g transform="translate(224.8 521)">
+<path d="M 0 4 A 4 4 0 1 1 8 4 A 4 4 0 1 1 0 4 Z" fill="rgb(68,114,196)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(241.47 513.33)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">CPU</tspan>
+</text>
+</g>
+<g transform="translate(279.87 525)">
+<path d="M 0 0 L 16 0" fill="none" fill-rule="nonzero" stroke="rgb(112,173,71)" stroke-width="3"/>
+</g>
+<g transform="translate(283.87 521)">
+<path d="M 0 0 L 8 0 L 8 8 L 0 8 Z" fill="rgb(112,173,71)" fill-rule="nonzero"/>
+</g>
+<g transform="translate(300.53 513.33)">
+<text x="0" y="15.96" text-anchor="start" xml:space="preserve">
+<tspan font-size="13.33" font-family="'Helvetica','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif" fill="#20242B">内存</tspan>
+</text>
+</g>
+</g>
+</g>
+</g>
+</svg>

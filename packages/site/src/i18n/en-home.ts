@@ -73,7 +73,7 @@ export const homeMessages = {
   'gzip 核心包': 'Core package, gzipped',
   '个': '',
   '运行时依赖': 'Runtime dependency',
-  '断言 + 212 快照': 'Assertions + 212 snapshots',
+  '断言 + 232 快照': 'Assertions + 232 snapshots',
   '就在这个页面里跑': 'Running right on this page',
   '下面这个查看器用的就是 npm 上的': 'This viewer uses the published npm package ',
   '。拖一个自己的文件进来——它不会被上传到任何地方。': '. Drop in your own file. It will not be uploaded anywhere.',

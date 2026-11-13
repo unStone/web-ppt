@@ -11,6 +11,7 @@ import {
   type AxisView,
   type Extent,
   type Insets,
+  type XYPlot,
 } from './frame';
 import { renderBubbles, renderScatter } from './plots';
 import type { PlotEnv } from './plot-marks';
@@ -91,7 +92,8 @@ export function xyInsets(m: ChartModel, axes: XYAxes[], base: Insets): Insets {
 /** 各轴对使用同一绘图区；背景只由外层绘制，否则后画的系列会擦掉已有图形。 */
 export function paintXY(m: ChartModel, axes: XYAxes[], rect: Rect, fonts: string[], pe: PlotEnv, seen = new Set<Axis>()) {
   const out: SlideElement[] = [],
-    plots: SlideElement[] = [];
+    plots: SlideElement[] = [],
+    maps: { group: PlotGroup; xy: XYPlot }[] = [];
   const once = (view: AxisView): AxisView => {
     if (seen.has(view.axis)) return { ...view, axis: { ...view.axis, del: true, title: null, majorGrid: null } };
     seen.add(view.axis);
@@ -99,6 +101,7 @@ export function paintXY(m: ChartModel, axes: XYAxes[], rect: Rect, fonts: string
   };
   for (const { group, x, y } of axes) {
     const xy = makeXY(rect, x, y);
+    maps.push({ group, xy });
     out.push(
       ...renderAxes(
         m,
@@ -123,5 +126,5 @@ export function paintXY(m: ChartModel, axes: XYAxes[], rect: Rect, fonts: string
     );
     plots.push(...(group.kind === 'bubble' ? renderBubbles(group, xy, pe) : renderScatter(group, xy, pe)));
   }
-  return { axes: out, plots };
+  return { axes: out, plots, maps };
 }
