@@ -2,7 +2,24 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。发布过程的验证证据（npm 发布、安装验收、体积口径、真机验收状态）记录在 [docs/releases/](docs/releases/)。
 
-## 未发布
+## 0.9.0-beta.2 - 2026-11-14
+
+九包发布到 npm `next`。本版交付桌面补齐线的两张票据：新建图表（桌面 002）与图表趋势线 / 误差线 / 数据表（桌面 003），连同主线上累积的工具链迁移。
+
+### 新建图表（桌面 002）
+
+- 新增 `@web-ppt/edit-core/chart-authoring` 按需入口：`AddChart` 命令在编辑会话的任意页上从零插入原生可编辑图表，覆盖 ECMA-376 全部 16 种经典绘图类型（含 3D 与曲面）与七类 ChartEx（AlternateContent 双部件与经典回退）；类别 / 系列（含空值）在命令边界 fast-fail（股价 4 系列 OHLC、饼族单系列、点数对齐、容量上限），历史 / 恢复 / 协同共用主编辑器。
+- 内嵌工作簿按图组语义铺列（类目列 / XY 双列 / 气泡三列 / OHLC 分组），单元格引用与图表缓存一致；默认外观为主题强调色与 +mn 字体。
+- 部件按 `ppt/charts/chartN.xml`（ChartEx 用 `chartExN.xml`）约定命名写入保存计划，移除后部件与内容类型同步回收；首次保存后既有数据 / 类型 / 样式 / 共享工作簿编辑链自动识别新图表。
+- 23 型保存产物进入 OOXML 合法性门禁（XSD + Open XML SDK 双通道）；LibreOffice 无修复打开抽样通过。
+
+### 图表趋势线 / 误差线 / 数据表（桌面 003）
+
+- `c:trendline`（六种拟合）、`c:errBars`（五类取值）与 `c:dTable` 从只保留 XML 进入解析与渲染：两条文本路径与矢量 PDF 都包含公式 / R² 标签与表格文字；堆叠图按累计顶 / 占比拟合；趋势线占独立图例条目。
+- `@web-ppt/edit-core/chart-design` 新增 `trendlines` / `errorBars` / `dataTable` 三个整值替换字段（undefined 保持 / 空数组移除），写入按 dml-chart.xsd 序列落位。
+- LibreOffice 对照归因：其导入器丢弃对数趋势线、双图组数据表重复铺列为其自身行为；幂趋势线系数口径差异按线性化 R² 口径记录（[设计与对照](docs/design/chart-analysis-rendering.md)）。
+
+### 工具链（主线上累积）
 
 - 包之间的 peer 依赖改为精确版本（例如 `@web-ppt/editor@0.8.1` 要求 `@web-ppt/core@0.8.1`）：九个包必须同版本，混装时 npm 在安装阶段报告冲突，不再到运行时才出错。
 - 修复发布声明文件的 3 处相对导入（`@web-ppt/core` 的 `pptx/geometry`、`@web-ppt/edit-core` 的 `templates` 与 `lint`）被 TypeScript 解析到无类型的 JS 产物：`CreateBlankPptxOptions`、`PresentationDescription` 等类型在宿主侧不再退化为 `any`，关闭 `skipLibCheck` 时也不再报 TS7016。
