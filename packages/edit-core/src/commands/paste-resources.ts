@@ -137,7 +137,7 @@ function mediaAllocation(doc: EditDoc): {
   return { targetByHash, allocateMediaPart: mediaPartAllocator(usedParts) };
 }
 
-function relationshipIdAllocator(doc: EditDoc, destinationPart: string): () => string {
+export function relationshipIdAllocator(doc: EditDoc, destinationPart: string): () => string {
   const used = relationshipIds(doc, destinationPart);
   const allocation = doc.identity.allocation;
   if (allocation) {

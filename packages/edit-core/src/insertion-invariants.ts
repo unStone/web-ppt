@@ -110,7 +110,12 @@ export function assertElementInsertionSource(doc: EditDoc, record: ElementRecord
     if (MEDIA_REL_TYPES.has(relationship.type.slice(relationship.type.lastIndexOf('/') + 1))) {
       if (!byTarget.has(target)) throw new Error(`${label} 的媒体关系缺少资源：${relationship.sourceId}`);
       referencedTargets.add(target);
-    } else if (!doc.package?.parts[target] && !doc.saveState.baselines[target]) {
+    } else if (
+      !doc.package?.parts[target]
+      && !doc.saveState.baselines[target]
+      // 新建图表（桌面 002）：目标部件在保存计划中产出，命令已把字节登记进 chartResources
+      && !Object.values(doc.chartResources ?? {}).some((resource) => target === resource.part || target === resource.fallback?.part)
+    ) {
       throw new Error(`${label} 的包关系目标不存在：${relationship.sourceId}`);
     }
   }

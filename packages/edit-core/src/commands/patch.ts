@@ -66,6 +66,7 @@ import { canInvalidateAgainst, collectPatchInvalidation } from './patch-invalida
 import { validateCommonObjectSlidePatch } from './common-object-slide-patch';
 import { isThemePatch, validateThemePatch } from './theme';
 import { isFontResourcePatch, validateFontResourcePatch } from './font-embedding';
+import { isChartResourcePatch, validateChartResourcePatch } from './chart-authoring';
 import { isLayoutPropertyPatch, validateLayoutPropertyPatch } from './layout-property';
 import { isMasterBackgroundPatch, validateMasterBackgroundPatch } from './master-property';
 import { isMasterTextStylePatch, validateMasterTextStylePatch } from './master-text-style';
@@ -96,6 +97,10 @@ function validatePatch(
   }
   if (isFontResourcePatch(input)) {
     validateFontResourcePatch(input, index);
+    return;
+  }
+  if (isChartResourcePatch(input)) {
+    validateChartResourcePatch(input, index);
     return;
   }
   if (isThemePatch(input)) {

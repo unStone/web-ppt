@@ -163,7 +163,7 @@ flowchart TD
 | ChartEx 真实语料 | 有（六类缺 PowerPoint 存出样本） | 有（公开语料或真机） | [data-fidelity 002](wayfinder/ppt-data-fidelity/tickets/002-chartex-fallback-corpus.md)，1.0 条件 |
 | SmartArt / OLE 真实样本、高级渲染根因 | 依样本而定 | 有（公开语料 + `npm run compare`） | [portability 008](wayfinder/ppt-portability-fidelity/tickets/008-native-object-scope.md) / [009](wayfinder/ppt-portability-fidelity/tickets/009-render-fidelity-scope.md)，不绑定版本；008 的样本同时服务桌面 001 |
 | OOXML 结构与语义校验 | 有（LibreOffice 容忍的错误 PowerPoint 会要求修复） | 已补齐（XSD + Open XML SDK 双通道，桌面 005 完成） | ✅ [桌面 005](wayfinder/ppt-desktop-parity/tickets/005-ooxml-validation-gate.md) |
-| 不能新建图表 | 有（图表是第二高频对象） | 有（数据集模型已预留，上游 chart-builder 可参考） | 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md)，P1，0.9.0 |
+| 不能新建图表 | ✅ 已实现（桌面 002，2026-11-14） | 有（数据集模型已预留，上游 chart-builder 可参考） | 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md)，P1，0.9.0 |
 | 趋势线 / 误差线 / 数据表不绘制 | 有（显示比 PowerPoint 少元素） | 有（上游预览器可参考） | 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md)，P1，0.9.0 |
 | SmartArt 无缓存排布偏离 | 有（布局族外的布局与编辑后重排不准） | 有（ECMA-376 §21.4，须自行实现） | 桌面 [001](wayfinder/ppt-desktop-parity/tickets/001-smartart-layout-engine.md)，P1，依赖真实样本，0.9.0 |
 | 不能新建 SmartArt | 有 | 有（001 之后） | 桌面 [006](wayfinder/ppt-desktop-parity/tickets/006-smartart-authoring.md)，0.9.0 |
@@ -303,7 +303,7 @@ Agent 004–008 随 `0.8.0-beta.3` 交付，桌面 004 导入安全与 005 OOXML
 
 | 票据 | 剩余 | 依赖 |
 |---|---|---|
-| 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md) 新建图表 | 16 种经典 + 7 种现代类型的插入命令、原生内容、主题默认外观与产品入口（产品待确认） | 无 |
+| 桌面 [002](wayfinder/ppt-desktop-parity/tickets/002-chart-authoring.md) 新建图表 | ✅ 16 经典 + 7 现代类型的插入命令、原生内容、主题默认外观已交付（2026-11-14）；官网入口待产品确认 | 无 |
 | 桌面 [003](wayfinder/ppt-desktop-parity/tickets/003-chart-analysis-rendering.md) 图表细节 | ✅ 趋势线 / 误差线 / 数据表解析与渲染、chart-design 编辑命令已交付（2026-11-14）；官网入口待产品确认 | 无 |
 | 桌面 [001](wayfinder/ppt-desktop-parity/tickets/001-smartart-layout-engine.md) SmartArt 引擎 | 布局树、全部算法、约束与规则重试；与 PowerPoint 缓存逐形状对照 | portability 008 的真实样本；可立即开工 |
 | 桌面 [006](wayfinder/ppt-desktop-parity/tickets/006-smartart-authoring.md) 新建 SmartArt | 自编布局目录、插入 / 切换布局 / 文本转换命令、产品入口 | 001 |

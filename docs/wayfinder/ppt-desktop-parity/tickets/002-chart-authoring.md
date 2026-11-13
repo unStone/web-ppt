@@ -35,6 +35,25 @@ blocked_by: []
 - 非法输入（类别与系列长度不符、XY 图缺数值）原子拒绝并给出稳定 reason。
 - 默认闭包体积不变。
 
+## Answer（2026-11-14，SDK 能力已交付；产品入口待后续）
+
+设计与实施见[设计文档](../../../design/chart-authoring.md)。已交付：
+
+| 层 | 交付 |
+|---|---|
+| 生成 | `chart-authoring/seed.ts` 16 种经典绘图类型 + `seed-chartex.ts` 七类 ChartEx（cx 分层数据模型、PowerPoint 口径的 AlternateContent 双部件）；内嵌工作簿按图组语义铺列（类目列 / XY 双列 / 气泡三列 / OHLC 分组），引用与缓存一致 |
+| 命令 | `AddChart`（chart-authoring 扩展）：位置、23 种类型、类别 / 系列（含空值）在命令边界 fast-fail（股价 4 系列 OHLC、饼族单系列、点数对齐、容量上限）；元素树 insert + `chartResources` 资源登记进入历史 / 恢复 / 协同 |
+| 保存 | 保存计划按 `ppt/charts/chartN.xml` 约定命名写出图表部件、图表关系、内嵌工作簿与内容类型；资源移除后部件与 Override 同步回收；默认闭包体积不变 |
+| 编辑链 | 保存后 `chartPartForElement` 解析新部件，数据编辑、类型 / 样式编辑、共享工作簿逻辑自动识别（测试：改值 9876 同时写回缓存与工作簿） |
+| 验收 | 23 型保存产物进入 OOXML 门禁（XSD + SDK）；test-chart-authoring 全链断言；LibreOffice 无修复打开抽样 8 型；五处序列违规在 XSD 预检中修正 |
+
+未交付（后续）：
+
+| 项 | 说明 |
+|---|---|
+| 产品入口 | 官网插入菜单的图表类型选择器与数据表编辑（票据原注「产品待确认」） |
+| 保存前数据面板 | 保存前投影由资源字节渲染（现代图用回退经典图），chart-data 面板编辑在首次保存后生效；若产品要求保存前编辑，需为 chart-data 绑定解析增加资源回退 |
+
 ## 参考
 
 上游 `src/internal/chartml/chart-builder.ts`、`chart-spec.ts`、`embedded-xlsx.ts`、`secondary-axis.ts`、`sheet-layout.ts`（MIT，`18b7e75`），以及 `test/fn-chart-*.test.ts` 的类型覆盖方式。

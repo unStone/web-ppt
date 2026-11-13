@@ -78,6 +78,10 @@
       "types": "./dist/comments/index.d.ts",
       "import": "./dist/comments.js"
     },
+    "./chart-authoring": {
+      "types": "./dist/chart-authoring/index.d.ts",
+      "import": "./dist/chart-authoring.js"
+    },
     "./chart-design": {
       "types": "./dist/chart-design/index.d.ts",
       "import": "./dist/chart-design.js"
@@ -140,7 +144,7 @@
   ],
   "scripts": {
     "postbuild": "node ../../tooling/build-agent-describe.mjs && vite build --config vite.lint.config.ts && node ../../tooling/build-agent-tools.mjs && node ../../tooling/build-template-fill.mjs",
-    "build": "vite build && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && vite build --config vite.media.config.ts && vite build --config vite.appearance.config.ts && vite build --config vite.resize.config.ts && node ../../tooling/check-preset-handles-boundary.mjs edit-core && tsc -p tsconfig.build.json && vite build --config vite.comments.config.ts && vite build --config vite.chart-design.config.ts && vite build --config vite.chart-ex.config.ts && vite build --config vite.smartart.config.ts && vite build --config vite.cfb.config.ts && vite build --config vite.ole.config.ts && vite build --config vite.ink.config.ts && vite build --config vite.ppt.config.ts",
+    "build": "vite build && vite build --config vite.templates.config.ts && vite build --config vite.chart.config.ts && vite build --config vite.media.config.ts && vite build --config vite.appearance.config.ts && vite build --config vite.resize.config.ts && node ../../tooling/check-preset-handles-boundary.mjs edit-core && tsc -p tsconfig.build.json && vite build --config vite.comments.config.ts && vite build --config vite.chart-authoring.config.ts && vite build --config vite.chart-design.config.ts && vite build --config vite.chart-ex.config.ts && vite build --config vite.smartart.config.ts && vite build --config vite.cfb.config.ts && vite build --config vite.ole.config.ts && vite build --config vite.ink.config.ts && vite build --config vite.ppt.config.ts",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

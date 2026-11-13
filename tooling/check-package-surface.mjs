@@ -40,7 +40,7 @@ for (const { dir, manifest } of published) {
 /** 必须以独立子路径交付、不进默认入口的能力 */
 const ON_DEMAND = {
   core: ['./image-zip', './chart-edit', './chart-ex', './modern-charts'],
-  'edit-core': ['./generate', './templates', './chart', './media', './appearance'],
+  'edit-core': ['./generate', './templates', './chart', './media', './chart-authoring', './appearance'],
   editor: ['./adjustments', './templates', './chart', './media', './accessibility', './edit-context'],
   'viewer-core': ['./comments'],
   react: ['./templates', './chart', './media'],
