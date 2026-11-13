@@ -15,6 +15,7 @@ const root = resolve(import.meta.dirname, '..'),
   out = join(root, 'out/chart-authoring');
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
+installDomEnv();
 
 const entry = join(out, 'entry.mjs');
 writeFileSync(
