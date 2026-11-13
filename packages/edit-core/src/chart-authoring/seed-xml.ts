@@ -1,5 +1,5 @@
 import { createXmlElement, createXmlText, insertXmlChild, parseXmlTree, setXmlAttribute } from '../xml/index.js';
-import type { XmlDocument, XmlElement, XmlNode } from '../xml';
+import type { XmlDocument, XmlElement, XmlNode } from '../xml/index.js';
 
 export const SEED_NS = {
   chart: 'http://schemas.openxmlformats.org/drawingml/2006/chart',
