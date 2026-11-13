@@ -65,13 +65,19 @@ function dataEntry(id: number, kind: ChartExKind, chart: AddChartData, source: A
   return element('cx:data', { id }, [...categories, numDim(NUM_DIM[kind], source.values)]);
 }
 
-function seriesEntry(index: number, kind: ChartExKind, source: AddChartSeries, style: SeedChartOptions): XmlElement {
-  const layoutPr = kind === 'boxWhisker' ? [element('cx:statistics', { quartileMethod: 'exclusive' })] : [];
-  return element('cx:series', { layoutId: LAYOUT_IDS[kind], formatIdx: index }, [
-    element('cx:tx', {}, [element('cx:txData', {}, [element('cx:v', {}, [source.name])])]),
-    element('cx:dataId', { val: index }),
-    element('cx:layoutPr', {}, layoutPr),
-  ]);
+/**
+ * 系列布局与数据条目。PowerPoint 的直方图是 layoutId=clusteredColumn（查看器按
+ * 数据分箱），帕累托 = clusteredColumn 柱系列 + paretoLine 折线系列（同一份数据
+ * 两条 cx:data，与 core 的 chart-ex 识别口径一致）。
+ */
+function seriesLayouts(kind: ChartExKind, chart: AddChartData): { layoutId: string; name: string; valuesIndex: number }[] {
+  if (kind === 'histogram') return chart.series.map((series) => ({ layoutId: 'clusteredColumn', name: series.name, valuesIndex: 0 }));
+  if (kind === 'paretoLine')
+    return [
+      ...chart.series.map((series) => ({ layoutId: 'clusteredColumn', name: series.name, valuesIndex: 0 })),
+      ...chart.series.map((series) => ({ layoutId: 'paretoLine', name: `${series.name} 累计`, valuesIndex: 0 })),
+    ];
+  return chart.series.map((series) => ({ layoutId: LAYOUT_IDS[kind], name: series.name, valuesIndex: 0 }));
 }
 
 function color(style: SeedChartOptions): XmlElement {
@@ -119,7 +125,13 @@ export function seedChartExXml(chart: AddChartData, style: SeedChartOptions): Ui
           element(
             'cx:plotAreaRegion',
             {},
-            chart.series.map((source, index) => seriesEntry(index, kind, source, style)),
+            seriesLayouts(kind, chart).map((entry, index) =>
+              element('cx:series', { layoutId: entry.layoutId, formatIdx: index }, [
+                element('cx:tx', {}, [element('cx:txData', {}, [element('cx:v', {}, [entry.name])])]),
+                element('cx:dataId', { val: entry.valuesIndex }),
+                element('cx:layoutPr', {}, kind === 'boxWhisker' ? [element('cx:statistics', { quartileMethod: 'exclusive' })] : []),
+              ]),
+            ),
           ),
         ]),
       ]),

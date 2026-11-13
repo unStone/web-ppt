@@ -82,16 +82,18 @@ function validateChart(chart: AddChartData): void {
 }
 
 /** 在现有包上分配约定命名的图表部件路径；生成保存（无原包）不支持插入图表。 */
-/** 在现有包上分配约定命名的图表部件路径；生成保存（无原包）不支持插入图表。 */
-function chartPartAllocator(doc: EditDoc): () => string {
+function chartPartAllocator(doc: EditDoc, prefix = 'chart'): () => string {
   const used = new Set(Object.keys(doc.package!.parts));
   return () => {
     let serial = 1;
-    while (used.has(`ppt/charts/chart${serial}.xml`)) serial++;
-    used.add(`ppt/charts/chart${serial}.xml`);
-    return `ppt/charts/chart${serial}.xml`;
+    while (used.has(`ppt/charts/${prefix}${serial}.xml`)) serial++;
+    used.add(`ppt/charts/${prefix}${serial}.xml`);
+    return `ppt/charts/${prefix}${serial}.xml`;
   };
 }
+
+/** ChartEx 部件的 SDK 内容类型硬约束要求 chartExN.xml 命名 */
+const chartExPartAllocator = (doc: EditDoc): (() => string) => chartPartAllocator(doc, 'chartEx');
 
 export function addChartPatches(doc: EditDoc, extension: ExtensionCommand, origin: string): CommandPatches {
   if (doc.meta.readonly || doc.meta.source !== 'pptx' || !doc.package) {
@@ -109,12 +111,13 @@ export function addChartPatches(doc: EditDoc, extension: ExtensionCommand, origi
   const modern = CHARTEX_KINDS.includes(chart.kind as never);
   if (!classic && !modern) throw new Error('图表类型无效');
 
-  // 部件分配：经典图一个图部件；现代图占 chartEx 与经典回退两个图部件。
-  // 工作簿只有一份（经典图自带 externalData；现代图的回退经典图引用它）。
+  // 部件分配：经典图一个 chartN.xml；现代图占 chartExN.xml（SDK 对 chartN.xml 的
+  // 内容类型有硬约束）与经典回退 chartM.xml 两个图部件。工作簿只有一份，
+  // 跟随回退经典图的编号（其 externalData 引用它）。
   const allocatePart = chartPartAllocator(doc);
-  const chartPart = allocatePart();
+  const chartPart = modern ? chartExPartAllocator(doc)() : allocatePart();
   const fallbackPart = modern ? allocatePart() : null;
-  const workbookPart = `ppt/embeddings/${chartPart.slice('ppt/charts/'.length, -'.xml'.length)}.xlsx`;
+  const workbookPart = `ppt/embeddings/${(fallbackPart ?? chartPart).slice('ppt/charts/'.length, -'.xml'.length)}.xlsx`;
   if (doc.package!.parts[workbookPart]) throw new Error('图表工作簿部件路径与现有部件冲突');
   const workbook = seedChartWorkbook(classic ? chart : fallbackChart(chart));
   const style = {};
@@ -154,7 +157,10 @@ export function addChartPatches(doc: EditDoc, extension: ExtensionCommand, origi
       {
         sourceId: 'rIdChartSeed',
         targetId,
-        type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
+        // ChartEx 用微软专有关系类型；SDK 按关系类型决定部件的内容类型期待
+        type: modern
+          ? 'http://schemas.microsoft.com/office/2014/relationships/chartEx'
+          : 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
         target: relativeTarget(part, chartPart),
       },
       ...(fallback

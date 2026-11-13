@@ -1,4 +1,4 @@
-import { createXmlElement, createXmlText, insertXmlChild, parseXmlTree, setXmlAttribute } from '../xml';
+import { createXmlElement, createXmlText, insertXmlChild, parseXmlTree, setXmlAttribute } from '../xml/index.js';
 import type { XmlDocument, XmlElement, XmlNode } from '../xml';
 
 export const SEED_NS = {

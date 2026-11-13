@@ -24,8 +24,11 @@ export function seedGraphicFrameMarkup(options: GraphicFrameOptions): {
   readonly fallbackRelationshipId?: string;
 } {
   const name = escapeAttribute(options.name);
+  // 每个分支的 graphicFrame 自带命名空间声明：OOXML 门禁按 MCE 读端语义展开
+  // AlternateContent 时克隆的是 Fallback 子树，祖先上的声明不会跟随。
   const frame = (relationshipId: string, modernChart: boolean) =>
-    `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${options.shapeId}" name="${name}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>`
+    `<p:graphicFrame xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex">`
+    + `<p:nvGraphicFramePr><p:cNvPr id="${options.shapeId}" name="${name}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>`
     + `<p:xfrm><a:off x="${pxToEmu(options.rect.x)}" y="${pxToEmu(options.rect.y)}"/><a:ext cx="${pxToEmu(options.rect.w)}" cy="${pxToEmu(options.rect.h)}"/></p:xfrm>`
     + (modernChart
       ? `<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/drawing/2014/chartex"><cx:chart r:id="${relationshipId}"/></a:graphicData></a:graphic></p:graphicFrame>`
@@ -33,7 +36,8 @@ export function seedGraphicFrameMarkup(options: GraphicFrameOptions): {
   if (options.modern && options.fallbackRelationshipId) {
     return {
       value:
-        `<mc:AlternateContent><mc:Choice Requires="modern">${frame(options.relationshipId, true)}</mc:Choice>`
+        `<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">`
+        + `<mc:Choice Requires="modern">${frame(options.relationshipId, true)}</mc:Choice>`
         + `<mc:Fallback>${frame(options.fallbackRelationshipId, false)}</mc:Fallback></mc:AlternateContent>`,
       fallbackRelationshipId: options.fallbackRelationshipId,
     };
