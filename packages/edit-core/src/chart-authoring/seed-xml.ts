@@ -1,5 +1,5 @@
-import { createXmlElement, createXmlText, insertXmlChild, parseXmlTree, setXmlAttribute } from '@web-ppt/edit-core/xml';
-import type { XmlDocument, XmlElement, XmlNode } from '@web-ppt/edit-core/xml';
+import { createXmlElement, createXmlText, insertXmlChild, parseXmlTree, setXmlAttribute } from '../xml';
+import type { XmlDocument, XmlElement, XmlNode } from '../xml';
 
 export const SEED_NS = {
   chart: 'http://schemas.openxmlformats.org/drawingml/2006/chart',

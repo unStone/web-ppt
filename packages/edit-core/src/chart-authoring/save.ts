@@ -15,7 +15,7 @@ import {
   insertXmlChild,
   removeXmlChild,
   xmlElementChildren,
-} from '@web-ppt/edit-core/xml';
+} from '../xml';
 import type { EditDoc } from '../types';
 import type { ChartAuthoringResource } from '../types';
 import { SEED_NS as NS, seedDocument, seedElement as element } from './seed-xml';

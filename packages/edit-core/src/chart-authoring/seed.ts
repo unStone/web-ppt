@@ -5,8 +5,8 @@
  * 右侧图例、类目 / 数值轴（3D 与曲面补系列轴）、externalData 指向内嵌工作簿。
  * 序列位全部按 dml-chart.xsd，产物要过 OOXML 门禁（桌面 005）。
  */
-import { serializeXmlTreeBytes } from '@web-ppt/edit-core/xml';
-import type { XmlElement } from '@web-ppt/edit-core/xml';
+import { serializeXmlTreeBytes } from '../xml';
+import type { XmlElement } from '../xml';
 import type { AddChartSeries, AddChartData, ClassicChartKind } from './types';
 import { SEED_NS as NS, seedDocument, seedElement as element } from './seed-xml';
 

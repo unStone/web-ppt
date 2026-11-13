@@ -6,8 +6,8 @@
  * paretoLine 只给 numDim（分箱由查看器计算）。多系列时每系列一份 cx:data
  * （id 顺增、series 以 dataId 引用），与 PowerPoint 存出的结构一致。
  */
-import { serializeXmlTreeBytes } from '@web-ppt/edit-core/xml';
-import type { XmlElement } from '@web-ppt/edit-core/xml';
+import { serializeXmlTreeBytes } from '../xml';
+import type { XmlElement } from '../xml';
 import type { AddChartData, AddChartSeries, ChartExKind } from './types';
 import { SEED_NS as NS, seedDocument, seedElement as element } from './seed-xml';
 import type { SeedChartOptions } from './seed';

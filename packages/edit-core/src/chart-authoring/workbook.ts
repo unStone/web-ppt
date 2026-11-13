@@ -3,7 +3,7 @@
  * 列布局：类目图 A 列类目、B 起每系列一列；散点每系列 X/Y 两列；气泡再加大小列；
  * 股价图每 4 列一组 OHLC。公式经 chartFormula 生成，与既有编辑器共用。
  */
-import { serializeXmlTreeBytes } from '@web-ppt/edit-core/xml';
+import { serializeXmlTreeBytes } from '../xml';
 import { createOpcPackage, disposeOpcPackage } from '../opc/patch';
 import { chartFormula, columnName } from '../chart/formula';
 import type { AddChartData, AddChartSeries } from './types';
