@@ -45,6 +45,11 @@
     "sha256": "a3ba97b115cfbb7eed00847aa5b39d73611876e44e7afcdb982158a2a01f6e74"
   },
   {
+    "name": "latin-formula.ttf",
+    "bytes": 44172,
+    "sha256": "c68d59bfe023a34fb86f7223bf02e57cbca3f61bb9ee57a10bae58961d8dd5b5"
+  },
+  {
     "name": "latin.ttf",
     "bytes": 21656,
     "sha256": "50dbc5b2e5f0022918db4f037624fe45b985d6748afc2b59566ecd3d3725b4c8"

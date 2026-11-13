@@ -12,7 +12,7 @@ import type { XmlElement } from '@web-ppt/edit-core/xml';
 import { axisTitleAnchor, chartXml, makeDataElement as make, xmlAttribute as attr } from '../chart/xml-data';
 import { CHART_PLOTS } from '../chart/plot-kinds';
 import { MAX_CHART_POINTS } from '../chart/validation';
-import type { ChartDesign, ChartType } from './types';
+import type { ChartDesign, ChartErrorBars, ChartTrendline, ChartType } from './types';
 
 const { child, children } = chartXml;
 const plotNames: Record<ChartType, string> = {
@@ -284,6 +284,94 @@ export function applyChartDesign(xml: string | Uint8Array, design: ChartDesign):
         ]);
       setXmlAttribute(show, 'val', design.labels ? '1' : '0');
     }
+  // ---------- 趋势线 / 误差线 / 数据表（整值替换：undefined 保持原样，数组 / 对象重写，空数组与 null 移除） ----------
+
+  const serTail = (series: XmlElement): XmlElement | null =>
+    children(series).find((n) => ['cat', 'val', 'xVal', 'yVal', 'smooth', 'shape', 'extLst'].includes(n.localName)) ?? null;
+  const boolNode = (parent: XmlElement, name: string, on: boolean): void => void add(parent, name, on ? '1' : '0');
+  const numLit = (parent: XmlElement, name: string, values: readonly (number | null)[] | undefined): void => {
+    if (!values) return;
+    const holder = add(parent, name);
+    const lit = add(holder, 'numLit');
+    add(lit, 'formatCode', 'General');
+    add(lit, 'ptCount', String(values.length));
+    values.forEach((value, index) => {
+      if (value === null || !Number.isFinite(value)) return;
+      const point = make(lit, 'pt', [['idx', String(index)]]);
+      insert(lit, point);
+      insert(add(point, 'v'), createXmlText(String(value)));
+    });
+  };
+  const lineProps = (parent: XmlElement, color: string): void => {
+    const props = make(parent, 'spPr');
+    insert(parent, props, serTail(parent));
+    const line = drawing(props, 'ln', [['w', '19050']]);
+    drawing(drawing(line, 'solidFill'), 'srgbClr', [['val', color.slice(1)]]);
+  };
+  const buildTrendline = (plot: XmlElement, t: ChartTrendline): XmlElement => {
+    const node = make(plot, 'trendline');
+    if (t.name) {
+      const name = make(node, 'name');
+      insert(node, name);
+      insert(name, createXmlText(t.name));
+    }
+    if (t.color) lineProps(node, t.color);
+    add(node, 'trendlineType', t.type);
+    if (t.type === 'poly') add(node, 'order', String(t.order ?? 2));
+    if (t.type === 'movingAvg') add(node, 'period', String(t.period ?? 2));
+    if (t.forward !== undefined) add(node, 'forward', String(t.forward));
+    if (t.backward !== undefined) add(node, 'backward', String(t.backward));
+    if (t.intercept !== undefined) add(node, 'intercept', String(t.intercept));
+    if (t.type !== 'movingAvg') {
+      boolNode(node, 'dispRSqr', t.rSquare === true);
+      boolNode(node, 'dispEq', t.equation === true);
+    }
+    return node;
+  };
+  const buildErrBars = (plot: XmlElement, e: ChartErrorBars, dir: 'x' | 'y'): XmlElement => {
+    const node = make(plot, 'errBars');
+    add(node, 'errDir', dir);
+    add(node, 'errBarType', e.amount ?? 'both');
+    add(node, 'errValType', e.valueType);
+    if (e.noEndCap) add(node, 'noEndCap', '1');
+    if (e.valueType === 'cust') {
+      numLit(node, 'plus', e.plus);
+      numLit(node, 'minus', e.minus);
+    } else if (e.value !== undefined) add(node, 'val', String(e.value));
+    if (e.color) lineProps(node, e.color);
+    return node;
+  };
+  if (design.trendlines !== undefined || design.errorBars !== undefined) {
+    const allSeries = plots.flatMap((plot) => children(plot, 'ser'));
+    for (const series of allSeries) {
+      if (design.trendlines !== undefined) for (const node of children(series, 'trendline')) remove(series, node);
+      if (design.errorBars !== undefined) for (const node of children(series, 'errBars')) remove(series, node);
+    }
+    for (const series of allSeries) {
+      const target = allSeries.indexOf(series);
+      const tail = serTail(series);
+      for (const t of design.trendlines ?? []) {
+        if ((t.series ?? 0) !== target) continue;
+        insert(series, buildTrendline(series, t), tail);
+      }
+      for (const e of design.errorBars ?? []) {
+        if ((e.series ?? 0) !== target) continue;
+        const dirs = e.direction === 'both' ? (['x', 'y'] as const) : [e.direction ?? 'y'];
+        for (const dir of dirs) insert(series, buildErrBars(series, e, dir), tail);
+      }
+    }
+  }
+  if (design.dataTable !== undefined) {
+    const previous = child(area, 'dTable');
+    if (previous) remove(area, previous);
+    if (design.dataTable) {
+      const table = beforeTail(area, 'dTable', ['spPr', 'extLst']);
+      boolNode(table, 'showHorzBorder', design.dataTable.horizontalBorders !== false);
+      boolNode(table, 'showVertBorder', design.dataTable.verticalBorders !== false);
+      boolNode(table, 'showOutline', design.dataTable.outline !== false);
+      boolNode(table, 'showKeys', design.dataTable.keys !== false);
+    }
+  }
   if (design.legend !== undefined) {
     const previous = child(chart, 'legend');
     if (previous) remove(chart, previous);

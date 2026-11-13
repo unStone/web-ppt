@@ -4,7 +4,7 @@
 import { ColorCtx, childColor } from '../pptx/color';
 import type { Fill } from '../types';
 import { attr, boolAttr, kid, kids, numAttr, walk } from '../xml';
-import { EMPTY_LN, LnSpec, accentColor, formatNumber, parseFill, parseLn, px, themeColor } from './util';
+import { EMPTY_LN, LnSpec, accentColor, clamp, formatNumber, parseFill, parseLn, px, themeColor } from './util';
 
 export type PlotKind =
   | 'bar'
@@ -189,6 +189,130 @@ function parseDLbls(el: Element | null, ctx: ColorCtx, parent: DLblSpec): DLblSp
 
 export const labelVisible = (l: DLblSpec): boolean => !l.del && (l.showVal || l.showCat || l.showSer || l.showPercent || l.showSize);
 
+// ---------- 趋势线 / 误差线 / 数据表 ----------
+
+/** c:trendlineType 的六种取值 */
+export type TrendKind = 'linear' | 'exponential' | 'logarithmic' | 'movingAvg' | 'poly' | 'power';
+
+const TREND_KINDS: Record<string, TrendKind> = {
+  linear: 'linear',
+  exponential: 'exponential',
+  logarithmic: 'logarithmic',
+  movingAvg: 'movingAvg',
+  poly: 'poly',
+  power: 'power',
+};
+
+/** c:trendline（CT_Trendline）。序列按 dml-chart.xsd：name spPr trendlineType order period forward backward intercept dispRSqr dispEq trendlineLbl。 */
+export interface TrendlineSpec {
+  /** c:name 显式图例名；缺省时由渲染层按类型自动生成 */
+  name: string | null;
+  kind: TrendKind;
+  /** poly 的阶数（2–6，缺省 2） */
+  order: number;
+  /** movingAvg 的周期（≥2，缺省 2） */
+  period: number;
+  /** 前推 / 后推量（类目图按类目数，散点按 x 单位） */
+  forward: number;
+  backward: number;
+  /** c:intercept 固定截距（linear / exponential） */
+  intercept: number | null;
+  dispRSqr: boolean;
+  dispEq: boolean;
+  ln: LnSpec;
+  /** c:trendlineLbl 的数字格式与文字样式 */
+  lblFmt: string | null;
+  lblSize: number | null;
+  lblColor: string | null;
+}
+
+const clampOrder = (v: number | null): number => (v === null ? 2 : Math.round(clamp(v, 2, 6)));
+const clampPeriod = (v: number | null): number => (v === null ? 2 : Math.max(2, Math.round(v)));
+
+function parseTrendline(el: Element, ctx: ColorCtx): TrendlineSpec {
+  const lbl = kid(el, 'trendlineLbl');
+  const ts = textStyle(kid(lbl, 'txPr'), ctx);
+  const rawKind = strChild(el, 'trendlineType') ?? 'linear';
+  const nameEl = kid(el, 'name');
+  return {
+    name: nameEl?.textContent?.trim() || null,
+    kind: TREND_KINDS[rawKind] ?? 'linear',
+    order: clampOrder(numChild(el, 'order')),
+    period: clampPeriod(numChild(el, 'period')),
+    forward: numChild(el, 'forward') ?? 0,
+    backward: numChild(el, 'backward') ?? 0,
+    intercept: numChild(el, 'intercept'),
+    dispRSqr: boolChild(el, 'dispRSqr', false),
+    dispEq: boolChild(el, 'dispEq', false),
+    ln: parseLn(kid(kid(el, 'spPr'), 'ln'), ctx),
+    lblFmt: attr(kid(lbl, 'numFmt'), 'formatCode'),
+    lblSize: ts.size,
+    lblColor: ts.color,
+  };
+}
+
+/** c:errBars（CT_ErrBars）。一个系列最多两条（散点 x / y 各一）。 */
+export interface ErrBarsSpec {
+  /** c:errDir；类目图缺省 y */
+  dir: 'x' | 'y';
+  /** c:errBarType：both / minus / plus */
+  kind: 'both' | 'minus' | 'plus';
+  /** c:errValType */
+  valType: 'cust' | 'fixedVal' | 'percentage' | 'stdDev' | 'stdErr';
+  noEndCap: boolean;
+  /** c:val（fixedVal / percentage / stdDev 的量；stdDev 是标准差的倍数） */
+  value: number | null;
+  /** c:plus / c:minus 数值源（cust 用，按点下标） */
+  plus: (number | null)[] | null;
+  minus: (number | null)[] | null;
+  ln: LnSpec;
+}
+
+const clampDir = (el: Element): 'x' | 'y' => (strChild(el, 'errDir') === 'x' ? 'x' : 'y');
+const clampBarType = (el: Element): 'both' | 'minus' | 'plus' => {
+  const v = strChild(el, 'errBarType');
+  return v === 'minus' || v === 'plus' ? v : 'both';
+};
+const clampValType = (el: Element): ErrBarsSpec['valType'] => {
+  const v = strChild(el, 'errValType');
+  return v === 'cust' || v === 'fixedVal' || v === 'percentage' || v === 'stdDev' || v === 'stdErr' ? v : 'fixedVal';
+};
+
+function parseErrBars(el: Element, ctx: ColorCtx): ErrBarsSpec {
+  return {
+    dir: clampDir(el),
+    kind: clampBarType(el),
+    valType: clampValType(el),
+    noEndCap: boolChild(el, 'noEndCap', false),
+    value: numChild(el, 'val'),
+    plus: kid(el, 'plus') ? readNums(kid(el, 'plus')).vals : null,
+    minus: kid(el, 'minus') ? readNums(kid(el, 'minus')).vals : null,
+    ln: parseLn(kid(kid(el, 'spPr'), 'ln'), ctx),
+  };
+}
+
+/** c:dTable（CT_DTable）。四个开关的 OOXML 缺省都是 true。 */
+export interface DTableSpec {
+  horz: boolean;
+  vert: boolean;
+  outline: boolean;
+  keys: boolean;
+  size: number | null;
+  color: string | null;
+}
+
+function parseDTable(el: Element, ctx: ColorCtx): DTableSpec {
+  const ts = textStyle(kid(el, 'txPr'), ctx);
+  return {
+    horz: boolChild(el, 'showHorzBorder', true),
+    vert: boolChild(el, 'showVertBorder', true),
+    outline: boolChild(el, 'showOutline', true),
+    keys: boolChild(el, 'showKeys', true),
+    size: ts.size,
+    color: ts.color,
+  };
+}
+
 // ---------- 系列 ----------
 
 export interface MarkerSpec {
@@ -216,6 +340,10 @@ export interface Series {
   fmt: string | null;
   dLbls: DLblSpec;
   dPts: Map<number, { fill: Fill | null; ln: LnSpec; explosion: number }>;
+  /** c:trendline*（bar / line / area / scatter / bubble 系列才可能有） */
+  trendlines: TrendlineSpec[];
+  /** c:errBars*（散点可同时有 x / y 两条） */
+  errBars: ErrBarsSpec[];
   /** 解析后的主色（图例 / 自动着色用） */
   color: string;
 }
@@ -274,6 +402,8 @@ function parseSer(ser: Element, kind: PlotKind, ctx: ColorCtx, autoIdx: number, 
     fmt,
     dLbls: parseDLbls(kid(ser, 'dLbls'), ctx, groupLbls),
     dPts,
+    trendlines: kids(ser, 'trendline').map((t) => parseTrendline(t, ctx)),
+    errBars: kids(ser, 'errBars').map((e) => parseErrBars(e, ctx)),
     color,
   };
 }
@@ -554,6 +684,8 @@ export interface ChartModel {
   plotFill: Fill | null;
   plotLn: LnSpec;
   plotLayout: ManualLayout | null;
+  /** c:plotArea/c:dTable；无则 null */
+  dTable: DTableSpec | null;
   textSize: number;
   textColor: string;
   /** 出现但未实现的图表类型标签 */
@@ -606,6 +738,7 @@ export function parseModel(root: Element, ctx: ColorCtx): ChartModel {
 
   const spPr = kid(root, 'spPr');
   const plotSp = kid(plotArea, 'spPr');
+  const dTableEl = plotArea ? kid(plotArea, 'dTable') : null;
 
   return {
     title: rawTitle && !autoDeleted ? rawTitle : null,
@@ -623,6 +756,7 @@ export function parseModel(root: Element, ctx: ColorCtx): ChartModel {
     plotFill: parseFill(plotSp, ctx),
     plotLn: parseLn(kid(plotSp, 'ln'), ctx),
     plotLayout: parseLayout(kid(plotArea, 'layout')),
+    dTable: dTableEl ? parseDTable(dTableEl, ctx) : null,
     textSize: spaceStyle.size ?? px(10),
     textColor: spaceStyle.color ?? themeColor(ctx, 'tx1'),
     unsupported,

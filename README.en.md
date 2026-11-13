@@ -126,7 +126,7 @@ Templates, design canvas, selection pane, shortcuts and clipboard, low-level `Ed
 
 | Package | Role | Depends on | Size (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 135.69 KB |
+| [`@web-ppt/core`](https://github.com/unStone/web-ppt/tree/master/packages/core) | Parse / render / export. No framework, no DOM. | fflate | 141.37 KB |
 | [`@web-ppt/edit-core`](https://github.com/unStone/web-ppt/tree/master/packages/edit-core) | Edit document, command history, projection and incremental save. No framework, no DOM. | `core`; lint uses Culori / RBush | 172.93 KB |
 | [`@web-ppt/editor`](https://github.com/unStone/web-ppt/tree/master/packages/editor) | Editing session, native SVG selection and transforms, three-layer incremental DOM. | `core` + `edit-core` + `viewer-core` | 57.35 KB |
 | [`@web-ppt/collab`](https://github.com/unStone/web-ppt/tree/master/packages/collab) | Optional field-level LWW collaboration and BroadcastChannel provider. | `edit-core` optional peer | 11.35 KB |
@@ -146,7 +146,7 @@ Sizes sum the gzipped default entry and every relative static chunk, excluding p
 | Text rendering | `foreignObject` + HTML layout for screen preview; native `<text>` + own line breaking for standalone SVG and print, so exported files don't depend on a browser |
 | Editing loop | Source values + overrides, command history, patch / generated save, recovery and collaboration; ordinary slides cannot mutate masters or layouts |
 | Performance | 210 slides / 11,280 elements: **42 ms** lazy first paint, 376 ms full parse, 0.09 ms single-slide render, 40 MB JS heap |
-| Regression | 212 render snapshots (30 test files × every slide × both text paths) compared byte for byte; `npm run compare` adds LibreOffice as ground truth |
+| Regression | 232 render snapshots (31 test files × every slide × both text paths) compared byte for byte; `npm run compare` adds LibreOffice as ground truth |
 | Main thread | Worker parsing blocks the main thread for zero time; images cross the boundary as `asset:N` tokens |
 
 Full matrix: [format capabilities](https://github.com/unStone/web-ppt/blob/master/docs/api/format-capabilities.md); gaps and approximations: [format limitations](https://github.com/unStone/web-ppt/blob/master/docs/api/format-limitations.md); methodology: [performance and fidelity benchmarks](https://github.com/unStone/web-ppt/blob/master/docs/engineering/performance.md) (docs are currently maintained in Chinese).

@@ -302,7 +302,9 @@ const applicationAdditional = [...closure([applicationEntry], false)]
 // raw 实测 2,398,175B 超出 708B，上调 800B
 // 嵌入字体写入命令（SetEmbeddedFont / RemoveEmbeddedFont + EOT 封装 + 保存计划）进编辑器
 // 命令联合的静态闭包：raw 实测 2,406,596B 超出 8329B，上调 8400B；gzip 567,806B 超出 2257B，上调 2300B
-const activatedBudget = { raw: initialBudget.raw + 151_765, gzip: initialBudget.gzip + 58_000 };
+// 图表分析元素（趋势线 / 误差线 / 数据表的解析、拟合与绘制）进图表模块静态闭包：
+// raw 实测 2,428,875B 超出 22,208B，上调 22_500B；gzip 573,846B 超出 5997B，上调 6100B
+const activatedBudget = { raw: initialBudget.raw + 174_265, gzip: initialBudget.gzip + 64_100 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

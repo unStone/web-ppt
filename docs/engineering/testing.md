@@ -129,7 +129,7 @@ flowchart LR
 
 | 命令 | 覆盖 |
 |---|---|
-| `npm run test:core` | 核心解析 / 渲染，2544 项断言 + 212 个渲染快照 |
+| `npm run test:core` | 核心解析 / 渲染，2588 项断言 + 232 个渲染快照 |
 | `npm run test:zip` | ZIP 安全 57 项断言：中央目录、声明与实际大小、条目数、压缩比、重复名称、路径穿越、真实 parse 与内存峰值；`test:zip:dist` 复验发布入口 |
 | `npm run test:describe` | Agent 结构化读出：全部固件 Schema 校验、两独立进程字节一致与逐 ID 选择；另验组合变换、当前设计投影、只读及预算错误；发布入口由 `test:describe:dist` 复验 |
 | `npm run test:lint` | 布局七项正反例、真实字体、普通组合去重、裁剪、复杂采样、取消及只读；全固件 Node/Canvas reason 对照与独立进程确定性；发布入口由 `test:lint:dist` 复验 |
@@ -144,7 +144,7 @@ flowchart LR
 | `npm run test:animation` | 动画统一验收 809 项断言：全部动画效果与切换共用同一套 Web Animations 驱动，`currentTime` seek 到 t=0 / 0.5 / 1 断言计算样式端点 == 关键帧声明、中点命中精确中间帧或严格介于两端、painted 包围盒按效果族核对（fly 离场 / 伸展锚边 / 运动路径终点位移）；morph 断言子元素级配对进度；代表性效果中间态截图落盘 `out/animation-acceptance/midpoints/`。新效果进 `sample-animation-effects.pptx` 固件矩阵即自动纳入；`test:animation:dist` 复验发布入口 |
 | `npm run test:ole:libreoffice` | OLE 外部打开 11 项断言：嵌入 DOCX run 改字与 XLSX 样式 / 富文本改写后重组为独立文档，LibreOffice 打开转换（fodt / fods / xlsx）核对文字、颜色与 run 边界；CI 在功能测试后单独执行 |
 | `npm run test:ooxml` | OOXML 合法性 4 项断言：全部保存产物过 ECMA-376 XSD 与 OpenXmlValidator 双通道，结构与语义负例各一例必须被拦截（§7.6）；依赖 xmllint 与 .NET 8，先跑功能测试落盘产物 |
-| `npm run test:edit` | 编辑模型 1154 项 + 保存 606 项 + PowerPoint 证据 9 项 + 181 份固件、1210 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 1154 项 + 保存 606 项 + PowerPoint 证据 9 项 + 182 份固件、1230 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:design-journey` | 设计旅程 31 项断言：模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开，三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:chart-media` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
@@ -176,7 +176,7 @@ flowchart LR
 |---|---|
 | **结构断言** | 几何（54 形状 × 5 组调节值 + 648 例模糊输入）、颜色、文本继承链、动画/切换、播放引擎、表格还原、图表、文本提取 |
 | **不变量** | 每个元素包围盒有限、路径无 `NaN`、Schema 必填字段齐全、SVG 结构合法、无悬空 `url(#id)`、无重复 id、导出路径无 `foreignObject` |
-| **渲染快照** | 30 个测试文件 × 全部页 × 两条文本路径 = 212 个归一化 SVG 基线，逐字节比对（更新流程见 §5） |
+| **渲染快照** | 31 个测试文件 × 全部页 × 两条文本路径 = 232 个归一化 SVG 基线，逐字节比对（更新流程见 §5） |
 | **回归锚点** | 针对已修复的真实 bug 写死断言：`.ppt` 字号错位、动画时长取错节点、飞入方向映射反、BLIP 未解压 |
 | **健壮性** | 70 例畸形输入——截断（5%~95%）、随机字节破坏、空文件、假魔数、全零；要求要么正常解析、要么抛可读 Error，不得崩溃或吐半成品。单个形状解析失败只降级为占位，不连累整页 |
 | **查看器交互** | 超链接分流（内部跳页 vs 外链回调）、索引夹紧、destroy 清理 |

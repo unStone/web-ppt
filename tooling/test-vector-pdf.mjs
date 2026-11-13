@@ -96,6 +96,57 @@ try {
   } finally {
     textPres.dispose();
   }
+  // 桌面 003：趋势线公式 / 数据表文字必须进入矢量 PDF 文本层（可搜索）。
+  // 图表固件继承 POI 语料主题字体（Trebuchet MS / PingFang SC / Helvetica），样本库没有
+  // 对应家族与粗体 face；本断言只关心「分析元素的文字可搜索」，把 run 字体统一映射到
+  // 覆盖完整 ASCII 的 formula 样本 face。图内文案已在固件里改成 ASCII，
+  // 只导出 chart2 的图表组（slide 级标题是中文，样本字体不覆盖汉字）。
+  await provider.register(
+    { id: 'formula', origin: 'explicit', bytes: new Uint8Array(readFileSync('tooling/font-glyph-samples/latin-formula.ttf')) },
+    { purpose: 'view-print' },
+  );
+  const chartPres = await api.parse(new Uint8Array(readFileSync('fixtures/sample-chart-analysis.pptx')));
+  for (const slide of chartPres.slides) {
+    const mapFonts = (els) => {
+      for (const el of els) {
+        if (el.kind === 'group') mapFonts(el.children);
+        else if (el.kind === 'shape' && el.text) {
+          for (const para of el.text.paragraphs) {
+            for (const run of para.runs) {
+              run.fonts = ['WebPPT Glyph Formula'];
+              run.b = false;
+            }
+          }
+        }
+      }
+    };
+    mapFonts(slide.elements);
+  }
+  // 只导出 chart2 的图表组（slide 级标题是中文，样本字体不覆盖）；图内文案已在固件里改成 ASCII
+  const chartGroup = chartPres.slides[1].elements.find((el) => el.kind === 'group');
+  assert(chartGroup, 'chart2 所在页缺少图表组');
+  const chartOnly = { ...chartPres, slides: [{ ...chartPres.slides[1], elements: [chartGroup] }] };
+  try {
+    const chartResult = await api.presentationToVectorPdf(chartOnly, { fonts: { provider, segmentText: api.segmentFontText } });
+    assert.deepEqual(chartResult.issues, []);
+    const chartPdfPath = resolve(out, 'chart-analysis.pdf');
+    writeFileSync(chartPdfPath, new Uint8Array(await chartResult.blob.arrayBuffer()));
+    const chartText = execFileSync(
+      'python3',
+      ['-c', 'import pymupdf,sys; print("".join(p.get_text() for p in pymupdf.open(sys.argv[1])))', chartPdfPath],
+      {
+        encoding: 'utf8',
+        env: { ...process.env, PYTHONPATH: process.env.PYTHONPATH ?? resolve(root, 'out/font-glyphs/python') },
+      },
+    );
+    for (const needle of ['y = 0.46764x^0.124341', 'Power']) {
+      assert.ok(chartText.includes(needle), `矢量 PDF 文本层缺失：${needle}`);
+    }
+    // 临时 face 用完即释放，保持后续契约的 provider 状态（faces === 2）不受影响
+    assert.equal(provider.release('formula'), true);
+  } finally {
+    chartPres.dispose();
+  }
   const jobsPres = await api.parse(new Uint8Array(readFileSync('fixtures/sample-vector-pdf-jobs.pptx')));
   try {
     const progress = [];

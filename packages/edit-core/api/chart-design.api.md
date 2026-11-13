@@ -44,8 +44,22 @@ import { TransitionType } from '@web-ppt/core';
 // @public (undocumented)
 export const CHART_TYPES: readonly ["bar", "line", "area", "pie", "doughnut", "radar", "scatter", "bubble"];
 
+// @public
+export interface ChartDataTable {
+    // (undocumented)
+    horizontalBorders?: boolean;
+    // (undocumented)
+    keys?: boolean;
+    // (undocumented)
+    outline?: boolean;
+    // (undocumented)
+    verticalBorders?: boolean;
+}
+
 // @public (undocumented)
 export interface ChartDesign {
+    dataTable?: ChartDataTable | null;
+    errorBars?: readonly ChartErrorBars[];
     // (undocumented)
     grouping?: 'standard' | 'stacked' | 'percentStacked';
     // (undocumented)
@@ -58,8 +72,46 @@ export interface ChartDesign {
     palette?: readonly string[];
     // (undocumented)
     title?: string;
+    trendlines?: readonly ChartTrendline[];
     // (undocumented)
     type?: ChartType;
+}
+
+// @public
+export interface ChartErrorBars {
+    amount?: 'both' | 'plus' | 'minus';
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    direction?: 'x' | 'y' | 'both';
+    // (undocumented)
+    minus?: readonly (number | null)[];
+    // (undocumented)
+    noEndCap?: boolean;
+    plus?: readonly (number | null)[];
+    // (undocumented)
+    series?: number;
+    value?: number;
+    // (undocumented)
+    valueType: ErrorValueType;
+}
+
+// @public
+export interface ChartTrendline {
+    // (undocumented)
+    backward?: number;
+    color?: string;
+    equation?: boolean;
+    forward?: number;
+    intercept?: number;
+    name?: string;
+    order?: number;
+    period?: number;
+    // (undocumented)
+    rSquare?: boolean;
+    series?: number;
+    // (undocumented)
+    type: TrendlineType;
 }
 
 // @public (undocumented)
@@ -72,7 +124,19 @@ export function createChartDesignEditor(editor: Pick<Editor, 'doc' | 'exec'>): {
 };
 
 // @public (undocumented)
+export const ERROR_VALUE_TYPES: readonly ["fixedVal", "percentage", "stdDev", "stdErr", "cust"];
+
+// @public (undocumented)
+export type ErrorValueType = (typeof ERROR_VALUE_TYPES)[number];
+
+// @public (undocumented)
 export function queryChartDesign(doc: EditDoc, id: ElementId): ChartDesign;
+
+// @public (undocumented)
+export const TRENDLINE_TYPES: readonly ["linear", "exponential", "logarithmic", "movingAvg", "poly", "power"];
+
+// @public (undocumented)
+export type TrendlineType = (typeof TRENDLINE_TYPES)[number];
 
 // (No @packageDocumentation comment for this package)
 

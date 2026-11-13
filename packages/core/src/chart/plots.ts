@@ -40,8 +40,12 @@ interface BarRec {
   anchor: Pt;
 }
 
-export function renderBars(g: PlotGroup, c: Cartesian, slot: BarSlot, env: PlotEnv, depth: Depth3D | null = null): SlideElement[] {
-  const out: SlideElement[] = [];
+/** 簇内几何：柱宽 / 槽位步进与「系列 si 第 i 个柱心」的坐标。误差线等系列级叠加元素复用同一套柱心。 */
+export function barSlotGeom(
+  c: Cartesian,
+  slot: BarSlot,
+  g: PlotGroup,
+): { barW: number; occupied: number; step: number; centerOf: (si: number, i: number) => number } {
   const gapW = clamp(g.gapWidth, 0, 800) / 100;
   const ov = clamp(g.overlap, -100, 100) / 100;
   const total = Math.max(slot.total, 1);
@@ -51,6 +55,19 @@ export function renderBars(g: PlotGroup, c: Cartesian, slot: BarSlot, env: PlotE
   barW = Math.min(barW, c.band);
   const occupied = barW * (1 + (total - 1) * (1 - ov));
   const step = barW * (1 - ov);
+  const stacked = isStacked(g);
+  const sym = c.horizontal ? -1 : 1;
+  const centerOf = (si: number, i: number): number => {
+    const k = slot.base + (stacked ? 0 : si);
+    return c.cat(i) + sym * (-occupied / 2 + k * step + barW / 2);
+  };
+  return { barW, occupied, step, centerOf };
+}
+
+export function renderBars(g: PlotGroup, c: Cartesian, slot: BarSlot, env: PlotEnv, depth: Depth3D | null = null): SlideElement[] {
+  const out: SlideElement[] = [];
+  const geom = barSlotGeom(c, slot, g);
+  const { barW } = geom;
   const stacked = isStacked(g);
   const percent = g.grouping === 'percentStacked';
 
@@ -69,8 +86,6 @@ export function renderBars(g: PlotGroup, c: Cartesian, slot: BarSlot, env: PlotE
   const labels: SlideElement[] = [];
   const recs: BarRec[] = [];
   g.series.forEach((s, si) => {
-    const k = slot.base + (stacked ? 0 : si);
-    const sym = c.horizontal ? -1 : 1;
     for (let i = 0; i < n; i++) {
       const raw = num(s.vals[i]);
       if (raw === null) continue;
@@ -82,7 +97,7 @@ export function renderBars(g: PlotGroup, c: Cartesian, slot: BarSlot, env: PlotE
         else negAcc[i] += v;
       }
       // 类目方向的中心：条形图槽位自下而上，柱状图自左而右
-      const cc = c.cat(i) + sym * (-occupied / 2 + k * step + barW / 2);
+      const cc = geom.centerOf(si, i);
       const v0 = c.val(c.clampVal(base));
       const v1 = c.val(c.clampVal(base + v));
       const [ax, ay] = c.pt(cc - barW / 2, v0);

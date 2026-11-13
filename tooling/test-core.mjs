@@ -628,6 +628,7 @@ const FIXTURES = [
   { file: 'sample.pptx', minPages: 3, source: 'pptx' },
   { file: 'showcase.pptx', minPages: 7, source: 'pptx' },
   { file: 'sample-chart.pptx', minPages: 9, source: 'pptx' },
+  { file: 'sample-chart-analysis.pptx', minPages: 10, source: 'pptx' },
   { file: 'sample-metafile.pptx', minPages: 1, source: 'pptx' },
   { file: 'sample-effects.pptx', minPages: 4, source: 'pptx' },
   { file: 'sample-media.pptx', minPages: 7, source: 'pptx' },
@@ -2250,6 +2251,42 @@ group('图表');
     check('解析出图表', charts >= 9, `实际 ${charts}`);
     check('图表内有文本（标题/刻度/图例）', texts > 100, `实际 ${texts}`);
     check('未支持类型占比很低', unsupported <= 2, `实际 ${unsupported}`);
+  }
+}
+
+group('图表分析元素（桌面 003）');
+{
+  const pres = parsed.get('sample-chart-analysis.pptx');
+  if (pres) {
+    let equations = 0,
+      r2 = 0,
+      legendTrend = 0,
+      trendShapes = 0,
+      errShapes = 0,
+      tableCells = 0,
+      unsupported = 0;
+    for (const s of pres.slides) {
+      walkElements(s.elements, (e) => {
+        if (e.kind === 'unsupported') unsupported++;
+        if (e.kind !== 'shape') return;
+        const text = e.text ? e.text.paragraphs.map((p) => p.runs.map((r) => r.text).join('')).join(' ') : '';
+        if (/^y = /.test(text)) equations++;
+        if (/^R² = /.test(text)) r2++;
+        if (/^(线性|指数|对数|多项式|幂|移动平均) \(/.test(text) || text === 'Power') legendTrend++;
+        if (/^(第一季度|华东|1月)/.test(text)) tableCells++;
+        if (e.stroke && !e.fill && !e.text) {
+          // 趋势线（多段折线）与误差线（单段+端帽）都是纯描边 shape
+          if ((e.path?.match(/L /g) ?? []).length >= 6) trendShapes++;
+          else errShapes++;
+        }
+      });
+    }
+    check('五条趋势线都有公式标签', equations >= 5, `实际 ${equations}`);
+    check('三个 R² 标签', r2 >= 3, `实际 ${r2}`);
+    check('趋势线占独立图例条目', legendTrend >= 6, `实际 ${legendTrend}`);
+    check('趋势线与误差线画出描边元素', trendShapes >= 5 && errShapes >= 10, `趋势线 ${trendShapes} / 误差线 ${errShapes}`);
+    check('数据表渲染出单元格文字', tableCells >= 4, `实际 ${tableCells}`);
+    check('无未支持回退', unsupported === 0, `实际 ${unsupported}`);
   }
 }
 

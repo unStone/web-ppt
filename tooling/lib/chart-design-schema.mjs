@@ -17,6 +17,11 @@ export function verifyChartDesignXml(xml) {
     radarChart: 'radarStyle varyColors ser dLbls axId extLst',
     scatterChart: 'scatterStyle varyColors ser dLbls axId extLst',
     bubbleChart: 'varyColors ser dLbls bubble3D bubbleScale showNegBubbles sizeRepresents axId extLst',
+    // c:ser 联合序列（idx order tx spPr 在前），覆盖 bar/line/area/scatter/bubble 的差异字段
+    ser: 'idx order tx spPr invertIfNegative pictureOptions marker dPt dLbls trendline errBars cat val xVal yVal bubbleSize smooth shape extLst',
+    trendline: 'name spPr trendlineType order period forward backward intercept dispRSqr dispEq trendlineLbl extLst',
+    errBars: 'errDir errBarType errValType noEndCap plus minus val spPr extLst',
+    dTable: 'showHorzBorder showVertBorder showOutline showKeys spPr txPr extLst',
   };
   for (const [name, sequence] of Object.entries(sequences)) {
     const order = sequence.split(' ');

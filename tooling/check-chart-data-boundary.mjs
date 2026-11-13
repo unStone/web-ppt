@@ -32,7 +32,8 @@ if (coreMainSize.raw > coreBaseline.raw || coreMainSize.gzip > coreBaseline.gzip
 }
 
 const coreChart = read('packages/core/dist/chart-edit.js');
-const coreChartBudget = { raw: 85_000, gzip: 26_000 };
+// 桌面 003 加入趋势线 / 误差线 / 数据表的解析与绘制后按实测校准（93_187 / 29_095）
+const coreChartBudget = { raw: 96_000, gzip: 30_000 };
 const coreChartSize = size(coreChart);
 if (coreChartSize.raw > coreChartBudget.raw || coreChartSize.gzip > coreChartBudget.gzip) {
   throw new Error(`core/chart-edit 体积超出预算：${JSON.stringify({ coreChartBudget, coreChartSize })}`);

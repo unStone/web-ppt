@@ -126,7 +126,7 @@ session.dispose();
 
 | 包 | 作用 | 依赖 | 体积 (gzip) |
 |---|---|---|---|
-| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM | fflate | 135.69KB |
+| [`@web-ppt/core`](packages/core) | 解析 / 渲染 / 导出，无框架无 DOM | fflate | 141.37KB |
 | [`@web-ppt/edit-core`](packages/edit-core) | 编辑文档、命令历史、投影与增量保存，无框架无 DOM | `core`；lint 使用 Culori / RBush | 172.93KB |
 | [`@web-ppt/editor`](packages/editor) | 编辑会话、原生 SVG 选择与变换、三层增量 DOM | `core` + `edit-core` + `viewer-core` | 57.35KB |
 | [`@web-ppt/collab`](packages/collab) | 可选字段级 LWW 协同与 BroadcastChannel provider | `edit-core` optional peer | 11.35KB |
@@ -146,7 +146,7 @@ session.dispose();
 | 文本渲染 | `foreignObject` + HTML 排版用于屏幕预览；原生 `<text>` + 自实现断行用于独立 SVG 与打印，交出去的文件不依赖浏览器 |
 | 编辑闭环 | 源值 + 覆盖、命令历史、补丁 / 生成保存、恢复与协同；普通页面不能越权修改母版 / 版式 |
 | 性能 | 210 页 / 11280 元素：惰性首屏 **42ms**，全量解析 376ms，单页渲染 0.09ms，JS 堆 40MB |
-| 回归 | 212 个渲染快照（30 个测试文件 × 全部页 × 两条文本路径）逐字节比对；`npm run compare` 再用 LibreOffice 做 ground truth |
+| 回归 | 232 个渲染快照（31 个测试文件 × 全部页 × 两条文本路径）逐字节比对；`npm run compare` 再用 LibreOffice 做 ground truth |
 | 主线程 | Worker 解析主线程零阻塞；图片以 `asset:N` 令牌跨线程传递 |
 
 完整矩阵见[格式能力](docs/api/format-capabilities.md)，缺失与近似实现见[格式限制](docs/api/format-limitations.md)，基准方法见[性能与保真基准](docs/engineering/performance.md)。

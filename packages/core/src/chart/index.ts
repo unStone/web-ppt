@@ -26,15 +26,16 @@ import {
   tickTarget,
   valueExtent,
 } from './frame';
-import { BarSlot, renderAreas, renderBars, renderLines, renderStock } from './plots';
+import { BarSlot, barSlotGeom, renderAreas, renderBars, renderLines, renderStock } from './plots';
 import { PlotEnv, markerEl, markerSymbol, pointFill } from './plot-marks';
+import { AnalysisMap, dataTableHeight, renderDataTable, renderErrBars, renderTrendlines, trendlineName } from './analysis';
 import { renderOfPie, renderPie, renderPie3D } from './plots-pie';
 import { renderRadar, renderRadarGrid } from './plots-radar';
 import { renderSurface } from './plots-surface';
 import type { RadarFrame } from './plots-radar';
 import type { SurfaceFrame } from './plots-surface';
 import { bindXYAxes, paintXY, xyInsets } from './xy';
-import { Depth3D, Rect, formatNumber, lineEl, measure, mix, niceScale, px, rectEl, solid, strokeFrom, textEl } from './util';
+import { Depth3D, Pt, Rect, formatNumber, lineEl, measure, mix, niceScale, px, rectEl, solid, strokeFrom, textEl } from './util';
 
 export interface ChartEnv {
   ctx: ColorCtx;
@@ -103,6 +104,13 @@ function legendItems(m: ChartModel, groups: PlotGroup[], cats: string[], ctx: Co
         marker: line ? { sym: markerSymbol(g, s, si), s } : null,
         line,
       });
+      // 趋势线按 PowerPoint 口径占独立图例条目，紧随所属系列
+      for (const t of s.trendlines) {
+        const tIdx = k++;
+        if (m.legendDeleted.has(tIdx)) continue;
+        const stroke = strokeFrom(t.ln.present ? t.ln : null, s.color, px(2)) ?? { color: s.color, width: px(2), dash: null };
+        items.push({ label: trendlineName(t, s.name), fill: solid(stroke.color), color: stroke.color, stroke, marker: null, line: true });
+      }
     });
   }
   return items;
@@ -409,6 +417,21 @@ function bindAxes(m: ChartModel, groups: PlotGroup[], horizontal: boolean): { pr
 
 // ---------- 类目 × 数值 ----------
 
+/** 类目图的分析元素坐标适配：数据 x = 1..n 沿类目轴；条形图的类目轴是竖直的，屏幕两轴互换 */
+function cartAnalysisMap(cc: Cartesian, horizontal: boolean): AnalysisMap {
+  return {
+    pt: horizontal ? (x, v) => [cc.val(v), cc.cat(x - 1)] : (x, v) => [cc.cat(x - 1), cc.val(v)],
+    left: cc.rect.x,
+    right: cc.rect.x + cc.rect.w,
+    top: cc.rect.y,
+    bottom: cc.rect.y + cc.rect.h,
+  };
+}
+
+/** 误差线方向：'y' 沿值轴（向上为正），'x' 沿类目轴（类目增大方向为正） */
+const errAlong = (dir: 'x' | 'y', horizontal: boolean): Pt =>
+  dir === 'y' ? (horizontal ? [1, 0] : [0, -1]) : horizontal ? [0, -1] : [1, 0];
+
 function cartesian(
   m: ChartModel,
   groups: PlotGroup[],
@@ -427,6 +450,18 @@ function cartesian(
   const valSide: Side = horizontal ? (primary.val.pos === 't' ? 't' : 'b') : primary.val.pos === 'r' ? 'r' : 'l';
   const secSide: Side = horizontal ? (valSide === 'b' ? 't' : 'b') : valSide === 'l' ? 'r' : 'l';
 
+  // 数据表：底部横置类目轴的 2D 图才渲染；表带高度先从绘图区扣掉，类目刻度标签由表头行替代
+  let tableH = 0;
+  if (m.dTable && !horizontal && catSide === 'b' && !groups.some((g) => g.is3D)) {
+    tableH = dataTableHeight(
+      m,
+      groups.reduce((a, g) => a + g.series.length, 0),
+      region.h,
+    );
+    if (tableH > 0) region = { x: region.x, y: region.y, w: region.w, h: Math.max(region.h - tableH, 8) };
+  }
+  const catAxisForRender = tableH > 0 ? { ...catAxis, tickLblPos: 'none' } : catAxis;
+
   const valLen = horizontal ? region.w : region.h;
   const target = tickTarget(valLen, m.textSize);
   const xyLayout = bindXYAxes(m, xyGroups, region, groups);
@@ -440,7 +475,7 @@ function cartesian(
   const hasBar = groups.some((g) => g.kind === 'bar');
   const allArea = groups.every((g) => g.kind === 'area');
   const between = hasBar ? true : allArea ? false : catAxis.crossBetween !== 'midCat';
-  const catView = makeCatView(catAxis, catSide, cats, between, m);
+  const catView = makeCatView(catAxisForRender, catSide, cats, between, m);
 
   const hAxis = horizontal ? valView : catView;
   const vAxis = horizontal ? catView : valView;
@@ -541,12 +576,56 @@ function cartesian(
     for (const g of bars) out.push(...renderBars(g, cc, slot(g), pe, g.is3D ? depth : null));
     for (const g of b.groups) if (g.kind === 'line') out.push(...renderLines(g, cc, pe));
     for (const g of b.groups) if (g.kind === 'stock') out.push(...renderStock(g, cc, pe));
+    paintAnalysis(b.groups, cc, slot);
+  };
+  /** 趋势线与误差线跟在所属系列之后；堆叠柱没有独立锚点，误差线不画 */
+  const paintAnalysis = (bg: PlotGroup[], cc: Cartesian, slot: (g: PlotGroup) => BarSlot): void => {
+    const map = cartAnalysisMap(cc, horizontal);
+    for (const g of bg) {
+      if (g.is3D) continue;
+      const geom = g.kind === 'bar' ? barSlotGeom(cc, slot(g), g) : null;
+      g.series.forEach((s, si) => {
+        out.push(...renderTrendlines(s, g, map, m, fonts, pe));
+        // 堆叠 / 百分比堆叠的误差线锚点与累计基线耦合，股价无逐点锚点，均不画
+        if (g.kind === 'stock' || isStacked(g)) return;
+        const posOf = (i: number): Pt | null => {
+          const v = s.vals[i];
+          if (v === null || !Number.isFinite(v)) return null;
+          const val = cc.val(cc.clampVal(v));
+          const cat = geom ? geom.centerOf(si, i) : cc.cat(i);
+          return cc.horizontal ? [val, cat] : [cat, val];
+        };
+        for (const spec of s.errBars) out.push(...renderErrBars(s, spec, posOf, errAlong(spec.dir, horizontal), m));
+      });
+    }
   };
   const xy = paintXY(m, xyAxes, rect, fonts, pe, new Set([primary.cat, primary.val, ...(secondary ? [secondary.val] : [])]));
   out.push(...xy.axes);
   paint(primary, c);
   if (secondary && c2) paint(secondary, c2);
   out.push(...xy.plots);
+  // 散点组（混合图内）的趋势线与误差线用自己的 xy 映射
+  for (const { group, xy: pair } of xy.maps) {
+    if (group.is3D) continue;
+    const map: AnalysisMap = {
+      pt: (x, v) => [pair.x(x), pair.y(v)],
+      left: rect.x,
+      right: rect.x + rect.w,
+      top: rect.y,
+      bottom: rect.y + rect.h,
+    };
+    group.series.forEach((s) => {
+      out.push(...renderTrendlines(s, group, map, m, fonts, pe));
+      const posOf = (i: number): Pt | null => {
+        const v = s.vals[i];
+        const x = s.xs?.[i] ?? i + 1;
+        if (v === null || !Number.isFinite(v) || !Number.isFinite(x)) return null;
+        return [pair.x(x), pair.y(v)];
+      };
+      for (const spec of s.errBars) out.push(...renderErrBars(s, spec, posOf, spec.dir === 'x' ? [1, 0] : [0, -1], m));
+    });
+  }
+  if (tableH > 0) out.push(...renderDataTable(m, groups, cats, rect, c, pe, fonts));
   return out;
 }
 
@@ -557,7 +636,28 @@ function scatter(m: ChartModel, groups: PlotGroup[], region: Rect, W: number, H:
   let rect = shrink(region, xyInsets(m, axes, { l: 0, r: 0, t: 0, b: 0 }));
   if (m.plotLayout && m.plotLayout.target === 'inner') rect = applyLayout(rect, m.plotLayout, W, H);
   const xy = paintXY(m, axes, rect, fonts, pe);
-  return [...plotBg(m, rect), ...xy.axes, ...xy.plots];
+  const out: SlideElement[] = [...plotBg(m, rect), ...xy.axes, ...xy.plots];
+  for (const { group, xy: pair } of xy.maps) {
+    if (group.is3D) continue;
+    const map: AnalysisMap = {
+      pt: (x, v) => [pair.x(x), pair.y(v)],
+      left: rect.x,
+      right: rect.x + rect.w,
+      top: rect.y,
+      bottom: rect.y + rect.h,
+    };
+    group.series.forEach((s) => {
+      out.push(...renderTrendlines(s, group, map, m, fonts, pe));
+      const posOf = (i: number): Pt | null => {
+        const v = s.vals[i];
+        const x = s.xs?.[i] ?? i + 1;
+        if (v === null || !Number.isFinite(v) || !Number.isFinite(x)) return null;
+        return [pair.x(x), pair.y(v)];
+      };
+      for (const spec of s.errBars) out.push(...renderErrBars(s, spec, posOf, spec.dir === 'x' ? [1, 0] : [0, -1], m));
+    });
+  }
+  return out;
 }
 
 // ---------- 曲面 / 复合饼 ----------
