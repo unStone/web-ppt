@@ -65,6 +65,7 @@ import { isElementTableStylePatch, validateElementTableStylePatch } from './elem
 import { canInvalidateAgainst, collectPatchInvalidation } from './patch-invalidation';
 import { validateCommonObjectSlidePatch } from './common-object-slide-patch';
 import { isThemePatch, validateThemePatch } from './theme';
+import { isFontResourcePatch, validateFontResourcePatch } from './font-embedding';
 import { isLayoutPropertyPatch, validateLayoutPropertyPatch } from './layout-property';
 import { isMasterBackgroundPatch, validateMasterBackgroundPatch } from './master-property';
 import { isMasterTextStylePatch, validateMasterTextStylePatch } from './master-text-style';
@@ -91,6 +92,10 @@ function validatePatch(
   }
   if (typeof patch.origin !== 'string' || !patch.origin) throw new Error(`Patch ${index} 缺少 origin`);
   if (isImageResourcePatch(input)) {
+    return;
+  }
+  if (isFontResourcePatch(input)) {
+    validateFontResourcePatch(input, index);
     return;
   }
   if (isThemePatch(input)) {

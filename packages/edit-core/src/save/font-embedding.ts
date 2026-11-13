@@ -13,7 +13,7 @@ import { wrapEotContainer } from '@web-ppt/core';
 import { base64ToBytes } from '../clipboard-binary';
 import { relativeTarget } from '../clipboard-source';
 import { findXmlChild, xmlElementChildren } from '../xml/query';
-import { insertXmlChildUnchecked } from '../xml/nodes';
+import { insertXmlChildUnchecked, removeXmlChild } from '../xml/nodes';
 import { namespacedElement } from '../save/xml-element';
 import { setXmlAttribute } from '../xml/mutate';
 import { parseXmlTree, serializeXmlTreeBytes } from '../xml/tree';
@@ -100,8 +100,10 @@ export function patchEmbeddedFontList(
       return created;
     })();
   const byFamily = new Map<string, XmlElement>();
-  for (const entry of xmlElementChildren(list, { localName: 'embeddedFont', namespaceUri: PRESENTATIONML_NS })) {
-    const typeface = xmlElementChildren(entry, { localName: 'font', namespaceUri: PRESENTATIONML_NS })[0]?.attributes?.find(
+  // 动态创建的子元素 namespaceUri 字段恒为 null（由序列化按 xmlns 解析），
+  // 按 localName 匹配；这些名称在 presentation.xml 的 p 命名空间外无歧义
+  for (const entry of xmlElementChildren(list, { localName: 'embeddedFont' })) {
+    const typeface = xmlElementChildren(entry, { localName: 'font' })[0]?.attributes?.find(
       (attribute) => attribute.localName === 'typeface',
     )?.value;
     if (typeface) byFamily.set(typeface, entry);
@@ -119,7 +121,7 @@ export function patchEmbeddedFontList(
     }
     // 幂等：已有槽位（内容寻址部件名不变）保持原关系 id，不重复插条目
     const slotName = slotOf(part.bold, part.italic);
-    const existingSlot = xmlElementChildren(entry, { localName: slotName, namespaceUri: PRESENTATIONML_NS })[0];
+    const existingSlot = xmlElementChildren(entry, { localName: slotName })[0];
     if (!existingSlot) {
       const slot = namespacedElement(entry, PRESENTATIONML_NS, slotName);
       insertXmlChildUnchecked(entry, slot);
@@ -166,6 +168,58 @@ export function patchFontPresentationRelationships(
     additions.push({ sourceId: id, targetId: id, type: FONT_RELATIONSHIP, target });
   }
   return { bytes: additions.length ? patchRelationshipPart(source, additions) : source, ids };
+}
+
+/**
+ * 资源移除后的引用剪除：删掉指向孤儿部件的字体关系，再删 embeddedFontLst 里
+ * 引用这些关系的槽位；槽位清空的条目连同 `p:font` 一起移除。返回两个部件的
+ * 新字节；没有可剪内容时原样返回。
+ */
+export function pruneEmbeddedFontReferences(
+  presentation: Uint8Array,
+  rels: Uint8Array,
+  orphanParts: readonly string[],
+): { presentation: Uint8Array; rels: Uint8Array } {
+  const orphanTargets = new Set(orphanParts.map((part) => relativeTarget('ppt/presentation.xml', part)));
+  const relsTree = parseXmlTree(rels);
+  const removedIds = new Set<string>();
+  for (const node of xmlElementChildren(relsTree.root, { localName: 'Relationship' })) {
+    const attributes = node.attributes ?? [];
+    const target = attributes.find((attribute) => attribute.localName === 'Target')?.value;
+    if (
+      attributes.find((attribute) => attribute.localName === 'Type')?.value === FONT_RELATIONSHIP
+      && target
+      && orphanTargets.has(target)
+    ) {
+      removedIds.add(attributes.find((attribute) => attribute.localName === 'Id')?.value ?? '');
+      removeXmlChild(relsTree.root, node);
+    }
+  }
+  let presentationBytes = presentation;
+  if (removedIds.size) {
+    const tree = parseXmlTree(presentation);
+    const list = findXmlChild(tree.root, { localName: 'embeddedFontLst', namespaceUri: PRESENTATIONML_NS });
+    if (list) {
+      for (const entry of xmlElementChildren(list, { localName: 'embeddedFont', namespaceUri: PRESENTATIONML_NS })) {
+        // 槽位 r:id 全部指向被删关系时整条移除——p:font 是必需子元素，留着会形成空壳条目
+        const slots = ['regular', 'bold', 'italic', 'boldItalic'].flatMap((slotName) =>
+          xmlElementChildren(entry, { localName: slotName, namespaceUri: PRESENTATIONML_NS }),
+        );
+        const rids = slots.map((slot) => slot.attributes?.find((attribute) => attribute.localName === 'id')?.value ?? '');
+        if (rids.length && rids.every((rid) => rid && removedIds.has(rid))) {
+          removeXmlChild(list, entry);
+          continue;
+        }
+        for (const slot of slots) {
+          const rid = slot.attributes?.find((attribute) => attribute.localName === 'id')?.value ?? '';
+          if (rid && removedIds.has(rid)) removeXmlChild(entry, slot);
+        }
+      }
+      if (!xmlElementChildren(list).length) removeXmlChild(tree.root, list);
+    }
+    presentationBytes = serializeXmlTreeBytes(tree);
+  }
+  return { presentation: presentationBytes, rels: serializeXmlTreeBytes(relsTree) };
 }
 
 /** Content-Type 登记 fntdata Default（Ext 已存在时保持原样） */

@@ -28,6 +28,7 @@ import type {
   TableCellRowRef,
   TableCellColumnRef,
   SectionId,
+  FontEmbedResource,
 } from '../types';
 import type { ElementClipboardPayload } from './clipboard-types';
 import type { ElementHierarchyPatch, GroupCommand, UngroupCommand } from './group-types';
@@ -70,6 +71,7 @@ import type {
   SetSlideSizeCommand,
 } from './common-object-slide-types';
 import type { SetThemeCommand, ThemePatch } from './theme-types';
+import type { RemoveEmbeddedFontCommand, SetEmbeddedFontCommand } from './font-embedding';
 import type { MasterTextStylePatch, SetMasterTextStyleCommand } from './master-text-style-types';
 
 export type {
@@ -544,7 +546,9 @@ export type Command =
   | SetNotesCommand
   | SetTableStyleCommand
   | SetThemeCommand
-  | SetMasterTextStyleCommand;
+  | SetMasterTextStyleCommand
+  | SetEmbeddedFontCommand
+  | RemoveEmbeddedFontCommand;
 
 type PageOnlyCommand =
   | AddSlideCommand
@@ -683,6 +687,19 @@ export type ImageResourcePatch =
   | {
       readonly op: 'del';
       readonly path: readonly ['imageResources', string];
+      readonly origin: string;
+    };
+
+export type FontResourcePatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['fontResources', string];
+      readonly value: FontEmbedResource;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['fontResources', string];
       readonly origin: string;
     };
 
@@ -878,6 +895,7 @@ export type Patch =
   | ElementPresetGeometryPatch
   | ElementImageReplacementPatch
   | ImageResourcePatch
+  | FontResourcePatch
   | ElementTextPatch
   | ElementOrderPatch
   | ElementNamePatch

@@ -11,6 +11,7 @@ import type { EditDoc, ElementId, SlideId } from '../types';
 import { isElementHierarchyPatch } from './element-hierarchy';
 import { isElementInteractionPatch } from './element-interaction';
 import { isImageResourcePatch } from './element-image-content';
+import { isFontResourcePatch } from './font-embedding';
 import { isElementTreePatch } from './element-tree';
 import { isSlideLayoutPatch } from './slide-layout';
 import { isSlideNotesPatch } from './slide-notes';
@@ -74,6 +75,8 @@ export function collectPatchInvalidation(
     }
     return;
   }
+  // 嵌入字体不进任何页面的投影，资源登记 / 移除无需元素级失效
+  if (isFontResourcePatch(patch)) return;
   if (masterElementPatch(doc, patch)) {
     releaseLayoutProjectionCache(doc);
     releaseDesignProjectionPackage(doc);

@@ -123,9 +123,11 @@ import type { ApplyFormatCommand } from './format-painter-types';
 import type { ReplaceTextCommand } from '../text-search-types';
 import { NUMERIC_XFRM_FIELDS } from './xfrm';
 import { setThemePatches } from './theme';
+import { removeEmbeddedFontPatches, setEmbeddedFontPatches } from './font-embedding';
 import type { SetThemeCommand } from './theme-types';
 import { setMasterTextStylePatches } from './master-text-style';
 import type { SetMasterTextStyleCommand } from './master-text-style-types';
+import type { RemoveEmbeddedFontCommand, SetEmbeddedFontCommand } from './font-embedding';
 import { extensionCommandPatches } from '../extension-runtime';
 import type { ExtensionCommand } from './types';
 import { assertDataObject } from '../data-validation';
@@ -153,6 +155,8 @@ function register<C extends Command>(
 const COMMANDS: Readonly<Record<Command['type'], CommandRegistration>> = {
   Extension: register<ExtensionCommand>(['namespace', 'scope', 'id', 'payload'], extensionCommandPatches),
   SetTheme: register<SetThemeCommand>(['id', 'clrScheme', 'fontScheme'], setThemePatches, { target: 'none' }),
+  SetEmbeddedFont: register<SetEmbeddedFontCommand>(['family', 'styles', 'bytes', 'mime'], setEmbeddedFontPatches, { target: 'none' }),
+  RemoveEmbeddedFont: register<RemoveEmbeddedFontCommand>(['hash'], removeEmbeddedFontPatches, { target: 'none' }),
   SetMasterTextStyle: register<SetMasterTextStyleCommand>(['target', 'category', 'level', 'paragraph', 'run'], setMasterTextStylePatches, {
     target: 'none',
   }),

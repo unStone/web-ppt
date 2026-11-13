@@ -46,7 +46,13 @@ import { materializeNotesMaster, prepareNotesMasterSave } from './notes-master';
 import { hasNameOverride } from './name';
 import { hasAltTextOverride } from './alt-text';
 import { hasGeometryOverride } from './geometry';
-import { fontEmbedSavePlan, patchEmbeddedFontList, patchFontContentType, patchFontPresentationRelationships } from './font-embedding';
+import {
+  fontEmbedSavePlan,
+  patchEmbeddedFontList,
+  patchFontContentType,
+  patchFontPresentationRelationships,
+  pruneEmbeddedFontReferences,
+} from './font-embedding';
 import {
   materializeTableStyles,
   patchTableStyleContentType,
@@ -230,8 +236,16 @@ export function saveEditDoc(doc: EditDoc, extensionPlan: EditExtensionSavePlan =
     if (!source) throw new Error(`找不到主题 OPC part：${part}`);
     nextBaselines[part] = source.slice();
   }
-  // 嵌入字体部件是本会话新增：登记基线与 created 语义，供撤销后的保存回收
+  // 嵌入字体部件是本会话新增：登记基线与 created 语义。资源移除后不再写出的
+  // 部件按 created 回收删除（363 行置 null），并同步剪除 presentation 的引用——
+  // 基线一并清除：部件字节可由 fontResources 重新生成，留着会让模型校验撞上
+  // 「基线不在包内」
   const fontPlan = fontEmbedSavePlan(doc, { ...doc.package.parts, ...nextBaselines });
+  const plannedFontParts = new Set(fontPlan.parts.map((font) => font.part));
+  const orphanFontParts = [...nextCreatedParts].filter(
+    (part) => part.startsWith('ppt/fonts/') && part.endsWith('.fntdata') && !plannedFontParts.has(part),
+  );
+  for (const part of orphanFontParts) delete nextBaselines[part];
   for (const font of fontPlan.parts) {
     if (nextBaselines[font.part]) continue;
     nextCreatedParts.add(font.part);
@@ -530,6 +544,16 @@ export function saveEditDoc(doc: EditDoc, extensionPlan: EditExtensionSavePlan =
         relationshipId: fontRels.ids[index],
       })),
     );
+  } else if (orphanFontParts.length) {
+    // 资源全部移除：部件已按 created 回收置 null，这里剪掉 presentation 的悬空引用
+    const relationships = changes[presentationRelsPart] ?? nextBaselines[presentationRelsPart] ?? doc.package.parts[presentationRelsPart];
+    const presentation = nextBaselines[presentationPart] ?? doc.package.parts[presentationPart];
+    if (!(relationships instanceof Uint8Array) || !(presentation instanceof Uint8Array)) {
+      throw new Error('回收嵌入字体缺少 OPC 闭包基线');
+    }
+    const pruned = pruneEmbeddedFontReferences(presentation, relationships, orphanFontParts);
+    changes[presentationRelsPart] = pruned.rels;
+    changes[presentationPart] = pruned.presentation;
   }
   for (const part of removedSlideParts.packageParts) changes[part] = null;
   if (tableStyles) {

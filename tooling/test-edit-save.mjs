@@ -205,7 +205,7 @@ await runTableStyleSaveContract({
     return JSON.parse(stdout);
   },
 });
-await runFontEmbeddingSaveContract({ edit, core, load, check, saveArtifact });
+await runFontEmbeddingSaveContract({ edit, core, load, check, eq, saveArtifact });
 await runThemeEditSaveContract({
   edit,
   core,
