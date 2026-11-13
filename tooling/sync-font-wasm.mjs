@@ -8,10 +8,13 @@
  */
 import { copyFileSync, mkdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { resolve } from 'node:path';
+import { createRequire } from 'node:module';
 
-const root = resolve('.');
-const source = resolve(root, 'node_modules/harfbuzzjs/dist/harfbuzz-subset.wasm');
+// site / viewer 的构建都以各自包目录为 cwd 调本脚本，而 npm 通常把 harfbuzzjs
+// 提升到根 node_modules——按 cwd 拼 node_modules 路径在 CI 上必落空（beta.1 起两次 master 红）。
+// 改由 require.resolve 从脚本自身位置出发，沿 Node 解析找到 npm 实际安装的 harfbuzzjs。
+const require = createRequire(import.meta.url);
+const source = require.resolve('harfbuzzjs/dist/harfbuzz-subset.wasm');
 const size = statSync(source).size;
 const digest = createHash('sha256').update(String(size)).digest('hex').slice(0, 12);
 const targets = [
