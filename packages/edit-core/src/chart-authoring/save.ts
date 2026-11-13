@@ -8,14 +8,7 @@
  */
 import { base64ToBytes } from '../clipboard-binary';
 import { relativeTarget } from '../clipboard-source';
-import {
-  parseXmlTree,
-  serializeXmlTreeBytes,
-  findXmlAttribute,
-  insertXmlChild,
-  removeXmlChild,
-  xmlElementChildren,
-} from '../xml';
+import { parseXmlTree, serializeXmlTreeBytes, findXmlAttribute, insertXmlChild, removeXmlChild, xmlElementChildren } from '../xml';
 import type { EditDoc } from '../types';
 import type { ChartAuthoringResource } from '../types';
 import { SEED_NS as NS, seedDocument, seedElement as element } from './seed-xml';
