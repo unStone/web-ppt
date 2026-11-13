@@ -13,6 +13,7 @@
 | 经典图表多级类别 | `@web-ppt/edit-core/chart` | 数据面板逐级编辑、空槽开关、类别与系列增删 | 两级/三级、横向矩阵、稳定身份及工作簿同步；[支持矩阵与只读边界](chart-hierarchical-categories.md) |
 | 共享工作簿与图表 | `@web-ppt/edit-core/chart-shared` | 数据面板编辑，关联页面同步；复制、撤销与恢复 | 共享缓存、重叠/独立区域、多表及类别/XY 共同记录已验收；[支持范围与证据](../wayfinder/ppt-portability-fidelity/notes/shared-chart-progress.md)。旧身份无法证明时显示未恢复并拒绝保存；混合图自动轴域、标签布局与气泡半径仍有[外观差异](../wayfinder/ppt-portability-fidelity/notes/mixed-chart-rendering.md) |
 | 经典图表类型与样式 | `@web-ppt/edit-core/chart-design` | 图表数据面板中的类型、排列、图例、标题、标签、配色 | 八类图表的兼容转换；遵循工作簿只读规则，类别型与 XY 数据不互转，组合图保留原生结构 |
+| 新建图表 | `@web-ppt/edit-core/chart-authoring` 的 `AddChart` | 编辑会话在任意页从零插入原生图表 | ECMA-376 全部 16 种经典类型 + 七类 ChartEx（AlternateContent 双部件与经典回退）；内嵌工作簿与缓存一致；主题强调色与 +mn 字体默认外观；保存后进入既有数据 / 类型 / 样式编辑链；官网入口待产品确认；见[设计](../design/chart-authoring.md) |
 | 图表趋势线 / 误差线 / 数据表 | 渲染解析自动加载；`@web-ppt/edit-core/chart-design` 的 `trendlines` / `errorBars` / `dataTable` 字段 | 文件已有元素如实绘制与编辑 | 六种趋势线拟合（类目 x = 1..n，散点实际 x，堆叠图按累计顶 / 占比）、五类误差线取值（堆叠与 3D 图组不画）、数据表替换类目标签带（底部横置类目轴的 2D 图）；公式 / R² 进入两条文本路径与矢量 PDF；官网入口待产品确认；见[设计与对照归因](../design/chart-analysis-rendering.md) |
 | 现代图表数据 | `@web-ppt/edit-core/chart-ex` | 现代图表数据面板 | 七类 ChartEx 的分层数据与增删行；保持空值、零、小计身份及工作簿其他内容 |
 | 批注编辑 | `@web-ppt/edit-core/comments` | 批注面板：新增、修改、删除、回复 | 字段级历史、恢复和协同；删除父批注时将回复提升为独立批注 |

@@ -143,6 +143,22 @@ export interface FontEmbedResource {
   readonly fsType: number;
 }
 
+/**
+ * 本会话要求写入保存的新建图表部件，按部件路径寻址（ppt/charts/chartN.xml 约定命名）。
+ * patch 载荷携带 base64 字节（历史在内存；协同补丁传输面会剥离字节，对端按保存产物重建）。
+ * 经典图只有 chart + workbook；现代图多一份经典回退图部件。
+ */
+export interface ChartAuthoringResource {
+  /** 图表部件路径（ppt/charts/chartN.xml 或 chartExN.xml 语义由 kind 决定） */
+  readonly part: string;
+  readonly mime: string;
+  readonly kind: string;
+  /** base64 编码的图表部件字节 */
+  readonly bytes: string;
+  readonly workbook: { readonly part: string; readonly mime: string; readonly bytes: string };
+  readonly fallback?: { readonly part: string; readonly mime: string; readonly bytes: string };
+}
+
 /** 页面背景会克隆未知扩展；因此除主图片外还要持有扩展引用的完整关系/资源闭包。 */
 export interface SlideImageBackground extends ElementImageReplacement {
   readonly imageRelationshipId: string;
@@ -908,6 +924,7 @@ export interface EditDoc {
    * 保存计划只输出这里仍然存在的条目。
    */
   fontResources?: Record<string, FontEmbedResource>;
+  chartResources?: Record<string, ChartAuthoringResource>;
   readonly package: OpcPackage | null;
   saveState: EditSaveState;
 }

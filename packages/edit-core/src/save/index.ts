@@ -46,6 +46,7 @@ import { materializeNotesMaster, prepareNotesMasterSave } from './notes-master';
 import { hasNameOverride } from './name';
 import { hasAltTextOverride } from './alt-text';
 import { hasGeometryOverride } from './geometry';
+import { chartAuthoringSavePlan, patchChartContentTypes, pruneChartContentTypes } from '../chart-authoring/save';
 import {
   fontEmbedSavePlan,
   patchEmbeddedFontList,
@@ -250,6 +251,19 @@ export function saveEditDoc(doc: EditDoc, extensionPlan: EditExtensionSavePlan =
     if (nextBaselines[font.part]) continue;
     nextCreatedParts.add(font.part);
     nextBaselines[font.part] = font.bytes.slice();
+  }
+  // 新建图表部件：资源按引用存活（元素删除后计划不再产出，基线同步清理），
+  // 图表关系与内容类型在下方对应段统一登记
+  const chartPlan = chartAuthoringSavePlan(doc);
+  const plannedChartParts = new Set(chartPlan.parts.map((part) => part.part));
+  const orphanChartParts = [...nextCreatedParts].filter(
+    (part) => (part.startsWith('ppt/charts/') || /^ppt\/embeddings\/chart.*\.xlsx$/.test(part)) && !plannedChartParts.has(part),
+  );
+  for (const part of orphanChartParts) delete nextBaselines[part];
+  for (const part of chartPlan.parts) {
+    if (nextBaselines[part.part]) continue;
+    nextCreatedParts.add(part.part);
+    nextBaselines[part.part] = part.bytes.slice();
   }
   if (tableStyles?.definitions.length && !nextBaselines[tableStyles.part]) {
     const source = doc.package.parts[tableStyles.part];
@@ -544,7 +558,19 @@ export function saveEditDoc(doc: EditDoc, extensionPlan: EditExtensionSavePlan =
         relationshipId: fontRels.ids[index],
       })),
     );
-  } else if (orphanFontParts.length) {
+  }
+  if (chartPlan.parts.length) {
+    for (const part of chartPlan.parts) changes[part.part] = part.bytes;
+    const contentTypes = changes[contentTypesPart] ?? nextBaselines[contentTypesPart] ?? doc.package.parts[contentTypesPart];
+    if (!(contentTypes instanceof Uint8Array)) throw new Error('写入新建图表缺少内容类型基线');
+    changes[contentTypesPart] = patchChartContentTypes(contentTypes, chartPlan);
+  }
+  if (orphanChartParts.length) {
+    // 新建图表资源全部移除：部件已按 created 回收置 null，内容类型的 Override 同步剪除
+    const contentTypes = changes[contentTypesPart] ?? nextBaselines[contentTypesPart] ?? doc.package.parts[contentTypesPart];
+    if (contentTypes instanceof Uint8Array) changes[contentTypesPart] = pruneChartContentTypes(contentTypes, orphanChartParts);
+  }
+  if (orphanFontParts.length) {
     // 资源全部移除：部件已按 created 回收置 null，这里剪掉 presentation 的悬空引用
     const relationships = changes[presentationRelsPart] ?? nextBaselines[presentationRelsPart] ?? doc.package.parts[presentationRelsPart];
     const presentation = nextBaselines[presentationPart] ?? doc.package.parts[presentationPart];

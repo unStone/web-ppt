@@ -214,6 +214,15 @@ jobs:
             out/template-fill/*.pptx
           if-no-files-found: error
           retention-days: 1
+      # 新建图表（桌面 002）的 23 型保存产物同样要过 OOXML 合法性门禁
+      - uses: actions/upload-artifact@v7
+        if: matrix.group == 'expanded'
+        with:
+          name: chart-authoring-inputs
+          overwrite: true
+          path: out/chart-authoring/*.pptx
+          if-no-files-found: error
+          retention-days: 1
 
   browser:
     needs: saving
@@ -325,6 +334,10 @@ jobs:
         with:
           name: agent-inputs
           path: out
+      - uses: actions/download-artifact@v8
+        with:
+          name: chart-authoring-inputs
+          path: out/chart-authoring
       - name: OOXML 合法性门禁
         # XSD（ECMA-376 Transitional）与 Open XML SDK 双通道，任一错误失败并打印错误 Id、部件与 XPath。
         run: node tooling/ci/run-group.mjs external ooxml

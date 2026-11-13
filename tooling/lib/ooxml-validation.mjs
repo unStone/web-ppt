@@ -24,7 +24,9 @@ export function collectOoxmlArtifacts(root) {
       files.push(file);
     }
   }
-  for (const directory of ['out/agent-tools', 'out/agent-mcp', 'out/template-fill']) {
+  for (const directory of ['out/agent-tools', 'out/agent-mcp', 'out/template-fill', 'out/chart-authoring']) {
+    // 可选产物目录：测试未运行的机器上跳过
+    if (!existsSync(join(root, directory))) continue;
     for (const name of readdirSync(join(root, directory))
       .filter((name) => name.endsWith('.pptx'))
       .sort()) {

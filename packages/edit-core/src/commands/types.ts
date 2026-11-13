@@ -28,6 +28,7 @@ import type {
   TableCellRowRef,
   TableCellColumnRef,
   SectionId,
+  ChartAuthoringResource,
   FontEmbedResource,
 } from '../types';
 import type { ElementClipboardPayload } from './clipboard-types';
@@ -703,6 +704,19 @@ export type FontResourcePatch =
       readonly origin: string;
     };
 
+export type ChartResourcePatch =
+  | {
+      readonly op: 'set';
+      readonly path: readonly ['chartResources', string];
+      readonly value: ChartAuthoringResource;
+      readonly origin: string;
+    }
+  | {
+      readonly op: 'del';
+      readonly path: readonly ['chartResources', string];
+      readonly origin: string;
+    };
+
 export type ElementTextPatch =
   | {
       readonly op: 'set';
@@ -896,6 +910,7 @@ export type Patch =
   | ElementImageReplacementPatch
   | ImageResourcePatch
   | FontResourcePatch
+  | ChartResourcePatch
   | ElementTextPatch
   | ElementOrderPatch
   | ElementNamePatch

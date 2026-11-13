@@ -45,6 +45,7 @@ import {
 import { applyTableRowPatch, isTableRowPatch } from './table-row';
 import { applyThemePatch, isThemePatch } from './theme';
 import { applyFontResourcePatch, isFontResourcePatch } from './font-embedding';
+import { applyChartResourcePatch, isChartResourcePatch } from './chart-authoring';
 import type { ElementTransformPatch, Patch } from './types';
 import { applyDocumentExtensionPatch, isDocumentExtensionPatch } from '../document-extensions';
 import { applyExtensionPatch, finalizeExtensionPatch, isExtensionPatch } from '../extension-runtime';
@@ -64,6 +65,7 @@ export function applyPatchValues(doc: EditDoc, patches: readonly Patch[]): void 
     if (applyCommonObjectSlidePatch(doc, patch)) continue;
     if (isThemePatch(patch)) applyThemePatch(doc, patch);
     else if (isFontResourcePatch(patch)) applyFontResourcePatch(doc, patch);
+    else if (isChartResourcePatch(patch)) applyChartResourcePatch(doc, patch);
     else if (isLayoutPropertyPatch(patch)) applyLayoutPropertyPatch(doc, patch);
     else if (isMasterBackgroundPatch(patch)) applyMasterBackgroundPatch(doc, patch);
     else if (isMasterTextStylePatch(patch)) applyMasterTextStylePatch(doc, patch);

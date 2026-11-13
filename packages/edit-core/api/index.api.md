@@ -466,6 +466,8 @@ export type EditAnimationStep = EditAnimationBase & ({
 // @public (undocumented)
 export interface EditDoc {
     // (undocumented)
+    chartResources?: Record<string, ChartAuthoringResource>;
+    // (undocumented)
     elements: Record<ElementId, ElementRecord>;
     extensions?: Record<string, unknown>;
     fontResources?: Record<string, FontEmbedResource>;
@@ -1964,7 +1966,7 @@ export interface PasteElementsCommand {
 }
 
 // @public (undocumented)
-export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | FontResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch | ExtensionPatch | DocumentExtensionPatch | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch | MasterBackgroundPatch | MasterTextStylePatch;
+export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | FontResourcePatch | ChartResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch | ExtensionPatch | DocumentExtensionPatch | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch | MasterBackgroundPatch | MasterTextStylePatch;
 
 // @public (undocumented)
 export function presentationSlideIdForPart(doc: EditDoc, part: string): number | undefined;
