@@ -12,6 +12,8 @@
 
 默认入口另提供 `exportFontFaces(usages)`：把替代字体**命中的切片**转成 data URI 的 `EmbeddedFont[]`（含 `unicodeRange` / `sizeAdjust`），供 core 导出选项 `fonts.extraFontFaces` 内联进隔离的导出 SVG。`/subset` 入口则服务嵌入字体：`createHarfBuzzSubsetter(wasm)` 产出确定性 `FontSubsetter`，core 在导出时按 `collectFonts` 字符集子集化、剔除无用量家族，失败按稳定 reason（`subset-failed` / `unused-family` / `subsetter-error`，经 `onFontFallback` 观察）回退整字体内联；不传 `fonts` 选项时导出产物逐字节不变。设计与实测见[导出字体子集化](../design/export-font-subset.md)。
 
+**写入 PPTX**（`@web-ppt/edit-core`）：`SetEmbeddedFont` / `RemoveEmbeddedFont` 命令把许可允许的字体登记进 `EditDoc.fontResources`，保存输出 `p:embeddedFontLst` + `ppt/fonts/*.fntdata`（EOT 容器，fsType 回写真实许可值）。core 的 `sfntEmbeddingRights` 在写入边界拒绝 restricted 与 bitmap-only；仅 sfnt（TTF/glyf、CFF OTF）可写，TTC 只写首个 face，MTX 压缩不做。范围与[票据 012](../wayfinder/ppt-desktop-parity/tickets/012-font-embedding-write.md)一致。
+
 字体包不携带字体字节、整形器或 Cordis。产品编辑器用 Cordis 管理文稿生命周期；公开 SDK 不依赖框架。
 
 ```ts

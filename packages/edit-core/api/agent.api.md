@@ -588,6 +588,10 @@ export const agentToolSchema: {
             }, {
                 readonly $ref: "#/definitions/SetMasterTextStyleCommand";
             }, {
+                readonly $ref: "#/definitions/SetEmbeddedFontCommand";
+            }, {
+                readonly $ref: "#/definitions/RemoveEmbeddedFontCommand";
+            }, {
                 readonly $ref: "#/definitions/AddImageCommand";
             }, {
                 readonly $ref: "#/definitions/ReplaceImageCommand";
@@ -6191,6 +6195,60 @@ export const agentToolSchema: {
                     readonly type: readonly ["number", "null"];
                 };
             };
+            readonly additionalProperties: false;
+        };
+        readonly SetEmbeddedFontCommand: {
+            readonly type: "object";
+            readonly properties: {
+                readonly type: {
+                    readonly type: "string";
+                    readonly const: "SetEmbeddedFont";
+                };
+                readonly family: {
+                    readonly type: "string";
+                };
+                readonly styles: {
+                    readonly type: "array";
+                    readonly items: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly bold: {
+                                readonly type: "boolean";
+                            };
+                            readonly italic: {
+                                readonly type: "boolean";
+                            };
+                        };
+                        readonly required: readonly ["bold", "italic"];
+                        readonly additionalProperties: false;
+                    };
+                    readonly description: "本条目覆盖的样式槽；至少一个";
+                };
+                readonly bytes: {
+                    readonly type: "string";
+                    readonly description: "base64 编码的 sfnt 字节（还原后的 TTF / OTF）";
+                };
+                readonly mime: {
+                    readonly type: "string";
+                    readonly enum: readonly ["font/ttf", "font/otf"];
+                };
+            };
+            readonly required: readonly ["type", "family", "styles", "bytes", "mime"];
+            readonly additionalProperties: false;
+        };
+        readonly RemoveEmbeddedFontCommand: {
+            readonly type: "object";
+            readonly properties: {
+                readonly type: {
+                    readonly type: "string";
+                    readonly const: "RemoveEmbeddedFont";
+                };
+                readonly hash: {
+                    readonly type: "string";
+                    readonly description: "登记时返回的资源哈希";
+                };
+            };
+            readonly required: readonly ["type", "hash"];
             readonly additionalProperties: false;
         };
         readonly AddImageCommand: {

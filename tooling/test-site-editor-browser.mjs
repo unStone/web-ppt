@@ -300,7 +300,9 @@ const applicationAdditional = [...closure([applicationEntry], false)]
 // 导出字体子集化：批注导出 / WebMCP 的引擎与脸集全在动态 chunk（静态闭包零 exportFontFaces），
 // 新增动态 chunk 使共享 chunk 重新划分：gzip 实测 565,475B 超出 926B，上调 1000B；
 // raw 实测 2,398,175B 超出 708B，上调 800B
-const activatedBudget = { raw: initialBudget.raw + 143_365, gzip: initialBudget.gzip + 55_700 };
+// 嵌入字体写入命令（SetEmbeddedFont / RemoveEmbeddedFont + EOT 封装 + 保存计划）进编辑器
+// 命令联合的静态闭包：raw 实测 2,406,596B 超出 8329B，上调 8400B；gzip 567,806B 超出 2257B，上调 2300B
+const activatedBudget = { raw: initialBudget.raw + 151_765, gzip: initialBudget.gzip + 58_000 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);

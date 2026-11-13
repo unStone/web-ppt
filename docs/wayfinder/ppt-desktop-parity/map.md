@@ -70,6 +70,7 @@ flowchart LR
 
 ## Decisions so far
 
+- [012 嵌入字体写入](tickets/012-font-embedding-write.md)的 SDK 能力已交付：core 的 fsType 权利判定与 EOT 容器封装、edit-core 的嵌入/移除命令与两条保存路径输出；许可拒绝在命令与保存双边界 fast-fail。可选子集化与产品面板开关待后续；本机 LibreOffice 不消费 PPTX 嵌入字体渲染（固件对照实验证实），以本引擎读侧验证为准。
 - SmartArt 采用 ECMA-376 Part 1 §21.4 的布局定义（`layoutDef` 的算法、约束、规则与条件）解释执行，取代当前 6 个布局族的启发式排布；有缓存 drawing 时仍优先使用缓存，编辑后重排走引擎。
 - 新建图表复用 [0.8 票据 001](../ppt-data-fidelity/tickets/001-chart-data-editing.md) 预留的数据集模型与工作簿同步，不另建图表模型。
 - 放映中的墨迹以原生 InkML 保存（沿用 `edit-core/ink`），不使用私有扩展命名空间。

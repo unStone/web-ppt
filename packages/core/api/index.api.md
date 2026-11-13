@@ -263,7 +263,43 @@ export interface EmbeddedFont {
 }
 
 // @public
+export function embeddedFontToSfnt(bytes: Uint8Array): DecodedFont | null;
+
+// @public (undocumented)
+export type EmbeddingCheck = {
+    ok: true;
+    rights: EmbeddingRights;
+} | {
+    ok: false;
+    reason: string;
+};
+
+// @public
+export interface EmbeddingRights {
+    // (undocumented)
+    outlineAllowed: boolean;
+    // (undocumented)
+    subsetAllowed: boolean;
+    // (undocumented)
+    usage: 'installable' | 'editable' | 'view-print' | 'restricted';
+}
+
+// @public
 export function encryptionScheme(info: Uint8Array): 'agile' | 'standard' | 'extensible';
+
+// @public (undocumented)
+export interface EotContainerOptions {
+    // (undocumented)
+    bold?: boolean;
+    // (undocumented)
+    family: string;
+    fsType?: number;
+    // (undocumented)
+    italic?: boolean;
+    style?: string;
+    subset?: boolean;
+    xor?: boolean;
+}
 
 // @public
 export interface ExportFontOptions {
@@ -940,6 +976,9 @@ export function setPptDecryptor(fn: PptDecryptor): void;
 // @public (undocumented)
 export function setShape3DRenderer(renderer: Shape3DRenderer | undefined): void;
 
+// @public
+export function sfntEmbeddingRights(bytes: Uint8Array): EmbeddingCheck;
+
 // @public (undocumented)
 export function sha256(msg: Uint8Array): Uint8Array;
 
@@ -1603,6 +1642,12 @@ export function transitionPreferredDirection(type: TransitionType): string | und
 export type TransitionType = 'none' | 'fade' | 'cut' | 'push' | 'pull' | 'cover' | 'wipe' | 'split' | 'zoom' | 'dissolve' | 'checker' | 'blinds' | 'comb' | 'wheel' | 'circle' | 'diamond' | 'plus' | 'wedge' | 'newsflash' | 'randomBar' | 'strips' | 'vortex' | 'switch' | 'flip' | 'ripple' | 'honeycomb' | 'glitter' | 'warp' | 'flythrough' | 'flash' | 'shred' | 'reveal' | 'wheelReverse' | 'ferris' | 'gallery' | 'conveyor' | 'pan' | 'doors' | 'window' | 'prism' | 'morph';
 
 // @public
+export const TTEMBED_SUBSET = 1;
+
+// @public
+export const TTEMBED_XORENCRYPTDATA = 268435456;
+
+// @public
 export function unplaceGroupFrame(group: GroupElement, frame: {
     x: number;
     y: number;
@@ -1627,6 +1672,9 @@ export interface UnsupportedElement extends ElementBase {
 
 // @public (undocumented)
 export function validateZipArchive(source: Uint8Array, limits?: ZipLimitOptions): void;
+
+// @public
+export function wrapEotContainer(fontData: Uint8Array, options: EotContainerOptions): Uint8Array;
 
 // @public
 export class WrongPasswordError extends Error {

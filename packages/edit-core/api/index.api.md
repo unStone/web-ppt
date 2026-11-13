@@ -317,7 +317,7 @@ export interface ClipboardXmlRoot {
 }
 
 // @public (undocumented)
-export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand | SetAltTextCommand | ExtensionCommand | SetLockedCommand | SetElementHiddenCommand | ApplyFormatCommand | ReplaceTextCommand | AlignElementsCommand | DistributeElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | SetGeometryCommand | ConvertToCustomGeometryCommand | SetPresetCommand | SetAdjCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | ClearFormatCommand | SetParaPropsCommand | AddSectionCommand | RenameSectionCommand | MoveSectionCommand | RemoveSectionCommand | SetSlideSizeCommand | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | InsertColumnCommand | RemoveRowCommand | RemoveColumnCommand | SetRowHeightCommand | SetColumnWidthCommand | MergeCellsCommand | SplitCellCommand | SetCellPropsCommand | SetFillCommand | SetStrokeCommand | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand | SetBackgroundImageCommand | SetHiddenCommand | SetTransitionCommand | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand | SetTableStyleCommand | SetThemeCommand | SetMasterTextStyleCommand;
+export type Command = SetXfrmCommand | SetFlipCommand | RemoveElementCommand | SetZCommand | SetNameCommand | SetAltTextCommand | ExtensionCommand | SetLockedCommand | SetElementHiddenCommand | ApplyFormatCommand | ReplaceTextCommand | AlignElementsCommand | DistributeElementsCommand | GroupCommand | UngroupCommand | PasteElementsCommand | AddShapeCommand | AddImageCommand | ReplaceImageCommand | SetCropCommand | SetGeometryCommand | ConvertToCustomGeometryCommand | SetPresetCommand | SetAdjCommand | AddTableCommand | AddSlideCommand | MoveSlideCommand | RemoveSlideCommand | DuplicateSlideCommand | EditTextCommand | SetRunPropsCommand | ClearFormatCommand | SetParaPropsCommand | AddSectionCommand | RenameSectionCommand | MoveSectionCommand | RemoveSectionCommand | SetSlideSizeCommand | FitTextShapeCommand | SetBodyPropsCommand | InsertRowCommand | InsertColumnCommand | RemoveRowCommand | RemoveColumnCommand | SetRowHeightCommand | SetColumnWidthCommand | MergeCellsCommand | SplitCellCommand | SetCellPropsCommand | SetFillCommand | SetStrokeCommand | SetEffectsCommand | SetLinkCommand | SetBackgroundCommand | SetBackgroundCropCommand | SetBackgroundImageCommand | SetHiddenCommand | SetTransitionCommand | SetAnimationsCommand | SetLayoutCommand | SetNotesCommand | SetTableStyleCommand | SetThemeCommand | SetMasterTextStyleCommand | SetEmbeddedFontCommand | RemoveEmbeddedFontCommand;
 
 // @public (undocumented)
 export interface CommandPatches {
@@ -468,6 +468,7 @@ export interface EditDoc {
     // (undocumented)
     elements: Record<ElementId, ElementRecord>;
     extensions?: Record<string, unknown>;
+    fontResources?: Record<string, FontEmbedResource>;
     // (undocumented)
     identity: EditIdentity;
     imageResources: Record<string, ElementInsertionResource>;
@@ -1963,7 +1964,7 @@ export interface PasteElementsCommand {
 }
 
 // @public (undocumented)
-export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch | ExtensionPatch | DocumentExtensionPatch | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch | MasterBackgroundPatch | MasterTextStylePatch;
+export type Patch = ElementTransformPatch | ElementFillPatch | ElementStrokePatch | ElementEffectsPatch | ElementLinkPatch | ElementCropPatch | ElementGeometryPatch | ElementPresetGeometryPatch | ElementImageReplacementPatch | ImageResourcePatch | FontResourcePatch | ElementTextPatch | ElementOrderPatch | ElementNamePatch | ElementAltTextPatch | ElementInteractionPatch | ExtensionPatch | DocumentExtensionPatch | ElementTreePatch | ElementHierarchyPatch | SlideTreePatch | SlideOrderPatch | SectionStatePatch | DocumentSizePatch | SlidePropertyPatch | SlideLayoutPatch | SlideNotesPatch | TableRowPatch | TableColumnPatch | TableGridEntryPatch | TableMergePatch | TableCellPropsPatch | ElementTableStylePatch | ThemePatch | LayoutPropertyPatch | MasterBackgroundPatch | MasterTextStylePatch;
 
 // @public (undocumented)
 export function presentationSlideIdForPart(doc: EditDoc, part: string): number | undefined;

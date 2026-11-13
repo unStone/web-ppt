@@ -397,6 +397,12 @@ export const agentToolSchema = {
           "$ref": "#/definitions/SetMasterTextStyleCommand"
         },
         {
+          "$ref": "#/definitions/SetEmbeddedFontCommand"
+        },
+        {
+          "$ref": "#/definitions/RemoveEmbeddedFontCommand"
+        },
+        {
           "$ref": "#/definitions/AddImageCommand"
         },
         {
@@ -7824,6 +7830,75 @@ export const agentToolSchema = {
           ]
         }
       },
+      "additionalProperties": false
+    },
+    "SetEmbeddedFontCommand": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "SetEmbeddedFont"
+        },
+        "family": {
+          "type": "string"
+        },
+        "styles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "bold": {
+                "type": "boolean"
+              },
+              "italic": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "bold",
+              "italic"
+            ],
+            "additionalProperties": false
+          },
+          "description": "本条目覆盖的样式槽；至少一个"
+        },
+        "bytes": {
+          "type": "string",
+          "description": "base64 编码的 sfnt 字节（还原后的 TTF / OTF）"
+        },
+        "mime": {
+          "type": "string",
+          "enum": [
+            "font/ttf",
+            "font/otf"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "family",
+        "styles",
+        "bytes",
+        "mime"
+      ],
+      "additionalProperties": false
+    },
+    "RemoveEmbeddedFontCommand": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "RemoveEmbeddedFont"
+        },
+        "hash": {
+          "type": "string",
+          "description": "登记时返回的资源哈希"
+        }
+      },
+      "required": [
+        "type",
+        "hash"
+      ],
       "additionalProperties": false
     },
     "AddImageCommand": {

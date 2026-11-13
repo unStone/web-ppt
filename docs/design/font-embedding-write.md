@@ -1,6 +1,6 @@
 # 嵌入字体写入 PPTX
 
-状态：实施中。对应 [票据 012](../wayfinder/ppt-desktop-parity/tickets/012-font-embedding-write.md)。
+状态：SDK 能力已交付（core 写入边界 + edit-core 保存与命令）；产品入口与可选子集化待后续。实施记录与 LibreOffice 环境限制见[票据 012](../wayfinder/ppt-desktop-parity/tickets/012-font-embedding-write.md)。实施相对本方案的两处偏差：`FontEmbedResource` 直接挂在 EditDoc（未走 extensions），patch 形态与 `imageResources` 同型；移除回收在保存计划内完成（orphan 部件置 null + 关系与 Lst 引用剪除），未用 extension runtime。另有一处实施教训：动态创建的 XML 子元素 `namespaceUri` 字段恒为 null（由序列化按 xmlns 解析），查找这类子元素必须按 localName，按 URI 过滤永远落空。
 
 ## 1. 问题
 
