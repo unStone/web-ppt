@@ -218,6 +218,8 @@ function layoutDiagram(relIds: Element | null, xf: XfrmInfo, env: Env): GroupEle
     slideNum: env.slideNum,
   };
 
+  // SmartArt 布局定义引擎（桌面 001）默认未接线：层级分支与 composite 完整
+  // 约束代数交付前，默认路径保持启发式（引擎经 diagram-engine 显式供宿主使用）
   const children = buildDiagram(pts, xf.w, xf.h, {
     family: layoutFamily(layoutRoot),
     vertical: isVertical(layoutRoot),
