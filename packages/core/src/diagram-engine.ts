@@ -411,7 +411,7 @@ export function evaluateLayoutDef(
   roots: DiagramPoint[],
   w: number,
   h: number,
-  options: { dir?: 'norm' | 'rev' } = {},
+  options: { dir?: 'norm' | 'rev'; trace?: (msg: string) => void } = {},
 ): EngineResult {
   if (!layoutRoot) return { shapes: [], connectors: [], reason: 'no-layout-definition', fontSize: null };
   if (!roots.length) return { shapes: [], connectors: [], reason: 'no-points', fontSize: null };
@@ -419,7 +419,7 @@ export function evaluateLayoutDef(
   const rootChildren = kids(layoutRoot, 'layoutNode');
   const entry = rootChildren[0] ?? null;
   if (!entry) return { shapes: [], connectors: [], reason: 'no-layout-definition', fontSize: null };
-  const docPoint: PointCtx = { pt: { id: '', text: null, children: roots, depth: -1 }, parent: null };
+  const docPoint: PointCtx = { pt: { id: '', text: null, children: roots, depth: -1, ptType: 'doc' }, parent: null };
 
   const parse = parseLayoutNode(entry, attr(entry, 'name') ?? 'root');
   if (typeof parse === 'string') return { shapes: [], connectors: [], reason: parse, fontSize: null };
@@ -430,6 +430,9 @@ export function evaluateLayoutDef(
 
   const connectors: EngineShape[] = [];
   let lastFontSz: number | null = null;
+
+  const trace = options.trace;
+  const say = (msg: string): void => trace?.(msg);
 
   const runChildren = (
     children: Child[],
@@ -442,11 +445,18 @@ export function evaluateLayoutDef(
     for (const child of children) {
       if (child.type === 'choose') {
         const branch = pickBranch(child.node, ctx);
-        if (!branch) return out;
+        if (!branch) {
+          say(`choose ${child.node.name}: 全部分支不匹配，跳过`);
+          return out;
+        }
+        say(`choose ${child.node.name}: 匹配`);
         out.push(...runChildren(branch, points, box, ctx, ancestors));
       } else if (child.type === 'forEach') {
+        const got = selectPoints(child.node, points, ctx);
+        say(`forEach ${child.node.name} axis=${child.node.axis}: 选中 ${got.length}`);
         out.push(...runForEach(child.node, points, box, ctx, ancestors));
       } else {
+        say(`layoutNode ${child.node.name}: alg=${child.node.alg?.type ?? '无'} shape=${child.node.shape ? '有' : '无'}`);
         out.push(...runLayoutNode(child.node, points, box, ctx, ancestors));
       }
     }
@@ -499,8 +509,14 @@ export function evaluateLayoutDef(
 
   const selectPoints = (fe: ForEach, points: PointCtx[], ctx: EvalCtx): PointCtx[] => {
     const current = points[ctx.index] ?? points[0] ?? docPoint;
+    // ptType 过滤：nonAsst 是「非助理点的所有点」（含 node），asst 只选助理点
     const filter = (list: PointCtx[]): PointCtx[] =>
-      list.filter((p) => !fe.ptType || fe.ptType === 'all' || pointTypeOf(p.pt) === fe.ptType);
+      list.filter(
+        (p) =>
+          !fe.ptType ||
+          fe.ptType === 'all' ||
+          (fe.ptType === 'nonAsst' ? pointTypeOf(p.pt) !== 'asst' : pointTypeOf(p.pt) === fe.ptType),
+      );
     let pool: PointCtx[];
     switch (fe.axis) {
       case 'self':
@@ -529,7 +545,7 @@ export function evaluateLayoutDef(
       case 'root':
       case 'root des': {
         // 文档根（可带 des 合成「root 的全部后代」）
-        const docCtx: PointCtx = { pt: { id: '', text: null, children: roots, depth: -1 }, parent: null };
+        const docCtx: PointCtx = { pt: { id: '', text: null, children: roots, depth: -1, ptType: 'doc' }, parent: null };
         pool = fe.axis === 'root' ? [docCtx] : filter(flattenCtx(docCtx));
         break;
       }
@@ -740,10 +756,9 @@ const flattenCtx = (root: PointCtx): PointCtx[] => {
 };
 
 const pointTypeOf = (pt: DiagramPoint): string => {
-  // parseDataModel 已滤掉 parTrans/sibTrans；asst 与 node 由调用方在数据里标注，
-  // 这里只有内容点，全部按 node 处理（orgChart 的 asst 过滤由 forEach ptType 表达时
-  // 若数据里全是 node，两者等价）
-  return 'node';
+  // parseDataModel 携带点的真实类型（node / asst / doc）；forEach 的 ptType
+  // 过滤（nonAsst / asst / node）依赖它区分助理点与普通点
+  return pt.ptType ?? 'node';
 };
 
 /** 约束求值：解析作用于 working 的 w/h/primFontSz/sp/sibSp 等 */

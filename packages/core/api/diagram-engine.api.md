@@ -53,6 +53,7 @@ export function engineShapesToElements(engine: EngineResult, roots: DiagramPoint
 // @public
 export function evaluateLayoutDef(layoutRoot: Element | null, roots: DiagramPoint[], w: number, h: number, options?: {
     dir?: 'norm' | 'rev';
+    trace?: (msg: string) => void;
 }): EngineResult;
 
 // @public

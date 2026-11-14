@@ -23,6 +23,8 @@ export interface DiagramPoint {
   children: DiagramPoint[];
   /** 层级深度，0 为根的直接子节点 */
   depth: number;
+  /** 点类型（node / asst / doc），供布局定义引擎的 forEach ptType 过滤 */
+  ptType: string;
 }
 
 export type LayoutFamily = 'linear' | 'cycle' | 'pyramid' | 'hierarchy' | 'snake' | 'radial';
@@ -90,7 +92,7 @@ export function parseDataModel(dataRoot: Element | null): DiagramPoint[] {
   const cxnLst = kid(dm, 'cxnLst');
   if (!ptLst) return [];
 
-  const nodes = new Map<string, { id: string; txBody: Element | null; kids: { id: string; ord: number }[] }>();
+  const nodes = new Map<string, { id: string; txBody: Element | null; kids: { id: string; ord: number }[]; ptType: string }>();
   let rootId: string | null = null;
   for (const pt of kids(ptLst, 'pt')) {
     const id = attr(pt, 'modelId');
@@ -99,7 +101,7 @@ export function parseDataModel(dataRoot: Element | null): DiagramPoint[] {
     // parTrans / sibTrans 是连接线与间隔，不是内容节点
     if (type === 'parTrans' || type === 'sibTrans' || type === 'pres') continue;
     if (type === 'doc') rootId = id;
-    nodes.set(id, { id, txBody: kid(pt, 't'), kids: [] });
+    nodes.set(id, { id, txBody: kid(pt, 't'), kids: [], ptType: type });
   }
 
   for (const cxn of kids(cxnLst, 'cxn')) {
@@ -126,6 +128,7 @@ export function parseDataModel(dataRoot: Element | null): DiagramPoint[] {
       text: null,
       children: n.kids.map((k) => build(k.id, depth + 1)).filter((x): x is DiagramPoint => x !== null),
       depth,
+      ptType: n.ptType,
     };
   };
 
