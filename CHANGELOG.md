@@ -2,6 +2,15 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。发布过程的验证证据（npm 发布、安装验收、体积口径、真机验收状态）记录在 [docs/releases/](docs/releases/)。
 
+## 0.9.0-beta.3 - 2026-11-14
+
+九包发布到 npm `next`。本版交付 SmartArt 布局定义引擎骨架（桌面 001 第一批）：
+
+- 新增 `@web-ppt/core/diagram-engine` 子入口：按文件自带 `dgm:layoutDef`（ECMA-376 §21.4.2）求值 SmartArt 布局——layoutNode 树（choose/if/else、forEach 十类轴、ref 引用）、十种算法（lin/snake/cycle/pyra/hierRoot/hierChild/conn/tx/sp/composite）、约束子集（w/h/primFontSz/间距/居中/定位，refType 作用域引用）与 ruleLst 字号收缩。
+- 稳定 reason 显式回退：极简 layoutDef（`minimal-layout-definition`）、未知构造（`unsupported-*`）与覆盖守恒（`incomplete-coverage`——引擎绑定数据点不足时不输出不完整结果），回退调用方既有路径。
+- `test-smartart-engine`（源码 + dist）：五个真实样本（LibreOffice core 语料，portability 008 登记）函数级求值对照——snake 类与 PowerPoint 缓存逐形状一致、matrix 类文本集合一致、orgChart1/cycle4 守恒回退不劣化；几何确定性。
+- 默认不接线：SmartArt 默认渲染路径保持启发式（orgChart 层级分支方向与 composite 完整 l/t/w/h 约束代数交付后接线），引擎经子入口供宿主显式使用；radial 类真实样本仍缺（portability 008 登记）。
+
 ## 0.9.0-beta.2 - 2026-11-14
 
 九包发布到 npm `next`。本版交付桌面补齐线的两张票据：新建图表（桌面 002）与图表趋势线 / 误差线 / 数据表（桌面 003），连同主线上累积的工具链迁移。

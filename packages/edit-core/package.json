@@ -1,6 +1,6 @@
 {
   "name": "@web-ppt/edit-core",
-  "version": "0.9.0-beta.2",
+  "version": "0.9.0-beta.3",
   "description": "Headless, framework-agnostic editing document model and render projection for Web-PPT.",
   "keywords": [
     "pptx",
@@ -149,7 +149,7 @@
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },
   "peerDependencies": {
-    "@web-ppt/core": "0.9.0-beta.2"
+    "@web-ppt/core": "0.9.0-beta.3"
   },
   "dependencies": {
     "culori": "^4.0.2",
