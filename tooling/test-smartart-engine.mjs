@@ -8,7 +8,6 @@ import { countedAssert } from './lib/counted-assert.mjs';
 const { assert: bound, record } = countedAssert('smartartEngine');
 import { installDomEnv, parseXml } from './lib/dom-env.mjs';
 import { bundleBrowser } from './lib/bundle-browser.mjs';
-import { makeZip } from './lib/ooxml.mjs';
 
 const root = resolve(import.meta.dirname, '..'),
   out = join(root, 'out/smartart-engine');
