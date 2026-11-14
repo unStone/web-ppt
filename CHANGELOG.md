@@ -2,6 +2,15 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。发布过程的验证证据（npm 发布、安装验收、体积口径、真机验收状态）记录在 [docs/releases/](docs/releases/)。
 
+## 0.9.0-beta.4 - 2026-11-14
+
+九包发布到 npm `next`。本版完成 SmartArt 布局引擎对组织结构图的接管并接线默认路径（桌面 001 第二批）：
+
+- 修复覆盖守恒误触发：`parseDataModel` 现携带点真实类型（node / asst / doc），引擎的 `ptType=nonAsst` 过滤按语义实现——orgChart 的子层（此前被全部过滤掉）正确展开。
+- 引擎接线 SmartArt 默认渲染路径（graphic-frame 解析与编辑重排）：引擎优先，覆盖守恒等 reason 触发时回退启发式族布局。真实样本对照：orgChart1 数据点全覆盖（形状含容器与连线），snake 类与 PowerPoint 缓存逐形状一致；lint 的 Node/Canvas 一致性恢复。
+- 颜色循环按形状序号（此前全局计数器导致引擎形状颜色漂移）。
+- 已知边界：cycle4 的 composite 平铺约束代数与 radial 真实样本（portability 008 登记）待后续，当前覆盖守恒回退启发式不劣化。
+
 ## 0.9.0-beta.3 - 2026-11-14
 
 九包发布到 npm `next`。本版交付 SmartArt 布局定义引擎骨架（桌面 001 第一批）：

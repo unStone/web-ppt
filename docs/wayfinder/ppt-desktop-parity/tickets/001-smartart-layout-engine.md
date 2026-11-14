@@ -34,7 +34,7 @@ blocked_by: []
 - 未实现的算法或约束类型返回稳定 reason 并回退到缓存或占位框，不输出错误排布。
 - 编辑节点后保存重开，LibreOffice 与独立读取器显示一致。
 
-## Answer（2026-11-14，引擎骨架已交付；层级分支与完整约束代数待后续）
+## Answer（2026-11-14，引擎骨架已交付；2026-11-14 第二批 orgChart 接线完成，cycle4 平铺与 radial 样本待后续）
 
 设计与实施见[设计文档](../../../design/smartart-layout-engine.md)。已交付：
 
@@ -53,10 +53,13 @@ blocked_by: []
 
 后续工作（保持本票 open，缩减范围）：
 
-1. orgChart1 的 hierBranch 不对称分支（l / r / hang）布局。
-2. composite 的完整 l/t/w/h 约束代数与 `gdLst` 公式。
-3. radial 类真实样本（portability 008 登记）驱动 radial1 引擎化。
-4. 全覆盖后删除 diagram.ts 的启发式族布局（当前保留服务极简定义与守恒回退）。
+1. composite 的完整 l/t/w/h 约束代数与 `gdLst` 公式（cycle4 变体，当前守恒回退启发式）。
+2. radial 类真实样本（portability 008 登记）驱动 radial1 引擎化。
+3. 全覆盖后删除 diagram.ts 的启发式族布局（当前保留服务极简定义与守恒回退）。
+
+### 第二批（2026-11-14，orgChart 接线，PR #68）
+
+覆盖守恒未触发的根因：`pointTypeOf` 恒返回 node，`ptType=nonAsst` 的 forEach 把数据点全部过滤——orgChart 的子层（含助理点）从未展开。`parseDataModel` 现携带点真实类型（`DiagramPoint.ptType`），引擎按语义实现 nonAsst = 非 asst 点。引擎已接线默认路径（graphic-frame 与 diagram-edit 引擎优先、reason 回退启发式）；颜色循环按形状序号（修复全局计数器导致的颜色漂移）。对照矩阵更新：orgChart1 v14 引擎 18 形状 / 数据点全覆盖（缓存 8 形状 / 5 文本——引擎含容器与连线形状）；v12 变体与 cycle4 仍守恒回退启发式不劣化；snake 与缓存逐形状一致。lint-browser Node/Canvas 一致性恢复绿。
 
 ## 参考
 
