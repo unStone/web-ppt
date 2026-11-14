@@ -1,5 +1,4 @@
 /** 桌面 001：布局定义引擎——真实样本 layoutDef 求值、与 PowerPoint 缓存对照、reason 回退与确定性（函数级）。 */
-import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
