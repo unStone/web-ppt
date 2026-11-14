@@ -93,6 +93,10 @@
       "types": "./dist/modern-charts.d.ts",
       "import": "./dist/modern-charts.js"
     },
+    "./diagram-engine": {
+      "types": "./dist/diagram-engine.d.ts",
+      "import": "./dist/diagram-engine.js"
+    },
     "./diagram-edit": {
       "types": "./dist/diagram-edit.d.ts",
       "import": "./dist/diagram-edit.js"
@@ -133,7 +137,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && vite build --config vite.handles.config.ts && vite build --config vite.image-zip.config.ts && vite build --config vite.node.config.ts && vite build --config vite.chart-edit.config.ts && vite build --config vite.chart-ex.config.ts && vite build --config vite.modern-charts.config.ts && node ../../tooling/check-preset-handles-boundary.mjs core && node ../../tooling/check-image-zip-boundary.mjs && node ../../tooling/check-node-boundary.mjs && tsc -p tsconfig.build.json && vite build --config vite.diagram-edit.config.ts && vite build --config vite.ink-edit.config.ts && vite build --config vite.emf-plus.config.ts && vite build --config vite.advanced-rendering.config.ts && vite build --config vite.three-d.config.ts && vite build --config vite.pdf.config.ts",
+    "build": "vite build && vite build --config vite.handles.config.ts && vite build --config vite.image-zip.config.ts && vite build --config vite.node.config.ts && vite build --config vite.chart-edit.config.ts && vite build --config vite.chart-ex.config.ts && vite build --config vite.modern-charts.config.ts && node ../../tooling/check-preset-handles-boundary.mjs core && node ../../tooling/check-image-zip-boundary.mjs && node ../../tooling/check-node-boundary.mjs && tsc -p tsconfig.build.json && vite build --config vite.diagram-engine.config.ts && vite build --config vite.diagram-edit.config.ts && vite build --config vite.ink-edit.config.ts && vite build --config vite.emf-plus.config.ts && vite build --config vite.advanced-rendering.config.ts && vite build --config vite.three-d.config.ts && vite build --config vite.pdf.config.ts",
     "prepublishOnly": "npm run build",
     "prepack": "node ../../tooling/sync-package-docs.mjs"
   },

@@ -1,5 +1,5 @@
 import type { ChartEnv } from './chart/hook';
-import type { SlideElement } from './types';
+import type { SlideElement, TextBody } from './types';
 import { parseXml } from './xml';
 import { parseTextBody } from './pptx/text';
 import { buildDiagram, parseDataModel, pointTxBody, layoutFamily, isVertical, parseDiagramColors } from './pptx/diagram';
@@ -20,21 +20,23 @@ export function layoutDiagramXml(
     /^[0-9a-f]{6}$/i.test(value) ? `#${value}` : `#${env.ctx.theme[env.ctx.clrMap[value] ?? value] ?? '4472C4'}`,
   );
   const nodes: string[] = [];
-  const elements = buildDiagram(parseDataModel(root), width, height, {
+  const dataModel = parseDataModel(root);
+  const textOfEngine = (id: string): TextBody | null => {
+    nodes.push(id);
+    const body = parseTextBody(pointTxBody(root, id), {
+      ctx: env.ctx,
+      fonts: env.fonts,
+      chain: [],
+      defaultColor: 'rgb(255,255,255)',
+      slideNum: 1,
+    });
+    return body ? { ...body, anchor: 'middle', paragraphs: body.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
+  };
+  const elements = buildDiagram(dataModel, width, height, {
     family: layoutFamily(layoutRoot),
     vertical: isVertical(layoutRoot),
     colors: palette,
-    textOf(id) {
-      nodes.push(id);
-      const body = parseTextBody(pointTxBody(root, id), {
-        ctx: env.ctx,
-        fonts: env.fonts,
-        chain: [],
-        defaultColor: 'rgb(255,255,255)',
-        slideNum: 1,
-      });
-      return body ? { ...body, anchor: 'middle', paragraphs: body.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
-    },
+    textOf: textOfEngine,
   });
   return { elements, nodes };
 }
