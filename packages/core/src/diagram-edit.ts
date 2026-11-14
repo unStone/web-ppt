@@ -3,6 +3,7 @@ import type { SlideElement, TextBody } from './types';
 import { parseXml } from './xml';
 import { parseTextBody } from './pptx/text';
 import { buildDiagram, parseDataModel, pointTxBody, layoutFamily, isVertical, parseDiagramColors } from './pptx/diagram';
+import { engineShapesToElements, evaluateLayoutDef } from './diagram-engine';
 
 /** 编辑预览与无 drawing 的 SmartArt 共用节点树和布局算法。 */
 export function layoutDiagramXml(
@@ -32,12 +33,22 @@ export function layoutDiagramXml(
     });
     return body ? { ...body, anchor: 'middle', paragraphs: body.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
   };
-  const elements = buildDiagram(dataModel, width, height, {
-    family: layoutFamily(layoutRoot),
-    vertical: isVertical(layoutRoot),
-    colors: palette,
-    textOf: textOfEngine,
-  });
+  // 桌面 001：布局定义引擎优先；覆盖守恒等 reason 触发时回退启发式族布局
+  const engine = evaluateLayoutDef(layoutRoot, dataModel, width, height);
+  const elements: SlideElement[] = [];
+  if (!engine.reason) {
+    elements.push(...engineShapesToElements(engine, dataModel, { colors: palette, textOf: textOfEngine }));
+  }
+  if (!elements.length) {
+    elements.push(
+      ...buildDiagram(dataModel, width, height, {
+        family: layoutFamily(layoutRoot),
+        vertical: isVertical(layoutRoot),
+        colors: palette,
+        textOf: textOfEngine,
+      }),
+    );
+  }
   return { elements, nodes };
 }
 

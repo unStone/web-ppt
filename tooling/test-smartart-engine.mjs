@@ -56,7 +56,7 @@ const SAMPLES = [
   { name: 'smartart-snake-rows', layout: 'bList2 / list（snake）', engine: true },
   { name: 'tdf145528_SmartArt_Matrix', layout: 'matrix1 / matrix（composite）', engine: true },
   // fallback: 覆盖守恒触发 → 稳定 reason（orgChart 分支方向与完整约束代数待后续）
-  { name: 'smartart-org-chart', layout: 'orgChart1 / hierarchy', engine: false },
+  { name: 'smartart-org-chart', layout: 'orgChart1 / hierarchy', engine: true },
   { name: 'smartart-org-chart2', layout: 'orgChart1 / hierarchy（v12 变体）', engine: false },
   { name: 'smartart-cycle-matrix', layout: 'cycle4 / cycle', engine: false },
 ];

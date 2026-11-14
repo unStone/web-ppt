@@ -6,6 +6,7 @@ import { attr, kid, numAttr, walk } from '../xml';
 import { getChartParser } from '../chart/hook';
 import { parseTextBody, TextEnv } from './text';
 import { buildDiagram, isVertical, layoutFamily, parseDataModel, parseDiagramColors, pointTxBody, wrapDiagram } from './diagram';
+import { engineShapesToElements, evaluateLayoutDef } from '../diagram-engine';
 import { Env, relByType } from './slide-inheritance';
 import { parseTable } from './table-style';
 import { retainCompatibilitySource } from './compatibility-source';
@@ -220,16 +221,26 @@ function layoutDiagram(relIds: Element | null, xf: XfrmInfo, env: Env): GroupEle
 
   // SmartArt 布局定义引擎（桌面 001）默认未接线：层级分支与 composite 完整
   // 约束代数交付前，默认路径保持启发式（引擎经 diagram-engine 显式供宿主使用）
-  const children = buildDiagram(pts, xf.w, xf.h, {
-    family: layoutFamily(layoutRoot),
-    vertical: isVertical(layoutRoot),
-    colors,
-    textOf: (id: string) => {
-      const t = parseTextBody(pointTxBody(dataRoot, id), textEnv);
-      // 数据模型里的文本没有 bodyPr，居中显示才像 SmartArt
-      return t ? { ...t, anchor: 'middle', paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
-    },
-  });
+  // 桌面 001：布局定义引擎优先；覆盖守恒等 reason 触发时回退启发式族布局
+  const engine = evaluateLayoutDef(layoutRoot, pts, xf.w, xf.h);
+  const children = engine.reason
+    ? buildDiagram(pts, xf.w, xf.h, {
+        family: layoutFamily(layoutRoot),
+        vertical: isVertical(layoutRoot),
+        colors,
+        textOf: (id: string) => {
+          const t = parseTextBody(pointTxBody(dataRoot, id), textEnv);
+          // 数据模型里的文本没有 bodyPr，居中显示才像 SmartArt
+          return t ? { ...t, anchor: 'middle', paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
+        },
+      })
+    : engineShapesToElements(engine, pts, {
+        colors,
+        textOf: (id: string) => {
+          const t = parseTextBody(pointTxBody(dataRoot, id), textEnv);
+          return t ? { ...t, anchor: 'middle', paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
+        },
+      });
   if (!children.length) return null;
   return wrapDiagram(children, { ...base(xf), name: 'SmartArt' });
 }
