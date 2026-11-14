@@ -10,7 +10,7 @@
 
 ### D1 引擎只服务完整 layoutDef，极简定义走启发式
 
-[diagram-engine.ts](../../packages/core/src/pptx/diagram-engine.ts) 解析 layoutNode 树（choose/if/else、forEach 轴选择、alg、shape、constrLst、ruleLst）并求值。入口节点没有任何子树的「极简定义」（python-pptx / LibreOffice 等第三方工具只写算法名，点展开无从表达）返回稳定 reason `minimal-layout-definition`，由调用方回退到 diagram.ts 的启发式族布局——那里的输出对这类文件已通过验收（test-core 固件与快照继续成立）。
+[diagram-engine.ts](../../packages/core/src/diagram-engine.ts) 解析 layoutNode 树（choose/if/else、forEach 轴选择、alg、shape、constrLst、ruleLst）并求值。入口节点没有任何子树的「极简定义」（python-pptx / LibreOffice 等第三方工具只写算法名，点展开无从表达）返回稳定 reason `minimal-layout-definition`，由调用方回退到 diagram.ts 的启发式族布局——那里的输出对这类文件已通过验收（test-core 固件与快照继续成立）。
 
 ### D2 求值语义（子集）
 
