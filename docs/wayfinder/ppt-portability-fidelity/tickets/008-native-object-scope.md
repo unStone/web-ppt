@@ -78,7 +78,7 @@ Windows 真机暂缓期间，样本先从已钉住来源的公开测试语料获
 
 矩阵结论：
 
-- **matrix（matrix1）与组织结构图（orgChart1 / hierarchy，带 constrLst 语义的布局族）两个缺口已补上**——桌面 [001](../ppt-desktop-parity/tickets/001-smartart-layout-engine.md) 的真实样本前置满足；radial 仍缺 PowerPoint 存出的真实样本，001 验收按已有矩阵族样本 + 确定性固件覆盖，radial 登记为该票的已知边界。
+- **matrix（matrix1）与组织结构图（orgChart1 / hierarchy，带 constrLst 语义的布局族）两个缺口已补上**——桌面 [001](../../ppt-desktop-parity/tickets/001-smartart-layout-engine.md) 的真实样本前置满足；radial 仍缺 PowerPoint 存出的真实样本，001 验收按已有矩阵族样本 + 确定性固件覆盖，radial 登记为该票的已知边界。
 - 仅改字场景下五个样本的 drawing 缓存字节全部保持不变、改动只落 `data1.xml`——「仅改文字可保留缓存」的口径在真实样本上成立。
 - DOCX（014）与 XLSX（015）的外部读取证据按原计划执行：014 用 POI 语料 `bug62513.pptx`（已在库），015 继续登记「PowerPoint 存出的嵌入 .xlsx 样本缺失」的边界，不用合成文件代替。
 - 本票关闭；`ole.pptx` 的 OLE 对象仍按框架级操作与原包保留，SmartArt 编辑的进一步扩展（结构变化重排）由桌面 001 承接。
