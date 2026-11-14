@@ -513,9 +513,7 @@ export function evaluateLayoutDef(
     const filter = (list: PointCtx[]): PointCtx[] =>
       list.filter(
         (p) =>
-          !fe.ptType ||
-          fe.ptType === 'all' ||
-          (fe.ptType === 'nonAsst' ? pointTypeOf(p.pt) !== 'asst' : pointTypeOf(p.pt) === fe.ptType),
+          !fe.ptType || fe.ptType === 'all' || (fe.ptType === 'nonAsst' ? pointTypeOf(p.pt) !== 'asst' : pointTypeOf(p.pt) === fe.ptType),
       );
     let pool: PointCtx[];
     switch (fe.axis) {

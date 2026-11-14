@@ -225,15 +225,15 @@ function layoutDiagram(relIds: Element | null, xf: XfrmInfo, env: Env): GroupEle
   const engine = evaluateLayoutDef(layoutRoot, pts, xf.w, xf.h);
   const children = engine.reason
     ? buildDiagram(pts, xf.w, xf.h, {
-    family: layoutFamily(layoutRoot),
-    vertical: isVertical(layoutRoot),
-    colors,
-    textOf: (id: string) => {
-      const t = parseTextBody(pointTxBody(dataRoot, id), textEnv);
-      // 数据模型里的文本没有 bodyPr，居中显示才像 SmartArt
-      return t ? { ...t, anchor: 'middle', paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
-    },
-  })
+        family: layoutFamily(layoutRoot),
+        vertical: isVertical(layoutRoot),
+        colors,
+        textOf: (id: string) => {
+          const t = parseTextBody(pointTxBody(dataRoot, id), textEnv);
+          // 数据模型里的文本没有 bodyPr，居中显示才像 SmartArt
+          return t ? { ...t, anchor: 'middle', paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
+        },
+      })
     : engineShapesToElements(engine, pts, {
         colors,
         textOf: (id: string) => {
