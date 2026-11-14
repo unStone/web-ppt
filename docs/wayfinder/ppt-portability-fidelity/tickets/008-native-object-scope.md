@@ -1,6 +1,6 @@
 ---
 title: 确定 SmartArt 与 OLE 的下一批原生编辑范围
-status: open
+status: closed
 priority: P3
 labels:
   - wayfinder:research
@@ -60,3 +60,25 @@ Windows 真机暂缓期间，样本先从已钉住来源的公开测试语料获
 | 3 | 用 `bug62513.pptx` 的 DOCX 验证 014：改 run 与表格单元格后由 LibreOffice 打开 | 014 的外部读取证据 |
 | 4 | 嵌入 `.xlsx` 仍无 PowerPoint 样本时，015 的外部读取证据登记为缺失，不用合成文件代替 | 015 的边界说明 |
 | 5 | 按矩阵把已有实现能覆盖的样本记为支持，其余登记为后续候选或排除原因 | 关闭本票 |
+
+## Answer（2026-11-14，真实样本登记完成，本票关闭）
+
+按「样本获取路径」取到 LibreOffice core `sd/qa/unit/data/pptx`（pin `53ccec4cc76b4c66a0a1f7a51427d548ff677146`）的六个样本，逐个核对 `docProps/app.xml` 的 Application 字段**全部为 Microsoft Office PowerPoint 生成**（v12 / v14 / v16），计为真实 Office 样本；已作为 `libreoffice-smartart` 语料集登记进 `fixtures/corpus.json`（来源、提交、git blob SHA1 齐全，`tooling/fetch-corpus.mjs` 可复现拉取）。
+
+逐样本矩阵（解析现状 + 仅改字验证，编辑链为已交付的 [013](013-smartart-matrix-radial.md)）：
+
+| 样本 | 生成版本 | 布局（loTypeId / loCatId） | 解析 | 仅改字后 | LibreOffice |
+|---|---|---|---|---|---|
+| `smartart-cycle-matrix.pptx` | 14 | cycle4 / cycle | 1 图组、11 文本、无 unsupported | 改字写入 `data1.xml`，drawing 缓存字节不变 | 无修复打开 |
+| `smartart-org-chart.pptx` | 14 | orgChart1 / hierarchy | 1 图组、5 文本 | 同上 | 无修复打开 |
+| `smartart-org-chart2.pptx` | 12 | orgChart1 / hierarchy | 1 图组、9 文本 | 同上（该样本 drawing 部件数 5，其余 6） | 无修复打开 |
+| `smartart-snake-rows.pptx` | 16 | bList2 / list | 1 图组、12 文本 | 同上 | 无修复打开 |
+| `tdf145528_SmartArt_Matrix.pptx` | 16 | matrix1 / matrix | 1 图组、5 文本 | 同上 | 无修复打开 |
+| `ole.pptx` | 16 | —（OLE 对象） | 1 unsupported 占位 | 不适用 | 无修复打开 |
+
+矩阵结论：
+
+- **matrix（matrix1）与组织结构图（orgChart1 / hierarchy，带 constrLst 语义的布局族）两个缺口已补上**——桌面 [001](../../ppt-desktop-parity/tickets/001-smartart-layout-engine.md) 的真实样本前置满足；radial 仍缺 PowerPoint 存出的真实样本，001 验收按已有矩阵族样本 + 确定性固件覆盖，radial 登记为该票的已知边界。
+- 仅改字场景下五个样本的 drawing 缓存字节全部保持不变、改动只落 `data1.xml`——「仅改文字可保留缓存」的口径在真实样本上成立。
+- DOCX（014）与 XLSX（015）的外部读取证据按原计划执行：014 用 POI 语料 `bug62513.pptx`（已在库），015 继续登记「PowerPoint 存出的嵌入 .xlsx 样本缺失」的边界，不用合成文件代替。
+- 本票关闭；`ole.pptx` 的 OLE 对象仍按框架级操作与原包保留，SmartArt 编辑的进一步扩展（结构变化重排）由桌面 001 承接。
