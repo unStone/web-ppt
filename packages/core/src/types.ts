@@ -905,6 +905,24 @@ export type TextUnderlineStyle = (typeof TEXT_UNDERLINE_STYLES)[number];
 export type TextStrikeStyle = (typeof TEXT_STRIKE_STYLES)[number];
 export type TextCapsStyle = (typeof TEXT_CAPS_STYLES)[number];
 
+/** 文字线性渐变（`a:gradFill/a:lin`）；angle 为 OOXML 角度（度，0 = 从左到右，顺时针）。 */
+export interface TextGradientFill {
+  angle: number;
+  stops: GradientStop[];
+  scaled: boolean;
+}
+
+export interface TextOutline {
+  color: string;
+  /** px */
+  width: number;
+  /**
+   * 渐变描边（`a:ln/a:gradFill`）。非空时 `color` 是首个色标，供无法绘制渐变描边的
+   * HTML 文本路径（`-webkit-text-stroke` 只接受颜色）使用。
+   */
+  gradientFill?: TextGradientFill | null;
+}
+
 export interface TextRun {
   text: string;
   /** 动态字段类型（如 slidenum）；显示文字只是跨应用缓存，字段身份不能被抹平。 */
@@ -927,11 +945,11 @@ export interface TextRun {
   /** 全大写 / 小型大写 */
   caps?: TextCapsStyle;
   /** 文字描边 */
-  outline?: { color: string; width: number } | null;
+  outline?: TextOutline | null;
   /** 渐变文字：CSS background-image 值 */
   gradient?: string | null;
   /** 生成保存使用结构值；CSS 渐变只是兼容已有渲染器的投影。 */
-  gradientFill?: { angle: number; stops: GradientStop[]; scaled: boolean } | null;
+  gradientFill?: TextGradientFill | null;
   /** 超链接 */
   link?: string;
   /** 文字高亮底色 */

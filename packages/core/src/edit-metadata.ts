@@ -64,7 +64,7 @@ export interface TextRunEditInfo {
     readonly baseline?: number;
     readonly spacing?: number;
     readonly caps?: TextCapsStyle;
-    readonly outline?: { color: string; width: number } | null;
+    readonly outline?: TextRun['outline'];
     readonly gradient?: string | null;
     readonly gradientFill?: TextRun['gradientFill'];
     readonly shadow?: string | null;

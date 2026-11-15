@@ -6,6 +6,8 @@ export interface PdfColor {
   alpha: number;
 }
 export function pdfColor(value: string): PdfColor {
+  // 无填充文字（a:noFill，常与描边搭配）渲染为 transparent：按 CSS 定义取 rgba(0,0,0,0)，字形仍可搜索
+  if (value === 'transparent') return { rgb: [0, 0, 0], alpha: 0 };
   const match = /^rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)(?:\s*,\s*(\d*\.?\d+))?\s*\)$/.exec(value);
   if (match && match.slice(1, 4).every((v) => Number(v) <= 255) && Number(match[4] ?? 1) <= 1) {
     return { rgb: match.slice(1, 4).map((v) => Number(v) / 255), alpha: Number(match[4] ?? 1) };

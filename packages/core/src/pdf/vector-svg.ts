@@ -218,7 +218,8 @@ export class VectorSvg {
     // 文字渐变：引用必须全元素一致且无装饰（下划线/删除线仍需纯色）、单行（tspan dy 的多行墨迹框语义待定）
     // 文字渐变按 span（引用元素）独立成框：多重渐变即同段多种引用；跨行 dy 的
     // 墨迹框按各行基线聚合，装饰线继承渐变（描边色彩空间复用同一 Pattern）
-    const gradientSpans = spans.filter((s) => s.style.fill.startsWith('url('));
+    // 渐变描边（stroke=url）与渐变填充共用同一 span 墨迹框：objectBoundingBox 对两者都取字形几何框
+    const gradientSpans = spans.filter((s) => s.style.fill.startsWith('url(') || s.style.stroke.startsWith('url('));
     if (gradientSpans.length && ctm === null) throw new Error('PDF 暂不支持图案单元内文字渐变');
     // 预推进每 span：多重渐变下每个引用框取该 span 的墨迹范围（advance 含轴承空隙，
     // 少字 run 下相位偏差可见；Chrome 对 tspan fill=url 按 tspan 墨迹分框，参考图已证）
@@ -226,11 +227,13 @@ export class VectorSvg {
     let inkTop = 0,
       inkHeight = 1;
     if (gradientSpans.length) {
-      const vertical = gradientSpans.some((span) => {
-        const gid = /^url\(#([^)]*)\)$/.exec(span.style.fill)?.[1],
-          def = gid && this.definitions.get(gid);
-        return def && Number(def.getAttribute('y1') ?? 0) !== Number(def.getAttribute('y2') ?? 0);
-      });
+      const vertical = gradientSpans.some((span) =>
+        [span.style.fill, span.style.stroke].some((paint) => {
+          const gid = /^url\(#([^)]*)\)$/.exec(paint)?.[1],
+            def = gid && this.definitions.get(gid);
+          return def && Number(def.getAttribute('y1') ?? 0) !== Number(def.getAttribute('y2') ?? 0);
+        }),
+      );
       let minY = Infinity,
         maxY = -Infinity,
         glyphs = 0;
@@ -361,10 +364,17 @@ export class VectorSvg {
       }
       if (hasStroke) {
         // stroke 轨：每个字形独立 BT 块内设 1 Tr（stroke-only），paint-order:stroke 的描边在填色下方
-        const strokeColor = this.paint.solid('none', span.style.stroke);
-        const rgMatch = /([\d.]+ [\d.]+ [\d.]+) RG/.exec(strokeColor);
-        const strokeRG = rgMatch?.[1] ?? '0 0 0';
-        commands.push(`q ${strokeRG} RG ${n(span.style.strokeWidth)} w`);
+        let strokePaint: string;
+        if (span.style.stroke.startsWith('url(')) {
+          // 渐变描边：与渐变填充同一墨迹框，Pattern 走描边色彩空间
+          const [start, end] = spanRange.get(spans.indexOf(span))!;
+          strokePaint = this.gradient.textPattern(span.style.stroke, this.definitions, start, end - start, inkTop, inkHeight, ctm!, true);
+        } else {
+          const strokeColor = this.paint.solid('none', span.style.stroke);
+          const rgMatch = /([\d.]+ [\d.]+ [\d.]+) RG/.exec(strokeColor);
+          strokePaint = `${rgMatch?.[1] ?? '0 0 0'} RG`;
+        }
+        commands.push(`q ${strokePaint} ${n(span.style.strokeWidth)} w`);
         for (const g of glyphPos) {
           commands.push(`BT /${g.font} ${n(g.size)} Tf 1 Tr 1 0 0 -1 ${n(g.x)} ${n(g.y)} Tm <${g.cid}> Tj ET`);
         }

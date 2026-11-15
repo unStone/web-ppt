@@ -2,6 +2,11 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。发布过程的验证证据（npm 发布、安装验收、体积口径、真机验收状态）记录在 [docs/releases/](docs/releases/)。
 
+## 未发布
+
+- 修复无填充 + 渐变描边（`a:noFill` + `a:ln/a:gradFill`）的文字被输出为完全透明（#58）：`TextRun.outline` 新增 `gradientFill` 结构值；原生 `<text>`（独立 SVG、打印）与矢量 PDF 绘制线性渐变描边，`foreignObject` HTML 路径（屏幕预览、PNG）以首个色标绘制实色描边。
+- 无原包生成保存可写回文字渐变描边（`a:ln/a:gradFill`）与文字无填充（`a:noFill`）；矢量 PDF 不再因无填充文字（`fill="transparent"`）整体失败。
+
 ## 0.9.0-beta.4 - 2026-11-14
 
 九包发布到 npm `next`。本版完成 SmartArt 布局引擎对组织结构图的接管并接线默认路径（桌面 001 第二批）：

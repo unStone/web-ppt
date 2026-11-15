@@ -87,6 +87,7 @@
 |---|---|---|
 | 装饰线线型（`e784a2c`） | `vector-decoration.ts` 按 CSS `text-decoration-style` 映射：dashed → dash `[2t 1t]`，dotted → `[0 t]` + 圆帽，double → 间距 1.5t 的平行双线，wavy → 半波长 3t、振幅 0.75t 的贝塞尔正弦近似；粗细与线位仍取 auto 度量 | 固件 `sample-vector-pdf-decoration-styles.pptx`；MuPDF 墨迹断言四种线型均可见、双线墨迹大于波浪（`tooling/lib/vector-pdf-decoration-styles-contract.mjs`） |
 | 文字描边（`2530e20`） | 字形位置收集一次，描边轨（`1 Tr` + `RG` + `w`）画在填色轨（`0 Tr`）之下，等效 SVG `paint-order:stroke`；覆盖检查只放行 `paint-order:stroke` | 固件 `sample-vector-pdf-text-stroke.pptx`（`a:rPr/a:ln` 轮廓）；MuPDF 像素断言描边与填色两轨均可见（`tooling/lib/vector-pdf-text-stroke-contract.mjs`） |
+| 渐变描边与无填充文字（issue #58） | 文字 `stroke=url(#线性渐变)` 与渐变填充共用 span 墨迹框，描边轨改设 `/Pattern CS … SCN`；图形描边渐变仍按 `svg-text-paint` 回退。`fill="transparent"`（`a:noFill`）按 CSS 定义取 `ca 0`，字形保持可搜索 | 同一固件第二段（无填充 + 水平渐变轮廓）；MuPDF 断言两段文字均可搜索、渐变左绿右蓝且无深色填色 |
 
 ## 字体失败定位
 
