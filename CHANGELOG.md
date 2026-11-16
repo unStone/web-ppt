@@ -2,7 +2,9 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。发布过程的验证证据（npm 发布、安装验收、体积口径、真机验收状态）记录在 [docs/releases/](docs/releases/)。
 
-## 未发布
+## 0.9.0-beta.6 - 2026-11-15
+
+九包发布到 npm `next`。本版修复 SmartArt 布局定义引擎的求值语义并交付 composite 约束代数（桌面 001 第三批）：
 
 - 修复 0.9.0-beta.4 起没有缓存 drawing 的 SmartArt 排布错误：snake 类（如 bList2）全部形状叠在同一位置。布局定义引擎改为两阶段求值（实例树构建 + 自顶向下约束布局）：choose 分支里的算法、形状与约束并入所在节点，`forName` 约束作用于目标子节点，`presOf` 按轴选择绑定数据点（一个形状可承载多个点），多段轴与 1 起计的 `st` 按规范求值。
 - SmartArt composite 约束代数：`l` / `t` / `r` / `b` / `ctrX` / `ctrY` 及偏移、兄弟引用与 `ar` 宽高比；cycle4（四象限 + 四角）由引擎排布。matrix1 与 PowerPoint 缓存逐形状一致，snake 与 cycle4 满足 LibreOffice 参照断言。
