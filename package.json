@@ -131,7 +131,7 @@
     "test:animation:dist": "node tooling/test-animation-acceptance.mjs --dist"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.6",
+    "@biomejs/biome": "2.6.7",
     "@microsoft/api-extractor": "7.60.1",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@npmcli/arborist": "9.9.1",
@@ -159,11 +159,11 @@
     "smol-toml": "1.9.1",
     "terser": "^5.51.2",
     "ts-json-schema-generator": "2.9.0",
-    "turbo": "2.11.10",
+    "turbo": "2.11.11",
     "typescript": "^7.0.2",
-    "vite": "^8.3.6",
+    "vite": "^8.3.8",
     "vue": "3.5.45",
-    "ws": "^8.22.1",
+    "ws": "^8.23.0",
     "yaml": "2.9.1"
   }
 }
