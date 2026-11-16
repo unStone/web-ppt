@@ -8,6 +8,8 @@ const e = (text) => `<m:e>${text}</m:e>`;
 const nested = `<m:f><m:num><m:rad><m:radPr><m:degHide m:val="1"/></m:radPr><m:deg/>${e(`<m:sSubSup>${e(r('x'))}<m:sub>${r('i')}</m:sub><m:sup>${r('2')}</m:sup></m:sSubSup>`)}</m:rad></m:num><m:den>${r('y')}</m:den></m:f>`;
 const formula = `<a14:m xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main"><m:oMath xmlns:m="${m}">${nested}</m:oMath></a14:m>`;
 const props = `<a:rPr sz="3200" u="dbl"><a:ln w="9525"><a:solidFill><a:srgbClr val="12539A"/></a:solidFill></a:ln><a:gradFill><a:gsLst><a:gs pos="0"><a:srgbClr val="CC3355"/></a:gs><a:gs pos="35789"><a:srgbClr val="8822CC"><a:alpha val="80000"/></a:srgbClr></a:gs><a:gs pos="100000"><a:srgbClr val="2266CC"/></a:gs></a:gsLst><a:lin ang="2345678" scaled="0"/></a:gradFill><a:effectLst><a:outerShdw blurRad="19050" dist="38100" dir="2700000"><a:srgbClr val="777777"><a:alpha val="50000"/></a:srgbClr></a:outerShdw></a:effectLst><a:uFill><a:solidFill><a:srgbClr val="228844"/></a:solidFill></a:uFill><a:latin typeface="Arial"/><a:ea typeface="Arial"/></a:rPr>`;
+// issue #58：无填充 + 渐变描边，文字只靠描边可见
+const gradientOutline = `<a:rPr sz="3200"><a:ln w="12700"><a:gradFill><a:gsLst><a:gs pos="31000"><a:srgbClr val="14B2FD"/></a:gs><a:gs pos="100000"><a:srgbClr val="10C182"/></a:gs></a:gsLst><a:lin ang="2700000" scaled="0"/></a:gradFill></a:ln><a:noFill/><a:latin typeface="Arial"/><a:ea typeface="Arial"/></a:rPr>`;
 const rich = sp({
   name: '渐变描边阴影与独立下划线',
   x: 70,
@@ -15,7 +17,7 @@ const rich = sp({
   w: 1100,
   h: 110,
   fill: solid('FFFFFF'),
-  text: `<a:p><a:pPr><a:buBlip><a:blip r:embed="rIdBullet"/></a:buBlip></a:pPr><a:r>${props}<a:t>Portable 高级文本</a:t></a:r></a:p>`,
+  text: `<a:p><a:pPr><a:buBlip><a:blip r:embed="rIdBullet"/></a:buBlip></a:pPr><a:r>${props}<a:t>Portable 高级文本</a:t></a:r><a:r>${gradientOutline}<a:t> 01</a:t></a:r></a:p>`,
 });
 const warp = sp({
   name: '艺术字调整值',

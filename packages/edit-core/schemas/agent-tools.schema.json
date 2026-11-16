@@ -2121,20 +2121,7 @@
         "outline": {
           "anyOf": [
             {
-              "type": "object",
-              "properties": {
-                "color": {
-                  "type": "string"
-                },
-                "width": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "color",
-                "width"
-              ],
-              "additionalProperties": false
+              "$ref": "#/definitions/TextOutline"
             },
             {
               "type": "null"
@@ -2152,27 +2139,7 @@
         "gradientFill": {
           "anyOf": [
             {
-              "type": "object",
-              "properties": {
-                "angle": {
-                  "type": "number"
-                },
-                "stops": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/GradientStop"
-                  }
-                },
-                "scaled": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "angle",
-                "stops",
-                "scaled"
-              ],
-              "additionalProperties": false
+              "$ref": "#/definitions/TextGradientFill"
             },
             {
               "type": "null"
@@ -2308,6 +2275,58 @@
         "all",
         "small"
       ]
+    },
+    "TextOutline": {
+      "type": "object",
+      "properties": {
+        "color": {
+          "type": "string"
+        },
+        "width": {
+          "type": "number",
+          "description": "px"
+        },
+        "gradientFill": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TextGradientFill"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "渐变描边（`a:ln/a:gradFill`）。非空时 `color` 是首个色标，供无法绘制渐变描边的 HTML 文本路径（`-webkit-text-stroke` 只接受颜色）使用。"
+        }
+      },
+      "required": [
+        "color",
+        "width"
+      ],
+      "additionalProperties": false
+    },
+    "TextGradientFill": {
+      "type": "object",
+      "properties": {
+        "angle": {
+          "type": "number"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GradientStop"
+          }
+        },
+        "scaled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "angle",
+        "stops",
+        "scaled"
+      ],
+      "additionalProperties": false,
+      "description": "文字线性渐变（`a:gradFill/a:lin`）；angle 为 OOXML 角度（度，0 = 从左到右，顺时针）。"
     },
     "GradientStop": {
       "type": "object",
@@ -2682,27 +2701,7 @@
               "$ref": "#/definitions/TextCapsStyle"
             },
             "outline": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "color": {
-                      "type": "string"
-                    },
-                    "width": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "color",
-                    "width"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "$ref": "#/definitions/TextRun"
             },
             "gradient": {
               "type": [

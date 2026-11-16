@@ -82,6 +82,8 @@ function runStyle(run: TextRun, scale: number): string {
   if (run.caps === 'all') css += 'text-transform:uppercase;';
   else if (run.caps === 'small') css += 'font-variant:small-caps;';
   if (run.highlight) css += `background-color:${run.highlight};`;
+  // -webkit-text-stroke 只接受颜色；background-clip:text 的渐变会连同字形内部一起显露，
+  // 无填充 + 渐变描边时无法只露出描边，所以渐变描边在 HTML 路径取首个色标（outline.color）。
   if (run.outline) css += `-webkit-text-stroke:${r(run.outline.width)}px ${run.outline.color};`;
   if (run.shadow) css += `text-shadow:${run.shadow};`;
   if (run.baseline) {

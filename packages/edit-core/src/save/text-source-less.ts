@@ -55,8 +55,10 @@ export function materializeRunProperties(properties: XmlElement, mark: TextMark)
     insertXmlInOrder(properties, highlight);
   }
   if (mark.props.color) {
-    const fill = namespacedElement(properties, DRAWINGML_NS, 'solidFill');
-    appendDrawingColor(fill, mark.props.color);
+    // 解析层把 a:noFill 读成 transparent（只靠描边显示的文字），写回同一语义
+    const noFill = mark.props.color === 'transparent';
+    const fill = namespacedElement(properties, DRAWINGML_NS, noFill ? 'noFill' : 'solidFill');
+    if (!noFill) appendDrawingColor(fill, mark.props.color);
     insertXmlInOrder(properties, fill);
   }
   if (!mark.props.fonts[0]) return;

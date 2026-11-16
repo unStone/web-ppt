@@ -1967,17 +1967,7 @@ export const agentToolSchema: {
                 };
                 readonly outline: {
                     readonly anyOf: readonly [{
-                        readonly type: "object";
-                        readonly properties: {
-                            readonly color: {
-                                readonly type: "string";
-                            };
-                            readonly width: {
-                                readonly type: "number";
-                            };
-                        };
-                        readonly required: readonly ["color", "width"];
-                        readonly additionalProperties: false;
+                        readonly $ref: "#/definitions/TextOutline";
                     }, {
                         readonly type: "null";
                     }];
@@ -1989,23 +1979,7 @@ export const agentToolSchema: {
                 };
                 readonly gradientFill: {
                     readonly anyOf: readonly [{
-                        readonly type: "object";
-                        readonly properties: {
-                            readonly angle: {
-                                readonly type: "number";
-                            };
-                            readonly stops: {
-                                readonly type: "array";
-                                readonly items: {
-                                    readonly $ref: "#/definitions/GradientStop";
-                                };
-                            };
-                            readonly scaled: {
-                                readonly type: "boolean";
-                            };
-                        };
-                        readonly required: readonly ["angle", "stops", "scaled"];
-                        readonly additionalProperties: false;
+                        readonly $ref: "#/definitions/TextGradientFill";
                     }, {
                         readonly type: "null";
                     }];
@@ -2086,6 +2060,48 @@ export const agentToolSchema: {
         readonly TextCapsStyle: {
             readonly type: "string";
             readonly enum: readonly ["none", "all", "small"];
+        };
+        readonly TextOutline: {
+            readonly type: "object";
+            readonly properties: {
+                readonly color: {
+                    readonly type: "string";
+                };
+                readonly width: {
+                    readonly type: "number";
+                    readonly description: "px";
+                };
+                readonly gradientFill: {
+                    readonly anyOf: readonly [{
+                        readonly $ref: "#/definitions/TextGradientFill";
+                    }, {
+                        readonly type: "null";
+                    }];
+                    readonly description: "渐变描边（`a:ln/a:gradFill`）。非空时 `color` 是首个色标，供无法绘制渐变描边的 HTML 文本路径（`-webkit-text-stroke` 只接受颜色）使用。";
+                };
+            };
+            readonly required: readonly ["color", "width"];
+            readonly additionalProperties: false;
+        };
+        readonly TextGradientFill: {
+            readonly type: "object";
+            readonly properties: {
+                readonly angle: {
+                    readonly type: "number";
+                };
+                readonly stops: {
+                    readonly type: "array";
+                    readonly items: {
+                        readonly $ref: "#/definitions/GradientStop";
+                    };
+                };
+                readonly scaled: {
+                    readonly type: "boolean";
+                };
+            };
+            readonly required: readonly ["angle", "stops", "scaled"];
+            readonly additionalProperties: false;
+            readonly description: "文字线性渐变（`a:gradFill/a:lin`）；angle 为 OOXML 角度（度，0 = 从左到右，顺时针）。";
         };
         readonly GradientStop: {
             readonly type: "object";
@@ -2394,21 +2410,7 @@ export const agentToolSchema: {
                             readonly $ref: "#/definitions/TextCapsStyle";
                         };
                         readonly outline: {
-                            readonly anyOf: readonly [{
-                                readonly type: "object";
-                                readonly properties: {
-                                    readonly color: {
-                                        readonly type: "string";
-                                    };
-                                    readonly width: {
-                                        readonly type: "number";
-                                    };
-                                };
-                                readonly required: readonly ["color", "width"];
-                                readonly additionalProperties: false;
-                            }, {
-                                readonly type: "null";
-                            }];
+                            readonly $ref: "#/definitions/TextRun";
                         };
                         readonly gradient: {
                             readonly type: readonly ["string", "null"];

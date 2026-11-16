@@ -67,6 +67,35 @@ const source = await parse(input),
   expected = texts(source).map(semantic);
 assert.equal(expected[2].paragraphs[0][1].math[0].kind, 'frac', '原生 a14:m 读取');
 assert.equal(expected[0].paragraphs[0][0].gradient.stops[1].pos, 0.35789, '色标不因 CSS 取整丢失精度');
+{
+  // issue #58：a:noFill + a:ln/a:gradFill 读成透明填充 + 渐变描边，不再记为不可重建
+  const run = texts(source)[0].paragraphs[0].runs[1];
+  assert.equal(run.color, 'transparent', '无填充保持透明');
+  near(run.outline, {
+    color: 'rgb(20,178,253)',
+    width: 12700 / 9525,
+    gradientFill: {
+      angle: 45,
+      scaled: false,
+      stops: [
+        { pos: 0.31, color: 'rgb(20,178,253)' },
+        { pos: 1, color: 'rgb(16,193,130)' },
+      ],
+    },
+  });
+  assert.equal(run.generationIssues, undefined, `渐变描边可原生重建：${run.generationIssues}`);
+  const svg = core.renderSlideToSvg(source, source.slides[0], { textMode: 'svg' });
+  const span = svg.match(/<tspan\b[^>]*>(?:\s|&#160;)?01<\/tspan>/)?.[0] ?? '';
+  const gradientId = span.match(/stroke="url\(#([^)]+)\)"/)?.[1];
+  assert(span.includes('fill="transparent"') && gradientId, `原生文本：透明填充 + 渐变描边引用 ${span}`);
+  assert(/stroke-width="1\.33"/.test(span) && span.includes('paint-order="stroke"'), `描边宽 1pt：${span}`);
+  const gradient = svg.match(new RegExp(`<linearGradient id="${gradientId}"[^>]*>(.*?)</linearGradient>`))?.[0] ?? '';
+  // OOXML 45° = 左上 → 右下
+  assert(/x1="0\.15" y1="0\.15" x2="0\.85" y2="0\.85"/.test(gradient), `渐变方向 45°：${gradient}`);
+  assert(/offset="31%" stop-color="rgb\(20,178,253\)".*offset="100%" stop-color="rgb\(16,193,130\)"/.test(gradient), `色标：${gradient}`);
+  const html = core.renderSlideToSvg(source, source.slides[0], { textMode: 'html' });
+  assert(/-webkit-text-stroke:1\.33px rgb\(20,178,253\);[^"]*">(?:\s|&#160;)?01</.test(html), 'HTML 路径以首个色标画出可见描边');
+}
 const bySlide = source.slides.map((slide) => slide.elements.flatMap((element) => bodies(element).filter(Boolean)).map(semantic));
 const sourceDoc = edit.createDoc(source);
 source.dispose();
@@ -83,11 +112,13 @@ const checkBullet = (bytes) =>
 checkBullet(generated.bytes);
 const reopened = await parse(generated.bytes);
 near(texts(reopened).map(semantic), expected);
+assert.equal(texts(reopened)[0].paragraphs[0].runs[1].color, 'transparent', '无来源生成保持 a:noFill');
 const xml = strFromU8(unzipSync(generated.bytes)['ppt/slides/slide1.xml']);
 for (const name of ['a14:m', 'm:f', 'm:rad', 'm:sSubSup', 'a:prstTxWarp', 'a:gradFill', 'a:outerShdw', 'a:uFill'])
   assert(xml.includes(`<${name}`), `${name} 原生结构`);
 assert(xml.includes('pos="35789"'), '写回精确色标');
 assert(xml.includes('ang="2345678"'), '写回精确角度');
+assert(/<a:ln w="12700"><a:gradFill[^>]*><a:gsLst><a:gs pos="31000">/.test(xml), '渐变描边写回 a:ln/a:gradFill');
 
 for (const slideId of sourceDoc.slideOrder) {
   const ids = sourceDoc.slides[slideId].children;

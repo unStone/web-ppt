@@ -1,4 +1,4 @@
-import type { Paragraph, TextBody, TextRun } from '../types';
+import type { Paragraph, TextBody, TextGradientFill, TextRun } from '../types';
 import { squeezePlan, type SqueezePlan } from './cjk-punct';
 import { layoutText } from './text-layout';
 import { fontFamily, fontSize, mathOf, measureTextWidth } from './text-measure';
@@ -174,6 +174,21 @@ function gradientFill(css: string, addDef: (m: string) => string): string | null
     })
     .map((sp, i, arr) => ({ color: sp.color, pos: sp.pos ?? (arr.length > 1 ? (i / (arr.length - 1)) * 100 : 0) }));
   if (!stops.length) return null;
+  return linearGradientPaint(deg, stops, addDef);
+}
+
+/** 渐变描边：结构值直接成 linearGradient；OOXML 角度 0 = 从左到右，等于 CSS 的 90deg。 */
+function outlineGradientPaint(gradient: TextGradientFill, addDef: (m: string) => string): string | null {
+  if (!gradient.stops.length) return null;
+  return linearGradientPaint(
+    gradient.angle + 90,
+    gradient.stops.map((stop) => ({ color: stop.color, pos: stop.pos * 100 })),
+    addDef,
+  );
+}
+
+/** 按 CSS 角度生成 objectBoundingBox 线性渐变，stop 位置是百分比。 */
+function linearGradientPaint(deg: number, stops: Array<{ color: string; pos: number }>, addDef: (m: string) => string): string {
   // CSS 角度 0deg 向上、顺时针；换算成单位向量
   const rad = ((deg - 90) * Math.PI) / 180;
   const dx = Math.cos(rad) / 2;
@@ -227,7 +242,10 @@ function spanSvg(seg: Seg, scale: number, addDef: (m: string) => string, dx?: nu
   if (run.spacing) attrs.push(`letter-spacing="${r(run.spacing)}"`);
   if (run.caps === 'small') attrs.push('font-variant="small-caps"');
   if (run.baseline) attrs.push(`dy="${r(run.baseline > 0 ? -size * 0.45 : size * 0.25)}"`);
-  if (run.outline) attrs.push(`stroke="${esc(run.outline.color)}" stroke-width="${r(run.outline.width)}" paint-order="stroke"`);
+  if (run.outline) {
+    const stroke = (run.outline.gradientFill && outlineGradientPaint(run.outline.gradientFill, addDef)) ?? run.outline.color;
+    attrs.push(`stroke="${esc(stroke)}" stroke-width="${r(run.outline.width)}" paint-order="stroke"`);
+  }
   if (dx?.some((v) => v !== 0)) attrs.push(`dx="${dx.map((v) => r(v)).join(' ')}"`);
   const marker =
     includeEditMarkers && seg.runIndex !== undefined && seg.runIndex >= 0

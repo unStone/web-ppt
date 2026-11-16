@@ -1,8 +1,50 @@
-import type { TextRun } from '../types';
+import type { GradientStop, TextGradientFill, TextRun } from '../types';
 import { attr, boolAttr, kid, kids, numAttr } from '../xml';
 import { childColor } from './color';
 import type { ColorCtx } from './color';
 import { parseEffects } from './effects';
+
+const isLinearGradient = (grad: Element): boolean => !!kid(grad, 'lin') && !kid(grad, 'path') && !kid(grad, 'tileRect');
+
+function gradientIssues(grad: Element, label: string): string[] {
+  const issues: string[] = [];
+  if (attr(grad, 'rotWithShape') === '0' || attr(grad, 'rotWithShape') === 'false' || attr(grad, 'flip') !== null)
+    issues.push(`${label}旋转/翻转`);
+  if (!isLinearGradient(grad)) issues.push(`${label}路径/平铺范围`);
+  return issues;
+}
+
+const gradientStops = (grad: Element, ctx: ColorCtx): GradientStop[] =>
+  kids(kid(grad, 'gsLst'), 'gs')
+    .map((gs) => ({
+      pos: (numAttr(gs, 'pos') ?? 0) / 100000,
+      color: childColor(gs, ctx) ?? '#000000',
+    }))
+    .sort((a, b) => a.pos - b.pos);
+
+/**
+ * `a:gradFill` 的线性结构值。路径 / 平铺渐变没有可重建的线性等价物，返回 null，
+ * 由调用方决定预览近似（见 textOutlineGradient）。
+ */
+function linearTextGradient(grad: Element, ctx: ColorCtx): TextGradientFill | null {
+  if (!isLinearGradient(grad)) return null;
+  const lin = kid(grad, 'lin');
+  return {
+    angle: (numAttr(lin, 'ang') ?? 0) / 60000,
+    scaled: boolAttr(lin, 'scaled') ?? false,
+    stops: gradientStops(grad, ctx),
+  };
+}
+
+/**
+ * 文字描边渐变。描边没有 CSS 投影可退，渲染只能读这份结构值，所以路径 / 平铺渐变
+ * 也给出与文字填充预览一致的近似（自上而下线性），其不可重建性由 generationIssues 记录。
+ * 没有色标时返回 null：没有可画的颜色。
+ */
+export function textOutlineGradient(grad: Element, ctx: ColorCtx): TextGradientFill | null {
+  const gradient = linearTextGradient(grad, ctx) ?? { angle: 90, scaled: false, stops: gradientStops(grad, ctx) };
+  return gradient.stops.length ? gradient : null;
+}
 
 /** 只保留能原生重建的范围；预览近似不能成为无来源保存时的数据真值。 */
 export function textGenerationProperties(rPr: Element | null, ctx: ColorCtx): Partial<TextRun> {
@@ -11,21 +53,9 @@ export function textGenerationProperties(rPr: Element | null, ctx: ColorCtx): Pa
     issues: string[] = [];
   const grad = kid(rPr, 'gradFill');
   if (grad) {
-    if (attr(grad, 'rotWithShape') === '0' || attr(grad, 'rotWithShape') === 'false' || attr(grad, 'flip') !== null)
-      issues.push('文字渐变旋转/翻转');
-    const lin = kid(grad, 'lin');
-    if (!lin || kid(grad, 'path') || kid(grad, 'tileRect')) issues.push('文字渐变路径/平铺范围');
-    else
-      result.gradientFill = {
-        angle: (numAttr(lin, 'ang') ?? 0) / 60000,
-        scaled: boolAttr(lin, 'scaled') ?? false,
-        stops: kids(kid(grad, 'gsLst'), 'gs')
-          .map((gs) => ({
-            pos: (numAttr(gs, 'pos') ?? 0) / 100000,
-            color: childColor(gs, ctx) ?? '#000000',
-          }))
-          .sort((a, b) => a.pos - b.pos),
-      };
+    issues.push(...gradientIssues(grad, '文字渐变'));
+    const linear = linearTextGradient(grad, ctx);
+    if (linear) result.gradientFill = linear;
   } else if (['solidFill', 'noFill', 'blipFill', 'pattFill', 'grpFill'].some((name) => kid(rPr, name))) {
     result.gradientFill = null;
   }
@@ -35,7 +65,8 @@ export function textGenerationProperties(rPr: Element | null, ctx: ColorCtx): Pa
   const line = kid(rPr, 'ln');
   if (line) {
     for (const child of Array.from(line.children)) {
-      if (!['solidFill', 'noFill'].includes(child.localName)) issues.push(`文字描边 ${child.localName}`);
+      if (child.localName === 'gradFill') issues.push(...gradientIssues(child, '文字描边渐变'));
+      else if (!['solidFill', 'noFill'].includes(child.localName)) issues.push(`文字描边 ${child.localName}`);
     }
     for (const name of ['cap', 'cmpd', 'algn']) {
       if (attr(line, name) !== null) issues.push(`文字描边 ${name}`);

@@ -1393,6 +1393,16 @@ export interface TextFontSlots {
     readonly latin: string | null;
 }
 
+// @public
+export interface TextGradientFill {
+    // (undocumented)
+    angle: number;
+    // (undocumented)
+    scaled: boolean;
+    // (undocumented)
+    stops: GradientStop[];
+}
+
 // @public (undocumented)
 export interface TextLayout {
     // (undocumented)
@@ -1486,6 +1496,14 @@ export interface TextLayoutSegment {
 export type TextMeasure = (text: string, run: Readonly<TextRun>, scale: number) => number;
 
 // @public (undocumented)
+export interface TextOutline {
+    // (undocumented)
+    color: string;
+    gradientFill?: TextGradientFill | null;
+    width: number;
+}
+
+// @public (undocumented)
 export interface TextRun {
     // (undocumented)
     b: boolean;
@@ -1499,20 +1517,13 @@ export interface TextRun {
     fonts: string[];
     generationIssues?: readonly string[];
     gradient?: string | null;
-    gradientFill?: {
-        angle: number;
-        stops: GradientStop[];
-        scaled: boolean;
-    } | null;
+    gradientFill?: TextGradientFill | null;
     highlight?: string | null;
     // (undocumented)
     i: boolean;
     link?: string;
     math?: MathNode[];
-    outline?: {
-        color: string;
-        width: number;
-    } | null;
+    outline?: TextOutline | null;
     shadow?: string | null;
     // (undocumented)
     shadowEffect?: Effects['shadow'] | null;
@@ -1558,10 +1569,7 @@ export interface TextRunEditInfo {
         readonly baseline?: number;
         readonly spacing?: number;
         readonly caps?: TextCapsStyle;
-        readonly outline?: {
-            color: string;
-            width: number;
-        } | null;
+        readonly outline?: TextRun['outline'];
         readonly gradient?: string | null;
         readonly gradientFill?: TextRun['gradientFill'];
         readonly shadow?: string | null;

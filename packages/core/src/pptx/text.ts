@@ -9,7 +9,7 @@ import { mergeParagraphProps, resolveParagraphLevel } from './paragraph-props';
 import { materializeParagraph } from './text-materialization';
 import { directTextBodyProperties, parseTextBodyLayout } from './text-body';
 import { finalizeRun } from './text-run';
-import { textGenerationProperties, mathGenerationIssues } from './text-generation';
+import { textGenerationProperties, textOutlineGradient, mathGenerationIssues } from './text-generation';
 
 export { finalizeRun } from './text-run';
 
@@ -44,7 +44,7 @@ export interface RunProps {
   baseline?: number;
   spc?: number;
   caps?: TextCapsStyle;
-  outline?: { color: string; width: number } | null;
+  outline?: TextRun['outline'];
   highlight?: string | null;
   link?: string;
 }
@@ -264,8 +264,12 @@ export function parseRunPropsDetailed(
   const ln = kid(rPr, 'ln');
   if (kid(ln, 'noFill')) out.outline = null;
   else if (ln) {
+    const width = emu(numAttr(ln, 'w') ?? 9525);
     const lc = childColor(kid(ln, 'solidFill'), ctx);
-    if (lc) out.outline = { color: lc, width: emu(numAttr(ln, 'w') ?? 9525) };
+    const lineGradient = kid(ln, 'gradFill');
+    const gradientFill = !lc && lineGradient ? textOutlineGradient(lineGradient, ctx) : null;
+    if (lc) out.outline = { color: lc, width };
+    else if (gradientFill) out.outline = { color: gradientFill.stops[0].color, width, gradientFill };
     else out.outline = null;
   }
   if (ln) bits |= TEXT_RUN_DIRECT_BITS.outline;

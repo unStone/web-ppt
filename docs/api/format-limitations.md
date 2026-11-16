@@ -11,6 +11,7 @@
 | 艺术字包络型预设 | `textPath` 只能弯曲基线，`textInflate` 等不会按位置缩放字形 |
 | 3D | 真实相机投影（XYZ 矩阵、正交 / 透视、挤出、曲线斜角）；材质、光照与纹理网格为近似 |
 | EMF+ | 按需入口 `@web-ppt/core/emf-plus` 支持常见绘图（路径、渐变、图片、文字、裁剪等）；未知记录按格式回退，纯 EMF+ 文件仍无样本 |
+| 文字渐变描边 | 原生 `<text>`（独立 SVG、打印 HTML）与矢量 PDF 画真实线性渐变；`foreignObject` HTML 路径（屏幕预览、PNG）的 `-webkit-text-stroke` 只接受颜色，改用首个色标画实色描边。路径 / 平铺渐变描边按自上而下线性近似显示，无原包生成保存时明确拒绝 |
 | 光栅操作码 | SVG/CSS 没有 XOR/AND 位运算混合，`mix-blend-mode` 不等价 |
 | chartex 新图表 | 独立 `@web-ppt/core/chart-ex` 已实现除地图外的原生布局，宿主显式启用；默认使用 Office 回退。真实漏斗、两条保存和浏览器已验证，其他类型真实 PPTX 与 Office 原生布局验收待补。见[能力与边界](chartex-native.md) |
 | Region 的 OR / XOR / DIFF 组合 | 需要区域布尔运算，SVG 裁剪表达不了；COPY 与 AND 已支持 |

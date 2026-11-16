@@ -168,12 +168,14 @@ export class VectorCoverage {
         }
         continue;
       }
-      if (key === 'stroke' || ((inText || tag === 'text' || tag === 'tspan') && key === 'fill')) {
-        // 文字渐变放行线性渐变（任意轴，垂直/斜向由字形墨迹框支撑）；径向与零长度轴仍回退
+      const textPaint = inText || tag === 'text' || tag === 'tspan';
+      if (key === 'stroke' || (textPaint && key === 'fill')) {
+        // 文字渐变（填充与描边）放行线性渐变（任意轴，垂直/斜向由字形墨迹框支撑）；
+        // 径向、零长度轴与图形描边渐变仍回退
         const gid = /^url\(#([^)]*)\)$/.exec(value)?.[1],
           target2 = gid && this.definitions.get(gid);
         if (
-          key === 'stroke'
+          !textPaint
           || !target2
           || target2.localName !== 'linearGradient'
           || (Number(target2.getAttribute('x2') ?? 1) === Number(target2.getAttribute('x1') ?? 0)
