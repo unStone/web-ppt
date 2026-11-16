@@ -10,14 +10,18 @@ import {
   setXmlAttribute,
   xmlElementChildren,
 } from '@web-ppt/edit-core/xml';
+import type { XmlElement } from '@web-ppt/edit-core/xml';
 import { objectSource } from '../object-source';
 import { relativeTarget, relationshipPartFor, resolveRelationshipTarget } from '../clipboard-source';
 import { chartRelationships } from '../chart/context';
-import { DGM, DSP, attr, child, children, readSmartArtNodes, writeSmartArtNodes, smartArtIdentity } from './model';
+import { A, DGM, DSP, attr, child, children, readSmartArtNodes, writeSmartArtNodes, smartArtIdentity } from './model';
 import { smartArtDrawing } from './drawing';
 
 const REL = 'http://schemas.openxmlformats.org/package/2006/relationships';
 const TYPE = 'http://schemas.microsoft.com/office/2007/relationships/diagramDrawing';
+/** CT_OfficeArtExtensionList 的扩展是 DrawingML 命名空间的 a:ext（dgm:extLst 里也一样，不随父元素命名空间） */
+const officeArtExtensions = (list: XmlElement | null): XmlElement[] =>
+  list ? xmlElementChildren(list).filter((node) => node.namespaceUri === A && node.localName === 'ext') : [];
 export const storedSmartArt = (doc: EditDoc, id: string) =>
   (doc.elements[id]?.ovr.extensions?.smartart as { value?: string } | undefined)?.value;
 
@@ -94,7 +98,7 @@ export function saveSmartArt(
     const text = (part: string | undefined) => (part ? new TextDecoder().decode(sourcePartBytes(doc, part)) : undefined);
     const relationships = chartRelationships(doc, source.hostPart);
     const sourceModel = parseXmlTree(source.xml).root;
-    const extensions = children(child(sourceModel, 'extLst'), 'ext').flatMap((node) => xmlElementChildren(node));
+    const extensions = officeArtExtensions(child(sourceModel, 'extLst')).flatMap((node) => xmlElementChildren(node));
     const pointer = extensions.find((node) => node.namespaceUri === DSP && node.localName === 'dataModelExt');
     const cached =
       relationships[attr(pointer ?? null, 'relId') ?? '']?.target ?? Object.values(relationships).find((r) => r.type === TYPE)?.target;
@@ -128,11 +132,11 @@ export function saveSmartArt(
       extList = createXmlElement('dgm:extLst', { attributes: [['xmlns:dgm', DGM]] });
       append(model.root, extList);
     }
-    let ext = children(extList, 'ext').find((node) => attr(node, 'uri') === DSP);
+    let ext = officeArtExtensions(extList).find((node) => attr(node, 'uri') === DSP);
     if (!ext) {
-      ext = createXmlElement('dgm:ext', {
+      ext = createXmlElement('a:ext', {
         attributes: [
-          ['xmlns:dgm', DGM],
+          ['xmlns:a', A],
           ['uri', DSP],
         ],
       });

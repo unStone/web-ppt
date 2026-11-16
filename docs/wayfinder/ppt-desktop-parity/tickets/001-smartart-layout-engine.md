@@ -34,32 +34,45 @@ blocked_by: []
 - 未实现的算法或约束类型返回稳定 reason 并回退到缓存或占位框，不输出错误排布。
 - 编辑节点后保存重开，LibreOffice 与独立读取器显示一致。
 
-## Answer（2026-11-14，引擎骨架已交付；2026-11-14 第二批 orgChart 接线完成，cycle4 平铺与 radial 样本待后续）
+## Answer（2026-11-15，两阶段求值与 composite 约束代数已交付；层级算法待后续）
 
-设计与实施见[设计文档](../../../design/smartart-layout-engine.md)。已交付：
+设计、求值语义与真值对照见[设计文档](../../../design/smartart-layout-engine.md)。
+
+### 根因（2026-11-15）
+
+0.9.0-beta.3 / beta.4 的引擎与规范语义不一致，默认渲染路径（beta.4 接线）上没有缓存的 snake 类 SmartArt 全部形状叠在同一位置：
+
+| 问题 | 规范语义 | 修正前 |
+|---|---|---|
+| choose 分支内容 | 分支里的 `alg` / `shape` / `presOf` / `constrLst` 属于所在 layoutNode | 只收集子 layoutNode，根节点按 dir 选的算法与象限形状全部丢失 |
+| 约束目标 | `forName` 指目标子节点 | 与声明节点名比较，`for="ch" forName` 约束从不生效 |
+| 求值顺序 | 父矩形先定，再推子约束 | 子节点先按传入 box 求值 |
+| 数据点绑定 | `presOf` 轴选择，一形状可承载多点 | 按布局序逐个绑定 |
+| `st` / `cnt` | `st` 从 1 计，`cnt=0` 为全部，多段轴逐段求值 | `st` 从 0 计，`cnt=0` 为空，无多段轴 |
+| 字号 | 数据模型 run 直设 `sz` 优先；rule `val` 是收缩下限 | 引擎字号覆盖直设值；rule `val` 被当作起始值 |
+
+此前对照用的「缓存形状数」来自本仓库自己的启发式或引擎输出：LibreOffice 语料里除 matrix1 外缓存 drawing 都为空，那些「与缓存逐形状一致」的结论不成立。
+
+### 交付
 
 | 层 | 交付 |
 |---|---|
-| 引擎 | `core/pptx/diagram-engine.ts`：layoutDef 树求值（choose/if/else、forEach 十类轴、ref 引用）、十种算法（lin/snake/cycle/pyra/hierRoot/hierChild/conn/tx/sp/composite）、约束子集（w/h/primFontSz/间距/居中/定位，refType + 作用域引用）、ruleLst 字号收缩、覆盖守恒（绑定数据点不足 → `incomplete-coverage` 稳定 reason） |
-| 接入 | graphic-frame 与 diagram-edit 引擎优先、reason 回退启发式；极简 layoutDef（第三方工具无子树）返回 `minimal-layout-definition` 走启发式——既有固件与 212+ 快照逐字节不变 |
-| 验收 | test-smartart-engine（源码 + dist）：五个真实样本剥离缓存对照——snake 与缓存逐形状一致、matrix1 文本集合一致、orgChart1/cycle4 守恒回退不劣化；reason 与确定性断言；语料缺失时空跑提示 |
+| 引擎 | `core/src/diagram-engine.ts`：实例树构建（多段轴、choose 分支并入、presOf 多点绑定）+ 自顶向下布局；composite 约束代数（w/h/l/t/r/b/ctrX/ctrY 与偏移、refForName 兄弟引用、`ar`）；snake 网格；溢出收缩与同名统一字号；90°/270° 旋转与缓存同构。只保留经真值验证的 composite / snake / tx / sp，其余算法返回 `unsupported-algorithm` |
+| 接入 | graphic-frame 与 diagram-edit：约束字号作为文本继承链缺省，直设 `sz` 优先；`layoutDiagramXml` 显式返回每个元素承载的点（不再依赖取文本顺序），保存的 drawing 写出旋转与多点合并文本 |
+| 验收 | `test-smartart-engine`：matrix1 与 PowerPoint 缓存逐形状一致；snake / cycle4 满足 LibreOffice 固定提交的 `testSnakeRows` / `testCycleMatrix` 断言；orgChart1 返回稳定 reason；composite 约束样例与 reason 回退不依赖语料 |
 
-完成条件核对（对照票据原文）：
+完成条件核对：
 
-- ⚠️ **逐形状对照部分达成**：snake 类（forEach 驱动）引擎接管且与缓存逐形状一致；matrix 类文本集合一致（装饰形状不绑文本）。orgChart1 的 hierBranch 分支方向与 composite 的完整 l/t/w/h 约束代数未实现——这些变体按覆盖守恒回退启发式（形状/文本数与缓存一致，不劣化），逐条归因见设计文档对照矩阵。
-- ⚠️ **确定性固件以真实样本替代**：引擎验收直接用 portability 008 登记的真实样本（pin + SHA1 校验、`fetch-corpus` 可复现），语料缺失时空跑；独立算法固件未单独生成（记录为与票据原文的偏离）。
-- ✅ 未实现的构造返回稳定 reason 并回退启发式/缓存，不输出错误排布。
-- ✅ 编辑节点后保存重开：edit-core/smartart 经 diagram-edit 走同一引擎，LibreOffice 与独立读取器显示一致（test-smartart-edit 既有断言继续通过）。
+- ⚠️ **逐形状对照部分达成**：唯一带 PowerPoint 缓存的 matrix1 逐形状一致；snake、cycle4 缓存为空，按 LibreOffice 断言验收；orgChart1 的层级算法未实现。
+- ⚠️ **确定性固件以真实样本替代**：引擎验收用 portability 008 登记的真实样本（pin + SHA1，`fetch-corpus` 可复现）；composite 约束有内联确定性样例。
+- ✅ 未实现的算法、轴、约束返回稳定 reason 并回退启发式，不输出未经验证的排布。
+- ✅ 编辑节点后保存重开：edit-core/smartart 经 diagram-edit 走同一引擎（`test-smartart-edit`）。
 
-后续工作（保持本票 open，缩减范围）：
+后续工作（保持本票 open）：
 
-1. composite 的完整 l/t/w/h 约束代数与 `gdLst` 公式（cycle4 变体，当前守恒回退启发式）。
-2. radial 类真实样本（portability 008 登记）驱动 radial1 引擎化。
-3. 全覆盖后删除 diagram.ts 的启发式族布局（当前保留服务极简定义与守恒回退）。
-
-### 第二批（2026-11-14，orgChart 接线，PR #68）
-
-覆盖守恒未触发的根因：`pointTypeOf` 恒返回 node，`ptType=nonAsst` 的 forEach 把数据点全部过滤——orgChart 的子层（含助理点）从未展开。`parseDataModel` 现携带点真实类型（`DiagramPoint.ptType`），引擎按语义实现 nonAsst = 非 asst 点。引擎已接线默认路径（graphic-frame 与 diagram-edit 引擎优先、reason 回退启发式）；颜色循环按形状序号（修复全局计数器导致的颜色漂移）。对照矩阵更新：orgChart1 v14 引擎 18 形状 / 数据点全覆盖（缓存 8 形状 / 5 文本——引擎含容器与连线形状）；v12 变体与 cycle4 仍守恒回退启发式不劣化；snake 与缓存逐形状一致。lint-browser Node/Canvas 一致性恢复绿。
+1. hierRoot / hierChild / conn（orgChart1，含 `hierBranch` 与助理点），以 LibreOffice `testOrgChart` 系列断言验收。
+2. lin / cycle / pyra / radial 先取得带真值的样本（portability 008）。
+3. 全部算法覆盖后删除 diagram.ts 的启发式族布局。
 
 ## 参考
 

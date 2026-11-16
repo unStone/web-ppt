@@ -2,6 +2,15 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。发布过程的验证证据（npm 发布、安装验收、体积口径、真机验收状态）记录在 [docs/releases/](docs/releases/)。
 
+## 未发布
+
+- 修复 0.9.0-beta.4 起没有缓存 drawing 的 SmartArt 排布错误：snake 类（如 bList2）全部形状叠在同一位置。布局定义引擎改为两阶段求值（实例树构建 + 自顶向下约束布局）：choose 分支里的算法、形状与约束并入所在节点，`forName` 约束作用于目标子节点，`presOf` 按轴选择绑定数据点（一个形状可承载多个点），多段轴与 1 起计的 `st` 按规范求值。
+- SmartArt composite 约束代数：`l` / `t` / `r` / `b` / `ctrX` / `ctrY` 及偏移、兄弟引用与 `ar` 宽高比；cycle4（四象限 + 四角）由引擎排布。matrix1 与 PowerPoint 缓存逐形状一致，snake 与 cycle4 满足 LibreOffice 参照断言。
+- SmartArt 文本：数据模型 run 直设的字号优先于布局约束字号；溢出时收缩、同一布局节点统一字号；90° / 270° 旋转形状与 PowerPoint 缓存同构；按 `zOrderOff` 排绘制顺序（snake 的父节点文本不再被矩形遮住）；编辑后保存的 drawing 写出旋转与多点合并文本。
+- 修复 SmartArt 编辑后保存的数据模型扩展：`dgm:extLst` 里原有的 `a:ext`（`dataModelExt`）此前查找不到，保存会另追加一个不合 schema 的 `dgm:ext`，读取端仍按第一个指针打开旧缓存 drawing；现在复用原有扩展指向新 drawing，缺失时补写 `a:ext`。
+- 引擎只保留经真值验证的 composite / snake / tx / sp 算法；hierRoot / hierChild / lin / cycle / pyra / conn 返回 `unsupported-algorithm`，由启发式族布局排布（组织结构图等）。
+- `@web-ppt/core/diagram-engine` API 变化：`EngineShape` 新增 `rot` / `ptIds` / `hideGeom`；`EngineRenderOptions.textOf` 增加字号参数，移除未使用的 `fallbackFontSize`；`evaluateLayoutDef` 选项改为导出的 `EvaluateOptions`（`{ dir, textOf }`，移除 `trace`）；移除从未生效的 `setSmartArtLayoutEngine` / `smartArtLayoutEngineEnabled`。`@web-ppt/core/diagram-edit` 的 `layoutDiagramXml` 返回的 `nodes` 改为与元素一一对应的 `string[][]`。
+
 ## 0.9.0-beta.5 - 2026-11-15
 
 九包发布到 npm `next`。本版是缺陷修复版：

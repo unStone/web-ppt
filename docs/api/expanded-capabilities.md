@@ -18,7 +18,7 @@
 | 现代图表数据 | `@web-ppt/edit-core/chart-ex` | 现代图表数据面板 | 七类 ChartEx 的分层数据与增删行；保持空值、零、小计身份及工作簿其他内容 |
 | 批注编辑 | `@web-ppt/edit-core/comments` | 批注面板：新增、修改、删除、回复 | 字段级历史、恢复和协同；删除父批注时将回复提升为独立批注 |
 | 页面适配 | `@web-ppt/edit-core/resize` | 页面尺寸 → 确保适合 | 全稿等比居中；同步文字、表格、效果、母版/版式与批注锚点；组合仅缩放根框；支持仅改画布 |
-| SmartArt 内部编辑 | `@web-ppt/edit-core/smartart` | SmartArt 数据面板 | 文字、增删节点及后代、父子关系和同级排序；按当前布局族重排，保存原生数据与 drawing 缓存 |
+| SmartArt 内部编辑 | `@web-ppt/edit-core/smartart` | SmartArt 数据面板 | 文字、增删节点及后代、父子关系和同级排序；按布局定义（composite / snake）或布局族重排，保存原生数据与 drawing 缓存 |
 | OLE 内部编辑 | `@web-ppt/edit-core/ole` | 嵌入对象数据面板 | 直接 OOXML、CFB Package/Ole10Native 中的 XLSX 单元格及 DOCX 普通段落（含表格单元格内段落）；保留未改部件，公式交宿主重算。SDK 另提供 DOCX 单个 run 改字（相邻格式保留）、XLSX 单元格字体/填充/边框样式与 sharedStrings 富文本读写，官网面板尚未接入这三项 |
 | 墨迹内部编辑 | `@web-ppt/edit-core/ink` | 墨迹面板与画布手绘 | 笔刷、移动、采样点、增删；保留压力通道、原生 InkML 与兼容预览 |
 | 地图 | `@web-ppt/core/chart-ex` | 自动显示具有 geoCache 的 regionMap | 使用文件自带边界，支持压缩缓存、四种投影、孔洞及跨日期变更线；无缓存时保留兼容图，不请求地图服务 |

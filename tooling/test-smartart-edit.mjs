@@ -1,6 +1,6 @@
 import { countedAssert } from './lib/counted-assert.mjs';
 const { assert, record } = countedAssert('smartartEdit');
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { unzipSync } from 'fflate';
@@ -125,3 +125,32 @@ for (const generated of [false, true]) {
 }
 record();
 console.log('SmartArt：文字、增删节点、重排（含 matrix / radial）、父子关系、循环拒绝、DiagramML 与 drawing 一致、历史恢复通过');
+
+// 可选真实语料（不计入确定性断言数）：cycle4 走布局定义引擎，编辑后保存的 drawing 写出旋转与多点合并文本
+const cycle = join(root, 'corpus/libreoffice-smartart/smartart-cycle-matrix.pptx');
+if (existsSync(cycle)) {
+  const { p, editor, api } = await make(readFileSync(cycle));
+  const [item] = smartart.listEditableSmartArt(editor.doc);
+  const a1 = api.query(item.id).find((n) => n.text === 'A1');
+  api.setText(item.id, a1.id, 'A1 已改');
+  const files = unzipSync(await editor.save());
+  const drawingKey = Object.keys(files).find((k) => /diagrams\/web-ppt-drawing-[^/]*\.xml$/.test(k));
+  assert(drawingKey, 'cycle4 保存生成新的 drawing');
+  const drawing = decoder.decode(files[drawingKey]);
+  for (const rot of [5400000, 10800000, 16200000]) assert(drawing.includes(`<a:xfrm rot="${rot}">`), `cycle4 drawing 写出 rot=${rot}`);
+  const shapes = drawing.split('<dsp:sp ').slice(1);
+  const merged = shapes.find((s) => ['C2-1', 'C2-2', 'C2-3', 'C2-4'].every((t) => s.includes(`<a:t>${t}</a:t>`)));
+  assert(merged, 'cycle4 C2 的四个数据点文本合并在同一个形状');
+  const ids = shapes.map((s) => s.match(/modelId="([^"]+)"/)[1]);
+  assert.equal(new Set(ids).size, ids.length, 'cycle4 drawing 的 modelId 唯一');
+  assert(/<a:t[^>]*>A1 已改<\/a:t>/.test(drawing), 'cycle4 编辑后的文字写入 drawing');
+  // dgm:extLst 里的扩展是 a:ext：复用原有的 dataModelExt 指向新 drawing，不追加重复扩展，也不写 dgm:ext
+  const model = decoder.decode(files[Object.keys(files).find((k) => /diagrams\/data\d*\.xml$/.test(k))]);
+  const pointers = model.match(/<dsp:dataModelExt [^>]*relId="([^"]+)"/g) ?? [];
+  assert.equal(pointers.length, 1, 'cycle4 数据模型只有一个 dataModelExt');
+  assert(pointers[0].includes('relId="webPptSmartArt'), 'cycle4 dataModelExt 指向保存生成的 drawing');
+  assert(!/<dgm:ext[\s>]/.test(model), 'cycle4 数据模型不写 dgm:ext');
+  p.dispose();
+  editor.dispose();
+  console.log(`SmartArt 真实语料：cycle4 引擎排布保存回环通过（${shapes.length} 个形状）`);
+}

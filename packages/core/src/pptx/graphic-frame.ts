@@ -219,28 +219,19 @@ function layoutDiagram(relIds: Element | null, xf: XfrmInfo, env: Env): GroupEle
     slideNum: env.slideNum,
   };
 
-  // SmartArt 布局定义引擎（桌面 001）默认未接线：层级分支与 composite 完整
-  // 约束代数交付前，默认路径保持启发式（引擎经 diagram-engine 显式供宿主使用）
-  // 桌面 001：布局定义引擎优先；覆盖守恒等 reason 触发时回退启发式族布局
-  const engine = evaluateLayoutDef(layoutRoot, pts, xf.w, xf.h);
+  // 布局约束字号作为继承链末级缺省：数据模型 run 直设的 sz 仍优先
+  const textOf = (id: string, fontPt: number | null = null) => {
+    const scoped =
+      fontPt === null ? textEnv : { ...textEnv, chain: [...textEnv.chain, { def: { rp: { sz: Math.round(fontPt * 100) } }, lvls: [] }] };
+    const t = parseTextBody(pointTxBody(dataRoot, id), scoped);
+    // 数据模型里的文本没有 bodyPr，居中显示才像 SmartArt
+    return t ? { ...t, anchor: 'middle' as const, paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' as const })) } : null;
+  };
+  // 桌面 001：布局定义引擎优先；不支持的构造或覆盖守恒触发 reason 时回退启发式族布局
+  const engine = evaluateLayoutDef(layoutRoot, pts, xf.w, xf.h, { textOf });
   const children = engine.reason
-    ? buildDiagram(pts, xf.w, xf.h, {
-        family: layoutFamily(layoutRoot),
-        vertical: isVertical(layoutRoot),
-        colors,
-        textOf: (id: string) => {
-          const t = parseTextBody(pointTxBody(dataRoot, id), textEnv);
-          // 数据模型里的文本没有 bodyPr，居中显示才像 SmartArt
-          return t ? { ...t, anchor: 'middle', paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
-        },
-      })
-    : engineShapesToElements(engine, pts, {
-        colors,
-        textOf: (id: string) => {
-          const t = parseTextBody(pointTxBody(dataRoot, id), textEnv);
-          return t ? { ...t, anchor: 'middle', paragraphs: t.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
-        },
-      });
+    ? buildDiagram(pts, xf.w, xf.h, { family: layoutFamily(layoutRoot), vertical: isVertical(layoutRoot), colors, textOf })
+    : engineShapesToElements(engine, pts, { colors, textOf });
   if (!children.length) return null;
   return wrapDiagram(children, { ...base(xf), name: 'SmartArt' });
 }

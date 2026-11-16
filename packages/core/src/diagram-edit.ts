@@ -5,7 +5,10 @@ import { parseTextBody } from './pptx/text';
 import { buildDiagram, parseDataModel, pointTxBody, layoutFamily, isVertical, parseDiagramColors } from './pptx/diagram';
 import { engineShapesToElements, evaluateLayoutDef } from './diagram-engine';
 
-/** 编辑预览与无 drawing 的 SmartArt 共用节点树和布局算法。 */
+/**
+ * 编辑预览与无 drawing 的 SmartArt 共用节点树和布局算法。
+ * `nodes[i]` 是 `elements[i]` 承载的数据点 id（按点序；装饰形状与连线为空数组）。
+ */
 export function layoutDiagramXml(
   data: string,
   layout: string | undefined,
@@ -13,42 +16,47 @@ export function layoutDiagramXml(
   width: number,
   height: number,
   env: ChartEnv,
-): { elements: SlideElement[]; nodes: string[] } {
+): { elements: SlideElement[]; nodes: string[][] } {
   const root = parseXml(data),
     layoutRoot = layout ? parseXml(layout) : null;
   const raw = parseDiagramColors(colors ? parseXml(colors) : null);
   const palette = (raw.length ? raw : ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6']).map((value) =>
     /^[0-9a-f]{6}$/i.test(value) ? `#${value}` : `#${env.ctx.theme[env.ctx.clrMap[value] ?? value] ?? '4472C4'}`,
   );
-  const nodes: string[] = [];
   const dataModel = parseDataModel(root);
-  const textOfEngine = (id: string): TextBody | null => {
-    nodes.push(id);
+  // 布局约束字号作为继承链缺省：数据模型 run 直设的 sz 仍优先
+  const textOf = (id: string, fontPt: number | null = null): TextBody | null => {
     const body = parseTextBody(pointTxBody(root, id), {
       ctx: env.ctx,
       fonts: env.fonts,
-      chain: [],
+      chain: fontPt === null ? [] : [{ def: { rp: { sz: Math.round(fontPt * 100) } }, lvls: [] }],
       defaultColor: 'rgb(255,255,255)',
       slideNum: 1,
     });
     return body ? { ...body, anchor: 'middle', paragraphs: body.paragraphs.map((p) => ({ ...p, align: 'center' })) } : null;
   };
-  // 桌面 001：布局定义引擎优先；覆盖守恒等 reason 触发时回退启发式族布局
-  const engine = evaluateLayoutDef(layoutRoot, dataModel, width, height);
-  const elements: SlideElement[] = [];
+  // 桌面 001：布局定义引擎优先；不支持的构造或覆盖守恒触发 reason 时回退启发式族布局
+  const engine = evaluateLayoutDef(layoutRoot, dataModel, width, height, { textOf: (id) => textOf(id) });
   if (!engine.reason) {
-    elements.push(...engineShapesToElements(engine, dataModel, { colors: palette, textOf: textOfEngine }));
+    return {
+      elements: engineShapesToElements(engine, dataModel, { colors: palette, textOf }),
+      nodes: engine.shapes.map((shape) => shape.ptIds),
+    };
   }
-  if (!elements.length) {
-    elements.push(
-      ...buildDiagram(dataModel, width, height, {
-        family: layoutFamily(layoutRoot),
-        vertical: isVertical(layoutRoot),
-        colors: palette,
-        textOf: textOfEngine,
-      }),
-    );
-  }
+  // 启发式族布局为每个非连线元素恰好取一次文本，取文本的顺序即元素承载的点序
+  const visited: string[] = [];
+  const elements = buildDiagram(dataModel, width, height, {
+    family: layoutFamily(layoutRoot),
+    vertical: isVertical(layoutRoot),
+    colors: palette,
+    textOf: (id: string) => {
+      visited.push(id);
+      return textOf(id);
+    },
+  });
+  let at = 0;
+  const nodes = elements.map((element) => (element.kind === 'shape' && element.name === 'SmartArt 连线' ? [] : [visited[at++]]));
+  if (at !== visited.length) throw new Error(`SmartArt 启发式布局的元素与数据点数不一致（${at} / ${visited.length}）`);
   return { elements, nodes };
 }
 
