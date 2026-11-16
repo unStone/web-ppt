@@ -27,14 +27,20 @@ const color = (value: string) =>
         .join('');
 const solid = (value: string) => `<a:solidFill><a:srgbClr val="${color(value)}"/></a:solidFill>`;
 
-function textBody(source: XmlElement, effective: TextBody): XmlElement {
+/** 形状承载多个数据点时（presOf 选中多个点），首个点的 dgm:t 提供 bodyPr / lstStyle，其余点只并入段落 */
+function textBody(sources: XmlElement[], effective: TextBody): XmlElement {
   const body = createXmlElement('dsp:txBody', {
     attributes: [
       ['xmlns:dsp', DSP],
       ['xmlns:a', A],
     ],
   });
-  for (const node of source.children) append(body, node.type === 'element' ? clone(node, body) : cloneXmlNode(node));
+  for (const [index, source] of sources.entries()) {
+    for (const node of source.children) {
+      if (index > 0 && !(node.type === 'element' && node.namespaceUri === A && node.localName === 'p')) continue;
+      append(body, node.type === 'element' ? clone(node, body) : cloneXmlNode(node));
+    }
+  }
   let properties = xmlElementChildren(body).find((n) => n.namespaceUri === A && n.localName === 'bodyPr');
   if (!properties) {
     properties = createXmlElement('a:bodyPr');
@@ -80,7 +86,10 @@ function textBody(source: XmlElement, effective: TextBody): XmlElement {
   return body;
 }
 
-export function smartArtDrawing(xml: string, elements: SlideElement[], nodeIds: string[], nodes: SmartArtNode[]): Uint8Array {
+/** `nodeIds[i]` 是 `elements[i]` 承载的数据点 id（layoutDiagramXml 的 nodes） */
+export function smartArtDrawing(xml: string, elements: SlideElement[], nodeIds: string[][], nodes: SmartArtNode[]): Uint8Array {
+  if (nodeIds.length !== elements.length)
+    throw new Error(`SmartArt 布局元素与数据点映射数不一致（${elements.length} / ${nodeIds.length}）`);
   const root = parseXmlTree(xml).root,
     points = child(root, 'ptLst');
   const drawing = parseXmlTree(
@@ -94,21 +103,32 @@ export function smartArtDrawing(xml: string, elements: SlideElement[], nodeIds: 
     for (const node of descendants) walk(node.id);
   };
   for (const node of nodes.filter((n) => n.parentId === null)) walk(node.id);
-  let at = 0,
-    edge = 0;
+  let edge = 0;
+  const used = new Set<string>();
   for (const [index, element] of elements.entries()) {
     if (element.kind !== 'shape' || !element.path) throw new Error('SmartArt 布局输出不是原生形状');
-    const id = element.name === 'SmartArt 连线' ? smartArtIdentity(`parent:${edges[edge++]}`) : nodeIds[at++];
+    const ids = nodeIds[index];
+    // 承载点的形状以首个点为 modelId；装饰形状（不承载点）与重复承载用确定性标识，保证 modelId 唯一
+    const id =
+      element.name === 'SmartArt 连线'
+        ? smartArtIdentity(`parent:${edges[edge++]}`)
+        : ids[0] && !used.has(ids[0])
+          ? ids[0]
+          : smartArtIdentity(`shape:${index}`);
+    used.add(id);
     const fill = element.fill?.type === 'solid' ? solid(element.fill.color) : '<a:noFill/>';
     const stroke = element.stroke
       ? `<a:ln w="${emu(element.stroke.width)}">${solid(element.stroke.color)}</a:ln>`
       : '<a:ln><a:noFill/></a:ln>';
+    const rot = element.rot ? ` rot="${Math.round(element.rot * 60000)}"` : '';
     const shape = parseXmlTree(
-      `<dsp:sp xmlns:dsp="${DSP}" xmlns:a="${A}" modelId="${esc(id)}"><dsp:nvSpPr><dsp:cNvPr id="${index + 1}" name="${esc(element.name ?? '')}"/><dsp:cNvSpPr/></dsp:nvSpPr><dsp:spPr><a:xfrm><a:off x="${emu(element.x)}" y="${emu(element.y)}"/><a:ext cx="${emu(element.w)}" cy="${emu(element.h)}"/></a:xfrm>${customGeometryMarkup(element.path, element.w, element.h, !!element.openGeom)}${fill}${stroke}</dsp:spPr></dsp:sp>`,
+      `<dsp:sp xmlns:dsp="${DSP}" xmlns:a="${A}" modelId="${esc(id)}"><dsp:nvSpPr><dsp:cNvPr id="${index + 1}" name="${esc(element.name ?? '')}"/><dsp:cNvSpPr/></dsp:nvSpPr><dsp:spPr><a:xfrm${rot}><a:off x="${emu(element.x)}" y="${emu(element.y)}"/><a:ext cx="${emu(element.w)}" cy="${emu(element.h)}"/></a:xfrm>${customGeometryMarkup(element.path, element.w, element.h, !!element.openGeom)}${fill}${stroke}</dsp:spPr></dsp:sp>`,
     ).root;
-    const point = children(points, 'pt').find((p) => attr(p, 'modelId') === id),
-      text = point && child(point, 't');
-    if (text && element.text) append(shape, textBody(text, element.text));
+    const sources = ids
+      .map((pointId) => children(points, 'pt').find((p) => attr(p, 'modelId') === pointId))
+      .map((point) => point && child(point, 't'))
+      .filter((text): text is XmlElement => !!text);
+    if (sources.length && element.text) append(shape, textBody(sources, element.text));
     append(tree, clone(shape, tree));
   }
   return serializeXmlTreeBytes(drawing);

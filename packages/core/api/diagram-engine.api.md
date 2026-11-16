@@ -5,15 +5,13 @@
 ```ts
 
 // @public (undocumented)
-export type EngineReason = 'unsupported-algorithm' | 'unsupported-axis' | 'unsupported-algorithm' | 'unsupported-axis' | 'unsupported-function' | 'unsupported-constraint' | 'unsupported-rule' | 'no-layout-definition' | 'no-points' | 'minimal-layout-definition' | 'incomplete-coverage';
+export type EngineReason = 'unsupported-algorithm' | 'unsupported-axis' | 'unsupported-function' | 'unsupported-constraint' | 'unsupported-rule' | 'no-layout-definition' | 'no-points' | 'minimal-layout-definition' | 'incomplete-coverage';
 
 // @public (undocumented)
 export interface EngineRenderOptions {
     // (undocumented)
     colors: string[];
-    fallbackFontSize?: number;
-    // (undocumented)
-    textOf: (id: string) => TextBody | null;
+    textOf: (id: string, fontPt: number | null) => TextBody | null;
 }
 
 // @public (undocumented)
@@ -35,10 +33,13 @@ export interface EngineShape {
     fontSz: number | null;
     // (undocumented)
     h: number;
+    hideGeom: boolean;
     name: string;
     // (undocumented)
     prst: string;
     ptId: string | null;
+    ptIds: string[];
+    rot: number;
     // (undocumented)
     w: number;
     // (undocumented)
@@ -51,19 +52,17 @@ export interface EngineShape {
 export function engineShapesToElements(engine: EngineResult, roots: DiagramPoint[], options: EngineRenderOptions): SlideElement[];
 
 // @public
-export function evaluateLayoutDef(layoutRoot: Element | null, roots: DiagramPoint[], w: number, h: number, options?: {
+export function evaluateLayoutDef(layoutRoot: Element | null, roots: DiagramPoint[], w: number, h: number, options?: EvaluateOptions): EngineResult;
+
+// @public (undocumented)
+export interface EvaluateOptions {
+    // (undocumented)
     dir?: 'norm' | 'rev';
-    trace?: (msg: string) => void;
-}): EngineResult;
+    textOf?: (id: string) => TextBody | null;
+}
 
 // @public
 export function parseDataModel(dataRoot: Element | null): DiagramPoint[];
-
-// @public (undocumented)
-export const setSmartArtLayoutEngine: (on: boolean) => void;
-
-// @public (undocumented)
-export const smartArtLayoutEngineEnabled: () => boolean;
 
 // (No @packageDocumentation comment for this package)
 

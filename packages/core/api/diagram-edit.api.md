@@ -7,7 +7,7 @@
 // @public
 export function layoutDiagramXml(data: string, layout: string | undefined, colors: string | undefined, width: number, height: number, env: ChartEnv): {
     elements: SlideElement[];
-    nodes: string[];
+    nodes: string[][];
 };
 
 // @public (undocumented)

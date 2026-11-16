@@ -1,57 +1,52 @@
 # SmartArt 布局定义引擎
 
-状态：引擎骨架已交付（真实 layoutDef 的树求值 + 九种算法 + 约束/规则子集 + 覆盖守恒回退）；组织结构图分支与 composite 平铺的完整求解器是后续工作。实施记录与对照归因见[票据 001](../wayfinder/ppt-desktop-parity/tickets/001-smartart-layout-engine.md)。
+状态：两阶段求值（实例树构建 + 自顶向下约束布局）已交付，composite 约束代数与 snake 网格经真值对照；层级算法（hierRoot / hierChild）与 lin / cycle / pyra / conn 未实现，返回稳定 reason 交启发式。实施记录见[票据 001](../wayfinder/ppt-desktop-parity/tickets/001-smartart-layout-engine.md)。
 
 ## 1. 问题
 
-没有缓存 drawing 的 SmartArt、以及编辑节点后的重排，此前按六个「布局族」启发式手工排布——布局族之外（matrix、带 constrLst 的组织结构图等）位置与字号偏离。需要按文件自带的 `dgm:layoutDef`（ECMA-376 Part 1 §21.4.2）求值出与 PowerPoint 缓存可对照的形状、位置和字号。
+没有缓存 drawing 的 SmartArt、以及编辑节点后的重排，需要按文件自带的 `dgm:layoutDef`（ECMA-376 Part 1 §21.4.2）求出与 PowerPoint 一致的形状、位置和字号。六个「布局族」的启发式排布只能覆盖少数布局。
 
-## 2. 设计决策
+## 2. 求值模型
 
-### D1 引擎只服务完整 layoutDef，极简定义走启发式
+```mermaid
+flowchart LR
+    L["layoutDef"] --> P["解析<br/>choose 分支的 alg / shape / presOf / 约束并入所在节点"]
+    D["数据点树"] --> B
+    P --> B["构建实例树<br/>forEach 展开 · choose 求值 · presOf 绑定点"]
+    B --> Y["自顶向下布局<br/>父矩形 → 子约束 → 算法分配子矩形"]
+    Y --> S["文本收缩与同名统一字号"]
+    S --> C{"数据点全被文本形状承载？"}
+    C -- 是 --> O["EngineShape[]"]
+    C -- 否 --> R["incomplete-coverage → 启发式"]
+```
 
-[diagram-engine.ts](../../packages/core/src/diagram-engine.ts) 解析 layoutNode 树（choose/if/else、forEach 轴选择、alg、shape、constrLst、ruleLst）并求值。入口节点没有任何子树的「极简定义」（python-pptx / LibreOffice 等第三方工具只写算法名，点展开无从表达）返回稳定 reason `minimal-layout-definition`，由调用方回退到 diagram.ts 的启发式族布局——那里的输出对这类文件已通过验收（test-core 固件与快照继续成立）。
-
-### D2 求值语义（子集）
-
-| 构造 | 支持范围 |
+| 构造 | 语义 |
 |---|---|
-| forEach 轴 | self / ch / des / sib / precedSib / followSib / anc / par / selfAndPar / root（含 `root des` 复合轴）、ref 引用复用、st/cnt 偏移、ptType 过滤 |
-| choose/if/else | func=var（dir / linDir / hierBranch）、func=cnt（带 axis / ptType 的关联点计数）、func=depth / maxDepth；op = equ / gte / lte / gt / lt |
-| 算法 | lin / snake / cycle / pyra / hierRoot / hierChild / conn / tx / sp / composite（共十种，覆盖 ECMA-376 的全部算法类型） |
-| 约束 | w / h / primFontSz / secFontSz / sp / sibSp / secSibSp / ctrX / ctrY / l / t / alignOff / bendDist 及边距类（记录值）；refType + for/forName/refFor/refForName 作用域引用 |
-| 规则 | ruleLst 的 primFontSz 收缩（测量文本溢出，按 fact 步进、至多 max 次） |
+| 轴 | `self` / `ch` / `des` / `desOrSelf` / `par` / `anc` / `ancOrSelf` / `sib` / `precedSib` / `followSib` / `root`；多段轴（`axis="ch ch desOrSelf"`）逐段求值，`ptType` / `st` / `cnt` 按段对应；`st` 从 1 计、负数从末尾计，`cnt=0` 为全部 |
+| choose / if | `func=var`（`dir`、`hierBranch` 取缺省 `std`）、`func=cnt`（带多段轴）、`depth` / `maxDepth`；op = equ / neq / gte / lte / gt / lt。分支里的 `alg` / `shape` / `presOf` / `constrLst` / `ruleLst` 并入所在 layoutNode |
+| presOf | 轴选择决定形状承载的数据点，可多个（cycle4 的 C2 承载 C2-1…C2-4），文本按点序合并；空 `presOf` 的形状是装饰，不承载点 |
+| 约束 | 父节点 `for="ch"` 的约束作用于 `forName` 指名的子节点，按文档序求值；`refForName` 引用同批兄弟已求出的量（未约束时取缺省），`refFor` 缺省引用父节点自身；`ptType` 按子节点承载的点判定 |
+| composite | 由 `w` / `h` / `l` / `t` / `r` / `b` / `ctrX` / `ctrY` 及 `*Off` 偏移解出子矩形（如 `r` 与 `w` 得 `l = r − w`）；`ar` 参数把自身矩形按宽高比收进父矩形并居中 |
+| snake | 单元宽高比取子节点 `ar` 或自身 w/h 约束，`sp` 引用子节点宽时按比例计间距；遍历每行个数取单元最大者；`grDir` / `flowDir` / `contDir` / `off=ctr` |
+| 字号 | `primFontSz`：自身 `self` > 父节点 `ch` > 最近祖先 `des`；溢出时逐步收缩（下限 rule `val`，缺省 5pt），同名节点取最小值。调用方把结果作为文本继承链缺省字号解析，数据模型 run 直设的 `sz` 优先 |
+| 旋转 | `shape rot`；90° / 270° 时宽高对调、中心不变，旋转后视觉外框等于布局矩形（与 PowerPoint 缓存一致） |
+| 绘制顺序 | 父实例先于子实例；兄弟按「文档序 + `zOrderOff`」稳定排序，键相同时偏移大的在后（snake 的 parentText `+1` 画在 parentRect 之上，cycle4 同为 `-2` 的背景与文本保持组内顺序） |
 
-不认识的算法、轴、函数测试或约束类型在解析/求值时终止并返回稳定 reason（`unsupported-algorithm` / `unsupported-axis` / `unsupported-function` / `unsupported-constraint` / `unsupported-rule`）。
+不认识的算法、轴、函数测试、约束或规则类型终止求值并返回稳定 reason（`unsupported-algorithm` / `unsupported-axis` / `unsupported-function` / `unsupported-constraint` / `unsupported-rule`）。入口节点没有任何子树的极简定义（第三方工具只写算法名）返回 `minimal-layout-definition`。
 
-### D3 覆盖守恒：不完整结果不输出
+## 3. 真值与验收（`test-smartart-engine`，源码 + dist）
 
-引擎求值出的形状绑定的独立数据点数少于数据点总数时（真实文件的版本变体里，某些分支在缺省 hierBranch / 条件测试下不展开），返回 `incomplete-coverage` 让调用方回退启发式——**不输出比启发式更差的结果**。这是设计标准「稳定 reason 的显式回退」的直接应用。
+LibreOffice 语料里除 matrix1 外的样本缓存 drawing 都为空（436 字节的空 `spTree`），不能当 PowerPoint 真值；这些样本以 LibreOffice 同一固定提交的导入测试断言为准。
 
-### D4 数据点绑定与辅助形状
+| 样本 | 真值来源 | 结果 |
+|---|---|---|
+| tdf145528_SmartArt_Matrix（matrix1） | PowerPoint 缓存 drawing | 4 块 tile 与中心形状的位置、尺寸、旋转逐个一致（误差 < 0.5px） |
+| smartart-snake-rows（bList2） | `testSnakeRows`：6 个节点 2 行 | 3 × 2 网格，形状全在 frame 内；默认渲染路径保留数据模型直设的 11pt / 16pt |
+| smartart-cycle-matrix（cycle4） | `testCycleMatrix` | A2 左上、B2 右上、C2 右下、D2 左下；A1 象限宽高相等；整体高度等于 frame 高；象限按分支 rot 旋转 |
+| smartart-org-chart / org-chart2（orgChart1） | `testOrgChart` | hierRoot / hierChild 未实现 → `unsupported-algorithm`，启发式排布满足 Manager 在 Employee 正上方 |
 
-形状与数据点的绑定沿用表现层语义：forEach 选择的点直接绑定；composite 类无 forEach 的树按布局序绑定。`ptType` 变体（parTrans / sibTrans）选出的连线点不在数据点树里，绑定循环统一改绑到下一个未占用的数据点；数据点耗尽后的装饰形状不绑点（文本集合不出现重复项）。
+## 4. 后续
 
-### D5 不做（后续工作）
-
-- 组织结构图（orgChart1）的分支方向变量（hierBranch = l / r / hang）驱动的不对称布局——缺省链路下这些分支不展开，覆盖守恒触发后回退启发式（启发式的层次排布对这两个样本与缓存形状/文本数一致）。
-- composite 平铺的完整 l/t/w/h 约束代数（含公式 `gdLst`）——cycle4 的 matrix 变体同样走守恒回退。
-- radial 类真实样本仍未取得（portability 008 已登记），radial1 保持启发式覆盖。
-
-## 3. 验收（test-smartart-engine，源码 + dist 双模式）
-
-- **snake-rows**（bList2）：剥离缓存后引擎接管，24 形状 / 15 文本，与 PowerPoint 缓存逐形状一致；几何确定性（同输入两次一致）。
-- **matrix1**（composite）：引擎接管，文本集合与缓存一致（5/5）。
-- **orgChart1 两个样本与 cycle4**：覆盖守恒触发回退启发式，剥离后形状/文本数与缓存一致（不劣化）。
-- reason 回退：极简 layoutDef 返回 `minimal-layout-definition`，启发式输出与既有断言一致（test-core 固件全部继续通过、212+ 快照逐字节不变）。
-- 语料缺失时（corpus/ 不入库）测试按空跑退出并提示 `fetch-corpus`，CI 有语料预热。
-
-## 4. 对照矩阵（2026-11-14 实测）
-
-| 样本 | 缓存 | 剥离缓存后 | 路径 |
-|---|---|---|---|
-| smartart-snake-rows（bList2） | 24 形状 / 15 文本 | 24 / 15 | 引擎接管，逐形状一致 |
-| tdf145528_SmartArt_Matrix（matrix1） | 5 / 5 | 9 / 5 | 引擎接管（装饰形状 4 个不绑文本） |
-| smartart-org-chart（orgChart1 v14） | 8 / 5 | 8 / 5 | 覆盖守恒 → 启发式 |
-| smartart-org-chart2（orgChart1 v12） | 17 / 9 | 17 / 9 | 覆盖守恒 → 启发式 |
-| smartart-cycle-matrix（cycle4） | 11 / 11 | 11 / 11 | 覆盖守恒 → 启发式 |
+- 层级算法 hierRoot / hierChild（orgChart1，含 `hierBranch` 变量与助理点）与 conn 连线，以 `testOrgChart` 系列断言为验收。
+- lin / cycle / pyra 需要先取得带真值的样本（portability 008 登记），radial 类样本仍缺。
+- 文本框旋转随形状旋转；PowerPoint 缓存的 `txXfrm` 对部分旋转形状单独校正文本方向，引擎未实现。
