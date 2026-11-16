@@ -134,7 +134,7 @@
     "@biomejs/biome": "2.6.6",
     "@microsoft/api-extractor": "7.60.1",
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@npmcli/arborist": "9.9.1",
+    "@npmcli/arborist": "10.0.4",
     "@npmcli/map-workspaces": "6.0.0",
     "@resvg/resvg-js": "^2.6.2",
     "@types/culori": "4.0.1",
