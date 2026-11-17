@@ -4,9 +4,24 @@
  */
 import type { Paragraph, TextBody, TextRun } from '../types';
 import { AutoNum, formatAutoNum } from './autonum';
-import { Scheme, escherColor } from './escher';
+import type { Scheme } from './escher';
 import type { Rec } from './records';
 import { MASTER_TO_PX } from './units';
+
+/**
+ * [MS-PPT] ColorIndexStruct：红/绿/蓝在低三字节，配色索引在高字节。
+ * 与 Escher 颜色（0x0BBGGRR，索引在低字节）相反，不能复用 escherColor()。
+ * 0xFE 表示低三字节是显式 sRGB，0xFF 表示未定义。
+ */
+export function pptTextColor(value: number, scheme: Scheme): string | undefined {
+  const index = value >>> 24;
+  if (index <= 0x07) {
+    const hex = (scheme[index] ?? '000000').padStart(6, '0');
+    return `rgb(${parseInt(hex.slice(0, 2), 16)},${parseInt(hex.slice(2, 4), 16)},${parseInt(hex.slice(4, 6), 16)})`;
+  }
+  if (index !== 0xfe) return undefined;
+  return `rgb(${value & 0xff},${(value >>> 8) & 0xff},${(value >>> 16) & 0xff})`;
+}
 
 export interface TextRunProps {
   size?: number;
@@ -351,7 +366,10 @@ export function buildTextBody(styled: StyledText, env: TextEnv, anchorProp: numb
 
 /** 形状自带属性 → 母版按级默认值 → 内建兜底 */
 function makeRun(text: string, own: TextRunProps, dft: TextRunProps, env: TextEnv, link: string | undefined): TextRun {
-  const color = own.color ?? dft.color;
+  const color =
+    (own.color !== undefined ? pptTextColor(own.color, env.scheme) : undefined)
+    ?? (dft.color !== undefined ? pptTextColor(dft.color, env.scheme) : undefined)
+    ?? 'rgb(0,0,0)';
   const fonts: string[] = [];
   for (const idx of [own.fontIdx ?? dft.fontIdx, own.asianFontIdx ?? dft.asianFontIdx]) {
     const name = idx !== undefined ? env.fonts[idx] : undefined;
@@ -364,7 +382,7 @@ function makeRun(text: string, own: TextRunProps, dft: TextRunProps, env: TextEn
     u: own.underline ?? dft.underline ?? false,
     strike: false,
     size: (own.size ?? dft.size ?? 18) * (96 / 72),
-    color: color !== undefined ? escherColor(color, env.scheme) : 'rgb(0,0,0)',
+    color,
     fonts,
     link,
   };
