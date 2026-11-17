@@ -145,6 +145,24 @@ const escher = await (async () => {
   return import(`file://${e}?t=${Date.now()}`);
 })();
 
+const pptText = await (async () => {
+  const t = join(outDir, 'ppt-text-bundle.mjs');
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      join(root, 'packages/core/src/ppt/text.ts'),
+      '--bundle',
+      '--format=esm',
+      '--platform=neutral',
+      '--log-level=error',
+      `--outfile=${t}`,
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
+  return import(`file://${t}?t=${Date.now()}`);
+})();
+
 const crypto = await (async () => {
   const c = join(outDir, 'crypto-bundle.mjs');
   execFileSync(
@@ -2119,6 +2137,27 @@ group('表格');
 }
 
 // ---------------- 8. .ppt 二进制专项 ----------------
+
+group('.ppt 文本颜色');
+{
+  const scheme = ['FFFFFF', '000000', '808080', '000000', 'CCFFFF', 'B2B2B2', '3333CC', '009999'];
+  const color = (value) => pptText.pptTextColor(value, scheme);
+  eq('配色索引 1（文本色）在高字节', color(0x01000000), 'rgb(0,0,0)');
+  eq('配色索引 5（强调色）在高字节', color(0x05000000), 'rgb(178,178,178)');
+  eq('0xFE 用低三字节的显式 RGB', color(0xfe123456), 'rgb(86,52,18)');
+  eq('0xFF 表示未定义', color(0xff000000), undefined);
+  eq('越界索引也按未定义处理', color(0x08000000), undefined);
+
+  const body = (own, dft = {}) =>
+    pptText.buildTextBody(
+      { text: 'x', paraProps: [{ chars: 2, props: {} }], charProps: [{ chars: 1, props: own }] },
+      { fonts: [], scheme, levelStyle: () => ({ para: {}, char: dft }), claimAutoNums: () => undefined },
+      undefined,
+    );
+  eq('makeRun 用文本解码器解析标题色', body({ color: 0x01000000 }).paragraphs[0].runs[0].color, 'rgb(0,0,0)');
+  eq('makeRun 支持显式 RGB', body({ color: 0xfe123456 }).paragraphs[0].runs[0].color, 'rgb(86,52,18)');
+  eq('makeRun 的 0xFF 继承母版颜色', body({ color: 0xff000000 }, { color: 0x01000000 }).paragraphs[0].runs[0].color, 'rgb(0,0,0)');
+}
 
 group('.ppt 二进制');
 {
