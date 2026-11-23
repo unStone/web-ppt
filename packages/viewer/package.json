@@ -13,6 +13,6 @@
     "@web-ppt/core": "*",
     "@web-ppt/fonts": "*",
     "@web-ppt/viewer-core": "*",
-    "harfbuzzjs": "1.6.1"
+    "harfbuzzjs": "1.6.4"
   }
 }
