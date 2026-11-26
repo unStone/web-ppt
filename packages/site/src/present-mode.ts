@@ -21,13 +21,13 @@ const HIDE_MS = 2000;
 
 /**
  * 放映里只有「点到幻灯片本身」才该前进。
- * 链接、页内跳转和控制条如果也触发 next，会把一次点击做成两件事。
+ * 链接、页内跳转、触发器动画的触发形状和控制条如果也触发 next，会把一次点击做成两件事。
  */
 export function isPresentAdvanceTarget(target: EventTarget | null): boolean {
   const el = target instanceof Element ? target : null;
   if (!el) return false;
   return !el.closest(
-    'a[href],button,input,select,textarea,audio,video,[data-media-toggle],[data-slide],.present-bar,.fullscreen-language,.link-toast,.preview-bar,.demo-foot,.pv-side,.speaker-aids,.present-blank,.slide-grid',
+    'a[href],button,input,select,textarea,audio,video,[data-media-toggle],[data-slide],[data-ppt-trigger],.present-bar,.fullscreen-language,.link-toast,.preview-bar,.demo-foot,.pv-side,.speaker-aids,.present-blank,.slide-grid',
   );
 }
 

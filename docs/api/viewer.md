@@ -29,6 +29,9 @@ await viewer.exportPng(2);                            // → Blob
 const v2 = new Viewer(container, pres, { media: 'player' });
 // 动画时间线里的媒体调用（如上一动画之后自动播放）被浏览器拒绝时，容器收到该事件
 container.addEventListener('web-ppt-playback-error', (e) => console.warn((e as CustomEvent).detail));
+// 触发器动画（PowerPoint 的「单击下列对象时开始效果」）由 Viewer 自己处理：点到触发形状只播它的序列，
+// 主序列进度不变；这次点击不会冒泡到宿主挂在祖先上的「点到幻灯片就前进」监听。
+// 触发形状带 data-ppt-trigger；监听若挂在查看器容器自身或捕获阶段，stopPropagation 挡不住，用这个标记排除
 
 const svg = await slideToSvgFile(pres, pres.slides[0]);
 const html = await presentationToPrintableHtml(pres); // 浏览器打印即得 PDF
@@ -91,10 +94,18 @@ import { PresentationState, playGroup, playTransition } from '@web-ppt/viewer-co
 const st = new PresentationState(pres, { animate: true, skipHidden: true });
 st.subscribe((c) => {
   if (c.type === 'slide') setIndex(c.index);          // c.transition 非空时该播切换
-  if (c.type === 'animation' && c.group) playGroup(el, c.group);
+  if (c.type === 'animation' && c.group) {
+    const handle = playGroup(el, c.group);
+    // c.interactive 是触发形状的 id：这一批属于交互序列，播完要告诉状态机
+    const trigger = c.interactive;
+    if (trigger !== undefined) void handle.finished.then(() => st.settleInteractive(trigger));
+  }
 });
 st.next();                     // 有待播动画先播动画，否则翻页
-st.hiddenElementIds;           // 当前批次下应隐藏的元素 id
+st.hiddenElementIds;           // 当前批次下应隐藏的元素 id（含尚未触发的交互序列）
+// 点击命中元素时先问状态机：是触发形状就只播它的序列，不再调用 next()
+if (st.isInteractiveTrigger(elementId)) st.playInteractive(elementId);
+else st.next();
 st.search('关键词');            // → 命中的页索引数组
 ```
 

@@ -40,6 +40,26 @@ export function hiddenBefore(groups: AnimStep[][], upTo: number): Set<number> {
   return hidden;
 }
 
+/** 各交互序列的点击批次；编号在序列内独立，分组规则与 groupSteps 相同 */
+export function interactiveGroups(slide: Slide): AnimStep[][][] {
+  return (slide.interactiveSequences ?? []).map((sequence) => groupSteps(sequence.steps));
+}
+
+/**
+ * 线性播放（分步打印、分步 PDF、视频）走到主序列第 upTo 批时，哪些元素应处于隐藏状态。
+ *
+ * 线性播放里没有人点触发形状，交互序列全程停在触发之前：它的入场目标不出现，退场目标也不会消失——
+ * PowerPoint 导出视频同样不带触发器动画。静态导出不在此列：那里取的是终态（见 staticHidden）。
+ */
+export function playbackHidden(slide: Slide, upTo: number): Set<number> {
+  const groups = groupSteps(slide.animations);
+  const hidden = groups.length ? hiddenBefore(groups, upTo) : new Set<number>();
+  for (const sequence of interactiveGroups(slide)) {
+    for (const id of hiddenBefore(sequence, 0)) hidden.add(id);
+  }
+  return hidden;
+}
+
 /**
  * 静态渲染（不播动画）时该隐藏哪些元素。
  *
@@ -54,7 +74,8 @@ export function hiddenBefore(groups: AnimStep[][], upTo: number): Set<number> {
  * 例外是全员退场的收尾页：终态一片空白，那还不如全画出来。
  */
 export function staticHidden(slide: Slide): Set<number> {
-  const groups = groupSteps(slide.animations);
+  // 终态 = 主序列与每个交互序列全部播完
+  const groups = [...groupSteps(slide.animations), ...interactiveGroups(slide).flat()];
   if (!groups.length) return new Set();
   const hidden = hiddenBefore(groups, groups.length);
   if (!hidden.size) return hidden;

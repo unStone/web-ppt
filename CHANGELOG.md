@@ -2,6 +2,11 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。发布过程的验证证据（npm 发布、安装验收、体积口径、真机验收状态）记录在 [docs/releases/](docs/releases/)。
 
+## 未发布
+
+- 新增触发器动画播放（#84）：PowerPoint 的交互序列（`p:timing` 里 `nodeType="interactiveSeq"`）此前被当成主序列的点击批次，任意一次点击都会播出；现在点击触发形状时才播放。`Viewer` 自己处理触发形状的点击——只播该序列、主序列进度不变、这次点击不再冒泡到宿主的翻页监听；自建 UI 用 `PresentationState` 的 `isInteractiveTrigger` / `playInteractive` / `settleInteractive`。序列播放中再点触发形状，按文件的 `restart` 属性立即重播、忽略或播完后不再响应。
+- `Slide` 新增可选的 `interactiveSequences`；`@web-ppt/core` 新增 `interactiveGroups` 与 `playbackHidden`。分步打印、分步 PDF 与视频是线性播放，不包含触发器动画，其入场目标全程隐藏；静态浏览与静态导出仍取终态。
+
 ## 0.9.0-beta.6 - 2026-11-15
 
 九包发布到 npm `next`。本版修复 SmartArt 布局定义引擎的求值语义并交付 composite 约束代数（桌面 001 第三批）：

@@ -221,5 +221,6 @@ flowchart LR
 | `sample-wps-interop.pptx` | WPS / PowerPoint 默认结构：fontRef 白字与显式颜色对照、仅 svgBlip 图标、两种楔形标注尾巴方向、归一化组合内标注、bgRef 1001 背景、拉丁与阿拉伯文的 cs 字体 |
 | `sample-ole.pptx` | OLE 预览图：可解码格式渲染成图片 / 认不出的格式退回占位框 |
 | `sample-embedfont.pptx` | 嵌入字体的四种容器：未压缩 EOT / 未压缩+异或 / 标记 MTX 压缩 / 裸 TTF |
+| `sample-animation-trigger.pptx` | 交互序列（触发器动画）：主序列与两个交互序列并存、只有交互序列、只有主序列的对照页；三种 `restart` |
 
 `.ppt` 样本由 `npm run ppt-samples` 用 LibreOffice 从 pptx 转换（pptx 固件变更后需重跑），保留策略见 §4。

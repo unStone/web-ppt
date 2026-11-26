@@ -1,6 +1,6 @@
 import type { Presentation, Slide, SlideElement } from '../types';
 import { vectorSlideMarkup } from './vector-render';
-import { groupSteps, hiddenBefore, staticHidden } from '../anim-steps';
+import { groupSteps, playbackHidden, staticHidden } from '../anim-steps';
 import { VectorFonts } from './vector-fonts';
 import { VectorDocument } from './vector-document';
 import { VectorSvg } from './vector-svg';
@@ -28,8 +28,9 @@ export async function presentationToVectorPdf(pres: Presentation, options: Vecto
     const groups = options.animationSteps ? groupSteps(slide.animations) : [];
     if (groups.length)
       for (let step = 0; step <= groups.length; step++)
-        jobs.push({ slide, slideNumber: index + 1, hidden: [...hiddenBefore(groups, step)] });
-    else jobs.push({ slide, slideNumber: index + 1, hidden: [...staticHidden(slide)] });
+        jobs.push({ slide, slideNumber: index + 1, hidden: [...playbackHidden(slide, step)] });
+    else
+      jobs.push({ slide, slideNumber: index + 1, hidden: [...(options.animationSteps ? playbackHidden(slide, 0) : staticHidden(slide))] });
   });
   for (const [index, job] of jobs.entries()) {
     fonts.abort();

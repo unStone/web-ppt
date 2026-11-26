@@ -16,6 +16,8 @@ blocked_by: []
 
 `edit-core/animation-catalog.ts` 的可编辑目录只有 8 个效果（appear、fade、fly、wipe、zoom、dissolve、spin、grow），不含运动路径；文件中其他效果由 core 播放并原样直通，但用户无法新增或修改。
 
+触发器动画的播放已交付（#84）：`Slide.interactiveSequences` 承载 `nodeType="interactiveSeq"` 的序列，`PresentationState.playInteractive` 按点击触发形状播放。本票范围里的「触发器」指在编辑器里新增与修改它；在此之前，含交互序列的页动画来源按只读原样保留。
+
 ## 范围
 
 | 部分 | 说明 |

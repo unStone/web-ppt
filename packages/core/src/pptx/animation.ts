@@ -1,4 +1,4 @@
-import type { AnimStep, Transition, TransitionType } from '../types';
+import type { AnimStep, InteractiveSequence, Transition, TransitionType } from '../types';
 import { resolveAnimationEffect } from '../animation-effects';
 import { transitionDefaultDirection } from '../transition';
 import { attr, kid, numAttr } from '../xml';
@@ -10,7 +10,8 @@ import { MAX_TIMING_NODES, selectSlideTiming, timingHasUnsupportedContent } from
  *
  * p:timing 的时间节点树非常深，但对预览而言只需要三件事：
  * 目标形状、效果类别、时序关系。因此这里做深度优先遍历，
- * 抓取所有带 presetClass 的 p:cTn 节点，其余结构忽略。
+ * 抓取主序列里所有带 presetClass 的 p:cTn 节点，其余结构忽略；
+ * nodeType="interactiveSeq" 的交互序列由点击触发形状启动，单独解析，不进主序列。
  */
 
 const SPEED_MS: Record<string, number> = { slow: 1000, med: 750, fast: 500 };
@@ -460,6 +461,8 @@ export interface MediaTiming {
 interface ParsedTiming {
   readonly animations?: AnimStep[];
   readonly media?: MediaTiming[];
+  /** nodeType="interactiveSeq" 的交互序列；没有时不出现，解析结果与从前逐字段相同 */
+  readonly interactive?: InteractiveSequence[];
   readonly readonly: boolean;
 }
 
@@ -474,9 +477,18 @@ interface RawMediaNode {
   kind: 'audio' | 'video';
 }
 
-function presetTimeNodes(timing: Element): { presets: { element: Element; order: number }[]; medias: RawMediaNode[] } | null {
+interface CollectedTimeNodes {
+  presets: { element: Element; order: number }[];
+  medias: RawMediaNode[];
+  /** 交互序列的时间节点根（cTn[@nodeType="interactiveSeq"]）；子树不在本次遍历里展开 */
+  interactive: Element[];
+}
+
+/** `insideInteractive` 为真时 `timing` 自身就是交互序列根，照常走进它的子树 */
+function presetTimeNodes(timing: Element, insideInteractive = false): CollectedTimeNodes | null {
   const found: { element: Element; order: number }[] = [];
   const medias: RawMediaNode[] = [];
+  const interactive: Element[] = [];
   interface Cursor {
     next: Element | null;
     readonly depth: number;
@@ -491,15 +503,24 @@ function presetTimeNodes(timing: Element): { presets: { element: Element; order:
   let visited = 0;
   while (current) {
     if (++visited > MAX_TIMING_NODES) return null;
+    const element: Element = current.element;
+    // 交互序列由点击触发形状启动，不能混进主序列的点击批次；整棵子树交给 parseInteractiveSequence
+    const interactiveRoot: boolean = !insideInteractive && element.localName === 'cTn' && attr(element, 'nodeType') === 'interactiveSeq';
+    if (interactiveRoot) {
+      // 子树不展开也要计入解析预算，否则宽树可以借交互序列绕过上限
+      visited += element.getElementsByTagName('*').length;
+      if (visited > MAX_TIMING_NODES) return null;
+      interactive.push(element);
+    }
     const preset: boolean =
-      !current.insidePreset && current.depth <= 25 && current.element.localName === 'cTn' && !!attr(current.element, 'presetClass');
-    if (preset) found.push({ element: current.element, order: visited });
+      !interactiveRoot && !current.insidePreset && current.depth <= 25 && element.localName === 'cTn' && !!attr(element, 'presetClass');
+    if (preset) found.push({ element, order: visited });
     // 媒体节点（p:audio/p:video）不是效果，不进 steps；只收集原始元素供回填播放语义
-    if (!current.insidePreset && (current.element.localName === 'audio' || current.element.localName === 'video')) {
-      medias.push({ element: current.element, order: visited, kind: current.element.localName });
+    if (!interactiveRoot && !current.insidePreset && (element.localName === 'audio' || element.localName === 'video')) {
+      medias.push({ element, order: visited, kind: element.localName });
     }
     const insidePreset: boolean = current.insidePreset || preset;
-    const child: Element | null = current.element.firstElementChild;
+    const child: Element | null = interactiveRoot ? null : element.firstElementChild;
     if (child) {
       parents.push({
         next: child.nextElementSibling,
@@ -525,7 +546,43 @@ function presetTimeNodes(timing: Element): { presets: { element: Element; order:
       };
     }
   }
-  return { presets: found, medias };
+  return { presets: found, medias, interactive };
+}
+
+/**
+ * 交互序列（nodeType="interactiveSeq"）：由点击触发形状启动，效果本身与主序列同构。
+ *
+ * 触发形状取启动条件（stCondLst 的 onClick）的目标；取不到就整条丢弃——没有触发形状的序列永远不会开始，
+ * 混进主序列反而会在任意一次点击时播出。含交互序列的时间树不是规范主序列，保存时原样保留
+ * （timingHasUnsupportedContent 判为只读）。序列里不挂在效果下的 p:audio / p:video 节点暂不映射。
+ */
+function parseInteractiveSequence(root: Element, slideW: number, slideH: number): InteractiveSequence | null {
+  const condition = kid(kid(root, 'stCondLst'), 'cond');
+  if (attr(condition, 'evt') !== 'onClick') return null;
+  // 触发目标是形状、连接线或组合，三者的 id 都落在 SlideElement.id 上；文字范围（txEl）触发不支持
+  const targetElement = kid(condition, 'tgtEl');
+  const trigger =
+    numAttr(kid(targetElement, 'spTgt'), 'spid')
+    ?? numAttr(kid(targetElement, 'cxnSpTgt'), 'spid')
+    ?? numAttr(kid(targetElement, 'grpSpTgt'), 'spid');
+  if (trigger === null) return null;
+  const collected = presetTimeNodes(root, true);
+  if (!collected) return null;
+  const steps: AnimStep[] = [];
+  for (const { element } of collected.presets) {
+    const step = buildStep(element, slideW, slideH);
+    if (step) steps.push(step);
+  }
+  if (!steps.length) return null;
+  // 与主序列同一规则：clickEffect 开新批，其后的 withPrev / afterPrev 归入这一批
+  let group = -1;
+  for (const step of steps) {
+    if (step.trigger === 'click' || group < 0) group++;
+    step.clickGroup = group;
+  }
+  const restart = attr(root, 'restart');
+  // schema 的缺省值是 always
+  return { trigger, steps, restart: restart === 'whenNotActive' || restart === 'never' ? restart : 'always' };
 }
 
 /** 从媒体节点（p:audio/p:video）提取播放语义；结构与 OOXML cMediaNode 对齐 */
@@ -553,6 +610,10 @@ function parseTimingDetailed(timing: Element | null, slideW = 0, slideH = 0): Pa
   let readonly = timingHasUnsupportedContent(timing);
   const collected = presetTimeNodes(timing);
   if (!collected) return { readonly: true };
+  const interactive = collected.interactive
+    .map((root) => parseInteractiveSequence(root, slideW, slideH))
+    .filter((sequence): sequence is InteractiveSequence => sequence !== null);
+  const interactiveField = interactive.length ? { interactive } : {};
   const built: { order: number; step: AnimStep }[] = [];
   for (const { element, order } of collected.presets) {
     const step = buildStep(element, slideW, slideH);
@@ -560,7 +621,7 @@ function parseTimingDetailed(timing: Element | null, slideW = 0, slideH = 0): Pa
     else readonly = true;
   }
 
-  if (!built.length && !collected.medias.length) return { readonly };
+  if (!built.length && !collected.medias.length) return { readonly, ...interactiveField };
 
   // 按点击批次编号：第一个效果与其后所有 withPrev/afterPrev 归为同一批。
   // 媒体节点与效果按文档顺序合并编号——媒体跟随最近的效果批次，
@@ -587,7 +648,7 @@ function parseTimingDetailed(timing: Element | null, slideW = 0, slideH = 0): Pa
     }
   }
   steps.push(...merged.filter((n) => n.step).map((n) => n.step!));
-  return { animations: steps, media: result, readonly };
+  return { animations: steps, media: result, ...interactiveField, readonly };
 }
 
 export function parseSlideTiming(root: Element | null, slideW = 0, slideH = 0): ParsedTiming {

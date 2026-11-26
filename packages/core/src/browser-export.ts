@@ -1,7 +1,7 @@
 import { canvasToPngBytes } from './canvas-png';
 import { validateRasterSize } from './raster-size';
 import { escapeXml } from './render/serialize';
-import { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
+import { groupSteps, playbackHidden, staticHidden } from './anim-steps';
 import { renderSlideToSvg } from './render/svg';
 import { collectFonts } from './font/collect';
 import type { FontUsage } from './font/collect';
@@ -334,11 +334,13 @@ export async function presentationToPrintableHtml(pres: Presentation, options: P
   for (const slide of pres.slides) {
     const groups = options.animationSteps ? groupSteps(slide.animations) : [];
     if (!groups.length) {
-      jobs.push(inlineSvgPage(pres, slide, options, [...staticHidden(slide)], pipeline));
+      // 没有可展开的批次：分步导出里交互序列同样不会被触发，静态导出取终态
+      const hidden = options.animationSteps ? playbackHidden(slide, 0) : staticHidden(slide);
+      jobs.push(inlineSvgPage(pres, slide, options, [...hidden], pipeline));
       continue;
     }
     for (let index = 0; index <= groups.length; index++) {
-      jobs.push(inlineSvgPage(pres, slide, options, [...hiddenBefore(groups, index)], pipeline));
+      jobs.push(inlineSvgPage(pres, slide, options, [...playbackHidden(slide, index)], pipeline));
     }
   }
   const pages = await Promise.all(jobs);

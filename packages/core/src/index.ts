@@ -74,7 +74,7 @@ export type {
   Geom,
   GeomSpec,
 } from './geometry/index';
-export { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
+export { groupSteps, hiddenBefore, interactiveGroups, playbackHidden, staticHidden } from './anim-steps';
 export { presentationToPrintableHtml, slideToPng, slideToSvgFile } from './browser-export';
 export type { CommentExportOptions, PrintableOptions } from './browser-export';
 export { setChartParser, setChartRenderer, setChartExParser, inheritPptxParsingContext } from './chart/hook';

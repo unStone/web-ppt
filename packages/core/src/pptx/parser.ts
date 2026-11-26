@@ -444,6 +444,7 @@ export function parseSlide(
     layoutName: attr(walk(layoutRoot, 'cSld'), 'name') ?? undefined,
     transition: directTransition ?? parseTransition(layoutRoot),
     animations: timing.animations,
+    ...(timing.interactive ? { interactiveSequences: timing.interactive } : {}),
     ...(edit
       ? {
           editInfo: {
