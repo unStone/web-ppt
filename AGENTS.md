@@ -82,6 +82,7 @@
 | **`chart/` 是解析器不是渲染器** | 它读 chart XML 产出 `SlideElement[]`。依赖 `pptx/color`·`text` 是正当复用（chart XML 本身就是 OOXML），不要试图「解耦」——那只会让 DrawingML 颜色解析复制一份 |
 | **TypeScript 7 主包没有 JS API** | `typescript@7` 的主入口只剩版本信息（`ts.sys`、`ts.createSourceFile` 都是 `undefined`），新 API 预计 7.1 才提供。类型检查与声明产出走原生 `tsc`；工具脚本里的语法解析、tsconfig 读取、模块解析一律从官方兼容包 `@typescript/typescript6` 导入。另一个 CLI 差异：命令行传文件时若发现 tsconfig.json 会报 TS5112，需要 `--ignoreConfig` |
 | **声明文件的相对导入要带扩展名** | 九个包都是 ESM。`tsc` 按 bundler 解析原样输出无扩展名的相对导入，`node16` / `nodenext` 下解析失败、导出静默变成 `any`，开着 `skipLibCheck` 时连报错都没有（issue #74）。声明产出后由 `tooling/fix-dts-import-extensions.mjs` 按实际产出的声明文件补扩展名，目录导入必须写成 `X/index.js`——dist 里同名还有 Vite 入口 `X.js`。新增声明产出步骤时带上它；`check-dts-resolution` 与 `check-dts-consumer` 在 verify 复核 |
+| **Chrome 158 改了两处计算样式** | ① 没有 `mask-image` 时，mask 各 longhand 的计算值只保留第一层（157 原样返回整串）。把关键帧声明喂给探针元素做归一化时必须**先全部赋值再读**：`getKeyframes()` 返回的键是字母序，`maskImage` 排在 `maskSize` 之后，逐个赋值后立刻读会让多层蒙版丢层。② `justify-content: flex-start` / `flex-end` 的计算值序列化成 `flow-start` / `flow-end`。断言计算样式时别写死其中一种写法。runner 滚动升级期间同一提交时红时绿，先查失败作业日志里的 UA 是 `Chrome/157` 还是 `Chrome/158` |
 
 ## 分层
 

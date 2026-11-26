@@ -84,16 +84,20 @@ export function createAnimationAcceptance(api) {
   // motion path 简写属性，喂进探针只会产出无关值
   const KEYFRAME_META = new Set(['offset', 'easing', 'composite']);
 
-  /** 把声明值喂给探针元素再读计算样式：两端走同一套序列化，字符串比较才有意义 */
+  /**
+   * 把声明值喂给探针元素再读计算样式：两端走同一套序列化，字符串比较才有意义。
+   *
+   * 必须先全部赋值再读。Chrome 158 起，没有 mask-image 时 mask 各 longhand 的计算值只保留第一层；
+   * getKeyframes() 返回的键是字母序，maskImage 排在 maskSize 之后，逐个赋值后立刻读会让多层蒙版丢层。
+   */
   const normalize = (declared, layer = false) => {
     const host = layer ? probeLayer : probe;
+    const entries = Object.entries(declared ?? {}).filter(([key, value]) => value != null && !KEYFRAME_META.has(key));
+    for (const [key, value] of entries) host.style[key] = String(value);
+    const computed = getComputedStyle(host);
     const out = {};
-    for (const [key, value] of Object.entries(declared ?? {})) {
-      if (value == null || KEYFRAME_META.has(key)) continue;
-      host.style[key] = String(value);
-      out[key] = getComputedStyle(host)[key];
-    }
-    for (const key of Object.keys(out)) host.style[key] = '';
+    for (const [key] of entries) out[key] = computed[key];
+    for (const [key] of entries) host.style[key] = '';
     return out;
   };
 
