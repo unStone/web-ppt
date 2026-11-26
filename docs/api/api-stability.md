@@ -28,7 +28,7 @@ Windows 验收与发布仍是后续交付条件，不通过修改版本号代替
 
 公开类型使用示例和负例位于 `tooling/type-contracts/`，源码类型检查与产物 exports 构建共同约束公开接口。
 
-每个 `exports` 类型入口的公开面由 API Extractor 生成报告，存放在 `packages/<包>/api/<入口>.api.md`。`npm run verify` 调用 `api:check`：导出的增删改与已提交报告不一致即失败，确认变更后运行 `npm run api:report` 并随代码提交，公开 API 的变化因此直接出现在 PR diff 中。同一步之前的 `check-dts-resolution` 保证发布声明文件里的相对导入都解析到 `.d.ts`。
+每个 `exports` 类型入口的公开面由 API Extractor 生成报告，存放在 `packages/<包>/api/<入口>.api.md`。`npm run verify` 调用 `api:check`：导出的增删改与已提交报告不一致即失败，确认变更后运行 `npm run api:report` 并随代码提交，公开 API 的变化因此直接出现在 PR diff 中。同一步之前的 `check-dts-resolution` 与 `check-dts-consumer` 保证发布声明文件在 `bundler`、`node16`、`nodenext` 三种模块解析下都可用：前者逐条核对声明文件里的相对导入解析到 `.d.ts`，后者按使用者的配置从包名真实编译全部类型入口。
 不兼容变更必须有迁移说明和明确版本决策；不承诺私有源码路径、内部 XML 操作器或生成产物文件名的稳定性。
 
 语料回归使用 `npm run test:edit:equivalence`；新增功能使用确定性固件及真实浏览器像素，真实 ChartEx 原文件证据

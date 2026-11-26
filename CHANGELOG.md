@@ -8,6 +8,7 @@
 - SmartArt 布局定义引擎的求值范围扩大：过渡点轴（`parTrans` / `sibTrans`）、`step` 与 `hideLastTrans`，条件函数 `pos` / `revPos` / `posOdd` / `posEven`，全部 64 种约束类型（含 `userA`–`userZ`）与 `ruleLst` 收缩规则。
 - SmartArt 编辑：读写保留助理节点（`type="asst"`），重排后的连线带唯一 `modelId`。
 - `@web-ppt/core/diagram-engine`：`DiagramPoint` 新增可选的 `parTransId` / `sibTransId` / `hierBranch` / `dir`。
+- 修复发布包的类型声明在 `moduleResolution: node16` / `nodenext` 下失效（#74）：九个包都是 ESM，`.d.ts` 沿用了源码里无扩展名的相对导入，而 Node ESM 解析要求显式扩展名，导入解析失败后导出静默变成 `any`。声明文件里的相对导入现在带 `.js` 扩展名，`bundler` 下的使用方式不变。`npm run verify` 新增按三种解析复核声明导入，并按使用者的 `node16` / `nodenext` 配置真实编译全部类型入口。
 
 ## 0.9.0-beta.6 - 2026-11-15
 
