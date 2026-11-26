@@ -261,6 +261,7 @@ export class PresentationState {
     return this.interactive.map((sequence) => sequence.trigger);
   }
 
+  /** 点击到的元素是不是某个交互序列的触发形状 */
   isInteractiveTrigger(target: number): boolean {
     return this.interactive.some((sequence) => sequence.trigger === target);
   }

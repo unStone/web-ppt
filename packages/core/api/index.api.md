@@ -507,6 +507,16 @@ export type ImageTilePlacement = Omit<ImageTile, 'sourceWidth' | 'sourceHeight'>
 export function inheritPptxParsingContext(source: OpcPackage, target: OpcPackage): OpcPackage;
 
 // @public
+export function interactiveGroups(slide: Slide): AnimStep[][][];
+
+// @public
+export interface InteractiveSequence {
+    restart: 'always' | 'whenNotActive' | 'never';
+    steps: AnimStep[];
+    trigger: number;
+}
+
+// @public
 export function invalidateTextMeasureCaches(): void;
 
 // @public (undocumented)
@@ -796,6 +806,9 @@ export interface PlaceholderIdentity {
     readonly type?: string | null;
 }
 
+// @public
+export function playbackHidden(slide: Slide, upTo: number): Set<number>;
+
 // @public (undocumented)
 export interface PngExportOptions extends CommentExportOptions {
     fonts?: ExportFontOptions;
@@ -1062,6 +1075,7 @@ export interface Slide {
     // (undocumented)
     elements: SlideElement[];
     hidden?: boolean;
+    interactiveSequences?: InteractiveSequence[];
     layoutName?: string;
     notes?: string;
     transition?: Transition;

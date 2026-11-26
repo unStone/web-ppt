@@ -310,7 +310,9 @@ const applicationAdditional = [...closure([applicationEntry], false)]
 // 属于同步渲染 / 编辑器必经代码：raw 实测 2,480,756B 超出 1534B，上调 1600B；gzip 585,479B 超出 357B，上调 400B
 // SmartArt 布局引擎补齐十种标准算法、过渡点轴与规则收缩，引擎在默认渲染路径的同步闭包内：
 // raw 实测 2,508,528B 超出 27,706B，上调 28_000B；gzip 593,074B 超出 7,552B，上调 7,600B
-const activatedBudget = { raw: initialBudget.raw + 253_920, gzip: initialBudget.gzip + 83_273 };
+// 触发器动画（issue #84）：交互序列的播放进度、触发形状点击与 data-ppt-trigger 标记属于查看器首次打开的同步代码：
+// raw 实测 2,510,855B 超出 2,033B，上调 2_100B；gzip 593,575B 超出 453B，上调 500B
+const activatedBudget = { raw: initialBudget.raw + 256_020, gzip: initialBudget.gzip + 83_773 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
