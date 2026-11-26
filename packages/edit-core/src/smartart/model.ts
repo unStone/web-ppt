@@ -44,7 +44,7 @@ export function readSmartArtNodes(xml: string): SmartArtNode[] {
     connections = children(child(root, 'cxnLst'), 'cxn');
   const rootId = attr(points.find((n) => attr(n, 'type') === 'doc') ?? null, 'modelId');
   const nodes = points
-    .filter((n) => !attr(n, 'type') || attr(n, 'type') === 'node')
+    .filter((n) => !attr(n, 'type') || attr(n, 'type') === 'node' || attr(n, 'type') === 'asst')
     .map((pt) => {
       const id = attr(pt, 'modelId');
       if (!id) throw new Error('SmartArt 节点缺少身份');
@@ -179,7 +179,7 @@ export function writeSmartArtNodes(xml: string, nodes: SmartArtNode[]): string {
       add(point, 'prSet');
       add(point, 'spPr');
     }
-    setXmlAttribute(point, 'type', 'node');
+    setXmlAttribute(point, 'type', previous && attr(previous, 'type') === 'asst' ? 'asst' : 'node');
     if (!previous || texts.get(node.id) !== node.text) replaceSmartArtText(point, node.text);
     const connectionId = smartArtIdentity(`connection:${node.id}`),
       par = smartArtIdentity(`parent:${node.id}`),
