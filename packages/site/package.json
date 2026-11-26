@@ -16,10 +16,10 @@
     "@web-ppt/editor": "*",
     "@web-ppt/fonts": "*",
     "@web-ppt/viewer-core": "*",
-    "cordis": "4.0.0-rc.12",
+    "cordis": "4.0.0-rc.13",
     "fflate": "^0.8.2",
     "harfbuzzjs": "1.6.4",
-    "lucide": "^1.70.0",
-    "mtx-decompressor": "^1.8.0"
+    "lucide": "^1.77.0",
+    "mtx-decompressor": "^1.9.0"
   }
 }
