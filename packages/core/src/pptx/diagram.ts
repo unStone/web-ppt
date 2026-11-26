@@ -25,6 +25,12 @@ export interface DiagramPoint {
   depth: number;
   /** 点类型（node / asst / doc），供布局定义引擎的 forEach ptType 过滤 */
   ptType: string;
+  /** 父子连接对应的过渡点 modelId（供布局定义引擎的 parTrans / sibTrans 轴选择） */
+  parTransId?: string;
+  sibTransId?: string;
+  /** 节点级布局变量覆盖（dgm:prSet/dgm:presLayoutVars） */
+  hierBranch?: string;
+  dir?: 'norm' | 'rev';
 }
 
 export type LayoutFamily = 'linear' | 'cycle' | 'pyramid' | 'hierarchy' | 'snake' | 'radial';
@@ -92,16 +98,47 @@ export function parseDataModel(dataRoot: Element | null): DiagramPoint[] {
   const cxnLst = kid(dm, 'cxnLst');
   if (!ptLst) return [];
 
-  const nodes = new Map<string, { id: string; txBody: Element | null; kids: { id: string; ord: number }[]; ptType: string }>();
+  const nodes = new Map<
+    string,
+    {
+      id: string;
+      txBody: Element | null;
+      kids: { id: string; ord: number; parTransId?: string; sibTransId?: string }[];
+      ptType: string;
+      hierBranch?: string;
+      dir?: 'norm' | 'rev';
+    }
+  >();
+  const presHierBranch = new Map<string, string>();
   let rootId: string | null = null;
+  let docDir: 'norm' | 'rev' | undefined;
   for (const pt of kids(ptLst, 'pt')) {
     const id = attr(pt, 'modelId');
     if (!id) continue;
     const type = attr(pt, 'type') ?? 'node';
-    // parTrans / sibTrans 是连接线与间隔，不是内容节点
-    if (type === 'parTrans' || type === 'sibTrans' || type === 'pres') continue;
-    if (type === 'doc') rootId = id;
-    nodes.set(id, { id, txBody: kid(pt, 't'), kids: [], ptType: type });
+    const prSet = kid(pt, 'prSet');
+    const vars = kid(prSet, 'presLayoutVars');
+    const hb = attr(kid(vars, 'hierBranch'), 'val');
+    const dirVal = attr(kid(vars, 'dir'), 'val');
+    if (type === 'pres') {
+      const assoc = attr(prSet, 'presAssocID');
+      if (assoc && hb && !presHierBranch.has(assoc)) presHierBranch.set(assoc, hb);
+      continue;
+    }
+    // parTrans / sibTrans 是连接线与间隔，不作为内容子节点展开
+    if (type === 'parTrans' || type === 'sibTrans') continue;
+    if (type === 'doc') {
+      rootId = id;
+      if (dirVal === 'norm' || dirVal === 'rev') docDir = dirVal;
+    }
+    nodes.set(id, {
+      id,
+      txBody: kid(pt, 't'),
+      kids: [],
+      ptType: type,
+      ...(hb ? { hierBranch: hb } : {}),
+      ...(dirVal === 'norm' || dirVal === 'rev' ? { dir: dirVal } : {}),
+    });
   }
 
   for (const cxn of kids(cxnLst, 'cxn')) {
@@ -112,23 +149,36 @@ export function parseDataModel(dataRoot: Element | null): DiagramPoint[] {
     if (!src || !dest) continue;
     const parent = nodes.get(src);
     if (!parent || !nodes.has(dest)) continue;
-    parent.kids.push({ id: dest, ord: numAttr(cxn, 'srcOrd') ?? 0 });
+    const parTransId = attr(cxn, 'parTransId');
+    const sibTransId = attr(cxn, 'sibTransId');
+    parent.kids.push({
+      id: dest,
+      ord: numAttr(cxn, 'srcOrd') ?? 0,
+      ...(parTransId && parTransId !== '0' ? { parTransId } : {}),
+      ...(sibTransId && sibTransId !== '0' ? { sibTransId } : {}),
+    });
   }
 
   const seen = new Set<string>();
-  const build = (id: string, depth: number): DiagramPoint | null => {
+  const build = (id: string, depth: number, trans?: { parTransId?: string; sibTransId?: string }): DiagramPoint | null => {
     // 数据模型里出现环是文件损坏，但不能因此栈溢出
     if (seen.has(id) || depth > 12) return null;
     seen.add(id);
     const n = nodes.get(id);
     if (!n) return null;
     n.kids.sort((a, b) => a.ord - b.ord);
+    const hierBranch = n.hierBranch ?? presHierBranch.get(id);
+    const dir = n.dir ?? (depth === 0 ? docDir : undefined);
     return {
       id,
       text: null,
-      children: n.kids.map((k) => build(k.id, depth + 1)).filter((x): x is DiagramPoint => x !== null),
+      children: n.kids.map((k) => build(k.id, depth + 1, k)).filter((x): x is DiagramPoint => x !== null),
       depth,
       ptType: n.ptType,
+      ...(trans?.parTransId ? { parTransId: trans.parTransId } : {}),
+      ...(trans?.sibTransId ? { sibTransId: trans.sibTransId } : {}),
+      ...(hierBranch ? { hierBranch } : {}),
+      ...(dir ? { dir } : {}),
     };
   };
 

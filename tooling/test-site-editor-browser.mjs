@@ -308,7 +308,9 @@ const applicationAdditional = [...closure([applicationEntry], false)]
 // raw 实测 2,449,592B 超出 20,425B，上调 20_500B；gzip 578,037B 超出 4088B，上调 4200B
 // 文字渐变描边（issue #58：a:ln/a:gradFill 解析、原生 <text> 渐变描边、无来源保存写回与 Agent 校验器字段）
 // 属于同步渲染 / 编辑器必经代码：raw 实测 2,480,756B 超出 1534B，上调 1600B；gzip 585,479B 超出 357B，上调 400B
-const activatedBudget = { raw: initialBudget.raw + 225_920, gzip: initialBudget.gzip + 75_673 };
+// SmartArt 布局引擎补齐十种标准算法、过渡点轴与规则收缩，引擎在默认渲染路径的同步闭包内：
+// raw 实测 2,508,528B 超出 27,706B，上调 28_000B；gzip 593,074B 超出 7,552B，上调 7,600B
+const activatedBudget = { raw: initialBudget.raw + 253_920, gzip: initialBudget.gzip + 83_273 };
 const activatedSize = { raw: initialSize.raw + applicationAdditional.raw, gzip: initialSize.gzip + applicationAdditional.gzip };
 if (activatedSize.raw > activatedBudget.raw || activatedSize.gzip > activatedBudget.gzip) {
   throw new Error(`官网首次打开的应用依赖闭包体积回归：${JSON.stringify({ activatedBudget, activatedSize })}`);
