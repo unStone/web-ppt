@@ -2,6 +2,10 @@
 
 本文件记录对使用者可见的变化。版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。发布过程的验证证据（npm 发布、安装验收、体积口径、真机验收状态）记录在 [docs/releases/](docs/releases/)。
 
+## 未发布
+
+- 修复发布包的类型声明在 `moduleResolution: node16` / `nodenext` 下失效（#74）：九个包都是 ESM，`.d.ts` 沿用了源码里无扩展名的相对导入，而 Node ESM 解析要求显式扩展名，导入解析失败后导出静默变成 `any`。声明文件里的相对导入现在带 `.js` 扩展名，`bundler` 下的使用方式不变。`npm run verify` 新增按三种解析复核声明导入，并按使用者的 `node16` / `nodenext` 配置真实编译全部类型入口。
+
 ## 0.9.0-beta.6 - 2026-11-15
 
 九包发布到 npm `next`。本版修复 SmartArt 布局定义引擎的求值语义并交付 composite 约束代数（桌面 001 第三批）：

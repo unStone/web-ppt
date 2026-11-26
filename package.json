@@ -43,7 +43,7 @@
     "eval:agent:run": "node tooling/agent-eval/run.mjs",
     "pretest:functional": "npm run test:site:font-gate && npm run test:metafile:fixture && npm run test:zip && node tooling/test-bench-source.mjs && npm run test:describe && npm run test:lint && npm run test:agent && npm run test:mcp && npm run test:webmcp && npm run test:fill",
     "preverify": "node tooling/test-published-template-binaries.mjs",
-    "postverify": "node tooling/check-dts-resolution.mjs && npm run api:check && npm run test:describe:dist && node tooling/measure-agent-describe.mjs && npm run test:lint:dist && node tooling/measure-agent-lint.mjs && npm run test:agent:dist && node tooling/measure-agent-tools.mjs && npm run test:mcp:dist && node tooling/measure-agent-mcp.mjs && npm run test:fill:dist && npm run test:metafile:fixture:dist",
+    "postverify": "node tooling/check-dts-resolution.mjs && node tooling/check-dts-consumer.mjs && npm run api:check && npm run test:describe:dist && node tooling/measure-agent-describe.mjs && npm run test:lint:dist && node tooling/measure-agent-lint.mjs && npm run test:agent:dist && node tooling/measure-agent-tools.mjs && npm run test:mcp:dist && node tooling/measure-agent-mcp.mjs && npm run test:fill:dist && npm run test:metafile:fixture:dist",
     "prepare": "git config core.hooksPath .githooks || true",
     "dev": "npm run dev -w @web-ppt/viewer",
     "build": "node tooling/build.mjs",
