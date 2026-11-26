@@ -33,6 +33,10 @@ execFileSync(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '
   cwd: join(root, 'packages/agent-mcp'),
   stdio: 'inherit',
 });
+execFileSync(process.execPath, [join(root, 'tooling/fix-dts-import-extensions.mjs')], {
+  cwd: join(root, 'packages/agent-mcp'),
+  stdio: 'inherit',
+});
 const after = snapshot();
 assert.deepEqual(after, before, 'agent-mcp 构建不得改变八个既有包默认入口的任一静态产物字节');
 mkdirSync(join(root, 'out/agent-mcp'), { recursive: true });

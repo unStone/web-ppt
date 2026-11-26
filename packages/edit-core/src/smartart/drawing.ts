@@ -108,13 +108,16 @@ export function smartArtDrawing(xml: string, elements: SlideElement[], nodeIds: 
   for (const [index, element] of elements.entries()) {
     if (element.kind !== 'shape' || !element.path) throw new Error('SmartArt 布局输出不是原生形状');
     const ids = nodeIds[index];
-    // 承载点的形状以首个点为 modelId；装饰形状（不承载点）与重复承载用确定性标识，保证 modelId 唯一
-    const id =
-      element.name === 'SmartArt 连线'
-        ? smartArtIdentity(`parent:${edges[edge++]}`)
-        : ids[0] && !used.has(ids[0])
-          ? ids[0]
-          : smartArtIdentity(`shape:${index}`);
+    // 承载点的形状以首个点为 modelId；连线优先用过渡点或父子边确定性标识；装饰形状与重复承载用序号标识，保证 modelId 唯一
+    let id: string;
+    if (ids[0] && !used.has(ids[0])) {
+      id = ids[0];
+    } else if (element.name === 'SmartArt 连线' && edge < edges.length) {
+      const candidate = smartArtIdentity(`parent:${edges[edge++]}`);
+      id = !used.has(candidate) ? candidate : smartArtIdentity(`shape:${index}`);
+    } else {
+      id = smartArtIdentity(`shape:${index}`);
+    }
     used.add(id);
     const fill = element.fill?.type === 'solid' ? solid(element.fill.color) : '<a:noFill/>';
     const stroke = element.stroke

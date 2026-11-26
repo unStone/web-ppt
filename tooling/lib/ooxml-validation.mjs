@@ -24,7 +24,7 @@ export function collectOoxmlArtifacts(root) {
       files.push(file);
     }
   }
-  for (const directory of ['out/agent-tools', 'out/agent-mcp', 'out/template-fill', 'out/chart-authoring']) {
+  for (const directory of ['out/agent-tools', 'out/agent-mcp', 'out/template-fill', 'out/chart-authoring', 'out/smartart-engine']) {
     // 可选产物目录：测试未运行的机器上跳过
     if (!existsSync(join(root, directory))) continue;
     for (const name of readdirSync(join(root, directory))
@@ -75,6 +75,10 @@ const NAMESPACE_SCHEMA = new Map(
  */
 const UNMAPPED_ROOT_EXCEPTIONS = [
   ['http://schemas.microsoft.com/office/drawing/2014/chartex', 'Microsoft chartex 扩展，无 ECMA-376 XSD'],
+  [
+    'http://schemas.microsoft.com/office/drawing/2008/diagram',
+    'Microsoft SmartArt drawing 缓存扩展（MS-ODRAWXML），无 ECMA-376 XSD；由 OpenXmlValidator 校验',
+  ],
   ['http://www.w3.org/2003/InkML', 'InkML 墨迹部件，不属于 OOXML 词汇'],
 ];
 

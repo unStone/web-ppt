@@ -144,7 +144,7 @@ flowchart LR
 | `npm run test:animation` | 动画统一验收 809 项断言：全部动画效果与切换共用同一套 Web Animations 驱动，`currentTime` seek 到 t=0 / 0.5 / 1 断言计算样式端点 == 关键帧声明、中点命中精确中间帧或严格介于两端、painted 包围盒按效果族核对（fly 离场 / 伸展锚边 / 运动路径终点位移）；morph 断言子元素级配对进度；代表性效果中间态截图落盘 `out/animation-acceptance/midpoints/`。新效果进 `sample-animation-effects.pptx` 固件矩阵即自动纳入；`test:animation:dist` 复验发布入口 |
 | `npm run test:ole:libreoffice` | OLE 外部打开 11 项断言：嵌入 DOCX run 改字与 XLSX 样式 / 富文本改写后重组为独立文档，LibreOffice 打开转换（fodt / fods / xlsx）核对文字、颜色与 run 边界；CI 在功能测试后单独执行 |
 | `npm run test:ooxml` | OOXML 合法性 4 项断言：全部保存产物过 ECMA-376 XSD 与 OpenXmlValidator 双通道，结构与语义负例各一例必须被拦截（§7.6）；依赖 xmllint 与 .NET 8，先跑功能测试落盘产物 |
-| `npm run test:edit` | 编辑模型 1154 项 + 保存 606 项 + PowerPoint 证据 9 项 + 182 份固件、1230 对独立进程 SVG 指纹 |
+| `npm run test:edit` | 编辑模型 1154 项 + 保存 606 项 + PowerPoint 证据 9 项 + 183 份固件、1244 对独立进程 SVG 指纹 |
 | `npm run test:templates` | 内置模板 29 项断言：确定性生成、编辑/恢复、保存与双文字路径指纹 |
 | `npm run test:design-journey` | 设计旅程 31 项断言：模板 → 主题 → 母版 → 版式 → 普通页面 → 保存重开，三套模板、权限隔离、恢复、补丁/生成保存与 `.ppt` 另存 |
 | `npm run test:chart-media` | 经典图表数据编辑 258 项断言：类别/散点/气泡/组合图、历史、协同、缓存与工作簿同步；兼容回退 197 项断言 |
