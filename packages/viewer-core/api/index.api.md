@@ -63,6 +63,7 @@ export class PresentationState {
     // (undocumented)
     cancelAutoAdvance(): void;
     get completedSteps(): readonly AnimStep[];
+    completedStepsBefore(group: readonly AnimStep[]): readonly AnimStep[];
     // (undocumented)
     get count(): number;
     // (undocumented)
@@ -74,7 +75,10 @@ export class PresentationState {
     get hiddenElementIds(): ReadonlySet<number>;
     // (undocumented)
     get index(): number;
+    get interactiveTriggers(): readonly number[];
+    isInteractiveTrigger(target: number): boolean;
     next(): void;
+    playInteractive(target: number): AnimStep[] | null;
     playNextAnimation(): AnimStep[] | null;
     // (undocumented)
     readonly presentation: Presentation;
@@ -84,6 +88,7 @@ export class PresentationState {
     search(query: string): number[];
     // (undocumented)
     setAnimate(on: boolean): void;
+    settleInteractive(trigger: number): void;
     // (undocumented)
     setZoom(z: number): void;
     // (undocumented)
@@ -122,6 +127,7 @@ export type StateChange =
 /**
 * 动画批次推进。`group` 是本次应播放的这一批。
 * `settle` 表示光标退回了一批：UI 要重绘并摆到该光标的终态，不能再播一遍。
+* `interactive` 是触发形状的 id：这一批属于交互序列，主序列进度不变，播完或被打断后调 settleInteractive。
 */
 | {
     type: 'animation';
@@ -129,6 +135,7 @@ export type StateChange =
     total: number;
     group: AnimStep[] | null;
     settle?: boolean;
+    interactive?: number;
 } | {
     type: 'zoom';
     zoom: number;

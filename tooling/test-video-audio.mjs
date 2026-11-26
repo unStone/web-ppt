@@ -89,6 +89,40 @@ await withChartBrowser(root, async (browser) => {
   check('导出返回 WebM', bytes.type === 'video/webm');
   check('播放语义在场（0.8/组0 与 0/循环/组1）', JSON.stringify(bytes.names) === '[[0.8,false,0],[0,true,1]]', JSON.stringify(bytes.names));
 
+  // 触发器动画不在线性时间轴上：开动画导出时，只有交互序列的那页里入场目标全程不出现；
+  // 关掉动画后视频取静态终态，同一个点就是形状本身的红色
+  const triggerVideo = await browser.evaluate(`(async()=>{
+    const { parse, presentationToVideo } = await import('/out/video-audio/contract.mjs');
+    const pres = await parse(new Uint8Array(await (await fetch('/fixtures/sample-animation-trigger.pptx')).arrayBuffer()), { lazy: false });
+    const slide = pres.slides[1];
+    const target = slide.elements[1];
+    const sample = async (animations) => {
+      const blob = await presentationToVideo({ ...pres, slides: [slide] }, { fps: 12, slideDurationMs: 600, animations });
+      const video = document.createElement('video'); video.muted = true;
+      video.src = URL.createObjectURL(blob);
+      await new Promise((resolve, reject) => { video.onloadeddata = resolve; video.onerror = () => reject(new Error('导出视频不能播放')); });
+      const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      await new Promise((resolve) => { video.onseeked = resolve; video.currentTime = video.duration - 0.1; });
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const ctx = canvas.getContext('2d'); ctx.drawImage(video, 0, 0);
+      // 取顶边中点：在形状内，又避开居中的白色文字与圆角
+      const x = Math.round((target.x + target.w / 2) * video.videoWidth / pres.width);
+      const y = Math.round((target.y + 12) * video.videoHeight / pres.height);
+      const pixel = Array.from(ctx.getImageData(x, y, 1, 1).data);
+      URL.revokeObjectURL(video.src);
+      return pixel;
+    };
+    return { animated: await sample(true), plain: await sample(false) };
+  })()`);
+  check(
+    '触发器动画不进视频：入场目标全程隐藏，关掉动画后取终态',
+    triggerVideo.animated.slice(0, 3).every((channel) => channel > 240)
+      && triggerVideo.plain[0] > 150
+      && triggerVideo.plain[1] < 80
+      && triggerVideo.plain[2] < 80,
+    JSON.stringify(triggerVideo),
+  );
+
   // 内嵌视频合成（videoOverlay）：真 MP4 帧叠加到画面（替代海报）
   if (ffmpeg) {
     const overlayResult = await browser.evaluate(`(async()=>{

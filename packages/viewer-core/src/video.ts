@@ -1,4 +1,4 @@
-import { hiddenBefore, staticHidden, type Presentation, type SlideElement } from '@web-ppt/core';
+import { playbackHidden, staticHidden, type Presentation, type SlideElement } from '@web-ppt/core';
 import { VideoScene } from './video/scene';
 import { WebmWriter } from './video/webm';
 import { groupDuration, videoPlan, type VideoOptions } from './video/timing';
@@ -259,7 +259,8 @@ export async function presentationToVideo(pres: Presentation, options: VideoOpti
     let pageStartMs = 0;
     for (const page of plan.pages) {
       healthy();
-      const hidden = page.groups.length ? hiddenBefore(page.groups, 0) : staticHidden(page.slide);
+      // 视频是线性播放：没有人点触发形状，交互序列的入场目标整页保持隐藏
+      const hidden = options.animations === false ? staticHidden(page.slide) : playbackHidden(page.slide, 0);
       const transitionMs = previous && page.transition ? page.transition : 0;
       const current = await scene.page(page.slide, [...hidden]);
       healthy();

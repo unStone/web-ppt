@@ -21,7 +21,7 @@ import { runTextLayoutContract } from './lib/text-layout-contract.mjs';
 import { runEngineTextHtmlContract } from './lib/engine-text-html-contract.mjs';
 import { runCoreImageZipContract } from './lib/core-image-zip-contract.mjs';
 import { runGroupTransformContract } from './lib/group-transform-contract.mjs';
-import { makeBmp, makeExifJpeg, makePng } from './lib/ooxml.mjs';
+import { deck, makeBmp, makeExifJpeg, makePng, slideXml } from './lib/ooxml.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'out/core');
@@ -4495,6 +4495,187 @@ group('headless 状态机');
       );
     }
     st.destroy();
+  }
+}
+
+group('交互序列（触发器动画）');
+{
+  const bytes = load('sample-animation-trigger.pptx');
+  const pres = await lib.parse(bytes, { lazy: false });
+  const [mixed, triggerOnly, mainOnly] = pres.slides;
+  const ids = (slide) => slide.elements.map((element) => element.id);
+  const [title, button, reveal, badge] = ids(mixed);
+  const [choice, answer] = ids(triggerOnly);
+  const [solo] = ids(mainOnly);
+  const brief = (step) => `${step.kind}/${step.effect}@${step.target}:${step.trigger}#${step.clickGroup}`;
+
+  // 解析：交互序列不进主序列，触发形状与批内编号各自独立
+  const sequenceOf = (slide, index) => slide.interactiveSequences?.[index] ?? { trigger: NaN, restart: undefined, steps: [] };
+  const revealSequence = sequenceOf(mixed, 0);
+  const badgeSequence = sequenceOf(mixed, 1);
+  const answerSequence = sequenceOf(triggerOnly, 0);
+  eq('交互序列不混进主序列', (mixed.animations ?? []).map(brief).join('|'), `entrance/fade@${title}:click#0`);
+  eq('并存页有两个交互序列', mixed.interactiveSequences?.length, 2);
+  eq('触发形状取启动条件的目标', mixed.interactiveSequences?.map((sequence) => sequence.trigger).join(','), `${button},${badge}`);
+  eq('whenNotActive 原样保留', revealSequence.restart, 'whenNotActive');
+  eq('序列内 clickGroup 从 0 起', revealSequence.steps.map(brief).join('|'), `entrance/fade@${reveal}:click#0`);
+  eq(
+    '序列内每个 clickEffect 开新批',
+    badgeSequence.steps.map(brief).join('|'),
+    `emphasis/spin@${badge}:click#0|exit/fade@${badge}:click#1`,
+  );
+  eq('never 原样保留', badgeSequence.restart, 'never');
+  eq('只有交互序列的页没有主序列', triggerOnly.animations, undefined);
+  eq(
+    'afterPrev 归入同一批',
+    answerSequence.steps.map(brief).join('|'),
+    `entrance/fade@${answer}:click#0|emphasis/spin@${answer}:afterPrev#0`,
+  );
+  eq('always 原样保留', answerSequence.restart, 'always');
+  check('只有主序列的页不产生 interactiveSequences 字段', mainOnly.interactiveSequences === undefined);
+
+  // 含交互序列的时间树不是规范主序列，保存时原样保留；对照页不受影响
+  const editable = await lib.parse(bytes, { lazy: false, edit: true });
+  check(
+    '含交互序列的页动画来源只读',
+    editable.slides[0].editInfo?.animationSourceReadonly === true && editable.slides[1].editInfo?.animationSourceReadonly === true,
+  );
+  check('仅主序列的对照页仍可编辑', editable.slides[2].editInfo?.animationSourceReadonly === undefined);
+
+  // 触发形状取不到的序列整条丢弃：它永远不会开始，混进主序列会在任意一次点击时播出
+  const orphanTiming =
+    '<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>'
+    + '<p:seq concurrent="1" nextAc="seek"><p:cTn id="2" restart="always" fill="hold" nodeType="interactiveSeq">'
+    + '<p:stCondLst><p:cond evt="onClick" delay="0"/></p:stCondLst><p:childTnLst>'
+    + '<p:par><p:cTn id="3" presetID="10" presetClass="entr" dur="300" fill="hold" nodeType="clickEffect">'
+    + '<p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>'
+    + '<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="4" dur="300" fill="hold"/><p:tgtEl><p:spTgt spid="9"/></p:tgtEl></p:cBhvr></p:animEffect>'
+    + '</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>';
+  const orphanShape =
+    '<p:sp><p:nvSpPr><p:cNvPr id="9" name="orphan"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="914400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr/></a:p></p:txBody></p:sp>';
+  const orphan = await lib.parse(
+    deck({ name: 'Orphan', width: 640, height: 360, slides: [slideXml(orphanShape).replace('</p:sld>', `${orphanTiming}</p:sld>`)] }),
+  );
+  const orphanSlide = orphan.slides[0];
+  eq('触发形状缺失的序列不进任何序列', `${orphanSlide.animations?.length ?? 0},${orphanSlide.interactiveSequences?.length ?? 0}`, '0,0');
+
+  // 后面的断言都建立在三个交互序列已解析出来的前提上
+  if (
+    check(
+      '固件的交互序列全部解析出来',
+      revealSequence.steps.length === 1 && badgeSequence.steps.length === 2 && answerSequence.steps.length === 2,
+    )
+  ) {
+    // 可见性：演示模式从触发之前开始，静态浏览取终态，线性导出停在触发之前
+    eq(
+      '交互批次按序列独立分组',
+      lib
+        .interactiveGroups(mixed)
+        .map((groups) => groups.map((group) => group.map((step) => step.target).join('+')).join(' | '))
+        .join(' / '),
+      `${reveal} / ${badge} | ${badge}`,
+    );
+    eq(
+      '线性导出第 0 步隐藏主序列与交互序列的入场目标',
+      [...lib.playbackHidden(mixed, 0)].sort().join(','),
+      [title, reveal].sort().join(','),
+    );
+    eq('主序列走完后只剩未触发的入场目标', [...lib.playbackHidden(mixed, 1)].join(','), String(reveal));
+    eq('只有交互序列的页线性导出始终隐藏其入场目标', [...lib.playbackHidden(triggerOnly, 0)].join(','), String(answer));
+    eq(
+      '没有交互序列的页与 hiddenBefore 一致',
+      [...lib.playbackHidden(mainOnly, 0)].join(','),
+      [...lib.hiddenBefore(lib.groupSteps(mainOnly.animations), 0)].join(','),
+    );
+    const final = new viewerLib.PresentationState(pres, { animate: false });
+    check('静态浏览取终态：触发才出现的元素可见', !final.hiddenElementIds.has(reveal));
+    check('静态浏览取终态：交互序列里退场的元素隐藏', final.hiddenElementIds.has(badge));
+    final.destroy();
+
+    // 状态机：点击触发形状才推进它的序列，主序列进度不变
+    const St = viewerLib.PresentationState;
+    const state = new St(pres, { animate: true });
+    const seen = [];
+    state.subscribe((change) => seen.push(change));
+    eq('触发形状列表', state.interactiveTriggers.join(','), `${button},${badge}`);
+    check('触发前入场目标隐藏', state.hiddenElementIds.has(reveal));
+    check('触发形状自己不是隐藏目标', !state.hiddenElementIds.has(badge));
+    eq('非触发形状不启动', state.playInteractive(title), null);
+    const revealed = state.playInteractive(button);
+    eq('点击触发形状交出该序列的批次', revealed?.map(brief).join('|'), `entrance/fade@${reveal}:click#0`);
+    check('批次开始后入场目标可见', !state.hiddenElementIds.has(reveal));
+    eq('主序列进度不因交互序列变化', state.animationDone, 0);
+    eq(
+      '交互批次的事件带触发形状 id',
+      seen
+        .filter((change) => change.type === 'animation' && change.interactive !== undefined)
+        .map((change) => change.interactive)
+        .join(','),
+      String(button),
+    );
+    eq('刚交出去的批次不算已播完', state.completedStepsBefore(revealed).length, 0);
+    eq('whenNotActive：播放中再点被忽略', state.playInteractive(button), null);
+    state.settleInteractive(button);
+    eq('已交出的交互批次计入已完成步骤', state.completedSteps.filter((step) => step.target === reveal).length, 1);
+    const replayed = state.playInteractive(button);
+    eq('播完后再点从头重播', replayed?.[0].target, reveal);
+    eq('重播时上一轮的批次不算已播完', state.completedStepsBefore(replayed).length, 0);
+    state.settleInteractive(button);
+    eq('重播后只计当前这一轮的批次', state.completedSteps.filter((step) => step.target === reveal).length, 1);
+    eq('never 序列第一批', state.playInteractive(badge)?.map(brief).join('|'), `emphasis/spin@${badge}:click#0`);
+    state.settleInteractive(badge);
+    const exited = state.playInteractive(badge);
+    eq('never 序列第二批', exited?.map(brief).join('|'), `exit/fade@${badge}:click#1`);
+    eq('另一序列已播完的批次计入已完成步骤', state.completedStepsBefore(exited).length, 2);
+    check('退场批次开始后目标隐藏', state.hiddenElementIds.has(badge));
+    state.settleInteractive(badge);
+    eq('never 序列播完后不再响应', state.playInteractive(badge), null);
+    // 上一步 / 下一步只走主序列，交互进度保留
+    const main = state.playNextAnimation();
+    check('主序列批次之前是全部已触发的交互批次', state.completedStepsBefore(main).length === 3);
+    eq('next 先播主序列', state.animationDone, 1);
+    state.prev();
+    check('退回主序列不影响已触发的交互序列', state.hiddenElementIds.has(badge) && !state.hiddenElementIds.has(reveal));
+    state.destroy();
+
+    const restartable = new St(pres, { animate: true, index: 1 });
+    eq('always 序列首批', restartable.playInteractive(choice)?.length, 2);
+    eq('always：播放中再点从头重播', restartable.playInteractive(choice)?.length, 2);
+    restartable.destroy();
+
+    const revisited = new St(pres, { animate: true });
+    revisited.playInteractive(badge);
+    revisited.settleInteractive(badge);
+    revisited.goTo(1);
+    revisited.goTo(0, 'backward');
+    check('换页后交互进度重建', revisited.hiddenElementIds.has(reveal) && !revisited.hiddenElementIds.has(badge));
+    eq('回到本页后序列从第一批开始', revisited.playInteractive(badge)?.map(brief).join('|'), `emphasis/spin@${badge}:click#0`);
+    revisited.destroy();
+
+    // 线性导出：交互序列不会被触发
+    const stepped = await lib.presentationToPrintableHtml(pres, { animationSteps: true });
+    const pages = (html) => html.split('class="pg"').slice(1);
+    const hiddenIn = (page, id) => new RegExp(`data-el="${id}" style="visibility:hidden;`).test(page);
+    const shownIn = (page, id) => new RegExp(`data-el="${id}" style="(?!visibility:hidden)`).test(page);
+    const steppedPages = pages(stepped);
+    eq('分步打印页数不因交互序列增加', steppedPages.length, 5);
+    check(
+      '分步第 1 张隐藏主序列与交互序列的入场目标',
+      hiddenIn(steppedPages[0], title) && hiddenIn(steppedPages[0], reveal) && shownIn(steppedPages[0], badge),
+    );
+    check(
+      '主序列播完后未触发的入场目标仍隐藏',
+      shownIn(steppedPages[1], title) && hiddenIn(steppedPages[1], reveal) && shownIn(steppedPages[1], badge),
+    );
+    check('只有交互序列的页只出一张且入场目标隐藏', hiddenIn(steppedPages[2], answer) && shownIn(steppedPages[2], choice));
+    const staticPages = pages(await lib.presentationToPrintableHtml(pres));
+    check(
+      '静态导出取终态',
+      shownIn(staticPages[0], reveal)
+        && hiddenIn(staticPages[0], badge)
+        && shownIn(staticPages[1], answer)
+        && shownIn(staticPages[2], solo),
+    );
   }
 }
 

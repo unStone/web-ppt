@@ -680,8 +680,8 @@ document.addEventListener('fullscreenchange', () => {
 presenter.addEventListener('click', (e) => {
   if (!presenting) return;
   const el = e.target instanceof Element ? e.target : null;
-  // 侧栏、按钮、链接自己处理；点到当前页才前进
-  if (!el || el.closest('a[href], button, [data-slide], .pv-side, .present-blank, .slide-grid')) return;
+  // 侧栏、按钮、链接和触发器动画的触发形状自己处理；点到当前页才前进
+  if (!el || el.closest('a[href], button, [data-slide], [data-ppt-trigger], .pv-side, .present-blank, .slide-grid')) return;
   viewer?.next();
   renderPresenter();
 });

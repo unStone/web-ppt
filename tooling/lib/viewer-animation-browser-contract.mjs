@@ -270,3 +270,55 @@ async function runAnimationEffectsBrowserContract({ Viewer, parse, load }) {
     mount.remove();
   }
 }
+
+/**
+ * 真实浏览器检查触发器动画：点触发形状只播它的交互序列，不推进主序列，
+ * 也不把这次点击交给宿主挂在祖先上的「点到幻灯片就前进」；触发形状带 data-ppt-trigger，
+ * 供把监听挂在容器自身或捕获阶段的宿主排除。
+ */
+export async function runViewerTriggerBrowserContract({ Viewer, parse, load }) {
+  const presentation = await parse(await load('sample-animation-trigger.pptx'), { lazy: false });
+  const mount = document.createElement('div');
+  mount.className = 'contract-offscreen';
+  mount.style.cssText = 'width:1280px;height:720px';
+  // 宿主的「点到幻灯片就前进」通常挂在查看器容器的祖先上
+  const host = document.createElement('div');
+  host.append(mount);
+  document.body.append(host);
+  let bubbled = 0;
+  const onHostClick = () => {
+    bubbled++;
+  };
+  host.addEventListener('click', onHostClick);
+  let viewer;
+  try {
+    viewer = new Viewer(mount, presentation, { animate: true, textMode: 'svg' });
+    const [title, button, reveal] = presentation.slides[0].elements.map((element) => element.id);
+    const node = (id) => mount.querySelector(`[data-el="${id}"]`);
+    const click = (id) => node(id).dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    if (node(reveal).style.visibility !== 'hidden') throw new Error('Chrome 触发前入场目标未隐藏');
+    if (!node(button).hasAttribute('data-ppt-trigger') || node(title).hasAttribute('data-ppt-trigger')) {
+      throw new Error('Chrome 触发形状没有带上 data-ppt-trigger 标记');
+    }
+    click(button);
+    const entrance = node(reveal).getAnimations()[0];
+    if (!entrance || node(reveal).style.visibility === 'hidden') throw new Error('Chrome 点击触发形状没有启动交互序列');
+    if (viewer.animationDone !== 0) throw new Error('Chrome 交互序列推进了主序列');
+    if (bubbled !== 0) throw new Error('Chrome 触发形状的点击冒泡到了宿主');
+    // 序列播放中再点被忽略：没有第二次入场
+    click(button);
+    if (node(reveal).getAnimations().length !== 1) throw new Error('Chrome 序列播放中再次点击没有被忽略');
+    entrance.finish();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    if (node(reveal).style.visibility === 'hidden') throw new Error('Chrome 交互序列播完后入场目标仍隐藏');
+    click(button);
+    if (node(reveal).getAnimations().length !== 1) throw new Error('Chrome 播完后再次点击没有重播');
+    click(title);
+    if (bubbled !== 1) throw new Error('Chrome 非触发形状的点击没有冒泡给宿主');
+  } finally {
+    viewer?.destroy();
+    host.removeEventListener('click', onHostClick);
+    presentation.dispose?.();
+    host.remove();
+  }
+}

@@ -1,7 +1,7 @@
 import type { Presentation, Slide } from './types';
 import { slideToPng } from '@web-ppt/core';
 import { validateRasterSize } from './raster-size';
-import { groupSteps, hiddenBefore, staticHidden } from './anim-steps';
+import { groupSteps, playbackHidden, staticHidden } from './anim-steps';
 import { PdfDocument } from './pdf/document';
 export { PdfDocument };
 export interface PdfExportOptions {
@@ -26,8 +26,9 @@ export async function presentationToPdf(pres: Presentation, options: PdfExportOp
     const groups = options.animationSteps ? groupSteps(slide.animations) : [];
     if (groups.length)
       for (let step = 0; step <= groups.length; step++)
-        jobs.push({ slide, slideNumber: index + 1, hidden: [...hiddenBefore(groups, step)] });
-    else jobs.push({ slide, slideNumber: index + 1, hidden: [...staticHidden(slide)] });
+        jobs.push({ slide, slideNumber: index + 1, hidden: [...playbackHidden(slide, step)] });
+    else
+      jobs.push({ slide, slideNumber: index + 1, hidden: [...(options.animationSteps ? playbackHidden(slide, 0) : staticHidden(slide))] });
   });
   const pdf = new PdfDocument(pres.width * 0.75, pres.height * 0.75, options.title);
   const abort = () => {

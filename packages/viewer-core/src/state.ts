@@ -1,4 +1,4 @@
-import type { AnimStep, Presentation, Slide, Transition } from '@web-ppt/core';
+import type { AnimStep, InteractiveSequence, Presentation, Slide, Transition } from '@web-ppt/core';
 import { slideText } from '@web-ppt/core';
 import { groupSteps, hiddenBefore, staticHidden } from '@web-ppt/core';
 import { autoAdvanceMs } from './playback';
@@ -28,9 +28,21 @@ export type StateChange =
   /**
    * 动画批次推进。`group` 是本次应播放的这一批。
    * `settle` 表示光标退回了一批：UI 要重绘并摆到该光标的终态，不能再播一遍。
+   * `interactive` 是触发形状的 id：这一批属于交互序列，主序列进度不变，播完或被打断后调 settleInteractive。
    */
-  | { type: 'animation'; done: number; total: number; group: AnimStep[] | null; settle?: boolean }
+  | { type: 'animation'; done: number; total: number; group: AnimStep[] | null; settle?: boolean; interactive?: number }
   | { type: 'zoom'; zoom: number };
+
+/** 交互序列在本页的播放进度；每次进页重建 */
+interface InteractivePlayback {
+  readonly trigger: number;
+  readonly restart: InteractiveSequence['restart'];
+  readonly groups: AnimStep[][];
+  /** 已交给 UI 的批次数 */
+  cursor: number;
+  /** 最近交出去的那一批还没播完 */
+  active: boolean;
+}
 
 type Listener = (change: StateChange) => void;
 const MAX_TIMER_DELAY_MS = 0x7fffffff;
@@ -39,6 +51,7 @@ export class PresentationState {
   private idx = 0;
   private zoomValue = 1;
   private groups: AnimStep[][] = [];
+  private interactive: InteractivePlayback[] = [];
   private cursor = 0;
   private listeners = new Set<Listener>();
   private autoTimer: ReturnType<typeof setTimeout> | null = null;
@@ -87,10 +100,11 @@ export class PresentationState {
     return this.animate && this.cursor < this.groups.length;
   }
 
-  /** 光标之前已经结束的步骤。终态样式按这个顺序覆盖。 */
+  /** 已交给 UI 的步骤：主序列光标之前的批次，加上各交互序列已触发的批次。终态样式按这个顺序覆盖。 */
   get completedSteps(): readonly AnimStep[] {
     const steps: AnimStep[] = [];
     for (let i = 0; i < this.cursor && i < this.groups.length; i++) steps.push(...this.groups[i]);
+    for (const sequence of this.interactive) steps.push(...sequence.groups.slice(0, sequence.cursor).flat());
     return steps;
   }
 
@@ -101,7 +115,12 @@ export class PresentationState {
    * 一起画出来就是几帧叠在一起（见 core 的 staticHidden）。
    */
   get hiddenElementIds(): ReadonlySet<number> {
-    return this.animate ? hiddenBefore(this.groups, this.cursor) : staticHidden(this.slide);
+    if (!this.animate) return staticHidden(this.slide);
+    const hidden = hiddenBefore(this.groups, this.cursor);
+    for (const sequence of this.interactive) {
+      for (const id of hiddenBefore(sequence.groups, sequence.cursor)) hidden.add(id);
+    }
+    return hidden;
   }
 
   /** 本页的自动换片延迟（毫秒），未配置则为 null */
@@ -205,6 +224,14 @@ export class PresentationState {
 
   private loadAnimations(): void {
     this.groups = this.animate ? groupSteps(this.slide.animations) : [];
+    this.interactive = this.animate
+      ? (this.slide.interactiveSequences ?? []).flatMap((sequence) => {
+          const groups = groupSteps(sequence.steps);
+          // 没有批次的序列无从播放（只可能来自调用方自己拼的文稿）
+          if (!groups.length) return [];
+          return [{ trigger: sequence.trigger, restart: sequence.restart, groups, cursor: 0, active: false }];
+        })
+      : [];
     this.cursor = 0;
   }
 
@@ -225,6 +252,56 @@ export class PresentationState {
     if (this.cursor === this.groups.length) return;
     this.cursor = this.groups.length;
     this.emit({ type: 'animation', done: this.cursor, total: this.groups.length, group: null });
+  }
+
+  // ---------------- 交互序列 ----------------
+
+  /** 本页交互序列的触发形状 id；自建 UI 据此做点击命中 */
+  get interactiveTriggers(): readonly number[] {
+    return this.interactive.map((sequence) => sequence.trigger);
+  }
+
+  /** 点击到的元素是不是某个交互序列的触发形状 */
+  isInteractiveTrigger(target: number): boolean {
+    return this.interactive.some((sequence) => sequence.trigger === target);
+  }
+
+  /**
+   * 点击触发形状，返回应播放的一批；形状不是触发器、或按 restart 不响应这次点击时返回 null。
+   * 序列播放中：always 从头重播，其余忽略这次点击。全部批次播完后：never 不再响应，其余从头重播。
+   * 交出去的那一批播完或被打断后，UI 调 settleInteractive。
+   */
+  playInteractive(target: number): AnimStep[] | null {
+    const sequence = this.interactive.find((candidate) => candidate.trigger === target);
+    if (!sequence) return null;
+    if (sequence.active) {
+      if (sequence.restart !== 'always') return null;
+      sequence.cursor = 0;
+    } else if (sequence.cursor >= sequence.groups.length) {
+      if (sequence.restart === 'never') return null;
+      sequence.cursor = 0;
+    }
+    const group = sequence.groups[sequence.cursor];
+    sequence.cursor++;
+    sequence.active = true;
+    this.emit({ type: 'animation', done: this.cursor, total: this.groups.length, group, interactive: target });
+    return group;
+  }
+
+  /** 触发形状的序列最近交出去的那一批已经播完或已被打断 */
+  settleInteractive(trigger: number): void {
+    const sequence = this.interactive.find((candidate) => candidate.trigger === trigger);
+    if (sequence) sequence.active = false;
+  }
+
+  /**
+   * 已交给 UI 的步骤里除去 `group` 自身的部分。
+   * `group` 是状态机刚交出去、尚未播完的那一批：它的强调 / 路径终态不能提前写入。
+   */
+  completedStepsBefore(group: readonly AnimStep[]): readonly AnimStep[] {
+    const batches = [...this.groups, ...this.interactive.flatMap((sequence) => sequence.groups)];
+    if (!batches.includes(group as AnimStep[])) throw new Error('completedStepsBefore 收到不属于当前页的动画批次');
+    return this.completedSteps.filter((step) => !group.includes(step));
   }
 
   // ---------------- 自动换片 ----------------

@@ -34,6 +34,8 @@ export class Viewer {
   private textMode: 'html' | 'svg';
   private playing: PlayHandle | null = null;
   private playingGroup: AnimStep[] | null = null;
+  /** 正在播放的批次所属交互序列的触发形状 id；主序列批次为 null */
+  private playingInteractive: number | null = null;
   private transition: TransitionPlayHandle | null = null;
   private currentLayer: HTMLElement | null = null;
   private cancelAuto: (() => void) | null = null;
@@ -58,15 +60,15 @@ export class Viewer {
         this.paint(change.transition);
         this.onChange?.(change.index);
       } else if (change.type === 'animation') {
-        if (change.group) this.play(change.group);
+        if (change.group) this.play(change.group, change.interactive ?? null);
         else if (change.settle) this.paint();
         else {
           this.releasePlayback(true);
           this.applyVisibility();
           this.applySettled();
         }
-        // paint 自己会通知进度；再通知一次，计数会闪两次。
-        if (!change.settle) this.onAnimStep?.(change.done, change.total);
+        // paint 自己会通知进度；再通知一次，计数会闪两次。交互序列不改变主序列进度，同样不通知。
+        if (!change.settle && change.interactive === undefined) this.onAnimStep?.(change.done, change.total);
       } else if (change.type === 'zoom') {
         this.applyZoom();
       }
@@ -231,16 +233,35 @@ export class Viewer {
     }
     this.applyZoom();
     this.applyVisibility();
+    this.markTriggers();
     this.applySettled();
     this.onAnimStep?.(this.state.animationDone, this.state.animationTotal);
   }
 
-  private play(group: Parameters<typeof playGroup>[1]): void {
-    this.releasePlayback(true);
+  /**
+   * 给交互序列的触发形状打上 data-ppt-trigger。宿主的「点到幻灯片就前进」如果挂在查看器容器自身
+   * 或捕获阶段上，stopPropagation 挡不住，宿主要靠这个标记把触发形状排除出去。
+   */
+  private markTriggers(): void {
+    for (const id of this.state.interactiveTriggers) {
+      this.currentLayer?.querySelector(`[data-el="${id}"]`)?.setAttribute('data-ppt-trigger', '');
+    }
+  }
+
+  private play(group: Parameters<typeof playGroup>[1], interactive: number | null = null): void {
+    this.releasePlayback(true, interactive);
+    this.playingInteractive = interactive;
     // 状态机在事件发出前已推进光标；新组尚未播完，不能提前写入它的强调/路径终态。
-    this.applySettled(this.state.completedSteps.slice(0, -group.length));
+    this.applySettled(this.state.completedStepsBefore(group));
     const layer = this.currentLayer;
-    if (!layer) return;
+    if (!layer) {
+      // 没有画面就无从播放：按已播完收尾，交互序列才不会一直停在「播放中」
+      this.playingInteractive = null;
+      if (interactive !== null) this.state.settleInteractive(interactive);
+      this.applyVisibility();
+      this.applySettled();
+      return;
+    }
     const playback = playGroup(layer, group);
     this.playing = playback;
     this.playingGroup = group;
@@ -264,11 +285,17 @@ export class Viewer {
     this.container.dispatchEvent(event);
   }
 
-  private releasePlayback(finish: boolean): void {
+  /**
+   * 释放当前播放。`continueWith` 是紧接着要重播的同一个交互序列：
+   * 状态机已把它标回播放中，不能再按「已播完」清掉。
+   */
+  private releasePlayback(finish: boolean, continueWith: number | null = null): void {
     const playback = this.playing;
     if (!playback) return;
+    const interactive = this.playingInteractive;
     this.playing = null;
     this.playingGroup = null;
+    this.playingInteractive = null;
     if (finish) playback.cancel();
     // 终态由隐藏集和 settledDeclaration 持有，释放 WAAPI 的 fill，避免遮住下一批。
     for (const animation of playback.animations) {
@@ -278,6 +305,8 @@ export class Viewer {
         /* timeline 已释放。 */
       }
     }
+    // 被打断的交互序列按已播完处理，之后才能再次触发
+    if (interactive !== null && interactive !== continueWith) this.state.settleInteractive(interactive);
   }
 
   /**
@@ -364,6 +393,19 @@ export class Viewer {
     const href = link?.getAttribute('href');
     if (href && this.onLinkClick) {
       if (this.onLinkClick(href) === true) e.preventDefault();
+    }
+    // 带链接的形状按链接处理；其余点击落在交互序列的触发形状上时只播它的序列
+    if (link) return;
+    // 触发形状可以是组：沿 data-el 祖先逐级找
+    for (let node = el?.closest('[data-el]') ?? null; node; node = node.parentElement?.closest('[data-el]') ?? null) {
+      const id = node.getAttribute('data-el');
+      const target = id ? Number(id) : NaN;
+      if (!this.state.isInteractiveTrigger(target)) continue;
+      // 宿主通常在祖先元素上监听「点到幻灯片就前进」，这次点击不能冒泡过去翻页
+      e.preventDefault();
+      e.stopPropagation();
+      this.state.playInteractive(target);
+      return;
     }
   };
 

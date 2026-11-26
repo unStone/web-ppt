@@ -22,5 +22,6 @@
 | 加密文件 | 设了打开密码的文件可解析：`parse(bytes, { password })`。未传密码抛 `PasswordRequiredError`，密码错误抛 `WrongPasswordError`，支持敏捷 AES-CBC / 标准 AES-ECB（.pptx）与 RC4 CryptoAPI（.ppt） |
 | ZIP / ZIP64 | 默认限制 4096 个条目、单条目 128 MiB、总解压量 512 MiB、压缩比 1000；可用 `parse(..., { zip })` 调整。异常名称、重复条目、伪造大小与超限输入抛带稳定 reason 的 `ZipSafetyError`；ZIP64 当前以 `zip64-unsupported` 拒绝。详见[导入安全上限](viewer.md#导入安全上限) |
 | OLE 嵌入对象 | 渲染 PowerPoint 存的预览图（经 VML 部件解析），不解析内部文档；预览为 PICT 等无法解码的格式时退回占位框 |
+| 触发器动画（交互序列） | `.pptx` 的 `nodeType="interactiveSeq"` 序列按点击触发形状播放：`Viewer` 自己处理点击，自建 UI 用 `PresentationState.playInteractive`。边界：`.ppt` 不解析交互序列；序列里不挂在效果下的 `p:audio` / `p:video` 节点不映射；编辑器不能新增或修改触发器，含交互序列的页动画来源按只读原样保留；分步打印、分步 PDF 与视频是线性播放，不包含触发器动画，其入场目标全程不出现 |
 
 > 各能力的完整支持范围与边界以[扩展能力矩阵](expanded-capabilities.md)为权威源，本表只列对使用决策有影响的条目。

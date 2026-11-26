@@ -82,7 +82,7 @@
     import { runEditorShapeEffectsBrowserContract } from '/tooling/lib/editor-shape-effects-browser-contract.mjs';
     import { runEditorHyperlinkBrowserContract } from '/tooling/lib/editor-hyperlink-browser-contract.mjs';
     import { runViewerHyperlinkBrowserContract } from '/tooling/lib/viewer-hyperlink-browser-contract.mjs';
-    import { runViewerAnimationBrowserContract } from '/tooling/lib/viewer-animation-browser-contract.mjs';
+    import { runViewerAnimationBrowserContract, runViewerTriggerBrowserContract } from '/tooling/lib/viewer-animation-browser-contract.mjs';
     import {
       publishEditorImageCropBrowserResult, runEditorImageCropBrowserContract,
     } from '/tooling/lib/editor-image-crop-browser-contract.mjs';
@@ -595,6 +595,7 @@
       const hyperlinkResult = await runEditorHyperlinkBrowserContract({ openEditor, load });
       await runViewerHyperlinkBrowserContract({ Viewer, parse, load });
       await runViewerAnimationBrowserContract({ Viewer, parse, load });
+      await runViewerTriggerBrowserContract({ Viewer, parse, load });
       const mediaPlayback = await runMediaInsertionBrowserContract({ core: mediaCore, load });
       const fallbackPlayback = await runViewerMediaFallbackBrowserContract({ Viewer, parse, load });
       report.dataset.mediaPlayback = [

@@ -240,8 +240,10 @@ export interface Slide {
   layoutName?: string;
   /** 切换效果 */
   transition?: Transition;
-  /** 元素动画，按点击分组后由查看器逐步播放 */
+  /** 元素动画（主序列），按点击分组后由查看器逐步播放 */
   animations?: AnimStep[];
+  /** 交互序列（p:timing 的 nodeType="interactiveSeq"）：点击触发形状才播放，不占主序列的点击 */
+  interactiveSequences?: InteractiveSequence[];
   /** 批注（ppt/comments/*.xml），默认不渲染，由 RenderOptions 开关控制 */
   comments?: SlideComment[];
   /** 仅 `parse(..., { edit: true })` 时存在，不参与渲染 */
@@ -467,8 +469,24 @@ export interface AnimStep {
    * 不写时动画仍作用在整个形状上。
    */
   paragraphRange?: { start: number; end: number };
-  /** 由查看器计算：属于第几个点击批次 */
+  /** 属于第几个点击批次；交互序列内从 0 起独立编号 */
   clickGroup?: number;
+}
+
+/**
+ * PowerPoint 的「触发器」动画：点击 `trigger` 形状才开始，与主序列互不占用点击。
+ * 对应 p:timing 里 nodeType="interactiveSeq" 的时间序列。
+ */
+export interface InteractiveSequence {
+  /** 触发形状的元素 id（对应 SlideElement.id） */
+  trigger: number;
+  /** 序列内的动画，按 clickGroup 分批；每点一次触发形状推进一批 */
+  steps: AnimStep[];
+  /**
+   * 序列播放中再点触发形状：`always` 立即从头重播，`whenNotActive` 忽略这次点击，`never` 播完后不再响应。
+   * 取自时间节点的 restart 属性，缺省为 `always`（与 schema 缺省值一致）。
+   */
+  restart: 'always' | 'whenNotActive' | 'never';
 }
 
 export type Fill =
