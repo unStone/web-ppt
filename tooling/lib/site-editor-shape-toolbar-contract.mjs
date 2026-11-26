@@ -12,12 +12,13 @@ export async function runSiteEditorShapeToolbarContract(context) {
     deviceScaleFactor: 1,
     mobile: false,
   });
+  // Chrome 158 起把 flex-start 的计算值序列化为 flow-start；两种写法是同一对齐方式，与 Chrome 版本无关地判定
   await waitFor(
     `getComputedStyle(document.querySelector('#objectPanel')).display === 'none'
     && document.querySelector('#slideCount')?.hidden
     && [...document.querySelectorAll('[data-task-tab]')].reduce((width, tab) => width + tab.getBoundingClientRect().width, 0)
       < document.querySelector('.task-tabs').getBoundingClientRect().width * 0.7
-    && getComputedStyle(document.querySelector('#taskStart')).justifyContent === 'flex-start'`,
+    && ['flex-start', 'flow-start'].includes(getComputedStyle(document.querySelector('#taskStart')).justifyContent)`,
     '窄屏编辑外壳收敛',
   );
   await click('[data-edit-id]');
