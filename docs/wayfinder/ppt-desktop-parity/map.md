@@ -91,5 +91,6 @@ flowchart LR
 
 ## Resolution
 
+- [001 SmartArt 布局定义引擎](tickets/001-smartart-layout-engine.md)：ECMA-376 §21.4.2 全部十种算法、多段轴与过渡点、条件函数、约束代数与规则收缩交付；七页确定性固件、编辑双保存 OOXML 门禁及 LibreOffice / POI 真实样本对照全部通过。
 - [004 导入解压上限与 ZIP 安全](tickets/004-import-archive-limits.md)：统一安全读取、可配置上限、57 项断言、真实语料与性能对照通过。
 - [005 OOXML 合法性门禁](tickets/005-ooxml-validation-gate.md)：XSD + OpenXmlValidator 双通道进入 CI 与发布流水线，148 份保存产物零错误、负例拦截、例外逐条登记；轴标题序位与十余个固件生成器的非法结构一并修正。
